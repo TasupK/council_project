@@ -50,7 +50,7 @@ Freeze row 1, apply a readable header style, size the columns for their content,
 Write this exact row to `USER!A2:G2`:
 
 ```text
-USR_EXAMPLE | admin@example.com | 예시 사용자 | ADMIN | N |  | 
+USR_EXAMPLE | admin@example.com | 예시 사용자 | ADMIN | N | (빈 값) | (빈 값)
 ```
 
 The example remains inactive so it cannot authorize a real login accidentally.
@@ -429,4 +429,3 @@ Expected: all tests PASS, syntax check succeeds, and no whitespace errors are re
 git add -- README.md
 git commit -m "docs: add login deployment guide"
 ```
-
