@@ -1,43 +1,779 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <base target="_top">
-    <meta charset="UTF-8">
-    <title>Council Project</title>
-    <style>
-      body {
-        margin: 0;
-        min-height: 100vh;
-        display: grid;
-        place-items: center;
-        font-family: Arial, sans-serif;
-        background: #f4f7fb;
-        color: #172033;
-      }
+<!doctype html>
+<html lang="ko">
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>학생회 통합 업무관리</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap');
 
-      main {
-        width: min(560px, calc(100% - 32px));
-        padding: 32px;
-        border: 1px solid #d8e0ec;
-        border-radius: 8px;
-        background: #ffffff;
-      }
+    :root {
+      --blue: #0f62fe;
+      --navy: #001d6c;
+      --ink: #21272a;
+      --muted: #697077;
+      --line: #dde1e6;
+      --cool: #f2f4f8;
+      --green: #10955e;
+      --side: 248px;
+    }
 
-      h1 {
-        margin: 0 0 12px;
-        font-size: 28px;
-      }
+    * { box-sizing: border-box; }
 
-      p {
-        margin: 0;
-        line-height: 1.6;
-      }
-    </style>
-  </head>
-  <body>
-    <main>
-      <h1>Council Project</h1>
-      <p>A simple Google Apps Script HTML page connected with clasp.</p>
+    body {
+      margin: 0;
+      background: var(--cool);
+      color: var(--ink);
+      font-family: 'Inter', 'Noto Sans KR', sans-serif;
+      font-size: 14px;
+    }
+
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+
+    /* 로그인 화면 */
+    .login {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: var(--cool);
+    }
+    .login-box {
+      width: min(390px, calc(100% - 32px));
+      text-align: center;
+    }
+    .login h1 { font-size: 26px; color: #121619; margin: 0; }
+    .login p { color: var(--muted); margin: 14px 0 28px; }
+    .login button {
+      width: 100%; height: 48px; border: 1px solid #c1c7cd;
+      background: white; font-weight: 700; color: #121619;
+    }
+    .login button:disabled { opacity: 0.7; cursor: not-allowed; }
+    .alert {
+      display: none; margin-top: 14px; padding: 12px;
+      border: 1px solid #f1c21b; background: #fff8e1;
+      color: #8c610d; text-align: left;
+    }
+    .alert.show { display: block; }
+
+    /* 전체 쉘 (상단, 좌측) */
+    .shell { display: none; min-width: 1000px; }
+    .shell.show { display: block; }
+
+    /* 상단 헤더 */
+    .top {
+      height: 64px; display: flex; align-items: center;
+      position: fixed; z-index: 3; inset: 0 0 auto;
+      background: #fff; border-bottom: 1px solid var(--line);
+      padding: 0 23px;
+    }
+    .brand { color: var(--navy); font-weight: 800; font-size: 18px; white-space: nowrap; }
+    .search {
+      height: 40px; width: clamp(360px, 45vw, 640px);
+      margin-left: 166px; display: flex; align-items: center; gap: 9px;
+      padding: 0 12px; border: 1px solid #c1c7cd;
+      background: var(--cool); color: var(--muted);
+    }
+    .search-icon { font-size: 20px; }
+    .term {
+      height: 40px; width: 124px; margin-left: 60px; padding: 0 12px;
+      border: 1px solid #c1c7cd; background: #fff;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .bell {
+      width: 48px; height: 48px; border: 0; background: #fff;
+      font-size: 21px; position: relative; margin-left: 24px;
+    }
+    .bell i {
+      position: absolute; width: 8px; height: 8px;
+      right: 8px; top: 8px; border-radius: 50%; background: #da1e28;
+    }
+    .user-trigger {
+      margin-left: auto; border: 0; background: #fff;
+      display: flex; align-items: center; gap: 8px; text-align: left;
+    }
+    .user-avatar {
+      width: 40px; height: 40px; display: grid; place-items: center;
+      border-radius: 50%; background: var(--cool);
+      color: #295cdb; font-weight: 800; font-size: 18px;
+    }
+    .user-trigger strong { display: block; font-size: 14px; }
+    .user-trigger small { display: block; margin-top: 2px; color: var(--muted); font-size: 12px; }
+
+    /* 팝업 모달 (프로필 모달) */
+    .pop {
+      display: none; position: absolute; right: 23px; top: 58px; width: 320px;
+      background: #fff; border: 1px solid #dfe3ea; border-radius: 8px;
+      box-shadow: 0 10px 26px rgba(16, 24, 40, 0.14); padding: 23px; z-index: 4;
+    }
+    .pop.open { display: block; }
+    .pop-head { display: flex; align-items: center; gap: 16px; }
+    .pop .user-avatar { width: 44px; height: 44px; background: #e3edff; }
+    .pop-name { font-weight: 800; font-size: 16px; }
+    .pop-email { font-size: 12px; color: #636e80; margin-top: 6px; }
+    .online {
+      margin-left: auto; padding: 5px 10px; border-radius: 12px;
+      background: #e8f7ed; color: #21854d; font-size: 11px; font-weight: 700;
+    }
+    .pop hr { border: 0; border-top: 1px solid #dfe3ea; margin: 20px 0 15px; }
+    .pop-menu {
+      width: 100%; height: 52px; border: 0; border-radius: 6px;
+      background: #f0f5ff; color: #1c2430; text-align: left;
+      padding: 0 12px; font-weight: 700;
+    }
+    .pop-menu + .pop-menu { margin-top: 8px; background: #fff0f2; color: #bf2e38; }
+    .pop-menu b {
+      display: inline-grid; place-items: center; width: 28px; height: 28px;
+      margin-right: 12px; border-radius: 6px; background: #dee8ff;
+      color: #295cdb; font-size: 13px;
+    }
+    .pop-menu.logout b { background: #ffe0e4; color: #bf2e38; }
+    .pop-foot { margin: 17px 0 0; font-size: 11px; color: #636e80; }
+
+    /* 좌측 사이드바 */
+    .side {
+      position: fixed; z-index: 2; top: 64px; bottom: 0; left: 0;
+      width: var(--side); padding: 23px 15px; background: #fff;
+      border-right: 1px solid var(--line);
+    }
+    .side button {
+      display: flex; align-items: center; justify-content: space-between;
+      width: 100%; height: 44px; border: 0; background: #fff;
+      border-radius: 8px; padding: 0 16px; color: #212629;
+      text-align: left; font-weight: 500; font-size: 15px;
+    }
+    .side button + button { margin-top: 8px; }
+    .side .system {
+      position: absolute; left: 15px; right: 15px; bottom: 124px;
+      padding-top: 16px; border-top: 1px solid var(--line);
+      color: #4d5459; font-size: 12px;
+    }
+    .side .setting { position: absolute; left: 15px; right: 15px; bottom: 64px; background: #f2f4f8; font-weight: 700; }
+
+    /* 메인 컨텐츠 영역 */
+    .page { margin: 64px 0 32px var(--side); min-height: calc(100vh - 96px); background: #f2f4f8; }
+    .page-head {
+      height: 112px; background: #fff; border-bottom: 1px solid var(--line);
+      padding: 37px 31px; display: flex; flex-direction: column; justify-content: center;
+    }
+    .crumb { font-size: 12px; color: var(--muted); margin-bottom: 8px; font-weight: 500; }
+    .page-head h1 { margin: 0; font-size: 24px; color: #121619; font-weight: 700; }
+
+    .workspace { max-width: 1128px; margin: 32px auto; padding: 0 0 50px; }
+    .section { margin-top: 0; }
+    .section + .section { margin-top: 24px; padding-top: 30px; border-top: 1px solid var(--line); }
+    .section h2 { margin: 0; color: #121619; font-size: 20px; font-weight: 700; }
+    .section > .desc { margin: 7px 0 16px; color: var(--muted); font-size: 13px; line-height: 1.5; }
+
+    /* 내 정보 카드 */
+    .profile-card {
+      height: 192px; background: #fff; border: 1px solid var(--line);
+      display: flex; align-items: flex-start; padding: 32px; position: relative; border-radius: 4px;
+    }
+    .profile-avatar {
+      width: 72px; height: 72px; border-radius: 50%;
+      display: grid; place-items: center; background: #e8f2ff;
+      color: var(--blue); font-size: 28px; font-weight: 800;
+    }
+    .profile-identity { margin: 3px 0 0 20px; width: 180px; }
+    .profile-identity b { font-size: 20px; font-weight: 700; display: block; }
+    .active { display: block; margin-top: 12px; color: var(--green); font-size: 13px; font-weight: 700; }
+
+    .facts { display: grid; grid-template-columns: repeat(2, minmax(210px, 1fr)); gap: 28px 80px; margin: 0 0 0 35px; }
+    .facts dt { font-size: 12px; color: var(--muted); font-weight: 700; margin-bottom: 8px; }
+    .facts dd { margin: 0; font-size: 14px; font-weight: 700; color: #121619; }
+    .profile-note { position: absolute; bottom: 16px; left: 32px; color: var(--muted); font-size: 12px; margin: 0;}
+
+    /* 역할 로우 */
+    .role-row {
+      height: 56px; display: flex; align-items: center;
+      background: #fff; border: 1px solid var(--line); padding: 0 15px;
+      border-radius: 4px;
+    }
+    .role-row + .role-row { margin-top: 8px; }
+    .role-name { font-size: 15px; font-weight: 800; min-width: 184px; color: #121619; }
+    .role-tag, .tag { padding: 7px 12px; background: var(--cool); border-radius: 4px; color: #4d5358; font-size: 12px; font-weight: 700; }
+    .role-status { margin-left: 50px; color: var(--green); font-weight: 700; font-size: 13px; }
+    .view { height: 40px; width: 120px; margin-left: auto; border: 1px solid #c1c7cd; background: #fff; color: var(--blue); font-weight: 700; border-radius: 4px; }
+
+    /* 알림 테이블 */
+    .notification-table { border: 1px solid var(--line); background: #fff; border-radius: 4px; }
+    .n-head, .n-row { display: grid; grid-template-columns: minmax(150px, 2fr) minmax(180px, 3fr) 110px 110px 80px; align-items: center; gap: 8px; }
+    .n-head { height: 48px; background: #dde1e6; font-weight: 700; font-size: 13px; color: #121619; }
+    .n-head > * { padding-left: 16px; }
+    .n-row { min-height: 72px; border-top: 1px solid var(--line); }
+    .n-row.changed { background: #f0f6ff; }
+    .n-row.failed { background: #fff1f1; }
+    .n-row > * { padding-left: 16px; }
+    .n-name { font-weight: 700; color: #121619; font-size: 14px; }
+    .n-desc { font-size: 13px; color: var(--muted); }
+    .locked { color: var(--green); font-size: 12px; font-weight: 700; }
+
+    /* 토글 스위치 */
+    .toggle { position: relative; display: inline-block; width: 44px; height: 24px; }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; inset: 0; border-radius: 12px; background: #c1c7cd; transition: .2s; }
+    .slider:before { content: ""; position: absolute; width: 18px; height: 18px; left: 3px; top: 3px; border-radius: 50%; background: #fff; transition: .2s; }
+    .toggle input:checked + .slider { background: var(--green); }
+    .toggle input:checked + .slider:before { transform: translateX(20px); }
+
+    .changed-cell {
+      height: 72px; display: flex; align-items: center; gap: 8px;
+      border: 1px solid var(--blue); margin: -1px 0; padding-left: 15px !important;
+      color: var(--blue); font-size: 11px; font-weight: 800; background: #e8f2ff;
+    }
+    .tag.optional { background: #e8f2ff; color: var(--blue); display: inline-block; padding: 7px 12px; }
+
+    /* 하단 저장 바 (모달 내) */
+    .bar {
+      min-height: 48px; margin-top: 14px; padding: 4px 8px 4px 15px;
+      display: flex; align-items: center; background: #fff8e1; border: 1px solid #f1c21b; border-radius: 4px;
+    }
+    .bar strong { font-size: 14px; color: #121619; }
+    .bar button { height: 40px; border: 1px solid #c1c7cd; background: #fff; font-weight: 700; margin-left: 8px; padding: 0 16px; border-radius: 4px; color: #121619; }
+    .bar .save { background: var(--blue); border-color: var(--blue); color: #fff; }
+    .bar .save, .bar .cancel { display: none; }
+    .bar.has-changes .save, .bar.has-changes .cancel { display: block; }
+    .bar .save { margin-left: 8px; }
+    .bar .cancel { margin-left: auto; }
+
+    /* 최하단 상태바 */
+    .statusbar {
+      position: fixed; z-index: 2; bottom: 0; left: 0; right: 0; height: 32px;
+      background: #fff; border-top: 1px solid var(--line);
+      padding: 8px 23px; color: var(--muted); font-size: 12px;
+    }
+
+    /* 모달 */
+    .backdrop { display: none; position: fixed; z-index: 10; inset: 0; background: rgba(16,24,40,0.5); place-items: center; }
+    .backdrop.open { display: grid; }
+    .modal {
+      width: min(1000px, calc(100vw - 40px)); max-height: calc(100vh - 40px); overflow: auto;
+      background: #fff; border: 1px solid #dfe3ea; border-radius: 8px; padding: 26px 39px;
+    }
+    .modal.small { width: 560px; padding: 23px; }
+    .modal h2 { margin: 0; font-size: 22px; color: #121619; font-weight: 700; }
+    .modal-sub { margin: 9px 0 16px; color: var(--muted); font-size: 13px; font-weight: 600; }
+    .readonly { display: inline-block; margin-left: 10px; padding: 6px 12px; background: #f5f6f9; border-radius: 13px; color: #6b7891; font-size: 11px; }
+    .close { float: right; width: 32px; height: 32px; border: 0; border-radius: 6px; background: #f5f6f9; color: var(--muted); font-size: 18px; display: grid; place-items: center; }
+
+    .info { padding: 14px 16px; background: #fff7e0; color: #8c610d; border-radius: 6px; font-size: 13px; display: flex; gap: 8px; align-items: center;}
+    .permission-table { width: 100%; border-collapse: collapse; margin-top: 18px; font-size: 12px; }
+    .permission-table th, .permission-table td { height: 44px; border: 1px solid #dfe3ea; text-align: center; color: #121619; }
+    .permission-table th { background: #f5f6f9; font-weight: 700; }
+    .permission-table td:first-child, .permission-table th:first-child { text-align: left; padding-left: 16px; }
+    .yes { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 4px; background: #6b7891; color: white; }
+
+    .permission-table tr.group { cursor: pointer; transition: background 0.2s; }
+    .permission-table tr.group:hover { background: #f8f9fa; }
+    .permission-table tr.group td:first-child { font-weight: 700; position: relative; }
+    .permission-table tr.group:not(.no-subs) td:first-child::after { content: '⌄'; float: right; margin-right: 16px; transition: transform 0.2s; font-size: 14px; color: #697077; }
+    .permission-table tr.group.open td:first-child::after { transform: rotate(180deg); }
+    .permission-table tr.sub { display: none; background: #fafbfc; }
+    .permission-table tr.sub.show { display: table-row; }
+    .permission-table tr.sub td:first-child { padding-left: 32px; color: #4d5358; }
+    .no { display: inline-grid; width: 20px; height: 20px; border-radius: 4px; border: 1px solid #c1c7cd; background: #fff; }
+
+    .modal-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 18px; padding-top: 17px; border-top: 1px solid #dfe3ea; color: var(--muted); font-size: 12px; }
+    .modal-foot button, .confirm-actions button { width: 88px; height: 40px; border: 1px solid #dfe3ea; background: #fff; font-weight: 700; border-radius: 4px; color: #121619; }
+
+    .confirm-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; padding-top: 16px; border-top: 1px solid #dde1e6; }
+    .confirm-actions .primary { width: 160px; background: var(--blue); color: #fff; border-color: var(--blue); }
+    .change-list { padding: 14px 16px; margin: 22px 0 0; background: #f8f9fa; border: 1px solid var(--line); border-radius: 4px; line-height: 1.8; font-size: 14px; color: #121619; }
+
+    .toast { position: fixed; right: 24px; bottom: 50px; z-index: 12; display: none; padding: 12px 16px; background: #21272a; color: #fff; border-radius: 5px; font-size: 14px; font-weight: 500;}
+    .toast.show { display: block; }
+
+    @media(max-width: 1100px) {
+      .search { margin-left: 40px; }
+      .term { margin-left: 20px; }
+      .facts { gap: 20px; margin-left: 22px; }
+      .workspace { margin: 32px 24px; }
+      .n-head, .n-row { grid-template-columns: 250px 1fr 125px 125px 80px; }
+    }
+  </style>
+</head>
+<body>
+  <!-- 로그인 페이지 -->
+  <main class="login" id="login">
+    <section class="login-box">
+      <h1>학생회 통합 업무관리</h1>
+      <p>승인된 Google 계정으로 로그인해 주세요.</p>
+      <button id="loginButton">Google 계정으로 로그인</button>
+      <div class="alert" id="loginAlert"></div>
+    </section>
+  </main>
+
+  <!-- 메인 쉘 -->
+  <div class="shell" id="shell">
+    <header class="top">
+      <div class="brand">학생회 통합 업무관리</div>
+      <div class="search"><span class="search-icon">⌕</span>업무·신청자·거래 검색</div>
+      <button class="term">2026학년도 <span>⌄</span></button>
+      <button class="bell" aria-label="알림">♧<i></i></button>
+      <button class="user-trigger" id="userTrigger">
+        <span class="user-avatar" id="topAvatar"></span>
+        <span>
+          <strong id="topName"></strong>
+          <small id="topRole"></small>
+        </span>
+      </button>
+
+      <!-- 프로필 팝업 -->
+      <aside class="pop" id="profilePop">
+        <div class="pop-head">
+          <span class="user-avatar" id="popAvatar"></span>
+          <div>
+            <div class="pop-name" id="popName"></div>
+            <div class="pop-email" id="popEmail"></div>
+          </div>
+          <span class="online">접속 중</span>
+        </div>
+        <hr>
+        <button class="pop-menu" id="goMy"><b>M</b>마이페이지 <span style="float:right">›</span></button>
+        <button class="pop-menu logout" id="logout"><b>O</b>로그아웃</button>
+        <hr>
+        <p class="pop-foot">로그인 계정 기준으로 정보와 권한이 표시됩니다.</p>
+      </aside>
+    </header>
+
+    <nav class="side">
+      <button>메인화면</button>
+      <button>장부관리 <span>⌄</span></button>
+      <button>학생회비관리 <span>⌄</span></button>
+      <button>행사복지관리 <span>⌄</span></button>
+      <span class="system">시스템</span>
+      <button class="setting">설정</button>
+    </nav>
+
+    <!-- 마이페이지 내용 -->
+    <main class="page">
+      <header class="page-head">
+        <div class="crumb">마이페이지</div>
+        <h1>마이페이지</h1>
+      </header>
+
+      <div class="workspace">
+        <!-- 내 정보 -->
+        <section class="section">
+          <h2>내 정보</h2>
+          <p class="desc">Google 계정과 관리자 기준정보를 표시합니다.</p>
+          <div class="profile-card">
+            <div class="profile-avatar" id="profileAvatar"></div>
+            <div class="profile-identity">
+              <b id="profileName"></b>
+              <span class="active">●&nbsp; 활성 계정</span>
+            </div>
+            <dl class="facts">
+              <div>
+                <dt>Google 계정</dt>
+                <dd id="emailFact"></dd>
+              </div>
+              <div>
+                <dt>직책</dt>
+                <dd id="roleFact"></dd>
+              </div>
+              <div>
+                <dt>소속·부서</dt>
+                <dd id="departmentFact"></dd>
+              </div>
+              <div>
+                <dt>최근 로그인</dt>
+                <dd>현재 접속</dd>
+              </div>
+            </dl>
+            <p class="profile-note">정보 변경은 관리자에게 요청해 주세요.</p>
+          </div>
+        </section>
+
+        <!-- 내 권한 -->
+        <section class="section">
+          <h2>내 권한</h2>
+          <p class="desc">여러 역할이 배정된 경우 각 역할의 권한이 합산되어 적용됩니다.</p>
+          <div id="roles"></div>
+        </section>
+
+        <!-- 알림 설정 (메인 화면 요약) -->
+        <section class="section">
+          <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 16px;">
+            <div>
+              <h2>알림 설정</h2>
+              <p class="desc" style="margin-bottom: 0;">앱 내 알림과 Gmail 수신 여부를 확인하고 상세히 관리합니다.</p>
+            </div>
+            <button id="openNotificationSettings" class="view" style="width: auto; padding: 0 16px;">자세히 보기&nbsp; →</button>
+          </div>
+
+          <div class="notification-table">
+            <div class="n-head">
+              <span>알림 항목</span>
+              <span>설명</span>
+              <span>앱 내 알림</span>
+              <span>Gmail</span>
+              <span>구분</span>
+            </div>
+            <div id="summaryNotifications"></div>
+          </div>
+        </section>
+      </div>
     </main>
-  </body>
+    <footer class="statusbar">시스템 v0.3 · 데이터 동기화 정상 · 기준일 2026-08-11</footer>
+  </div>
+
+  <!-- 권한 조회 모달 -->
+  <div class="backdrop" id="permissionModal">
+    <section class="modal">
+      <button class="close" data-close="permissionModal">×</button>
+      <h2 id="modalTitle"></h2>
+      <p class="modal-sub">기본 역할 · 활성 <span class="readonly">읽기 전용</span></p>
+      <div class="info">ⓘ 이 권한은 관리자 설정에 따라 적용되며, 마이페이지에서는 변경할 수 없습니다.</div>
+      <p class="desc" style="margin-top:16px; font-size:13px; color:#697077;">여러 역할이 배정된 경우 각 역할의 권한이 합산되어 적용됩니다.</p>
+
+      <table class="permission-table">
+        <thead>
+          <tr>
+            <th>화면·업무</th>
+            <th>메뉴 접근</th>
+            <th>조회</th>
+            <th>등록·수정</th>
+            <th>승인·처리</th>
+            <th>출력·다운로드</th>
+          </tr>
+        </thead>
+        <tbody id="permissionRows"></tbody>
+      </table>
+
+      <div class="modal-foot">
+        <span>권한 기준일 2026-08-11</span>
+        <button data-close="permissionModal">닫기</button>
+      </div>
+    </section>
+  </div>
+
+  <!-- 알림 설정 변경 모달 -->
+  <div class="backdrop" id="notificationModal">
+    <section class="modal" style="padding: 32px 39px;">
+      <button class="close" data-close="notificationModal">×</button>
+      <h2>알림 상세 설정</h2>
+      <p class="desc" style="font-size:13px; color:#697077; margin: 9px 0 24px;">각 알림 채널별로 수신 여부를 직접 껐다 켤 수 있습니다.</p>
+
+      <div class="notification-table">
+        <div class="n-head">
+          <span>알림 항목</span>
+          <span>설명</span>
+          <span>앱 내 알림</span>
+          <span>Gmail</span>
+          <span>구분</span>
+        </div>
+        <div id="modalNotifications"></div>
+      </div>
+
+      <div class="bar" id="changeBar">
+        <strong id="changeCount">변경사항 없음</strong>
+        <button class="cancel" id="discard">변경사항 취소</button>
+        <button class="save" id="save">알림 설정 저장</button>
+      </div>
+    </section>
+  </div>
+
+  <!-- 저장 확인 모달 -->
+  <div class="backdrop" id="saveModal">
+    <section class="modal small">
+      <button class="close" data-close="saveModal">×</button>
+      <h2>변경사항 저장</h2>
+      <p class="desc" style="font-size:13px; color:#697077; margin-top:8px;">선택 알림의 변경사항을 저장하시겠습니까?</p>
+      <div class="change-list" id="saveList"></div>
+
+      <div class="confirm-actions">
+        <button data-close="saveModal">취소</button>
+        <button class="primary" id="confirmSave">변경사항 저장</button>
+      </div>
+    </section>
+  </div>
+
+  <!-- 알림 토스트 -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const $ = id => document.getElementById(id);
+    const state = { data: null, base: {}, pending: {} };
+    const esc = v => String(v||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+    const gas = (name, arg) => new Promise((yes, no) => google.script.run.withSuccessHandler(yes).withFailureHandler(no)[name](arg));
+
+    function alertMsg(text) {
+      $('loginAlert').textContent = text;
+      $('loginAlert').classList.add('show');
+    }
+
+    function showAuthorization(url) {
+      $('loginAlert').innerHTML = `스프레드시트 접근 권한 승인이 필요합니다.<br><a href="${esc(url)}" target="_top">권한 승인하기</a>를 눌러 Google 계정 권한을 허용한 뒤, 이 페이지로 돌아와 다시 로그인해 주세요.`;
+      $('loginAlert').classList.add('show');
+    }
+
+    function toast(text) {
+      $('toast').textContent = text;
+      $('toast').classList.add('show');
+      setTimeout(() => $('toast').classList.remove('show'), 2600);
+    }
+
+    async function login() {
+      $('loginButton').disabled = true;
+      $('loginButton').textContent = 'Google 계정 확인 중...';
+      try {
+        let authorization = await gas('getAuthorizationStatus');
+        if (authorization.required) {
+          showAuthorization(authorization.url);
+          return;
+        }
+        let status = await gas('getLoginStatus');
+        if (status.status !== 'authorized') throw new Error(status.message || '접근 권한이 없는 계정입니다.');
+
+        state.data = await gas('getMyPageData');
+        render();
+      } catch (e) {
+        alertMsg(e.message || '로그인에 실패했습니다.');
+      } finally {
+        $('loginButton').disabled = false;
+        $('loginButton').textContent = 'Google 계정으로 로그인';
+      }
+    }
+
+    function render() {
+      let u = state.data.user, initial = u.name.slice(0, 1), role = u.roles.join(', ');
+      $('login').style.display = 'none';
+      $('shell').classList.add('show');
+
+      ['topAvatar','popAvatar','profileAvatar'].forEach(id => $(id).textContent = initial);
+      $('topName').textContent = u.name;
+      $('topRole').textContent = role;
+
+      $('popName').textContent = u.name;
+      $('popEmail').textContent = u.email;
+
+      $('profileName').textContent = u.name;
+      $('emailFact').textContent = u.email;
+      $('departmentFact').textContent = u.department;
+      $('roleFact').textContent = role;
+
+      $('roles').innerHTML = state.data.roles.map((r, i) => `
+        <div class="role-row">
+          <span class="role-name">${esc(r.name)}</span>
+          <span class="role-tag">기본 역할</span>
+          <span class="role-status">●&nbsp; 활성</span>
+          <button class="view" data-role="${i}">권한 보기&nbsp; →</button>
+        </div>
+      `).join('');
+
+      state.data.notifications.forEach(n => state.base[n.id] = { inApp: n.inApp, gmail: n.gmail });
+      renderSummaryTable();
+      renderModalNotifications();
+    }
+
+    // 메인 화면의 요약 테이블 (읽기 전용)
+    function renderSummaryTable() {
+      $('summaryNotifications').innerHTML = state.data.notifications.map(n => {
+        let v = state.base[n.id];
+        let channel = (key) => v[key]
+          ? `<span style="color:var(--green); font-weight:700;">● 켜짐</span>`
+          : `<span style="color:var(--muted);">○ 꺼짐</span>`;
+        return `
+          <div class="n-row">
+            <span class="n-name">${esc(n.name)}</span>
+            <span class="n-desc">${esc(n.description)}</span>
+            <span>${channel('inApp')}</span>
+            <span>${channel('gmail')}</span>
+            <span class="tag ${n.required ? '' : 'optional'}">${n.required ? '필수' : '선택'}</span>
+          </div>`;
+      }).join('');
+    }
+
+    // 모달 안의 편집 테이블 (토글 스위치 제공)
+    function renderModalNotifications() {
+      $('modalNotifications').innerHTML = state.data.notifications.map(n => {
+        let p = state.pending[n.id], v = p || state.base[n.id], cl = 'n-row' + (p ? ' changed' : '') + (p && p.error ? ' failed' : '');
+        let channel = (key) => n.required
+          ? `<span class="locked">●&nbsp; 켜짐 · 잠금</span>`
+          : `<span class="${p && p[key] !== state.base[n.id][key] ? 'changed-cell' : ''}">${p && p[key] !== state.base[n.id][key] ? '변경&nbsp; ' : ''}<label class="toggle"><input type="checkbox" data-id="${n.id}" data-channel="${key}" ${v[key] ? 'checked' : ''}><span class="slider"></span></label></span>`;
+        return `
+          <div class="${cl}">
+            <span class="n-name">${esc(n.name)}</span>
+            <span class="n-desc">${esc(n.description)}</span>
+            ${channel('inApp')}
+            ${channel('gmail')}
+            <span class="tag ${n.required ? '' : 'optional'}">${n.required ? '필수' : '선택'}</span>
+          </div>`;
+      }).join('');
+
+      let num = Object.keys(state.pending).length, bar = $('changeBar');
+      bar.classList.toggle('has-changes', !!num);
+      $('changeCount').textContent = num ? `${num}개 변경됨` : '변경사항 없음';
+      $('save').textContent = `알림 설정 저장${num ? ' (' + num + ')' : ''}`;
+    }
+
+    function updateChannel(e) {
+      let id = e.target.dataset.id;
+      if (!id) return;
+      let item = state.pending[id] || Object.assign({}, state.base[id]);
+      item[e.target.dataset.channel] = e.target.checked;
+      delete item.error;
+
+      if (item.inApp === state.base[id].inApp && item.gmail === state.base[id].gmail) {
+        delete state.pending[id];
+      } else {
+        state.pending[id] = item;
+      }
+      renderModalNotifications();
+    }
+
+    function showPermissions(index) {
+      let r = state.data.roles[index], perms = r.permissions;
+      let yes = (term) => perms.some(p => p.indexOf(term) > -1 || p.indexOf('전체') > -1);
+
+      const structure = [
+        { name: '메인화면', subs: [] },
+        { name: '장부관리', subs: [
+          { name: '수입·지출 관리' },
+          { name: '감사 이력' }
+        ] },
+        { name: '학생회비관리', subs: [
+          { name: '납부 현황' },
+          { name: '환불 신청' }
+        ] },
+        { name: '행사복지관리', subs: [
+          { name: '행사 참여자' },
+          { name: '복지 물품 대여' }
+        ] }
+      ];
+
+      function renderCell(taskName, cellType) {
+        let allowed = false;
+        if (cellType === '메뉴 접근' || cellType === '조회') allowed = yes(taskName) || yes('조회');
+        if (cellType === '등록·수정') allowed = yes('수정') || yes('생성') || yes('등록');
+        if (cellType === '승인·처리') allowed = yes('승인') || yes('처리') || yes('배정');
+        if (cellType === '출력·다운로드') allowed = yes('다운로드') || yes('출력');
+
+        // 데모 목적으로 메인화면은 항상 접근/조회 가능
+        if (taskName === '메인화면' && (cellType === '메뉴 접근' || cellType === '조회')) allowed = true;
+
+        // 특정 업무에서 절대 불가능한 권한 예외 처리 (빈 박스 렌더링을 방지하려면 아예 비우거나 놔둠.
+        // 하지만 사용자가 '해당없음이 아니라 체크없는 빈 박스여야해'라고 명시했으므로 무조건 빈 박스로 렌더링)
+        return `<td>${allowed ? '<span class="yes">✓</span>' : '<span class="no"></span>'}</td>`;
+      }
+
+      $('modalTitle').textContent = r.name + ' 역할 권한';
+
+      let html = '';
+      structure.forEach((group, i) => {
+        let hasSubs = group.subs && group.subs.length > 0;
+        let trClass = hasSubs ? 'group' : 'group no-subs';
+        html += `<tr class="${trClass}" data-group="${i}">
+          <td>${group.name}</td>
+          ${renderCell(group.name, '메뉴 접근')}
+          ${renderCell(group.name, '조회')}
+          ${renderCell(group.name, '등록·수정')}
+          ${renderCell(group.name, '승인·처리')}
+          ${renderCell(group.name, '출력·다운로드')}
+        </tr>`;
+
+        if (hasSubs) {
+          group.subs.forEach(sub => {
+            html += `<tr class="sub sub-${i}">
+              <td>└ ${sub.name}</td>
+              ${renderCell(sub.name, '메뉴 접근')}
+              ${renderCell(sub.name, '조회')}
+              ${renderCell(sub.name, '등록·수정')}
+              ${renderCell(sub.name, '승인·처리')}
+              ${renderCell(sub.name, '출력·다운로드')}
+            </tr>`;
+          });
+        }
+      });
+
+      $('permissionRows').innerHTML = html;
+
+      // 토글 이벤트 등록 (기존 이벤트 중복 방지를 위해 innerHTML 이후 등록)
+      document.querySelectorAll('.permission-table tr.group').forEach(tr => {
+        tr.onclick = () => {
+          if (tr.classList.contains('no-subs')) return;
+          let g = tr.dataset.group;
+          tr.classList.toggle('open');
+          document.querySelectorAll(`.sub-${g}`).forEach(sub => sub.classList.toggle('show'));
+        };
+      });
+
+      $('permissionModal').classList.add('open');
+    }
+
+    function openSave() {
+      let ids = Object.keys(state.pending);
+      if (!ids.length) return;
+      $('saveList').innerHTML = ids.map(id => {
+        let n = state.data.notifications.find(x => x.id === id), v = state.pending[id];
+        return `<strong>${esc(n.name)}</strong><br>앱 내 알림 ${v.inApp ? '켜짐' : '꺼짐'} · Gmail ${v.gmail ? '켜짐' : '꺼짐'}`;
+      }).join('<hr style="border:0; border-top:1px solid #dde1e6; margin:12px 0;">');
+      $('saveModal').classList.add('open');
+    }
+
+    async function save() {
+      let changes = Object.keys(state.pending).map(id => ({ id, inApp: state.pending[id].inApp, gmail: state.pending[id].gmail }));
+      $('confirmSave').disabled = true;
+      try {
+        let res = await gas('saveNotificationSettings', changes);
+        res.results.forEach(r => {
+          if (r.success) {
+            state.base[r.id] = { inApp: state.pending[r.id].inApp, gmail: state.pending[r.id].gmail };
+            delete state.pending[r.id];
+          } else if (state.pending[r.id]) {
+            state.pending[r.id].error = r.message || '저장에 실패했습니다.';
+          }
+        });
+        $('saveModal').classList.remove('open');
+        $('notificationModal').classList.remove('open');
+
+        // 저장 완료 후 메인화면 요약 및 편집 모달 데이터 리렌더링
+        renderSummaryTable();
+        renderModalNotifications();
+
+        let failed = Object.keys(state.pending).length;
+        toast(failed ? '일부 알림을 저장하지 못했습니다.' : '알림 설정을 성공적으로 저장했습니다.');
+      } catch (e) {
+        toast(e.message || '저장 중 오류가 발생했습니다.');
+      } finally {
+        $('confirmSave').disabled = false;
+      }
+    }
+
+    // 이벤트 리스너 등록
+    $('loginButton').onclick = login;
+    $('userTrigger').onclick = () => $('profilePop').classList.toggle('open');
+    $('goMy').onclick = () => {
+      $('profilePop').classList.remove('open');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+    $('logout').onclick = () => {
+      state.data = null; state.pending = {};
+      $('shell').classList.remove('show');
+      $('login').style.display = 'grid';
+    };
+
+    // 권한 자세히 보기 클릭 시
+    $('roles').onclick = e => e.target.dataset.role !== undefined && showPermissions(e.target.dataset.role);
+
+    // 알림 설정 변경 이벤트
+    $('modalNotifications').onchange = updateChannel;
+    $('discard').onclick = () => { state.pending = {}; renderModalNotifications(); };
+    $('save').onclick = openSave;
+    $('confirmSave').onclick = save;
+
+    // 알림 설정 [자세히 보기] 버튼
+    $('openNotificationSettings').onclick = () => {
+      state.pending = {}; // 열 때 변경사항 초기화
+      renderModalNotifications();
+      $('notificationModal').classList.add('open');
+    }
+
+    // 모달 닫기 공통
+    document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => $(b.dataset.close).classList.remove('open'));
+  </script>
+</body>
 </html>
