@@ -1,0 +1,734 @@
+<script>
+(function () {
+  'use strict';
+
+  var state = {
+    view: 'list',
+    currentEventId: '',
+    eventList: null,
+    eventFilters: { include_closed: false },
+    eventPage: 1,
+    detail: null,
+    activeTab: 'basic',
+    applicantPage: 1,
+    applicantFilters: {},
+    attendancePage: 1,
+    attendanceFilters: {},
+    refundPage: 1,
+    dirtyAttendance: {},
+    loadingCount: 0
+  };
+
+  var content = document.getElementById('ew-content');
+  var modalRoot = document.getElementById('ew-modal-root');
+  var loading = document.getElementById('ew-loading');
+  var toast = document.getElementById('ew-toast');
+
+  function api(functionName, request) {
+    setLoading(true);
+    return new Promise(function (resolve, reject) {
+      if (!window.google || !google.script || !google.script.run) {
+        setLoading(false);
+        reject(new Error('Google Apps Script 웹앱 환경에서 실행해주세요.'));
+        return;
+      }
+      var runner = google.script.run
+        .withSuccessHandler(function (response) {
+          setLoading(false);
+          if (!response || response.ok !== true) {
+            var apiError = response && response.error ? response.error : {};
+            var error = new Error(apiError.message || 'API 처리에 실패했습니다.');
+            error.code = apiError.code || 'PROCESS_FAILED';
+            error.details = apiError.details;
+            reject(error);
+            return;
+          }
+          resolve(response.data);
+        })
+        .withFailureHandler(function (serverError) {
+          setLoading(false);
+          reject(new Error(serverError && serverError.message
+            ? serverError.message
+            : '서버 호출에 실패했습니다.'));
+        });
+      runner[functionName]({
+        // TODO(공통 인증): 로그인 사용자/권한 계약이 확정되면 auth를 공통 모듈에서 채운다.
+        auth: { email: '' },
+        request: request || {}
+      });
+    });
+  }
+
+  function setLoading(isLoading) {
+    state.loadingCount = Math.max(0, state.loadingCount + (isLoading ? 1 : -1));
+    loading.hidden = state.loadingCount === 0;
+  }
+
+  function showToast(message, isError) {
+    toast.textContent = message;
+    toast.classList.toggle('error', Boolean(isError));
+    toast.hidden = false;
+    window.clearTimeout(showToast.timer);
+    showToast.timer = window.setTimeout(function () { toast.hidden = true; }, 4200);
+  }
+
+  function handleError(error) {
+    var prefix = error && error.code ? '[' + error.code + '] ' : '';
+    showToast(prefix + (error && error.message ? error.message : '오류가 발생했습니다.'), true);
+  }
+
+  function escapeHtml(value) {
+    return String(value === null || typeof value === 'undefined' ? '' : value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  function money(value) {
+    if (value === null || value === '' || typeof value === 'undefined') return '확인 필요';
+    var number = Number(value);
+    return isFinite(number) ? number.toLocaleString('ko-KR') + '원' : escapeHtml(value);
+  }
+
+  function displayDate(value) {
+    return value ? escapeHtml(String(value).slice(0, 10).replace(/-/g, '.')) : '-';
+  }
+
+  function statusClass(value) {
+    var text = String(value || '');
+    if (['승인', '납부', '출석', '진행중', '입금 완료', '처리 완료'].indexOf(text) >= 0) return 'ew-status-green';
+    if (['반려', '미납', '미참석'].indexOf(text) >= 0) return 'ew-status-red';
+    if (['모집중', '대기', '입금 대기', '처리 대기'].indexOf(text) >= 0) return 'ew-status-blue';
+    if (text === '예정') return 'ew-status-purple';
+    if (text === '동기화 필요') return 'ew-status-orange';
+    return 'ew-status-gray';
+  }
+
+  function statusBadge(value, fallback) {
+    var label = value || fallback || '확인 필요';
+    return '<span class="ew-status ' + statusClass(label) + '">' + escapeHtml(label) + '</span>';
+  }
+
+  function pageHead(breadcrumb, title, description, actions) {
+    return '<section class="ew-page-head">' +
+      '<div><small>' + escapeHtml(breadcrumb) + '</small><h1>' + escapeHtml(title) + '</h1>' +
+      '<p>' + escapeHtml(description) + '</p></div>' +
+      '<div class="ew-page-actions">' + (actions || '') + '</div></section>';
+  }
+
+  function paginationHtml(data, action) {
+    if (!data || data.totalPages <= 1) return '<div class="ew-pagination"></div>';
+    var buttons = '';
+    var start = Math.max(1, data.page - 2);
+    var end = Math.min(data.totalPages, start + 4);
+    for (var page = start; page <= end; page += 1) {
+      buttons += '<button type="button" class="ew-page-btn ' + (page === data.page ? 'active' : '') +
+        '" data-action="' + action + '" data-page="' + page + '">' + page + '</button>';
+    }
+    return '<div class="ew-pagination">' +
+      '<button type="button" class="ew-page-btn" data-action="' + action + '" data-page="' +
+      Math.max(1, data.page - 1) + '" ' + (data.page === 1 ? 'disabled' : '') + '>‹</button>' +
+      buttons +
+      '<button type="button" class="ew-page-btn" data-action="' + action + '" data-page="' +
+      Math.min(data.totalPages, data.page + 1) + '" ' + (data.page === data.totalPages ? 'disabled' : '') + '>›</button>' +
+      '</div>';
+  }
+
+  function setActiveNav(detailActive) {
+    document.querySelectorAll('.ew-subnav').forEach(function (button, index) {
+      button.classList.toggle('active', detailActive ? index === 1 : index === 0);
+    });
+  }
+
+  function goList() {
+    state.view = 'list';
+    state.activeTab = 'basic';
+    setActiveNav(false);
+    renderEventListShell();
+    loadEventList();
+  }
+
+  function renderEventListShell() {
+    var filter = state.eventFilters;
+    content.innerHTML = pageHead(
+      '행사복지관리 / 행사 목록·생성',
+      '행사 목록',
+      '행사를 검색·필터하고 생성·상세로 이동합니다.',
+      '<button type="button" class="ew-btn ew-btn-primary ew-btn-icon" data-action="go-create">＋ 행사 생성</button>'
+    ) + '<div class="ew-page-body">' +
+      '<form id="ew-event-search" class="ew-card ew-filter-card">' +
+        '<div class="ew-filter-top">' +
+          field('행사명·키워드 검색', '<input name="keyword" type="search" value="' + escapeHtml(filter.keyword || '') + '" placeholder="행사명·키워드 검색">', 'ew-keyword') +
+          '<div class="ew-filter-buttons"><button class="ew-btn" type="button" data-action="reset-event-filters">초기화</button>' +
+          '<button class="ew-btn ew-btn-primary ew-btn-icon" type="submit">⌕　검색</button></div>' +
+        '</div>' +
+        '<div class="ew-filter-grid ew-filter-grid-secondary">' +
+          field('담당자', '<select name="manager" id="ew-manager-filter"><option value="">전체 담당자</option></select>') +
+          field('진행 일자', '<div class="ew-date-range"><input name="start_date" type="date" value="' + escapeHtml(filter.start_date || '') + '"><span>~</span><input name="end_date" type="date" value="' + escapeHtml(filter.end_date || '') + '"></div>') +
+          field('유형', '<select name="event_type" id="ew-type-filter"><option value="">전체 유형</option></select>') +
+          field('행사 상태', '<select name="event_status" id="ew-status-filter"><option value="">전체</option></select>') +
+          field('종료 상태 <span class="ew-contract-note">파생값</span>', '<select name="close_status"><option value="">전체</option><option value="active">미종료</option><option value="closed">종료</option></select>') +
+          '<div class="ew-filter-toggle"><label class="ew-switch-label"><input type="checkbox" name="include_closed" ' + (filter.include_closed ? 'checked' : '') + '> <span>종료 행사 포함<small class="ew-contract-note">event_status에서 파생 · 계약 확인 필요</small></span></label></div>' +
+        '</div>' +
+      '</form>' +
+      '<div id="ew-event-summary" class="ew-card ew-summary"></div>' +
+      '<div id="ew-event-table" class="ew-card ew-table-card"></div>' +
+    '</div>';
+    var closeSelect = content.querySelector('[name="close_status"]');
+    if (closeSelect) closeSelect.value = filter.close_status || '';
+  }
+
+  function field(label, control, extraClass) {
+    return '<div class="ew-field ' + (extraClass || '') + '"><label>' + label + '</label>' + control + '</div>';
+  }
+
+  function loadEventList() {
+    api('apiV1_getEventList', {
+      filter: state.eventFilters,
+      page: state.eventPage,
+      pageSize: 10
+    }).then(function (data) {
+      state.eventList = data;
+      fillEventFilterOptions(data.options || {});
+      renderEventSummary(data.summary || {});
+      renderEventTable(data);
+    }).catch(handleError);
+  }
+
+  function fillEventFilterOptions(options) {
+    fillSelect('ew-manager-filter', options.managers || [], state.eventFilters.manager);
+    fillSelect('ew-type-filter', options.eventTypes || [], state.eventFilters.event_type);
+    fillSelect('ew-status-filter', options.eventStatuses || [], state.eventFilters.event_status);
+  }
+
+  function fillSelect(id, values, selected) {
+    var select = document.getElementById(id);
+    if (!select) return;
+    values.forEach(function (value) {
+      var option = document.createElement('option');
+      option.value = value;
+      option.textContent = value;
+      option.selected = value === selected;
+      select.appendChild(option);
+    });
+  }
+
+  function renderEventSummary(summary) {
+    var target = document.getElementById('ew-event-summary');
+    if (!target) return;
+    target.innerHTML = summaryItem('전체 행사', summary.total || 0, '') +
+      summaryItem('예정', summary.scheduled || 0, 'purple') +
+      summaryItem('모집 중', summary.recruiting || 0, 'blue') +
+      summaryItem('진행 중', summary.inProgress || 0, 'green') +
+      summaryItem('종료', summary.closed || 0, 'red');
+  }
+
+  function summaryItem(label, value, className) {
+    return '<div class="ew-summary-item ' + className + '"><span>' + label + '</span><strong>' +
+      escapeHtml(value) + '건</strong></div>';
+  }
+
+  function renderEventTable(data) {
+    var target = document.getElementById('ew-event-table');
+    if (!target) return;
+    var rows = data.items || [];
+    var body = rows.length ? rows.map(function (event) {
+      var statusOptions = (data.options && data.options.eventStatuses || ['예정', '모집중', '진행중', '종료'])
+        .map(function (status) {
+          return '<option value="' + escapeHtml(status) + '" ' + (status === event.event_status ? 'selected' : '') + '>' + escapeHtml(status) + '</option>';
+        }).join('');
+      return '<tr><td><strong>' + escapeHtml(event.event_name) + '</strong><small>' + escapeHtml(event.event_id) + '</small></td>' +
+        '<td>' + escapeHtml(event.manager) + '</td><td>' + displayDate(event.event_date) + '</td>' +
+        '<td>' + escapeHtml(event.event_type) + '</td>' +
+        '<td><select data-role="event-status" data-id="' + escapeHtml(event.event_id) + '">' + statusOptions + '</select></td>' +
+        '<td><div class="ew-row-actions"><button type="button" class="ew-btn ew-btn-outline ew-btn-small" data-action="go-detail" data-id="' + escapeHtml(event.event_id) + '">상세</button>' +
+        '<button type="button" class="ew-btn ew-btn-small" data-action="close-event" data-id="' + escapeHtml(event.event_id) + '" ' + (event.event_status === '종료' ? 'disabled' : '') + '>종료</button></div></td></tr>';
+    }).join('') : '<tr><td colspan="6" class="ew-table-empty">조건에 맞는 행사가 없습니다.</td></tr>';
+    target.innerHTML = '<table class="ew-table"><thead><tr><th>행사명</th><th>담당자</th><th>진행 일자 ↓</th><th>유형</th><th>행사 상태</th><th>관리</th></tr></thead><tbody>' +
+      body + '</tbody></table>' + paginationHtml(data, 'event-page');
+  }
+
+  function readForm(form) {
+    var data = {};
+    new FormData(form).forEach(function (value, key) {
+      if (data[key]) data[key] = [].concat(data[key], value);
+      else data[key] = value;
+    });
+    form.querySelectorAll('input[type="checkbox"]').forEach(function (input) {
+      data[input.name] = input.checked;
+    });
+    return data;
+  }
+
+  function goEventForm(eventId) {
+    state.view = eventId ? 'edit' : 'create';
+    setActiveNav(false);
+    if (!eventId) {
+      renderEventForm(null);
+      return;
+    }
+    api('apiV1_getEventForEdit', { id: eventId })
+      .then(renderEventForm)
+      .catch(handleError);
+  }
+
+  function renderEventForm(event) {
+    var isEdit = Boolean(event);
+    var value = event || { event_status: '예정' };
+    content.innerHTML = pageHead(
+      '행사복지관리 / 행사 목록·생성 / ' + (isEdit ? '행사 수정' : '행사 생성'),
+      '행사 ' + (isEdit ? '수정' : '생성'),
+      'DB 설계서의 EVT_01_EVENT 물리 필드만 저장합니다.',
+      '<button type="button" class="ew-btn" data-action="go-list">목록으로</button>'
+    ) + '<div class="ew-page-body"><form id="ew-event-form" class="ew-card ew-form-card" data-id="' + escapeHtml(value.event_id || '') + '">' +
+      formRow('행사명 *', '<input name="event_name" required value="' + escapeHtml(value.event_name || '') + '">') +
+      formRow('유형 *', '<input name="event_type" required value="' + escapeHtml(value.event_type || '') + '" placeholder="예: MT, 개강총회">') +
+      formRow('담당 부서 *', '<input name="department" required value="' + escapeHtml(value.department || '') + '">') +
+      formRow('행사 목적 *', '<textarea name="event_purpose" required placeholder="행사의 목적과 취지를 입력해주세요.">' + escapeHtml(value.event_purpose || '') + '</textarea>') +
+      formRow('모집 기간 *', '<div class="ew-date-range"><input name="recruit_start_date" type="date" required value="' + escapeHtml(value.recruit_start_date || '') + '"><span>~</span><input name="recruit_end_date" type="date" required value="' + escapeHtml(value.recruit_end_date || '') + '"></div>') +
+      formRow('행사 진행 일자 *', '<div class="ew-date-range"><input name="event_date" type="date" required value="' + escapeHtml(value.event_date || '') + '"><span>~</span><input type="date" disabled title="행사 종료일 물리 필드 확인 필요"></div><div class="ew-form-help">행사 종료일 필드는 설계 확인 전까지 저장하지 않습니다.</div>') +
+      formRow('장소 *', '<input name="event_place" required value="' + escapeHtml(value.event_place || '') + '">') +
+      formRow('정원 *', '<input name="capacity" type="number" min="0" required value="' + escapeHtml(value.capacity || '') + '">') +
+      formRow('담당자 *', '<input name="manager" required value="' + escapeHtml(value.manager || '') + '">') +
+      feeFormRow(value) +
+      pendingFormRow('예산안', '행사 장부 테이블/필드 확인 필요') +
+      formRow('진행상태 *', statusRadios(value.event_status)) +
+      relatedMaterialFormRow(value) +
+      formRow('기타사항', '<textarea name="additional_notes" placeholder="추가 전달사항이나 특이사항을 입력해주세요.">' + escapeHtml(value.additional_notes || '') + '</textarea>') +
+      '<div class="ew-form-submit"><button class="ew-btn ew-btn-primary" type="submit">저장</button></div>' +
+    '</form></div>';
+  }
+
+  function formRow(label, control) {
+    return '<div class="ew-form-row"><div class="ew-form-label">' + label + '</div><div class="ew-form-control">' + control + '</div></div>';
+  }
+
+  function pendingFormRow(label, reason) {
+    return formRow(label, '<div class="ew-pending-field"><input disabled placeholder="설계 확인 필요"><span class="ew-status ew-status-orange">확인 필요</span></div><div class="ew-form-help">' + escapeHtml(reason) + '</div>');
+  }
+
+  function feeFormRow(value) {
+    return '<div class="ew-form-row ew-fee-form-row">' +
+      '<div class="ew-form-label ew-fee-main-label"><span>참가비 *</span><small>(*학생회비)</small></div>' +
+      '<div class="ew-fee-options">' +
+        '<div class="ew-fee-option"><label for="ew-member-fee">납부자 *</label><div class="ew-money-input"><input id="ew-member-fee" name="fee_amount" type="number" min="0" required value="' + escapeHtml(value.fee_amount || 0) + '"><span>원</span></div></div>' +
+        '<div class="ew-fee-option"><label for="ew-non-member-fee">미납부자 *</label><div class="ew-money-input"><input id="ew-non-member-fee" name="non_member_fee_amount" type="number" min="0" required value="' + escapeHtml(value.non_member_fee_amount || 0) + '"><span>원</span></div></div>' +
+      '</div></div>';
+  }
+
+  function relatedMaterialFormRow(value) {
+    var existing = safeRelatedMaterialLink(value.related_materials);
+    return formRow('관련자료',
+      '<div class="ew-file-upload-row">' +
+        '<label class="ew-btn ew-file-picker" for="ew-related-material-file">파일 선택</label>' +
+        '<input id="ew-related-material-file" type="file" hidden accept=".pdf,.hwp,.hwpx,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.zip">' +
+        '<span id="ew-related-material-name" class="ew-file-name">선택된 파일 없음</span>' +
+      '</div>' +
+      '<div class="ew-form-help">PDF, 문서, 이미지, ZIP 파일 · 최대 5MB</div>' +
+      (existing ? '<div class="ew-existing-file">기존 자료: ' + existing + '</div>' : '')
+    );
+  }
+
+  function safeRelatedMaterialLink(url) {
+    var text = String(url || '').trim();
+    if (!text) return '';
+    if (!/^https:\/\/(drive|docs)\.google\.com\//i.test(text)) return escapeHtml(text);
+    return '<a href="' + escapeHtml(text) + '" target="_blank" rel="noopener noreferrer">관련자료 열기</a>';
+  }
+
+  function textWithBreaks(value) {
+    return escapeHtml(value || '-').replace(/\r?\n/g, '<br>');
+  }
+
+  function readRelatedMaterialFile(form) {
+    var input = form.querySelector('#ew-related-material-file');
+    var file = input && input.files ? input.files[0] : null;
+    if (!file) return Promise.resolve(null);
+    if (file.size > 5 * 1024 * 1024) {
+      return Promise.reject(new Error('관련자료 파일은 최대 5MB까지 업로드할 수 있습니다.'));
+    }
+    return new Promise(function (resolve, reject) {
+      var reader = new FileReader();
+      reader.onload = function () {
+        var result = String(reader.result || '');
+        var commaIndex = result.indexOf(',');
+        if (commaIndex < 0) {
+          reject(new Error('관련자료 파일을 읽을 수 없습니다.'));
+          return;
+        }
+        resolve({
+          name: file.name,
+          mimeType: file.type || 'application/octet-stream',
+          size: file.size,
+          base64: result.slice(commaIndex + 1)
+        });
+      };
+      reader.onerror = function () { reject(new Error('관련자료 파일을 읽을 수 없습니다.')); };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function statusRadios(selected) {
+    return '<div class="ew-radio-group">' + ['예정', '모집중', '진행중', '종료'].map(function (status) {
+      return '<label class="ew-radio-pill"><input type="radio" name="event_status" value="' + status + '" ' + (status === selected ? 'checked' : '') + ' required><span>' + status + '</span></label>';
+    }).join('') + '</div>';
+  }
+
+  function goDetail(eventId, tab) {
+    if (!eventId) {
+      showToast('행사 목록에서 상세 행사를 먼저 선택해주세요.', true);
+      return;
+    }
+    state.view = 'detail';
+    if (state.currentEventId && state.currentEventId !== eventId) state.dirtyAttendance = {};
+    state.currentEventId = eventId;
+    state.activeTab = tab || state.activeTab || 'basic';
+    setActiveNav(true);
+    api('apiV1_getEventDetail', { id: eventId }).then(function (data) {
+      state.detail = data;
+      renderDetailShell();
+      renderActiveTab();
+    }).catch(handleError);
+  }
+
+  function renderDetailShell() {
+    var detail = state.detail;
+    var event = detail.event;
+    var summary = detail.summary || {};
+    content.innerHTML = pageHead(
+      '행사복지관리 / 행사 상세 관리',
+      '행사복지관리 상세',
+      '행사 신청자, 참가비, 출석, 결산 및 환불 업무를 통합 관리합니다.',
+      '<button type="button" class="ew-btn" data-action="go-list">목록으로</button>' +
+      '<button type="button" class="ew-btn ew-btn-primary ew-btn-icon" data-action="edit-event" data-id="' + escapeHtml(event.event_id) + '">＋ 행사 정보 수정</button>'
+    ) + '<div class="ew-page-body"><section class="ew-card ew-event-hero">' +
+      '<div class="ew-event-title"><h2>' + escapeHtml(event.event_name) + '</h2>' + statusBadge(event.event_status) + '</div>' +
+      '<div class="ew-event-meta"><span>' + escapeHtml(event.event_type) + '</span><span>담당 부서 ' + escapeHtml(event.department) + '</span><span>담당자 ' + escapeHtml(event.manager) + '</span>' +
+      '<span>모집기간 ' + displayDate(event.recruit_start_date) + ' ~ ' + displayDate(event.recruit_end_date) + '</span><span>행사일 ' + displayDate(event.event_date) + '</span><span>' + escapeHtml(event.event_place) + '</span></div>' +
+    '</section><div class="ew-kpis">' +
+      kpi('전체 신청자', summary.totalApplicants, '명') +
+      kpi('승인 참가자', summary.approvedApplicants, '명') +
+      kpi('참가비 입금 완료', summary.paidApplicants, '명') +
+      kpi('실제 출석자', summary.actualAttendees, '명') +
+      kpi('현재 잔액', summary.currentBalance, '원', 'balance') +
+    '</div><div class="ew-tabs">' + tabsHtml() + '</div>' +
+    '<div id="ew-tab-panel" class="ew-detail-body"></div></div>';
+  }
+
+  function kpi(label, value, unit, className) {
+    var text = value === null || typeof value === 'undefined' ? '확인 필요' : escapeHtml(value) + unit;
+    return '<div class="ew-card ew-kpi ' + (className || '') + '"><span>' + label + '</span><strong>' + text + '</strong></div>';
+  }
+
+  function tabsHtml() {
+    var tabs = [
+      ['basic', '기본정보'], ['applicants', '신청자'], ['attendance', '참가비·출석'],
+      ['ledger', '결산'], ['refund', '환불']
+    ];
+    return tabs.map(function (tab) {
+      return '<button type="button" class="ew-tab ' + (state.activeTab === tab[0] ? 'active' : '') + '" data-action="detail-tab" data-tab="' + tab[0] + '">' + tab[1] + '</button>';
+    }).join('');
+  }
+
+  function renderActiveTab() {
+    var panel = document.getElementById('ew-tab-panel');
+    if (!panel) return;
+    document.querySelectorAll('.ew-tab').forEach(function (tab) {
+      tab.classList.toggle('active', tab.dataset.tab === state.activeTab);
+    });
+    if (state.activeTab === 'basic') renderBasicTab(panel);
+    else if (state.activeTab === 'applicants') loadApplicants(panel);
+    else if (state.activeTab === 'attendance') loadAttendance(panel);
+    else if (state.activeTab === 'ledger') renderPendingTab(panel, '결산/장부 연동 확인 필요', '행사 장부 DB 테이블과 장부관리 영역의 연동 키가 설계서에 없습니다. apiV1_getEventLedgerList와 apiV1_syncEventLedgers는 안전하게 DB 변경 없이 중단됩니다.');
+    else loadRefunds(panel);
+  }
+
+  function renderBasicTab(panel) {
+    var event = state.detail.event;
+    panel.innerHTML = '<section class="ew-card ew-info-card"><h3>행사 정보</h3><dl class="ew-info-list">' +
+      info('행사명', event.event_name) + info('행사 유형', event.event_type) +
+      info('행사 목적', textWithBreaks(event.event_purpose), true) + info('담당 부서', event.department) +
+      info('담당자', event.manager) + info('모집 기간', displayDate(event.recruit_start_date) + ' ~ ' + displayDate(event.recruit_end_date), true) +
+      info('행사 기간', displayDate(event.event_date), true) + info('행사 장소', event.event_place) +
+      info('모집 정원', event.capacity + '명') + info('납부자 참가비', money(event.fee_amount), true) +
+      info('미납부자 참가비', money(event.non_member_fee_amount), true) +
+      info('관련 자료', safeRelatedMaterialLink(event.related_materials) || '-', true) +
+      info('기타사항', textWithBreaks(event.additional_notes), true) +
+      '</dl></section>' +
+      '<section class="ew-card ew-integration-bar">' +
+        integration('Google Forms 신청서', '설정 확인 필요') +
+        integration('신청자 Google Sheets', '설정 확인 필요') +
+        integration('행사 증빙 Google Drive', '파일 필드 확인 필요') +
+        integration('장부 데이터 연동', 'DB 확인 필요') +
+        '<button type="button" class="ew-btn" data-action="sync-applicants">↻　동기화</button>' +
+      '</section>';
+  }
+
+  function info(label, value, alreadyHtml) {
+    return '<dt>' + escapeHtml(label) + '</dt><dd>' + (alreadyHtml ? value : escapeHtml(value || '-')) + '</dd>';
+  }
+
+  function integration(label, status) {
+    return '<div class="ew-integration"><strong>' + escapeHtml(label) + '</strong>' + statusBadge(status, '확인 필요') + '</div>';
+  }
+
+  function renderPendingTab(panel, title, message) {
+    panel.innerHTML = '<section class="ew-card ew-pending-panel"><h3>' + escapeHtml(title) + '</h3><p>' + escapeHtml(message) + '</p></section>';
+  }
+
+  function loadApplicants(panel) {
+    panel.innerHTML = applicantsToolbar() + '<div id="ew-applicants-table" class="ew-card ew-table-card"></div>';
+    api('apiV1_getApplicantList', {
+      id: state.currentEventId,
+      filter: state.applicantFilters,
+      page: state.applicantPage,
+      pageSize: 10
+    }).then(renderApplicantsTable).catch(handleError);
+  }
+
+  function applicantsToolbar() {
+    var filter = state.applicantFilters;
+    return '<form id="ew-applicant-search" class="ew-card ew-tab-toolbar">' +
+      '<strong>▣　Google Forms</strong><button type="button" class="ew-btn ew-btn-small" data-action="sync-applicants">↻</button><span class="ew-spacer"></span>' +
+      '<input name="keyword" type="search" value="' + escapeHtml(filter.keyword || '') + '" placeholder="이름, 학번, 연락처 검색">' +
+      '<select name="membership_status"><option value="">학생회비 납부</option><option value="납부" ' + selected(filter.membership_status, '납부') + '>납부</option><option value="미납" ' + selected(filter.membership_status, '미납') + '>미납</option></select>' +
+      '<select name="approval_status"><option value="">승인 상태</option><option value="대기" ' + selected(filter.approval_status, '대기') + '>대기</option><option value="승인" ' + selected(filter.approval_status, '승인') + '>승인</option><option value="반려" ' + selected(filter.approval_status, '반려') + '>반려</option></select>' +
+      '<button class="ew-btn ew-btn-primary ew-btn-small" type="submit">검색</button><span class="ew-last-sync">마지막 동기화: 확인 필요</span></form>';
+  }
+
+  function renderApplicantsTable(data) {
+    var target = document.getElementById('ew-applicants-table');
+    if (!target) return;
+    var body = (data.items || []).length ? data.items.map(function (item) {
+      var paid = Number(item.amount_paid || 0) >= Number(item.amount_due || 0) && Number(item.amount_due || 0) >= 0;
+      return '<tr><td>' + displayDate(item.applied_at) + '</td><td>' + escapeHtml(item.name) + '</td><td>' + escapeHtml(item.student_id) + '</td><td>' + escapeHtml(item.phone) + '</td>' +
+        '<td>' + statusBadge(item.membership_status) + '</td><td>' + statusBadge(item.approval_status) + '</td>' +
+        '<td>' + statusBadge(paid ? '입금 완료' : '입금 대기') + '</td><td><button type="button" class="ew-btn ew-btn-outline ew-btn-small" data-action="applicant-detail" data-id="' + escapeHtml(item.application_id) + '">보기</button></td></tr>';
+    }).join('') : '<tr><td colspan="8" class="ew-table-empty">신청자 데이터가 없습니다. Forms 연동 설정을 확인해주세요.</td></tr>';
+    target.innerHTML = '<table class="ew-table"><thead><tr><th>신청일시</th><th>이름</th><th>학번</th><th>연락처</th><th>학생회비</th><th>승인</th><th>참가비</th><th>상세</th></tr></thead><tbody>' + body + '</tbody></table>' + paginationHtml(data, 'applicant-page');
+  }
+
+  function openApplicantModal(applicationId) {
+    api('apiV1_getApplicantDetail', { id: applicationId }).then(function (data) {
+      var item = data.applicant;
+      var paid = Number(item.amount_paid || 0) >= Number(item.amount_due || 0);
+      modalRoot.innerHTML = '<div class="ew-modal-backdrop" data-action="close-modal"><section class="ew-modal" role="dialog" aria-modal="true" aria-labelledby="ew-modal-title" data-modal-stop>' +
+        '<header class="ew-modal-head"><h2 id="ew-modal-title">신청자 상세</h2><button class="ew-modal-close" type="button" data-action="close-modal" aria-label="닫기">×</button></header>' +
+        '<div class="ew-modal-body"><dl class="ew-modal-info">' + info('이름', item.name) + info('학번', item.student_id) +
+        info('학과', '확인 필요 · DB 필드 없음') + info('연락처', item.phone) + '</dl><div class="ew-modal-divider"></div>' +
+        '<dl class="ew-modal-info">' + info('학생회비 상태', statusBadge(item.membership_status), true) +
+        info('참가비 입금 상태', statusBadge(paid ? '입금 완료' : '입금 대기'), true) +
+        info('승인 상태', statusBadge(item.approval_status), true) + '</dl>' +
+        '<div class="ew-modal-divider"></div><label>송금 내역 캡처</label><div class="ew-upload-placeholder"><div>▦<strong>송금 내역 파일 API 확인 필요</strong><small>설계 확정 전 업로드 비활성</small></div></div></div>' +
+        '<footer class="ew-modal-actions"><button type="button" class="ew-btn ew-btn-outline" data-action="process-applicant" data-id="' + escapeHtml(item.application_id) + '" data-process="confirmDeposit">입금 확인</button>' +
+        '<button type="button" class="ew-btn ew-btn-primary" data-action="process-applicant" data-id="' + escapeHtml(item.application_id) + '" data-process="approve">승인</button></footer>' +
+        '</section></div>';
+    }).catch(handleError);
+  }
+
+  function loadAttendance(panel) {
+    panel.innerHTML = attendanceToolbar() + '<div id="ew-attendance-table" class="ew-card ew-table-card"></div><div id="ew-dirty-bar"></div>';
+    api('apiV1_getAttendanceList', {
+      id: state.currentEventId,
+      filter: state.attendanceFilters,
+      page: state.attendancePage,
+      pageSize: 10
+    }).then(renderAttendanceTable).catch(handleError);
+  }
+
+  function attendanceToolbar() {
+    var filter = state.attendanceFilters;
+    return '<form id="ew-attendance-search" class="ew-card ew-tab-toolbar"><strong>▣　출석 체크 시트 (Google Forms)</strong>' +
+      '<button type="button" class="ew-btn ew-btn-small" data-action="sync-attendance">↻ 명단 동기화</button><span class="ew-spacer"></span>' +
+      '<input name="keyword" type="search" value="' + escapeHtml(filter.keyword || '') + '" placeholder="이름, 학번, 연락처 검색">' +
+      '<select name="fee_status"><option value="">참가비 상태</option><option value="paid" ' + selected(filter.fee_status, 'paid') + '>입금 완료</option><option value="unpaid" ' + selected(filter.fee_status, 'unpaid') + '>미입금</option></select>' +
+      '<select name="attendance_status"><option value="">출석 상태</option><option value="출석" ' + selected(filter.attendance_status, '출석') + '>출석</option><option value="미참석" ' + selected(filter.attendance_status, '미참석') + '>미참석</option></select>' +
+      '<button class="ew-btn ew-btn-primary ew-btn-small" type="submit">검색</button><span class="ew-last-sync">마지막 동기화: 확인 필요</span></form>';
+  }
+
+  function selected(current, value) {
+    return current === value ? 'selected' : '';
+  }
+
+  function renderAttendanceTable(data) {
+    var target = document.getElementById('ew-attendance-table');
+    if (!target) return;
+    var body = (data.items || []).length ? data.items.map(function (item) {
+      var paid = Number(item.amount_paid || 0) >= Number(item.amount_due || 0);
+      var dirty = state.dirtyAttendance[item.application_id];
+      var status = dirty ? dirty.attendance_status : item.attendance_status;
+      var checked = status === '출석';
+      return '<tr class="' + (dirty ? 'selected' : '') + '"><td>□</td><td>' + escapeHtml(item.name) + '</td><td>' + escapeHtml(item.student_id) + '</td><td>' + escapeHtml(item.phone) + '</td>' +
+        '<td>' + statusBadge(item.membership_status) + '</td><td>' + (paid ? 'O' : 'X') + '</td>' +
+        '<td><input type="checkbox" data-role="attendance-toggle" data-id="' + escapeHtml(item.application_id) + '" ' + (checked ? 'checked' : '') + ' aria-label="' + escapeHtml(item.name) + ' 출석"></td>' +
+        '<td>' + statusBadge(checked ? '출석' : '미참석') + '</td></tr>';
+    }).join('') : '<tr><td colspan="8" class="ew-table-empty">출석 관리 대상이 없습니다.</td></tr>';
+    target.innerHTML = '<table class="ew-table"><thead><tr><th>□</th><th>이름</th><th>학번</th><th>연락처</th><th>학생회비</th><th>참가비</th><th>출석 상태</th><th>비고</th></tr></thead><tbody>' + body + '</tbody></table>' + paginationHtml(data, 'attendance-page');
+    renderDirtyBar();
+  }
+
+  function renderDirtyBar() {
+    var target = document.getElementById('ew-dirty-bar');
+    if (!target) return;
+    var count = Object.keys(state.dirtyAttendance).length;
+    target.innerHTML = count ? '<div class="ew-dirty-bar"><div class="ew-dirty-message"><strong>ⓘ 변경사항 ' + count + '건이 있습니다.</strong>선택한 출석 상태가 아직 저장되지 않았습니다.</div>' +
+      '<button type="button" class="ew-btn ew-btn-small" data-action="cancel-attendance">변경 취소</button><button type="button" class="ew-btn ew-btn-primary ew-btn-small" data-action="apply-attendance">변경사항 적용</button></div>' : '';
+  }
+
+  function loadRefunds(panel) {
+    panel.innerHTML = '<div class="ew-card ew-tab-toolbar"><strong>환불 대상</strong><span class="ew-spacer"></span><button type="button" class="ew-btn ew-btn-small" data-action="sync-refunds">↻ 대상 동기화</button><button type="button" class="ew-btn ew-btn-outline ew-btn-small" data-action="export-refunds">환불 파일 내보내기</button></div><div id="ew-refund-table" class="ew-card ew-table-card"></div>';
+    api('apiV1_getEventRefundList', { id: state.currentEventId, page: state.refundPage, pageSize: 10 })
+      .then(renderRefundTable).catch(handleError);
+  }
+
+  function renderRefundTable(data) {
+    var target = document.getElementById('ew-refund-table');
+    if (!target) return;
+    var body = (data.items || []).length ? data.items.map(function (item) {
+      return '<tr><td>' + escapeHtml(item.name) + '</td><td>' + escapeHtml(item.student_id) + '</td><td>' + money(item.refund_amount || 0) + '</td><td>' + displayDate(item.refund_processed_at) + '</td><td>' + statusBadge(item.refund_processed_at ? '처리 완료' : '처리 대기') + '</td></tr>';
+    }).join('') : '<tr><td colspan="5" class="ew-table-empty">환불 대상 데이터가 없습니다. 은행/계좌 물리 필드는 설계 확인이 필요합니다.</td></tr>';
+    target.innerHTML = '<table class="ew-table"><thead><tr><th>이름</th><th>학번</th><th>환불 금액</th><th>환불 처리일</th><th>상태</th></tr></thead><tbody>' + body + '</tbody></table>' + paginationHtml(data, 'refund-page');
+  }
+
+  function runUnavailableApi(name, request) {
+    api(name, request || { id: state.currentEventId })
+      .then(function () { showToast('동기화가 완료되었습니다.'); })
+      .catch(handleError);
+  }
+
+  content.addEventListener('submit', function (event) {
+    event.preventDefault();
+    if (event.target.id === 'ew-event-search') {
+      state.eventFilters = readForm(event.target);
+      state.eventPage = 1;
+      loadEventList();
+    } else if (event.target.id === 'ew-event-form') {
+      var eventForm = event.target;
+      var payload = readForm(eventForm);
+      var id = eventForm.dataset.id;
+      var saveButton = eventForm.querySelector('button[type="submit"]');
+      if (saveButton) saveButton.disabled = true;
+      readRelatedMaterialFile(eventForm)
+        .then(function (fileInput) {
+          if (fileInput) payload.related_material_file = fileInput;
+          return api(id ? 'apiV1_updateEvent' : 'apiV1_createEvent', id ? { id: id, payload: payload } : { payload: payload });
+        })
+        .then(function (saved) {
+          showToast('행사 정보가 저장되었습니다.');
+          goDetail(saved.event_id, 'basic');
+        })
+        .catch(handleError)
+        .finally(function () {
+          if (saveButton && document.contains(saveButton)) saveButton.disabled = false;
+        });
+    } else if (event.target.id === 'ew-applicant-search') {
+      state.applicantFilters = readForm(event.target);
+      state.applicantPage = 1;
+      loadApplicants(document.getElementById('ew-tab-panel'));
+    } else if (event.target.id === 'ew-attendance-search') {
+      state.attendanceFilters = readForm(event.target);
+      state.attendancePage = 1;
+      loadAttendance(document.getElementById('ew-tab-panel'));
+    }
+  });
+
+  document.addEventListener('click', function (event) {
+    var button = event.target.closest('[data-action]');
+    if (!button || button.disabled) return;
+    var action = button.dataset.action;
+    if (action === 'go-list') goList();
+    else if (action === 'go-create') goEventForm('');
+    else if (action === 'reset-event-filters') {
+      state.eventFilters = { include_closed: false };
+      state.eventPage = 1;
+      renderEventListShell();
+      loadEventList();
+    }
+    else if (action === 'go-detail') goDetail(button.dataset.id, 'basic');
+    else if (action === 'go-current-detail') goDetail(state.currentEventId, 'basic');
+    else if (action === 'edit-event') goEventForm(button.dataset.id);
+    else if (action === 'event-page') { state.eventPage = Number(button.dataset.page); loadEventList(); }
+    else if (action === 'applicant-page') { state.applicantPage = Number(button.dataset.page); loadApplicants(document.getElementById('ew-tab-panel')); }
+    else if (action === 'attendance-page') { state.attendancePage = Number(button.dataset.page); loadAttendance(document.getElementById('ew-tab-panel')); }
+    else if (action === 'refund-page') { state.refundPage = Number(button.dataset.page); loadRefunds(document.getElementById('ew-tab-panel')); }
+    else if (action === 'detail-tab') { state.activeTab = button.dataset.tab; renderActiveTab(); }
+    else if (action === 'close-event') closeEvent(button.dataset.id);
+    else if (action === 'applicant-detail') openApplicantModal(button.dataset.id);
+    else if (action === 'close-modal') closeModal(event);
+    else if (action === 'process-applicant') processApplicant(button.dataset.id, button.dataset.process);
+    else if (action === 'sync-applicants') runUnavailableApi('apiV1_syncApplicantsFromForms', { id: state.currentEventId });
+    else if (action === 'sync-attendance') runUnavailableApi('apiV1_syncAttendanceList', { id: state.currentEventId });
+    else if (action === 'cancel-attendance') { state.dirtyAttendance = {}; loadAttendance(document.getElementById('ew-tab-panel')); }
+    else if (action === 'apply-attendance') applyAttendance();
+    else if (action === 'sync-refunds') runUnavailableApi('apiV1_syncEventRefundTargets', { id: state.currentEventId });
+    else if (action === 'export-refunds') runUnavailableApi('apiV1_exportGroupRefundSheet', { id: state.currentEventId });
+  });
+
+  document.addEventListener('change', function (event) {
+    if (event.target.id === 'ew-related-material-file') {
+      var selectedFile = event.target.files && event.target.files[0];
+      var fileNameTarget = document.getElementById('ew-related-material-name');
+      if (fileNameTarget) {
+        fileNameTarget.textContent = selectedFile
+          ? selectedFile.name + ' (' + Math.ceil(selectedFile.size / 1024) + 'KB)'
+          : '선택된 파일 없음';
+      }
+    } else if (event.target.matches('[data-role="event-status"]')) {
+      var select = event.target;
+      api('apiV1_updateEventStatus', { id: select.dataset.id, payload: { event_status: select.value } })
+        .then(function () { showToast('행사 상태를 변경했습니다.'); loadEventList(); })
+        .catch(function (error) { handleError(error); loadEventList(); });
+    } else if (event.target.matches('[data-role="attendance-toggle"]')) {
+      state.dirtyAttendance[event.target.dataset.id] = {
+        application_id: event.target.dataset.id,
+        attendance_status: event.target.checked ? '출석' : '미참석'
+      };
+      renderDirtyBar();
+      event.target.closest('tr').classList.add('selected');
+      var badge = event.target.closest('tr').querySelector('td:last-child .ew-status');
+      if (badge) {
+        badge.textContent = event.target.checked ? '출석' : '미참석';
+        badge.className = 'ew-status ' + statusClass(badge.textContent);
+      }
+    }
+  });
+
+  document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape' && modalRoot.innerHTML) modalRoot.innerHTML = '';
+  });
+
+  function closeEvent(id) {
+    if (!window.confirm('이 행사를 종료 상태로 변경하시겠습니까?')) return;
+    api('apiV1_closeEvent', { id: id })
+      .then(function () { showToast('행사를 종료했습니다.'); loadEventList(); })
+      .catch(handleError);
+  }
+
+  function closeModal(event) {
+    if (event.target.closest('[data-modal-stop]') && !event.target.classList.contains('ew-modal-close')) return;
+    modalRoot.innerHTML = '';
+  }
+
+  function processApplicant(id, action) {
+    api('apiV1_processApplicant', { id: id, action: action }).then(function () {
+      showToast(action === 'confirmDeposit' ? '입금을 확인했습니다.' : '신청자를 승인했습니다.');
+      modalRoot.innerHTML = '';
+      goDetail(state.currentEventId, 'applicants');
+    }).catch(handleError);
+  }
+
+  function applyAttendance() {
+    var items = Object.keys(state.dirtyAttendance).map(function (key) { return state.dirtyAttendance[key]; });
+    api('apiV1_applyAttendanceChanges', { id: state.currentEventId, payload: { items: items } })
+      .then(function () {
+        state.dirtyAttendance = {};
+        showToast('출석 변경사항을 저장했습니다.');
+        goDetail(state.currentEventId, 'attendance');
+      }).catch(handleError);
+  }
+
+  goList();
+}());
+</script>
