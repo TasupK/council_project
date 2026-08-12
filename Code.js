@@ -5,7 +5,18 @@
 
 var DB_KEY = 'COUNCIL_SETTINGS_DB_V1';
 var SPREADSHEET_ID_KEY = 'COUNCIL_DB_SPREADSHEET_ID';
+var DRIVE_FOLDER_ID_KEY = 'COUNCIL_DRIVE_FOLDER_ID';
+var ADMIN_ROLE_ID = 'role_admin';
+/** 1차 API 정의 시트 (기능 설계 참조용) */
+var API_SPEC_SPREADSHEET_ID = '1XUPJO-tY3wI4SSb8lWORL084Y4QNSNGgPmaIU8sgzzE';
 var PERM_KEYS = ['menu', 'view', 'edit', 'approve', 'export'];
+var PERM_COLUMNS = [
+  { key: 'menu', label: '메뉴 접근', hint: '(자동)' },
+  { key: 'view', label: '조회' },
+  { key: 'edit', label: '등록 및 수정' },
+  { key: 'approve', label: '승인 및 보관' },
+  { key: 'export', label: '다운로드' }
+];
 var SHEETS = {
   meta: '메타',
   departments: '부서',
@@ -20,6 +31,40 @@ function toClient_(obj) {
   return JSON.parse(JSON.stringify(obj == null ? {} : obj));
 }
 
+function ok_(data) {
+  return toClient_(Object.assign({ ok: true }, data || {}));
+}
+
+function fail_(code, message, extra) {
+  return toClient_(Object.assign({ ok: false, code: code || 'ERROR', message: message || '오류가 발생했습니다.' }, extra || {}));
+}
+
+function isDbConfigured_() {
+  var props = PropertiesService.getScriptProperties();
+  var folderId = props.getProperty(DRIVE_FOLDER_ID_KEY);
+  var sheetId = props.getProperty(SPREADSHEET_ID_KEY);
+  if (!folderId || !sheetId) return false;
+  try {
+    SpreadsheetApp.openById(sheetId);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+/** 운영 Drive 미연결 시 예전 임시 스프레드시트 ID 정리 */
+function cleanupOrphanDbLink_() {
+  var props = PropertiesService.getScriptProperties();
+  if (!props.getProperty(DRIVE_FOLDER_ID_KEY) && props.getProperty(SPREADSHEET_ID_KEY)) {
+    props.deleteProperty(SPREADSHEET_ID_KEY);
+  }
+}
+
+function getDbMode_() {
+  cleanupOrphanDbLink_();
+  return isDbConfigured_() ? 'connected' : 'preview';
+}
+
 function doGet() {
   return HtmlService.createHtmlOutputFromFile('index')
     .setTitle('학생회 통합 업무관리')
@@ -31,6 +76,473 @@ function doGet() {
 
 function ping() {
   return toClient_({ ok: true, now: new Date().toISOString() });
+}
+
+/** 로그인 후 한 번 호출 — 설정 데이터 전체를 메모리 캐시용으로 반환 */
+function loadAllData() {
+  cleanupOrphanDbLink_();
+  var login = apiV1_checkLogin();
+  if (!login.ok) return login;
+
+  var db = ensureDb_();
+  var info = getSpreadsheetInfo_();
+  var meta = (db && db.meta) || createSeedDb_().meta;
+  var email = getActiveUserEmail_();
+  var current = apiV1_getCurrentUser();
+  var isAdmin = !!(current.ok && current.isAdmin);
+
+  var users = (db.users || []).map(function (u) { return enrichUser_(u, db); });
+  var roles = (db.roles || []).map(function (r) { return enrichRole_(r, db); });
+  var tree = buildPermissionTree_(db);
+  var permissionsByRole = {};
+  roles.forEach(function (r) {
+    permissionsByRole[r.id] = db.permissions[r.id] || {};
+  });
+
+  return ok_({
+    apiVersion: 'v1',
+    dbMode: getDbMode_(),
+    app: {
+      name: '학생회 통합 업무관리',
+      version: 'v0.5',
+      term: meta.term || '2026학년도',
+      baseDate: meta.baseDate || '',
+      syncStatus: info.connected ? 'Google Sheets DB 연결됨' : '미리보기(운영 Drive 미연결)'
+    },
+    database: {
+      connected: !!info.connected,
+      mode: getDbMode_(),
+      type: 'Google Sheets',
+      spreadsheetId: info.spreadsheetId || '',
+      spreadsheetUrl: info.spreadsheetUrl || '',
+      folderId: PropertiesService.getScriptProperties().getProperty(DRIVE_FOLDER_ID_KEY) || '',
+      error: info.error || ''
+    },
+    session: {
+      email: email,
+      isAdmin: isAdmin,
+      preview: getDbMode_() === 'preview'
+    },
+    currentUser: current.user || {},
+    academicYears: apiV1_getAcademicYearList().items || [],
+    departments: db.departments && db.departments.length ? db.departments : createSeedDb_().departments,
+    users: users,
+    roles: roles,
+    permissionTree: tree,
+    permissionsByRole: permissionsByRole,
+    permissionMeta: db.permissionMeta || {},
+    columns: PERM_COLUMNS,
+    nav: buildNavForUser_(current)
+  });
+}
+
+/** Google Drive 폴더 ID로 DB 스프레드시트 연결 후 전체 데이터 반환 (운영 Drive 확정 시 사용) */
+function connectDriveFolder(folderId) {
+  folderId = String(folderId || '').trim();
+  if (!folderId) throw new Error('Google Drive 폴더 ID를 입력하세요.');
+  var spreadsheetId = findSpreadsheetInFolder_(folderId);
+  if (!spreadsheetId) {
+    throw new Error('폴더에서 스프레드시트를 찾을 수 없습니다. 운영 DB 시트가 준비되면 폴더에 넣어주세요.');
+  }
+  PropertiesService.getScriptProperties().setProperty(DRIVE_FOLDER_ID_KEY, folderId);
+  PropertiesService.getScriptProperties().setProperty(SPREADSHEET_ID_KEY, spreadsheetId);
+  return loadAllData();
+}
+
+/** 스프레드시트 ID로 직접 연결 (운영 DB 확정 시) */
+function connectSpreadsheet(spreadsheetId) {
+  spreadsheetId = String(spreadsheetId || '').trim();
+  if (!spreadsheetId) throw new Error('스프레드시트 ID를 입력하세요.');
+  SpreadsheetApp.openById(spreadsheetId);
+  PropertiesService.getScriptProperties().setProperty(SPREADSHEET_ID_KEY, spreadsheetId);
+  return loadAllData();
+}
+
+/** 운영 DB 연결 해제 — 미리보기(시드) 모드로 전환 */
+function disconnectDatabase() {
+  var props = PropertiesService.getScriptProperties();
+  props.deleteProperty(SPREADSHEET_ID_KEY);
+  props.deleteProperty(DRIVE_FOLDER_ID_KEY);
+  return loadAllData();
+}
+
+/** ---------- COM_API v1 (공통 API, 1차 설계 시트 기준) ---------- */
+
+/** COM_API_001 로그인 계정 확인 */
+function apiV1_checkLogin() {
+  cleanupOrphanDbLink_();
+  var email = getActiveUserEmail_();
+  if (!email) return fail_('NO_SESSION', 'Google 로그인이 필요합니다.');
+
+  var db = ensureDb_();
+  var user = findUserByEmail_(db, email);
+
+  if (!user && getDbMode_() === 'preview') {
+    return ok_({
+      email: email,
+      user: {
+        id: 'preview_user',
+        name: email.split('@')[0],
+        email: email,
+        roleIds: [ADMIN_ROLE_ID],
+        roles: [{ id: ADMIN_ROLE_ID, name: '시스템 관리자' }],
+        status: 'active'
+      },
+      dbMode: 'preview',
+      preview: true,
+      message: '운영 DB 미연결 — 미리보기 모드로 접속합니다.'
+    });
+  }
+
+  if (!user) return fail_('NOT_REGISTERED', '등록되지 않은 Google 계정입니다.', { email: email });
+  if (user.status !== 'active') return fail_('INACTIVE', '비활성화된 계정입니다.', { email: email });
+
+  return ok_({
+    email: email,
+    user: enrichUser_(user, db),
+    dbMode: getDbMode_(),
+    preview: false
+  });
+}
+
+/** COM_API_002 현재 사용자 조회 */
+function apiV1_getCurrentUser() {
+  var login = apiV1_checkLogin();
+  if (!login.ok) return login;
+
+  var db = ensureDb_();
+  var user = login.user;
+  var roleIds = user.roleIds || [];
+  var roles = roleIds.map(function (id) {
+    var r = findById_(db.roles, id);
+    return r ? enrichRole_(r, db) : { id: id, name: id };
+  });
+  var permissions = buildUserPermissions_(db, roleIds);
+  var sessionUser = resolveSessionUser_(db, login.email);
+
+  return ok_({
+    user: {
+      id: user.id,
+      name: sessionUser.name,
+      title: sessionUser.title,
+      email: login.email,
+      department: user.department || '',
+      status: user.status,
+      roleIds: roleIds,
+      roles: roles
+    },
+    permissions: permissions,
+    isAdmin: roleIds.indexOf(ADMIN_ROLE_ID) !== -1,
+    dbMode: getDbMode_(),
+    menus: permissions.menus || []
+  });
+}
+
+/** COM_API_003 로그아웃 — Apps Script 웹앱은 클라이언트 세션 정리 */
+function apiV1_logout() {
+  return ok_({ message: '클라이언트 세션을 정리했습니다. Google 계정 전환은 브라우저에서 로그아웃하세요.' });
+}
+
+/** COM_API_004 사용자 목록 조회 */
+function apiV1_listUsers(filters) {
+  assertAdmin_();
+  return getUsers(filters);
+}
+
+/** COM_API_005 사용자 상세 조회 */
+function apiV1_getUser(userId) {
+  assertAdmin_();
+  var db = ensureDb_();
+  var user = findById_(db.users, userId);
+  if (!user) throw new Error('사용자를 찾을 수 없습니다.');
+  return ok_({ user: enrichUser_(user, db) });
+}
+
+/** COM_API_006 사용자 등록 */
+function apiV1_createUser(payload) {
+  assertAdmin_();
+  assertWritableDb_();
+  return saveUserChanges({ changes: [], newUsers: [payload || {}] });
+}
+
+/** COM_API_007 사용자 정보 수정 */
+function apiV1_updateUser(payload) {
+  assertAdmin_();
+  assertWritableDb_();
+  payload = payload || {};
+  if (!payload.id) throw new Error('사용자 ID가 필요합니다.');
+  return saveUserChanges({ changes: [payload], newUsers: [] });
+}
+
+/** COM_API_008 사용자 상태 처리 (단일/일괄) */
+function apiV1_processUsers(payload) {
+  assertAdmin_();
+  assertWritableDb_();
+  payload = payload || {};
+  var ids = payload.ids || [];
+  var action = String(payload.action || '').toLowerCase();
+  if (!ids.length) throw new Error('처리할 사용자 ID가 필요합니다.');
+  var status = action === 'activate' || action === 'active' ? 'active' : 'inactive';
+  var changes = ids.map(function (id) { return { id: id, status: status }; });
+  return saveUserChanges({ changes: changes, newUsers: [] });
+}
+
+/** COM_API_009 역할 목록 조회 */
+function apiV1_listRoles(filters) {
+  assertAdmin_();
+  return getRoles(filters);
+}
+
+/** COM_API_010 역할 상세 조회 */
+function apiV1_getRole(roleId) {
+  assertAdmin_();
+  var db = ensureDb_();
+  var role = findById_(db.roles, roleId);
+  if (!role) throw new Error('역할을 찾을 수 없습니다.');
+  var matrix = getPermissionMatrix(roleId);
+  return ok_({
+    role: enrichRole_(role, db),
+    permissions: matrix.values || {},
+    permissionMeta: db.permissionMeta[roleId] || {}
+  });
+}
+
+/** COM_API_011 역할 등록 */
+function apiV1_createRole(payload) {
+  assertAdmin_();
+  assertWritableDb_();
+  return saveRoleChanges({ changes: [], newRoles: [payload || {}] });
+}
+
+/** COM_API_012 역할 정보 수정 */
+function apiV1_updateRole(payload) {
+  assertAdmin_();
+  assertWritableDb_();
+  payload = payload || {};
+  if (!payload.id) throw new Error('역할 ID가 필요합니다.');
+  return saveRoleChanges({ changes: [payload], newRoles: [] });
+}
+
+/** COM_API_013 역할 상태 처리 (단일/일괄) */
+function apiV1_processRoles(payload) {
+  assertAdmin_();
+  assertWritableDb_();
+  payload = payload || {};
+  var ids = payload.ids || [];
+  var action = String(payload.action || '').toLowerCase();
+  if (!ids.length) throw new Error('처리할 역할 ID가 필요합니다.');
+  var status = action === 'activate' || action === 'active' ? 'active' : 'inactive';
+  var changes = ids.map(function (id) { return { id: id, status: status }; });
+  return saveRoleChanges({ changes: changes, newRoles: [] });
+}
+
+/** COM_API_014 권한표 조회 */
+function apiV1_getPermissionMatrix(roleId) {
+  assertAdmin_();
+  return getPermissionMatrix(roleId);
+}
+
+/** COM_API_015 역할별 권한 조회 */
+function apiV1_getRolePermissions(roleId) {
+  assertAdmin_();
+  return getPermissionMatrix(roleId);
+}
+
+/** COM_API_016 역할별 권한 저장 */
+function apiV1_saveRolePermissions(payload) {
+  assertAdmin_();
+  assertWritableDb_();
+  return savePermissionChanges(payload);
+}
+
+/** COM_API_017 내 정보 조회 */
+function apiV1_getMyProfile() {
+  var current = apiV1_getCurrentUser();
+  if (!current.ok) return current;
+  return ok_({ profile: current.user });
+}
+
+/** COM_API_018 내 권한 조회 */
+function apiV1_getMyPermissions() {
+  var current = apiV1_getCurrentUser();
+  if (!current.ok) return current;
+  return ok_({
+    roles: current.user.roles || [],
+    permissions: current.permissions || {}
+  });
+}
+
+/** COM_API_019 내 알림 설정 수정 — DB 준비 전 스텁 */
+function apiV1_updateMyNotification(payload) {
+  var login = apiV1_checkLogin();
+  if (!login.ok) return login;
+  if (!isDbConfigured_()) {
+    return ok_({ message: '미리보기 모드 — 알림 설정은 운영 DB 연결 후 저장됩니다.', saved: false, payload: payload || {} });
+  }
+  appendAuditLog_('USER_NOTIFICATION', login.email, '알림 설정 변경', JSON.stringify(payload || {}));
+  return ok_({ message: '알림 설정이 저장되었습니다.', saved: true });
+}
+
+/** COM_API_020 학년도 목록 조회 */
+function apiV1_getAcademicYearList() {
+  var db = ensureDb_();
+  var current = db.meta.term || '2026학년도';
+  return ok_({
+    current: current,
+    items: [
+      { id: '2026', label: '2026학년도', isCurrent: current.indexOf('2026') >= 0 },
+      { id: '2025', label: '2025학년도', isCurrent: current.indexOf('2025') >= 0 }
+    ]
+  });
+}
+
+/** COM_API_021 부서 목록 조회 */
+function apiV1_getDepartmentList() {
+  var db = ensureDb_();
+  return ok_({
+    total: db.departments.length,
+    items: db.departments.map(function (name, i) {
+      return { id: 'dept_' + (i + 1), name: name, status: 'active' };
+    })
+  });
+}
+
+/** COM_API_022 담당자 목록 조회 */
+function apiV1_listAssignees(filters) {
+  filters = filters || {};
+  var db = ensureDb_();
+  var q = String(filters.q || '').trim().toLowerCase();
+  var dept = filters.department || '';
+  var roleId = filters.roleId || '';
+  var list = db.users.filter(function (u) {
+    if (u.status !== 'active') return false;
+    if (dept && u.department !== dept) return false;
+    if (roleId && (u.roleIds || []).indexOf(roleId) === -1) return false;
+    if (q) {
+      var hay = (u.name + ' ' + u.email).toLowerCase();
+      if (hay.indexOf(q) === -1) return false;
+    }
+    return true;
+  }).map(function (u) { return enrichUser_(u, db); });
+  return ok_({ total: list.length, assignees: list });
+}
+
+/** COM_API_023 공통 파일 업로드 — 운영 Drive 연결 후 구현 */
+function apiV1_uploadFile(payload) {
+  assertWritableDb_();
+  return fail_('NOT_IMPLEMENTED', '파일 업로드 API는 운영 Drive·FILE 테이블 준비 후 연결됩니다.', { payload: payload || {} });
+}
+
+/** COM_API_024 공통 파일 조회 — 운영 Drive 연결 후 구현 */
+function apiV1_getFile(fileId) {
+  return fail_('NOT_IMPLEMENTED', '파일 조회 API는 운영 Drive·FILE 테이블 준비 후 연결됩니다.', { fileId: fileId });
+}
+
+/** COM_API_025 공통 코드 조회 */
+function apiV1_listCodes(group) {
+  group = String(group || '').trim();
+  var codes = {
+    user_status: [
+      { code: 'active', label: '활성' },
+      { code: 'inactive', label: '비활성' }
+    ],
+    role_type: [
+      { code: 'default', label: '기본 역할' },
+      { code: 'custom', label: '사용자 정의' }
+    ],
+    perm_action: PERM_COLUMNS.map(function (c) { return { code: c.key, label: c.label }; })
+  };
+  if (group && codes[group]) return ok_({ group: group, items: codes[group] });
+  return ok_({ groups: Object.keys(codes), codes: codes });
+}
+
+/** COM_API_026 감사·변경 이력 조회 */
+function apiV1_listAuditLogs(filters) {
+  assertAdmin_();
+  filters = filters || {};
+  var logs = readAuditLogs_();
+  var q = String(filters.q || '').trim().toLowerCase();
+  var list = logs.filter(function (log) {
+    if (q && (log.summary + ' ' + log.actor + ' ' + log.target).toLowerCase().indexOf(q) === -1) return false;
+    return true;
+  });
+  return ok_({ total: list.length, logs: list.slice(0, 100) });
+}
+
+function buildNavForUser_(current) {
+  var isAdmin = !!(current && current.ok && current.isAdmin);
+  var nav = [
+    { id: 'home', label: '메인화면', group: 'main' },
+    { id: 'ledger', label: '장부관리', group: 'main' },
+    { id: 'fee', label: '학생회비관리', group: 'main' },
+    { id: 'event', label: '행사복지관리', group: 'main' }
+  ];
+  if (isAdmin) nav.push({ id: 'settings', label: '설정', group: 'system', adminOnly: true });
+  return nav;
+}
+
+function buildUserPermissions_(db, roleIds) {
+  var screens = db.screens || [];
+  var merged = {};
+  (roleIds || []).forEach(function (roleId) {
+    var byScreen = db.permissions[roleId] || {};
+    Object.keys(byScreen).forEach(function (screenId) {
+      if (!merged[screenId]) merged[screenId] = emptyPerm_();
+      PERM_KEYS.forEach(function (k) {
+        merged[screenId][k] = merged[screenId][k] || !!byScreen[screenId][k];
+      });
+    });
+  });
+  var menus = screens.filter(function (s) {
+    return merged[s.id] && merged[s.id].menu;
+  }).map(function (s) { return { id: s.id, name: s.name, group: s.group }; });
+  return { byScreen: merged, menus: menus };
+}
+
+function assertAdmin_() {
+  var current = apiV1_getCurrentUser();
+  if (!current.ok) throw new Error(current.message || '로그인이 필요합니다.');
+  if (!current.isAdmin) throw new Error('시스템 관리자 권한이 필요합니다.');
+  return current;
+}
+
+function assertWritableDb_() {
+  if (!isDbConfigured_()) {
+    throw new Error('운영 DB가 아직 연결되지 않았습니다. 실제 Google Drive 연결 후 저장할 수 있습니다.');
+  }
+}
+
+function appendAuditLog_(category, actor, summary, detail) {
+  if (!isDbConfigured_()) return;
+  try {
+    var ss = getSpreadsheet_();
+    var sheet = ss.getSheetByName('감사이력') || ss.insertSheet('감사이력');
+    if (sheet.getLastRow() === 0) {
+      sheet.appendRow(['일시', '구분', '수행자', '요약', '상세']);
+    }
+    sheet.appendRow([new Date(), category, actor || '', summary || '', detail || '']);
+  } catch (e) {
+    // 감사 이력 실패는 본 업무를 막지 않음
+  }
+}
+
+function readAuditLogs_() {
+  if (!isDbConfigured_()) return [];
+  try {
+    var sheet = getSpreadsheet_().getSheetByName('감사이력');
+    if (!sheet || sheet.getLastRow() < 2) return [];
+    return sheet.getRange(2, 1, sheet.getLastRow() - 1, 5).getValues().map(function (r) {
+      return {
+        at: formatCellDate_(r[0]),
+        category: String(r[1] || ''),
+        actor: String(r[2] || ''),
+        summary: String(r[3] || ''),
+        target: String(r[4] || '')
+      };
+    }).reverse();
+  } catch (e) {
+    return [];
+  }
 }
 
 function getBootstrap() {
@@ -168,6 +680,7 @@ function saveUserChanges(payload) {
   });
 
   saveDb_(db);
+  appendAuditLog_('USER', db.meta.currentUser.name, '사용자 변경 저장', changes.length + '건 수정, ' + newUsers.length + '건 신규');
   return { ok: true, message: '사용자 변경사항이 저장되었습니다.', total: db.users.length };
 }
 
@@ -255,6 +768,7 @@ function saveRoleChanges(payload) {
   }
 
   saveDb_(db);
+  appendAuditLog_('ROLE', db.meta.currentUser.name, '역할 변경 저장', changes.length + '건 수정, ' + newRoles.length + '건 신규');
   return { ok: true, message: '역할 변경사항이 저장되었습니다.', total: db.roles.length };
 }
 
@@ -269,13 +783,7 @@ function getPermissionMatrix(roleId) {
   return toClient_({
     ok: true,
     role: enrichRole_(role, db),
-    columns: [
-      { key: 'menu', label: '메뉴 접근', hint: '(자동)' },
-      { key: 'view', label: '조회' },
-      { key: 'edit', label: '등록 및 수정' },
-      { key: 'approve', label: '승인 및 보관' },
-      { key: 'export', label: '다운로드' }
-    ],
+    columns: PERM_COLUMNS,
     tree: tree,
     values: perms,
     lastSavedAt: db.permissionMeta[roleId] ? db.permissionMeta[roleId].savedAt : (role.updatedAt || ''),
@@ -319,6 +827,7 @@ function savePermissionChanges(payload) {
   role.updatedAt = today_();
   role.updatedBy = db.meta.currentUser.name;
   saveDb_(db);
+  appendAuditLog_('PERMISSION', db.meta.currentUser.name, '권한 변경 저장', role.name + ' / ' + Object.keys(changes).length + '화면');
   return { ok: true, message: '권한 변경사항이 저장되었습니다.' };
 }
 
@@ -352,7 +861,10 @@ function setupDatabase() {
 /** ---------- Google Sheets DB ---------- */
 
 function ensureDb_() {
-  var ss = getOrCreateSpreadsheet_();
+  if (!isDbConfigured_()) {
+    return createSeedDb_();
+  }
+  var ss = getSpreadsheet_();
   if (!hasInitializedSheets_(ss)) {
     var seed = createSeedDb_();
     var legacy = readLegacyPropertiesDb_();
@@ -395,22 +907,19 @@ function mergeDbDefaults_(db, fallback) {
 }
 
 function saveDb_(db) {
-  writeDbToSheet_(getOrCreateSpreadsheet_(), db);
+  assertWritableDb_();
+  writeDbToSheet_(getSpreadsheet_(), db);
 }
 
+function getSpreadsheet_() {
+  var id = PropertiesService.getScriptProperties().getProperty(SPREADSHEET_ID_KEY);
+  if (!id) throw new Error('운영 DB가 연결되지 않았습니다.');
+  return SpreadsheetApp.openById(id);
+}
+
+/** @deprecated 자동 생성하지 않음 — connectDriveFolder / connectSpreadsheet 사용 */
 function getOrCreateSpreadsheet_() {
-  var props = PropertiesService.getScriptProperties();
-  var id = props.getProperty(SPREADSHEET_ID_KEY);
-  if (id) {
-    try {
-      return SpreadsheetApp.openById(id);
-    } catch (e) {
-      // 시트가 삭제된 경우 다시 생성
-    }
-  }
-  var ss = SpreadsheetApp.create('학생회 통합 업무관리 DB');
-  props.setProperty(SPREADSHEET_ID_KEY, ss.getId());
-  return ss;
+  return getSpreadsheet_();
 }
 
 function getSpreadsheetInfo_() {
@@ -903,4 +1412,55 @@ function emptyPerm_() {
 
 function today_() {
   return Utilities.formatDate(new Date(), Session.getScriptTimeZone() || 'Asia/Seoul', 'yyyy-MM-dd');
+}
+
+function getActiveUserEmail_() {
+  try {
+    return String(Session.getActiveUser().getEmail() || '').trim().toLowerCase();
+  } catch (e) {
+    return '';
+  }
+}
+
+function resolveSessionUser_(db, email) {
+  var fallback = (db.meta && db.meta.currentUser) || { name: '운영자', title: '관리자' };
+  if (!email) return fallback;
+  var user = findUserByEmail_(db, email);
+  if (!user) {
+    return {
+      name: fallback.name,
+      title: fallback.title
+    };
+  }
+  var primaryRole = (user.roleIds || []).map(function (id) {
+    return findById_(db.roles, id);
+  }).filter(Boolean)[0];
+  return {
+    name: user.name || fallback.name,
+    title: primaryRole ? primaryRole.name : fallback.title
+  };
+}
+
+function isSystemAdmin_(db, sessionUser) {
+  var email = getActiveUserEmail_();
+  if (!email) return true;
+  var user = findUserByEmail_(db, email);
+  if (!user) return false;
+  return (user.roleIds || []).indexOf(ADMIN_ROLE_ID) !== -1 && user.status === 'active';
+}
+
+function findSpreadsheetInFolder_(folderId) {
+  var folder = DriveApp.getFolderById(folderId);
+  var preferred = null;
+  var first = null;
+  var files = folder.getFilesByType(MimeType.GOOGLE_SHEETS);
+  while (files.hasNext()) {
+    var file = files.next();
+    if (!first) first = file.getId();
+    if (file.getName().indexOf('학생회 통합 업무관리 DB') >= 0) {
+      preferred = file.getId();
+      break;
+    }
+  }
+  return preferred || first;
 }
