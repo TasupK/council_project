@@ -1,43 +1,2047 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <base target="_top">
-    <meta charset="UTF-8">
-    <title>Council Project</title>
-    <style>
-      body {
-        margin: 0;
-        min-height: 100vh;
-        display: grid;
-        place-items: center;
-        font-family: Arial, sans-serif;
-        background: #f4f7fb;
-        color: #172033;
+<html lang="ko">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>학생회 통합 업무관리</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f2f4f8;
+      --surface: #ffffff;
+      --border: #dde1e6;
+      --border-strong: #c1c7cd;
+      --text: #121619;
+      --text-2: #21272a;
+      --text-3: #697077;
+      --text-4: #4d5358;
+      --brand: #001d6c;
+      --primary: #0f62fe;
+      --primary-hover: #0353e9;
+      --active-bg: #e5f2ff;
+      --active-text: #257ad8;
+      --danger: #da1e28;
+      --warn-bg: #fcf4d6;
+      --warn-border: #f1c21b;
+      --changed-bg: #edf5ff;
+      --new-bg: #defbe6;
+      --green: #24a148;
+      --sidebar-w: 248px;
+      --header-h: 64px;
+      --status-h: 32px;
+      --radius: 8px;
+      --shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+      --font: "IBM Plex Sans KR", "Apple SD Gothic Neo", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: var(--font);
+      color: var(--text);
+      background: var(--bg);
+    }
+    button, input, select { font: inherit; }
+    button { cursor: pointer; }
+    a { color: inherit; text-decoration: none; }
+
+    .app {
+      min-height: 100%;
+      display: grid;
+      grid-template-rows: var(--header-h) 1fr var(--status-h);
+    }
+
+    /* Header */
+    .header {
+      display: grid;
+      grid-template-columns: 220px 1fr auto auto auto;
+      gap: 16px;
+      align-items: center;
+      padding: 0 24px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+    .brand {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--brand);
+      white-space: nowrap;
+    }
+    .global-search {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      height: 40px;
+      max-width: 640px;
+      padding: 0 12px;
+      background: var(--bg);
+      border: 1px solid var(--border-strong);
+      border-radius: 4px;
+      color: var(--text-3);
+    }
+    .global-search input {
+      flex: 1;
+      border: 0;
+      outline: 0;
+      background: transparent;
+      color: var(--text-2);
+    }
+    .term-select, .icon-btn {
+      height: 40px;
+      border: 1px solid var(--border-strong);
+      background: var(--surface);
+      border-radius: 4px;
+      color: var(--text-2);
+    }
+    .term-select { padding: 0 12px; min-width: 124px; }
+    .icon-btn {
+      width: 40px;
+      position: relative;
+      display: grid;
+      place-items: center;
+    }
+    .dot {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--danger);
+    }
+    .user-card {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 140px;
+    }
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--bg);
+      display: grid;
+      place-items: center;
+      color: var(--text-3);
+    }
+    .user-card strong { display: block; font-size: 14px; font-weight: 500; }
+    .user-card span { display: block; font-size: 12px; color: var(--text-3); }
+
+    /* Body */
+    .body {
+      display: grid;
+      grid-template-columns: var(--sidebar-w) 1fr;
+      min-height: 0;
+    }
+    .sidebar {
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      padding: 24px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      height: 44px;
+      padding: 0 16px;
+      border: 0;
+      border-radius: var(--radius);
+      background: transparent;
+      color: var(--text-2);
+      font-weight: 500;
+      font-size: 15px;
+      text-align: left;
+      width: 100%;
+    }
+    .nav-item:hover { background: #f8f9fb; }
+    .nav-item.active {
+      background: var(--active-bg);
+      color: var(--active-text);
+      font-weight: 600;
+      box-shadow: inset 3px 0 0 var(--primary);
+    }
+    .nav-spacer { flex: 1; }
+    .nav-label {
+      margin: 16px 0 4px 16px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-4);
+    }
+    .nav-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 8px 0;
+    }
+
+    .main {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .page-header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 32px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 16px;
+    }
+    .crumb-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+      min-height: 24px;
+    }
+    .back-btn {
+      display: none;
+      width: 24px;
+      height: 24px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: #121619;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .back-btn.show { display: inline-flex; }
+    .back-btn svg {
+      width: 22px;
+      height: 22px;
+      display: block;
+    }
+    .crumb {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-3);
+      margin: 0;
+    }
+    .page-title {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 700;
+    }
+    .workspace {
+      padding: 24px 32px 32px;
+      overflow: auto;
+      flex: 1;
+    }
+
+    .status-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 24px;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      color: var(--text-3);
+      font-size: 12px;
+    }
+    .status-bar a { color: var(--primary); font-weight: 500; }
+    .db-card {
+      margin-top: 24px;
+      padding: 16px 20px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+    .db-card strong { display: block; margin-bottom: 4px; }
+    .db-card p { margin: 0; color: var(--text-3); font-size: 13px; }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      height: 40px;
+      padding: 0 16px;
+      border-radius: 4px;
+      border: 1px solid transparent;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+    .btn-primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-secondary { background: var(--surface); color: var(--text-2); border-color: var(--border-strong); }
+    .btn-ghost { background: transparent; color: var(--text-2); border-color: transparent; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-lg { height: 48px; padding: 0 20px; font-size: 16px; }
+
+    /* Settings home */
+    .section-title {
+      margin: 0 0 12px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-4);
+    }
+    .settings-list {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .settings-row {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: 52px;
+      padding: 0 20px;
+      border: 0;
+      border-bottom: 1px solid var(--border);
+      background: transparent;
+      text-align: left;
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--text-2);
+    }
+    .settings-row:last-child { border-bottom: 0; }
+    .settings-row:hover { background: #f8fafc; }
+    .chevron { color: var(--text-3); }
+
+    /* Filters / toolbar */
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .field, .select, .search-field {
+      height: 40px;
+      border: 1px solid var(--border-strong);
+      border-radius: 4px;
+      background: var(--surface);
+      padding: 0 12px;
+      color: var(--text-2);
+    }
+    .search-field { min-width: 240px; }
+    .count-label {
+      margin-left: auto;
+      color: var(--text-3);
+      font-size: 14px;
+    }
+    .change-bar {
+      display: none;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+      padding: 10px 14px;
+      background: var(--warn-bg);
+      border: 1px solid var(--warn-border);
+      border-radius: 4px;
+    }
+    .change-bar.show { display: flex; }
+    .change-bar .spacer { flex: 1; }
+
+    /* Table */
+    .table-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      overflow: auto;
+    }
+    table.data {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 1180px;
+    }
+    table.data th, table.data td {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+      vertical-align: middle;
+      font-size: 14px;
+    }
+    table.data th {
+      background: #f8f9fb;
+      color: var(--text-3);
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    table.data tr:last-child td { border-bottom: 0; }
+    table.data tbody tr.row-readonly { cursor: pointer; }
+    table.data tbody tr.row-readonly:hover td { background: #f8fafc; }
+    table.data tbody tr.is-selected,
+    table.data tbody tr.is-changed,
+    table.data tbody tr.is-new { cursor: pointer; }
+    table.data tbody tr.is-locked { cursor: default; }
+    table.data tbody tr.is-locked:hover td { background: transparent; }
+    table.data tr.is-new td { background: #edf5ff; }
+    table.data tr.is-selected td { background: #edf5ff; }
+    table.data tr.is-changed td { background: #fcf4d6; }
+    table.data tr.is-new td:first-child { box-shadow: inset 4px 0 0 var(--primary); }
+    table.data tr.is-selected td:first-child { box-shadow: inset 4px 0 0 var(--primary); }
+    table.data tr.is-changed td:first-child { box-shadow: inset 4px 0 0 #f1c21b; }
+    table.data input.cell, table.data select.cell {
+      width: 100%;
+      min-width: 110px;
+      height: 36px;
+      border: 1px solid var(--border-strong);
+      border-radius: 4px;
+      padding: 0 8px;
+      background: #fff;
+    }
+    .email-lock {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--text-3);
+    }
+    .role-tags { display: flex; flex-wrap: wrap; gap: 4px; flex: 1; }
+    .role-picker { position: relative; min-width: 180px; }
+    .role-picker-btn {
+      width: 100%;
+      min-height: 36px;
+      border: 1px solid var(--border-strong);
+      border-radius: 4px;
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 4px 8px;
+      text-align: left;
+      color: var(--text-2);
+    }
+    .role-picker-btn .placeholder { color: var(--text-3); font-size: 13px; }
+    .role-picker-menu {
+      display: none;
+      position: absolute;
+      z-index: 30;
+      left: 0;
+      right: 0;
+      top: calc(100% + 4px);
+      background: #fff;
+      border: 1px solid var(--border-strong);
+      border-radius: 4px;
+      box-shadow: var(--shadow);
+      max-height: 240px;
+      overflow: auto;
+      padding: 6px 0;
+    }
+    .role-picker.open .role-picker-menu { display: block; }
+    .role-option {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .role-option:hover { background: #f8f9fb; }
+    .role-option input { accent-color: var(--primary); }
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      height: 24px;
+      padding: 0 8px;
+      border-radius: 12px;
+      background: var(--active-bg);
+      color: var(--active-text);
+      font-size: 12px;
+      font-weight: 500;
+    }
+    .tag.muted { background: #eef0f3; color: var(--text-3); }
+    .tag.protect { background: #fff1f1; color: var(--danger); }
+    .status-cell { display: flex; align-items: center; gap: 8px; }
+    .status-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--border-strong);
+    }
+    .status-dot.on { background: var(--green); }
+    .toggle {
+      width: 40px; height: 22px; border-radius: 999px; border: 0;
+      background: #c1c7cd; position: relative; padding: 0;
+    }
+    .toggle.on { background: var(--green); }
+    .toggle::after {
+      content: "";
+      position: absolute;
+      top: 3px; left: 3px;
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      background: #fff;
+      transition: left .15s ease;
+    }
+    .toggle.on::after { left: 21px; }
+    .meta-sub { display: block; color: var(--text-3); font-size: 12px; margin-top: 2px; }
+    .table-footer {
+      display: flex;
+      justify-content: space-between;
+      padding: 12px 14px;
+      color: var(--text-3);
+      font-size: 13px;
+      border-top: 1px solid var(--border);
+      background: #fafbfc;
+    }
+
+    /* Permission page */
+    .role-panel {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr 1fr 1fr 1.2fr auto;
+      gap: 12px;
+      align-items: end;
+      padding: 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      margin-bottom: 12px;
+    }
+    .role-panel label {
+      display: block;
+      font-size: 12px;
+      color: var(--text-3);
+      margin-bottom: 6px;
+    }
+    .role-panel .value {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-2);
+    }
+    .role-panel a.link { color: var(--primary); font-weight: 500; }
+    .perm-table th, .perm-table td { text-align: center; }
+    .perm-table th:first-child, .perm-table td:first-child { text-align: left; }
+    .perm-group {
+      font-weight: 600;
+      background: #f8f9fb;
+      cursor: pointer;
+      user-select: none;
+    }
+    .perm-child td:first-child { padding-left: 36px; color: var(--text-2); }
+    .na { color: var(--text-3); font-size: 12px; }
+    .cell-changed {
+      background: var(--changed-bg) !important;
+      position: relative;
+    }
+    .change-badge {
+      display: inline-block;
+      margin-left: 6px;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: var(--primary);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .check {
+      width: 18px; height: 18px;
+      accent-color: var(--primary);
+    }
+    .check:disabled { opacity: 0.55; }
+
+    /* Modal */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(22, 22, 22, 0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+      padding: 24px;
+    }
+    .modal-backdrop.show { display: flex; }
+    .modal {
+      width: min(720px, 100%);
+      background: var(--surface);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .modal-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 20px 24px 8px;
+    }
+    .modal-header h2 { margin: 0; font-size: 20px; }
+    .modal-body { padding: 8px 24px 20px; color: var(--text-2); }
+    .modal-body p { margin: 0 0 12px; color: var(--text-3); line-height: 1.5; }
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      padding: 16px 24px;
+      border-top: 1px solid var(--border);
+    }
+    .summary-card {
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 16px;
+      margin-bottom: 10px;
+      background: #f8f9fa;
+    }
+    .summary-card.is-new { background: #f8f9fa; border-color: var(--border); }
+    .summary-card.is-changed { background: #fff8e1; border-color: #f1c21b; }
+    .summary-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+    .summary-card strong { display: block; font-size: 16px; margin: 0; }
+    .summary-card .meta { color: var(--text-3); font-size: 13px; margin-top: 6px; line-height: 1.5; }
+    .summary-card .meta-new { color: #19724b; font-weight: 500; }
+    .summary-row {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      margin-top: 8px;
+      font-size: 13px;
+      color: var(--text-2);
+    }
+    .summary-row .label {
+      flex: 0 0 48px;
+      color: #4e5358;
+      font-weight: 600;
+    }
+    .diff-after { color: #a6141a; font-weight: 600; }
+    .status-diff {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 12px;
+      color: #a6141a;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .status-diff-icon {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #a6141a;
+      color: #fff8e1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .badge-new {
+      display: inline-block;
+      margin: 0;
+      padding: 0;
+      background: transparent;
+      color: #0f62fe;
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .badge-add, .badge-remove {
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .badge-add { color: #0f62fe; }
+    .badge-remove { color: #a6141a; }
+    .perm-change-group { margin-bottom: 14px; }
+    .perm-change-group-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-4);
+      margin: 0 0 8px;
+    }
+    .perm-change-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .perm-sample {
+      margin-top: 12px;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background: #f8f9fa;
+    }
+    .perm-sample-screen { font-weight: 600; margin: 6px 0; }
+    .perm-sample-flags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 16px;
+      color: var(--text-3);
+      font-size: 13px;
+    }
+    .th-hint {
+      display: block;
+      font-weight: 400;
+      font-size: 11px;
+      color: var(--text-3);
+    }
+    .toast {
+      position: fixed;
+      right: 24px;
+      bottom: 48px;
+      background: #161616;
+      color: #fff;
+      padding: 12px 16px;
+      border-radius: 4px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .2s ease;
+      z-index: 60;
+    }
+    .toast.show { opacity: 1; }
+    .loading {
+      padding: 48px;
+      text-align: center;
+      color: var(--text-3);
+    }
+    .placeholder-page {
+      background: var(--surface);
+      border: 1px dashed var(--border-strong);
+      border-radius: 4px;
+      padding: 48px;
+      color: var(--text-3);
+    }
+
+    @media (max-width: 1100px) {
+      .body { grid-template-columns: 72px 1fr; }
+      .nav-item span.label, .nav-label, .brand { display: none; }
+      .header { grid-template-columns: 48px 1fr auto auto auto; }
+      .role-panel { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app" id="app">
+    <header class="header">
+      <div class="brand">학생회 통합 업무관리</div>
+      <label class="global-search">
+        <span aria-hidden="true">⌕</span>
+        <input type="search" placeholder="업무·신청자·거래 검색" disabled>
+      </label>
+      <select class="term-select" id="termSelect" aria-label="학년도"></select>
+      <button class="icon-btn" type="button" aria-label="알림">🔔<span class="dot"></span></button>
+      <div class="user-card">
+        <div class="avatar">👤</div>
+        <div>
+          <strong id="userName">운영자</strong>
+          <span id="userTitle">관리자</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="body">
+      <aside class="sidebar" id="sidebar"></aside>
+      <section class="main">
+        <div class="page-header">
+          <div>
+            <div class="crumb-row">
+              <button class="back-btn" id="backBtn" type="button" aria-label="설정으로 돌아가기">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M15 4L7 12l8 8" fill="none" stroke="#121619" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
+              <div class="crumb" id="crumb">설정 / 설정 홈</div>
+            </div>
+            <h1 class="page-title" id="pageTitle">설정</h1>
+          </div>
+          <div id="pageActions"></div>
+        </div>
+        <div class="workspace" id="workspace">
+          <div class="loading">불러오는 중…</div>
+        </div>
+      </section>
+    </div>
+
+    <footer class="status-bar" id="statusBar">시스템 준비 중…</footer>
+  </div>
+
+  <div class="modal-backdrop" id="modalRoot"></div>
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const state = {
+      bootstrap: null,
+      route: 'settings',
+      users: [],
+      roles: [],
+      departments: [],
+      userDrafts: {},
+      editingUserId: null,
+      newUsers: [],
+      roleDrafts: {},
+      editingRoleId: null,
+      newRoles: [],
+      permRoleId: null,
+      permTree: [],
+      permValues: {},
+      permBaseline: {},
+      permChanges: {},
+      permColumns: [],
+      permRole: null,
+      expandedGroups: { ledger: true },
+      filters: {
+        users: { q: '', roleId: '', status: '' },
+        roles: { q: '', type: '', status: '' }
+      }
+    };
+
+    function $(id) { return document.getElementById(id); }
+
+    function toast(msg) {
+      const el = $('toast');
+      el.textContent = msg;
+      el.classList.add('show');
+      clearTimeout(toast._t);
+      toast._t = setTimeout(() => el.classList.remove('show'), 2400);
+    }
+
+    function parseApiResult(result) {
+      if (typeof result === 'string') {
+        try { return JSON.parse(result); } catch (e) { return result; }
+      }
+      return result;
+    }
+
+    function sleep(ms) {
+      return new Promise((resolve) => setTimeout(resolve, ms));
+    }
+
+    function api(fn, ...args) {
+      return new Promise((resolve, reject) => {
+        if (typeof google === 'undefined' || !google.script || !google.script.run) {
+          reject(new Error('Apps Script 런타임에서만 API를 사용할 수 있습니다. clasp push 후 웹앱으로 열어주세요.'));
+          return;
+        }
+        google.script.run
+          .withSuccessHandler((result) => resolve(parseApiResult(result)))
+          .withFailureHandler((err) => {
+            reject(new Error(err && err.message ? err.message : String(err || '알 수 없는 오류')));
+          })[fn](...args);
+      });
+    }
+
+    async function apiRetry(fn, args, tries) {
+      args = args || [];
+      tries = tries || 3;
+      let lastErr = null;
+      for (let i = 0; i < tries; i++) {
+        try {
+          const result = await api(fn, ...args);
+          if (result != null) return result;
+          lastErr = new Error('서버 응답이 비어 있습니다.');
+        } catch (err) {
+          lastErr = err;
+        }
+        await sleep(500 * (i + 1));
+      }
+      throw lastErr || new Error('서버에 연결하지 못했습니다.');
+    }
+
+    function statusLabel(s) { return s === 'active' ? '활성' : '비활성'; }
+
+    function escapeHtml(str) {
+      return String(str == null ? '' : str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function closeModal() {
+      const root = $('modalRoot');
+      root.classList.remove('show');
+      root.innerHTML = '';
+    }
+
+    function openModal(html) {
+      const root = $('modalRoot');
+      root.innerHTML = html;
+      root.classList.add('show');
+      root.onclick = (e) => { if (e.target === root) closeModal(); };
+    }
+
+    async function init() {
+      try {
+        state.bootstrap = await apiRetry('getBootstrap', [], 4);
+        applyBootstrap();
+        renderSidebar();
+        await navigate('settings');
+      } catch (err) {
+        $('workspace').innerHTML = `<div class="placeholder-page"><strong>초기화 실패</strong><p>${escapeHtml(err.message || err)}</p><p style="margin-top:12px;">권한 창이 뜨면 허용한 뒤 새로고침하세요. 새 배포는 만들지 말고 이 링크를 그대로 다시 열면 됩니다.</p></div>`;
+      }
+    }
+
+    function applyBootstrap() {
+      const b = state.bootstrap || {};
+      const user = b.currentUser || { name: '운영자', title: '관리자' };
+      const app = b.app || {};
+      $('userName').textContent = user.name || '운영자';
+      $('userTitle').textContent = user.title || '관리자';
+      $('termSelect').innerHTML = `<option>${escapeHtml(app.term || '2026학년도')}</option>`;
+      const db = b.database || {};
+      const dbLink = db.spreadsheetUrl
+        ? `<a href="${escapeHtml(db.spreadsheetUrl)}" target="_blank" rel="noopener">Google Sheets DB</a> 연결됨`
+        : escapeHtml(app.syncStatus || '시스템 준비 중');
+      $('statusBar').innerHTML = `시스템 ${escapeHtml(app.version || 'v0.3')} · ${dbLink} · 기준일 ${escapeHtml(app.baseDate || '')}`;
+    }
+
+    function renderSidebar() {
+      const items = (state.bootstrap && state.bootstrap.nav) || [];
+      const main = items.filter(i => i.group === 'main');
+      const system = items.filter(i => i.group === 'system');
+      const activeId = state.route.startsWith('settings') ? 'settings' : state.route;
+      $('sidebar').innerHTML = [
+        ...main.map(item => navBtn(item, activeId)),
+        '<div class="nav-spacer"></div>',
+        '<div class="nav-label">시스템</div>',
+        '<div class="nav-divider"></div>',
+        ...system.map(item => navBtn(item, activeId))
+      ].join('');
+    }
+
+    function navBtn(item, activeId) {
+      const active = item.id === activeId ? ' active' : '';
+      return `<button class="nav-item${active}" type="button" data-nav="${item.id}"><span class="label">${escapeHtml(item.label)}</span></button>`;
+    }
+
+    document.addEventListener('click', (e) => {
+      const nav = e.target.closest('[data-nav]');
+      if (nav) {
+        const id = nav.getAttribute('data-nav');
+        if (id === 'settings') navigate('settings');
+        else navigate('placeholder:' + id);
+      }
+    });
+
+    async function navigate(route) {
+      state.route = route;
+      renderSidebar();
+      if (route === 'settings') return renderSettingsHome();
+      if (route === 'settings-users') return loadUsers();
+      if (route === 'settings-roles') return loadRoles();
+      if (route === 'settings-perms') return loadPermissions();
+      if (String(route).startsWith('placeholder:')) {
+        const id = route.split(':')[1];
+        const label = (state.bootstrap.nav.find(n => n.id === id) || {}).label || id;
+        setPage(label, label, '');
+        $('workspace').innerHTML = `<div class="placeholder-page">${escapeHtml(label)} 화면은 설정 범위 밖입니다. 사이드바의 <strong>설정</strong>에서 사용자·권한 기능을 이용하세요.</div>`;
+      }
+    }
+
+    function setPage(crumb, title, actionsHtml, opts) {
+      opts = opts || {};
+      $('crumb').textContent = crumb;
+      $('pageTitle').textContent = title;
+      $('pageActions').innerHTML = actionsHtml || '';
+      const back = $('backBtn');
+      if (opts.backTo) {
+        back.classList.add('show');
+        back.onclick = () => navigate(opts.backTo);
+      } else {
+        back.classList.remove('show');
+        back.onclick = null;
+      }
+    }
+
+    function renderSettingsHome() {
+      setPage('설정 / 설정 홈', '설정', '');
+      const db = (state.bootstrap && state.bootstrap.database) || {};
+      const dbHtml = db.spreadsheetUrl
+        ? `<div class="db-card">
+             <div>
+               <strong>Google Sheets 데이터베이스</strong>
+               <p>사용자·역할·권한이 스프레드시트에 저장됩니다. 화면에서 저장하면 시트에 바로 반영됩니다.</p>
+             </div>
+             <a class="btn btn-secondary" href="${escapeHtml(db.spreadsheetUrl)}" target="_blank" rel="noopener">시트 열기</a>
+           </div>`
+        : '';
+      $('workspace').innerHTML = `
+        <h3 class="section-title">사용자·권한</h3>
+        <div class="settings-list">
+          <button class="settings-row" type="button" data-go="settings-users">사용자 관리 <span class="chevron">›</span></button>
+          <button class="settings-row" type="button" data-go="settings-roles">역할 관리 <span class="chevron">›</span></button>
+          <button class="settings-row" type="button" data-go="settings-perms">업무 권한 설정 <span class="chevron">›</span></button>
+        </div>
+        ${dbHtml}`;
+      $('workspace').querySelectorAll('[data-go]').forEach(btn => {
+        btn.onclick = () => navigate(btn.getAttribute('data-go'));
+      });
+    }
+
+    /* ---------- Users ---------- */
+    async function loadUsers() {
+      setPage('설정 / 사용자·권한 / 사용자 관리', '사용자 관리',
+        `<button class="btn btn-primary" type="button" id="btnAddUser">＋ 사용자 추가</button>`,
+        { backTo: 'settings' });
+      $('workspace').innerHTML = '<div class="loading">사용자 목록 불러오는 중…</div>';
+      try {
+        const res = await api('getUsers', state.filters.users);
+        state.users = res.users;
+        state.roles = res.roles;
+        state.departments = res.departments;
+        state.userDrafts = {};
+        state.editingUserId = null;
+        state.newUsers = [];
+        renderUsers();
+        $('btnAddUser').onclick = addNewUserRow;
+      } catch (err) {
+        $('workspace').innerHTML = `<div class="placeholder-page">${escapeHtml(err.message || err)}</div>`;
+      }
+    }
+
+    function userChangeCount() {
+      return Object.keys(state.userDrafts).length + state.newUsers.length;
+    }
+
+    function sameRoleIds(a, b) {
+      const left = (a || []).slice().sort().join(',');
+      const right = (b || []).slice().sort().join(',');
+      return left === right;
+    }
+
+    function getUserView(id) {
+      if (String(id).startsWith('new:')) {
+        return state.newUsers[Number(String(id).split(':')[1])];
+      }
+      const u = state.users.find(x => x.id === id);
+      return Object.assign({}, u, state.userDrafts[id] || {});
+    }
+
+    function snapshotUser(u) {
+      return {
+        name: u.name,
+        email: u.email,
+        studentId: u.studentId || '',
+        phone: u.phone || '',
+        department: u.department,
+        roleIds: (u.roleIds || []).slice(),
+        status: u.status
+      };
+    }
+
+    function isUserRowEditing(id) {
+      return String(id).startsWith('new:') || !!state.userDrafts[id] || state.editingUserId === id;
+    }
+
+    function updateUserField(id, field, value) {
+      if (String(id).startsWith('new:')) {
+        state.newUsers[Number(String(id).split(':')[1])][field] = value;
+        refreshUserChangeBar();
+        return;
+      }
+      const original = state.users.find(x => x.id === id);
+      if (!state.userDrafts[id]) state.userDrafts[id] = snapshotUser(original);
+      state.userDrafts[id][field] = value;
+      const d = state.userDrafts[id];
+      if (
+        d.name === original.name &&
+        d.email === original.email &&
+        (d.studentId || '') === (original.studentId || '') &&
+        (d.phone || '') === (original.phone || '') &&
+        d.department === original.department &&
+        d.status === original.status &&
+        sameRoleIds(d.roleIds, original.roleIds)
+      ) {
+        delete state.userDrafts[id];
+      }
+      const row = document.querySelector('tr[data-row="' + id + '"]');
+      if (row) {
+        row.classList.toggle('is-changed', !!state.userDrafts[id]);
+        row.classList.toggle('is-selected', !state.userDrafts[id] && state.editingUserId === id);
+      }
+      refreshUserChangeBar();
+    }
+
+    function refreshUserChangeBar() {
+      const n = userChangeCount();
+      const bar = $('userChangeBar');
+      if (!bar) return;
+      bar.classList.toggle('show', n > 0);
+      const strong = bar.querySelector('strong');
+      if (strong) strong.textContent = n + '개 변경됨';
+      const saveBtn = $('userSave');
+      if (saveBtn) saveBtn.textContent = '변경사항 저장 (' + n + ')';
+    }
+
+    function rolePickerHtml(ids, rowKey) {
+      const selected = ids || [];
+      const tags = selected.length
+        ? `<div class="role-tags">${selected.map(id => {
+            const r = state.roles.find(x => x.id === id);
+            return `<span class="tag">${escapeHtml(r ? r.name : id)}</span>`;
+          }).join('')}</div>`
+        : '<span class="placeholder">역할 선택</span>';
+      const options = state.roles.map(r => `
+        <label class="role-option">
+          <input type="checkbox" data-role-id="${r.id}" ${selected.indexOf(r.id) >= 0 ? 'checked' : ''}>
+          <span>${escapeHtml(r.name)}</span>
+        </label>`).join('');
+      return `
+        <div class="role-picker" data-role-picker="${rowKey}">
+          <button type="button" class="role-picker-btn" data-role-toggle="${rowKey}">
+            ${tags}
+            <span>▼</span>
+          </button>
+          <div class="role-picker-menu">${options}</div>
+        </div>`;
+    }
+
+    function renderRolePickerTags(picker, roleIds) {
+      const btn = picker.querySelector('.role-picker-btn');
+      if (!btn) return;
+      const chevron = '<span>▼</span>';
+      if (!roleIds.length) {
+        btn.innerHTML = '<span class="placeholder">역할 선택</span>' + chevron;
+        return;
+      }
+      btn.innerHTML = `<div class="role-tags">${roleIds.map(id => {
+        const r = state.roles.find(x => x.id === id);
+        return `<span class="tag">${escapeHtml(r ? r.name : id)}</span>`;
+      }).join('')}</div>` + chevron;
+    }
+
+    function roleReadOnlyHtml(view) {
+      const roles = view.roles && view.roles.length
+        ? view.roles
+        : (view.roleIds || []).map(id => {
+            const r = state.roles.find(x => x.id === id);
+            return { id, name: r ? r.name : id };
+          });
+      if (!roles.length) return '-';
+      return `<div class="role-tags">${roles.map(r => `<span class="tag">${escapeHtml(r.name)}</span>`).join('')}</div>`;
+    }
+
+    function userEditableCells(view, key, deptOptions) {
+      return `
+        <td><input class="cell" data-field="name" data-id="${key}" value="${escapeHtml(view.name || '')}"></td>
+        <td><input class="cell" data-field="email" data-id="${key}" value="${escapeHtml(view.email || '')}"></td>
+        <td><input class="cell" data-field="studentId" data-id="${key}" value="${escapeHtml(view.studentId || '')}"></td>
+        <td><input class="cell" data-field="phone" data-id="${key}" value="${escapeHtml(view.phone || '')}"></td>
+        <td><select class="cell" data-field="department" data-id="${key}">${deptOptions(view.department)}</select></td>
+        <td>${rolePickerHtml(view.roleIds, key)}</td>
+        <td>
+          <div class="status-cell">
+            <button type="button" class="toggle ${view.status === 'active' ? 'on' : ''}" data-toggle="${key}"></button>
+            <span data-status-label="${key}">${statusLabel(view.status)}</span>
+          </div>
+        </td>`;
+    }
+
+    function userReadOnlyCells(view) {
+      return `
+        <td>${escapeHtml(view.name || '')}</td>
+        <td>${escapeHtml(view.email || '')}</td>
+        <td>${escapeHtml(view.studentId || '')}</td>
+        <td>${escapeHtml(view.phone || '')}</td>
+        <td>${escapeHtml(view.department || '')}</td>
+        <td>${roleReadOnlyHtml(view)}</td>
+        <td>
+          <div class="status-cell">
+            <span class="status-dot ${view.status === 'active' ? 'on' : ''}"></span>
+            <span>${statusLabel(view.status)}</span>
+          </div>
+        </td>`;
+    }
+
+    function renderUsers() {
+      const f = state.filters.users;
+      const roleOptions = state.roles.map(r =>
+        `<option value="${r.id}" ${f.roleId === r.id ? 'selected' : ''}>${escapeHtml(r.name)}</option>`).join('');
+      const deptOptions = (d) => state.departments.map(x =>
+        `<option value="${escapeHtml(x)}" ${d === x ? 'selected' : ''}>${escapeHtml(x)}</option>`).join('');
+
+      const rows = [];
+      state.newUsers.forEach((u, idx) => {
+        const key = 'new:' + idx;
+        rows.push(`
+          <tr class="is-new" data-row="${key}">
+            ${userEditableCells(u, key, deptOptions)}
+            <td>신규</td>
+          </tr>`);
+      });
+
+      state.users.forEach(u => {
+        const draft = state.userDrafts[u.id];
+        const view = Object.assign({}, u, draft || {});
+        const changed = !!draft;
+        const editing = isUserRowEditing(u.id);
+        const rowClass = changed ? 'is-changed' : (state.editingUserId === u.id ? 'is-selected' : 'row-readonly');
+        rows.push(`
+          <tr class="${rowClass}" data-row="${u.id}">
+            ${editing ? userEditableCells(view, u.id, deptOptions) : userReadOnlyCells(view)}
+            <td>${escapeHtml(view.updatedAt || '')}<span class="meta-sub">${escapeHtml(view.updatedBy || '')}</span></td>
+          </tr>`);
+      });
+
+      const count = state.users.length + state.newUsers.length;
+      $('workspace').innerHTML = `
+        <div class="toolbar">
+          <input class="search-field" id="userQ" type="search" placeholder="이름 또는 이메일 검색" value="${escapeHtml(f.q)}">
+          <select class="select" id="userRole"><option value="">역할 전체</option>${roleOptions}</select>
+          <select class="select" id="userStatus">
+            <option value="">상태 전체</option>
+            <option value="active" ${f.status === 'active' ? 'selected' : ''}>활성</option>
+            <option value="inactive" ${f.status === 'inactive' ? 'selected' : ''}>비활성</option>
+          </select>
+          <button class="btn btn-secondary" type="button" id="userReset">초기화</button>
+          <div class="count-label">사용자 ${count}명</div>
+        </div>
+        <div class="change-bar ${userChangeCount() ? 'show' : ''}" id="userChangeBar">
+          <strong>${userChangeCount()}개 변경됨</strong>
+          <div class="spacer"></div>
+          <button class="btn btn-secondary" type="button" id="userDiscard">변경사항 취소</button>
+          <button class="btn btn-primary" type="button" id="userSave">변경사항 저장 (${userChangeCount()})</button>
+        </div>
+        <div class="table-wrap">
+          <table class="data">
+            <thead>
+              <tr>
+                <th>이름</th>
+                <th>Google 계정 이메일</th>
+                <th>학번</th>
+                <th>연락처</th>
+                <th>소속부서</th>
+                <th>역할</th>
+                <th>상태</th>
+                <th>최근변경</th>
+              </tr>
+            </thead>
+            <tbody>${rows.join('') || '<tr><td colspan="8">사용자가 없습니다.</td></tr>'}</tbody>
+          </table>
+          <div class="table-footer"><span>총 ${count}명</span><span>1 / 1</span></div>
+        </div>`;
+
+      $('userQ').onchange = $('userQ').onkeydown = (e) => {
+        if (e.type === 'keydown' && e.key !== 'Enter') return;
+        state.filters.users.q = $('userQ').value;
+        loadUsers();
+      };
+      $('userRole').onchange = () => { state.filters.users.roleId = $('userRole').value; loadUsers(); };
+      $('userStatus').onchange = () => { state.filters.users.status = $('userStatus').value; loadUsers(); };
+      $('userReset').onclick = () => {
+        state.filters.users = { q: '', roleId: '', status: '' };
+        loadUsers();
+      };
+      $('userDiscard').onclick = () => {
+        state.userDrafts = {};
+        state.editingUserId = null;
+        state.newUsers = [];
+        renderUsers();
+        toast('변경사항을 취소했습니다.');
+      };
+      $('userSave').onclick = confirmSaveUsers;
+
+      $('workspace').querySelectorAll('tr[data-row]').forEach(tr => {
+        tr.addEventListener('click', (e) => {
+          const id = tr.getAttribute('data-row');
+          if (String(id).startsWith('new:')) return;
+          if (e.target.closest('input, select, button, label, .role-picker')) return;
+          if (state.editingUserId === id) return;
+          state.editingUserId = id;
+          renderUsers();
+        });
+      });
+
+      $('workspace').querySelectorAll('[data-field]').forEach(el => {
+        el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', () => {
+          updateUserField(el.getAttribute('data-id'), el.getAttribute('data-field'), el.value);
+        });
+      });
+
+      $('workspace').querySelectorAll('[data-toggle]').forEach(btn => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          const id = btn.getAttribute('data-toggle');
+          const view = getUserView(id);
+          const next = view.status === 'active' ? 'inactive' : 'active';
+          updateUserField(id, 'status', next);
+          btn.classList.toggle('on', next === 'active');
+          const label = document.querySelector('[data-status-label="' + id + '"]');
+          if (label) label.textContent = statusLabel(next);
+        };
+      });
+
+      $('workspace').querySelectorAll('[data-role-toggle]').forEach(btn => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          const picker = btn.closest('.role-picker');
+          const open = picker.classList.contains('open');
+          $('workspace').querySelectorAll('.role-picker.open').forEach(p => p.classList.remove('open'));
+          if (!open) picker.classList.add('open');
+        };
+      });
+
+      $('workspace').querySelectorAll('.role-picker').forEach(picker => {
+        picker.onclick = (e) => e.stopPropagation();
+        picker.querySelectorAll('input[data-role-id]').forEach(chk => {
+          chk.onchange = () => {
+            const id = picker.getAttribute('data-role-picker');
+            const roleIds = Array.from(picker.querySelectorAll('input[data-role-id]:checked')).map(el => el.getAttribute('data-role-id'));
+            updateUserField(id, 'roleIds', roleIds);
+            renderRolePickerTags(picker, roleIds);
+          };
+        });
+      });
+
+      document.onclick = (e) => {
+        if (!e.target.closest('.role-picker')) {
+          document.querySelectorAll('.role-picker.open').forEach(p => p.classList.remove('open'));
+        }
+      };
+    }
+
+    function addNewUserRow() {
+      const defaultRole = (state.roles.find(r => r.id === 'role_finance') || state.roles[0] || {}).id;
+      const nextNo = state.users.length + state.newUsers.length + 1;
+      state.newUsers.unshift({
+        name: '',
+        email: '',
+        studentId: String(20260000 + nextNo),
+        phone: '010-0000-' + ('000' + nextNo).slice(-4),
+        department: state.departments[0] || '',
+        roleIds: defaultRole ? [defaultRole] : [],
+        status: 'active'
+      });
+      renderUsers();
+    }
+
+    function diffText(before, after) {
+      return `${escapeHtml(before || '-')} → <span class="diff-after">${escapeHtml(after || '-')}</span>`;
+    }
+
+    function roleNamesFromIds(ids) {
+      return (ids || []).map(id => {
+        const r = state.roles.find(x => x.id === id);
+        return r ? r.name : id;
+      });
+    }
+
+    function confirmSaveUsers() {
+      const n = userChangeCount();
+      if (!n) return;
+      const cards = [];
+      state.newUsers.forEach(u => {
+        const roleNames = roleNamesFromIds(u.roleIds).join(', ');
+        cards.push(`
+          <div class="summary-card is-new">
+            <div class="summary-head">
+              <strong>${escapeHtml(u.name || '(이름 없음)')}</strong>
+              <span class="badge-new">신규 등록</span>
+            </div>
+            <div class="meta">${escapeHtml(u.email || '')}</div>
+            <div class="meta meta-new">${escapeHtml(u.studentId || '-')} · ${escapeHtml(u.phone || '-')} · ${escapeHtml(u.department || '-')} · ${escapeHtml(roleNames || '-')} · ${statusLabel(u.status)}</div>
+          </div>`);
+      });
+      Object.keys(state.userDrafts).forEach(id => {
+        const before = state.users.find(u => u.id === id);
+        const after = Object.assign({}, before, state.userDrafts[id]);
+        const beforeRoles = (before.roles || []).map(r => r.name).join(', ');
+        const afterRoleList = roleNamesFromIds(after.roleIds);
+        const afterRoles = afterRoleList.join(', ');
+        const rows = [];
+        if (before.name !== after.name) {
+          rows.push(`<div class="summary-row"><span class="label">이름</span><span>${diffText(before.name, after.name)}</span></div>`);
+        }
+        if (before.email !== after.email) {
+          rows.push(`<div class="summary-row"><span class="label">이메일</span><span>${diffText(before.email, after.email)}</span></div>`);
+        }
+        if ((before.studentId || '') !== (after.studentId || '')) {
+          rows.push(`<div class="summary-row"><span class="label">학번</span><span>${diffText(before.studentId, after.studentId)}</span></div>`);
+        }
+        if ((before.phone || '') !== (after.phone || '')) {
+          rows.push(`<div class="summary-row"><span class="label">연락처</span><span>${diffText(before.phone, after.phone)}</span></div>`);
+        }
+        if (before.department !== after.department) {
+          rows.push(`<div class="summary-row"><span class="label">소속</span><span>${diffText(before.department, after.department)}</span></div>`);
+        }
+        if (!sameRoleIds(before.roleIds, after.roleIds)) {
+          rows.push(`<div class="summary-row"><span class="label">역할</span><span>${diffText(beforeRoles, afterRoles)}</span></div>`);
+        }
+        const statusChanged = before.status !== after.status;
+        cards.push(`
+          <div class="summary-card is-changed">
+            <div class="summary-head">
+              <strong>${escapeHtml(after.name)}</strong>
+            </div>
+            ${rows.join('')}
+            ${statusChanged ? `<div class="status-diff"><span class="status-diff-icon">!</span>상태&nbsp;&nbsp;${escapeHtml(statusLabel(before.status))} → <span class="diff-after">${escapeHtml(statusLabel(after.status))}</span></div>` : ''}
+          </div>`);
+      });
+
+      openModal(`
+        <div class="modal">
+          <div class="modal-header">
+            <h2>변경사항 저장</h2>
+            <button class="btn btn-ghost" type="button" id="modalClose">✕</button>
+          </div>
+          <div class="modal-body">
+            <p>사용자 ${n}명의 변경사항을 저장하시겠습니까?</p>
+            ${cards.join('')}
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" type="button" id="modalCancel">취소</button>
+            <button class="btn btn-primary" type="button" id="modalConfirm">변경사항 저장</button>
+          </div>
+        </div>`);
+      $('modalClose').onclick = $('modalCancel').onclick = closeModal;
+      $('modalConfirm').onclick = async () => {
+        try {
+          const changes = Object.keys(state.userDrafts).map(id => Object.assign({ id }, state.userDrafts[id]));
+          const res = await api('saveUserChanges', { changes, newUsers: state.newUsers });
+          closeModal();
+          toast(res.message || '저장되었습니다.');
+          await loadUsers();
+        } catch (err) {
+          toast(err.message || String(err));
+        }
+      };
+    }
+
+    /* ---------- Roles ---------- */
+    async function loadRoles() {
+      setPage('설정 / 사용자·권한 / 역할 관리', '역할 관리',
+        `<button class="btn btn-primary" type="button" id="btnAddRole">＋ 역할 추가</button>`,
+        { backTo: 'settings' });
+      $('workspace').innerHTML = '<div class="loading">역할 목록 불러오는 중…</div>';
+      try {
+        const res = await api('getRoles', state.filters.roles);
+        state.roles = res.roles;
+        state.roleDrafts = {};
+        state.editingRoleId = null;
+        state.newRoles = [];
+        renderRoles();
+        $('btnAddRole').onclick = () => {
+          state.newRoles.unshift({ name: '', description: '', status: 'active', type: 'custom' });
+          renderRoles();
+        };
+      } catch (err) {
+        $('workspace').innerHTML = `<div class="placeholder-page">${escapeHtml(err.message || err)}</div>`;
+      }
+    }
+
+    function roleChangeCount() {
+      return Object.keys(state.roleDrafts).length + state.newRoles.length;
+    }
+
+    function snapshotRole(r) {
+      return { name: r.name, description: r.description || '', status: r.status };
+    }
+
+    function getRoleView(id) {
+      if (String(id).startsWith('new:')) return state.newRoles[Number(String(id).split(':')[1])];
+      const r = state.roles.find(x => x.id === id);
+      return Object.assign({}, r, state.roleDrafts[id] || {});
+    }
+
+    function isRoleRowEditing(id) {
+      return String(id).startsWith('new:') || !!state.roleDrafts[id] || state.editingRoleId === id;
+    }
+
+    function refreshRoleChangeBar() {
+      const n = roleChangeCount();
+      const bar = $('roleChangeBar');
+      if (!bar) return;
+      bar.classList.toggle('show', n > 0);
+      const strong = bar.querySelector('strong');
+      if (strong) strong.textContent = n + '개 변경됨';
+      const saveBtn = $('roleSave');
+      if (saveBtn) saveBtn.textContent = '변경사항 저장 (' + n + ')';
+    }
+
+    function updateRoleField(id, field, value, opts) {
+      opts = opts || {};
+      if (String(id).startsWith('new:')) {
+        state.newRoles[Number(String(id).split(':')[1])][field] = value;
+        if (opts.rerender) renderRoles();
+        else refreshRoleChangeBar();
+        return;
+      }
+      const original = state.roles.find(x => x.id === id);
+      if (!original || original.protected) return;
+      state.editingRoleId = id;
+      if (!state.roleDrafts[id]) state.roleDrafts[id] = snapshotRole(original);
+      state.roleDrafts[id][field] = value;
+      const d = state.roleDrafts[id];
+      if (d.name === original.name && (d.description || '') === (original.description || '') && d.status === original.status) {
+        delete state.roleDrafts[id];
+      }
+      if (opts.rerender) {
+        renderRoles();
+        return;
+      }
+      const row = document.querySelector('tr[data-role-row="' + id + '"]');
+      if (row) {
+        row.classList.toggle('is-changed', !!state.roleDrafts[id]);
+        row.classList.toggle('is-selected', !state.roleDrafts[id] && state.editingRoleId === id);
+        row.classList.remove('row-readonly');
+      }
+      refreshRoleChangeBar();
+    }
+
+    function typeTagHtml(view) {
+      const label = view.typeLabel || (view.type === 'custom' ? '사용자 정의' : '기본 역할');
+      return `<span class="tag ${view.type === 'custom' ? '' : 'muted'}">${escapeHtml(label)}</span>`;
+    }
+
+    function roleEditableCells(view, key) {
+      return `
+        <td><input class="cell" data-rfield="name" data-rid="${key}" value="${escapeHtml(view.name || '')}" placeholder="역할명"></td>
+        <td>${typeTagHtml(view)}</td>
+        <td><input class="cell" data-rfield="description" data-rid="${key}" value="${escapeHtml(view.description || '')}" placeholder="설명"></td>
+        <td>${String(key).startsWith('new:') ? '0명' : `<a class="link" href="#" data-goto-users-role="${key}">${view.assignedCount || 0}명</a>`}</td>
+        <td>
+          <div class="status-cell">
+            <button type="button" class="toggle ${view.status === 'active' ? 'on' : ''}" data-rtoggle="${key}"></button>
+            <span data-rstatus-label="${key}">${statusLabel(view.status)}</span>
+          </div>
+        </td>`;
+    }
+
+    function roleReadOnlyCells(view, locked) {
+      return `
+        <td><strong>${escapeHtml(view.name || '')}</strong>${locked ? ' <span class="tag protect">보호됨</span>' : ''}</td>
+        <td>${typeTagHtml(view)}</td>
+        <td>${escapeHtml(view.description || '')}</td>
+        <td><a class="link" href="#" data-goto-users-role="${view.id}">${view.assignedCount || 0}명</a></td>
+        <td>
+          <div class="status-cell">
+            <span class="status-dot ${view.status === 'active' ? 'on' : ''}"></span>
+            <span>${statusLabel(view.status)}</span>
+          </div>
+        </td>`;
+    }
+
+    function renderRoles() {
+      const f = state.filters.roles;
+      const rows = [];
+
+      state.newRoles.forEach((r, idx) => {
+        const key = 'new:' + idx;
+        rows.push(`
+          <tr class="is-new" data-role-row="${key}">
+            ${roleEditableCells(r, key)}
+            <td>신규</td>
+          </tr>`);
+      });
+
+      state.roles.forEach(r => {
+        const draft = state.roleDrafts[r.id];
+        const view = Object.assign({}, r, draft || {});
+        const changed = !!draft;
+        const locked = !!r.protected;
+        const editing = !locked && isRoleRowEditing(r.id);
+        let rowClass = 'row-readonly';
+        if (locked) rowClass = 'row-readonly is-locked';
+        else if (changed) rowClass = 'is-changed';
+        else if (state.editingRoleId === r.id) rowClass = 'is-selected';
+        rows.push(`
+          <tr class="${rowClass}" data-role-row="${r.id}" data-locked="${locked ? '1' : '0'}">
+            ${editing ? roleEditableCells(view, r.id) : roleReadOnlyCells(view, locked)}
+            <td>${escapeHtml(view.updatedAt || '')}<span class="meta-sub">${escapeHtml(view.updatedBy || '')}</span></td>
+          </tr>`);
+      });
+
+      const count = state.roles.length + state.newRoles.length;
+      $('workspace').innerHTML = `
+        <div class="toolbar">
+          <input class="search-field" id="roleQ" type="search" placeholder="역할명 또는 설명 검색" value="${escapeHtml(f.q)}">
+          <select class="select" id="roleType">
+            <option value="">구분 전체</option>
+            <option value="default" ${f.type === 'default' ? 'selected' : ''}>기본 역할</option>
+            <option value="custom" ${f.type === 'custom' ? 'selected' : ''}>사용자 정의</option>
+          </select>
+          <select class="select" id="roleStatus">
+            <option value="">상태 전체</option>
+            <option value="active" ${f.status === 'active' ? 'selected' : ''}>활성</option>
+            <option value="inactive" ${f.status === 'inactive' ? 'selected' : ''}>비활성</option>
+          </select>
+          <button class="btn btn-secondary" type="button" id="roleReset">초기화</button>
+          <div class="count-label">역할 ${count}개</div>
+        </div>
+        <div class="change-bar ${roleChangeCount() ? 'show' : ''}" id="roleChangeBar">
+          <strong>${roleChangeCount()}개 변경됨</strong>
+          <div class="spacer"></div>
+          <button class="btn btn-secondary" type="button" id="roleDiscard">변경사항 취소</button>
+          <button class="btn btn-primary" type="button" id="roleSave">변경사항 저장 (${roleChangeCount()})</button>
+        </div>
+        <div class="table-wrap">
+          <table class="data" id="roleTable">
+            <thead>
+              <tr>
+                <th>역할명</th><th>구분</th><th>설명</th><th>배정 사용자</th><th>상태</th><th>최근 변경</th>
+              </tr>
+            </thead>
+            <tbody>${rows.join('')}</tbody>
+          </table>
+          <div class="table-footer"><span>총 ${count}개</span><span>1 / 1</span></div>
+        </div>`;
+
+      $('roleQ').onchange = $('roleQ').onkeydown = (e) => {
+        if (e.type === 'keydown' && e.key !== 'Enter') return;
+        state.filters.roles.q = $('roleQ').value;
+        loadRoles();
+      };
+      $('roleType').onchange = () => { state.filters.roles.type = $('roleType').value; loadRoles(); };
+      $('roleStatus').onchange = () => { state.filters.roles.status = $('roleStatus').value; loadRoles(); };
+      $('roleReset').onclick = () => { state.filters.roles = { q: '', type: '', status: '' }; loadRoles(); };
+      $('roleDiscard').onclick = () => {
+        state.roleDrafts = {};
+        state.editingRoleId = null;
+        state.newRoles = [];
+        renderRoles();
+        toast('변경사항을 취소했습니다.');
+      };
+      $('roleSave').onclick = confirmSaveRoles;
+
+      const roleTable = $('roleTable');
+      if (roleTable) {
+        roleTable.onclick = (e) => {
+          const tr = e.target.closest('tr[data-role-row]');
+          if (!tr) return;
+          const id = tr.getAttribute('data-role-row');
+          if (String(id).startsWith('new:')) return;
+          if (e.target.closest('input, button, a, label')) return;
+          if (tr.getAttribute('data-locked') === '1') {
+            toast('보호된 역할은 수정할 수 없습니다.');
+            return;
+          }
+          if (state.editingRoleId === id && isRoleRowEditing(id)) return;
+          state.editingRoleId = id;
+          renderRoles();
+        };
       }
 
-      main {
-        width: min(560px, calc(100% - 32px));
-        padding: 32px;
-        border: 1px solid #d8e0ec;
-        border-radius: 8px;
-        background: #ffffff;
-      }
+      $('workspace').querySelectorAll('[data-rfield]').forEach(el => {
+        el.addEventListener('input', () => {
+          updateRoleField(el.getAttribute('data-rid'), el.getAttribute('data-rfield'), el.value);
+        });
+      });
+      $('workspace').querySelectorAll('[data-rtoggle]').forEach(btn => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          const id = btn.getAttribute('data-rtoggle');
+          const view = getRoleView(id);
+          const next = view.status === 'active' ? 'inactive' : 'active';
+          updateRoleField(id, 'status', next, { rerender: true });
+        };
+      });
+      $('workspace').querySelectorAll('[data-goto-users-role]').forEach(a => {
+        a.onclick = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          state.filters.users.roleId = a.getAttribute('data-goto-users-role');
+          navigate('settings-users');
+        };
+      });
+    }
 
-      h1 {
-        margin: 0 0 12px;
-        font-size: 28px;
-      }
+    function confirmSaveRoles() {
+      const n = roleChangeCount();
+      if (!n) return;
+      const cards = [];
+      state.newRoles.forEach(r => {
+        cards.push(`
+          <div class="summary-card is-new">
+            <div class="summary-head">
+              <strong>${escapeHtml(r.name || '(역할명 없음)')}</strong>
+              <span class="badge-new">신규 등록</span>
+            </div>
+            <div class="meta meta-new">사용자 정의 · ${escapeHtml(r.description || '-')} · ${statusLabel(r.status)}</div>
+          </div>`);
+      });
+      Object.keys(state.roleDrafts).forEach(id => {
+        const before = state.roles.find(x => x.id === id);
+        const after = Object.assign({}, before, state.roleDrafts[id]);
+        const rows = [];
+        if (before.name !== after.name) {
+          rows.push(`<div class="summary-row"><span class="label">역할명</span><span>${diffText(before.name, after.name)}</span></div>`);
+        }
+        if ((before.description || '') !== (after.description || '')) {
+          rows.push(`<div class="summary-row"><span class="label">설명</span><span>${diffText(before.description, after.description)}</span></div>`);
+        }
+        const statusChanged = before.status !== after.status;
+        cards.push(`
+          <div class="summary-card is-changed">
+            <div class="summary-head"><strong>${escapeHtml(after.name)}</strong></div>
+            ${rows.join('')}
+            ${statusChanged ? `<div class="status-diff"><span class="status-diff-icon">!</span>상태&nbsp;&nbsp;${escapeHtml(statusLabel(before.status))} → <span class="diff-after">${escapeHtml(statusLabel(after.status))}</span></div>` : ''}
+          </div>`);
+      });
+      openModal(`
+        <div class="modal">
+          <div class="modal-header">
+            <h2>변경사항 저장</h2>
+            <button class="btn btn-ghost" type="button" id="modalClose">✕</button>
+          </div>
+          <div class="modal-body">
+            <p>역할 ${n}개의 변경사항을 저장하시겠습니까?</p>
+            ${cards.join('')}
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" type="button" id="modalCancel">취소</button>
+            <button class="btn btn-primary" type="button" id="modalConfirm">변경사항 저장</button>
+          </div>
+        </div>`);
+      $('modalClose').onclick = $('modalCancel').onclick = closeModal;
+      $('modalConfirm').onclick = () => { closeModal(); saveRoles(); };
+    }
 
-      p {
-        margin: 0;
-        line-height: 1.6;
+    async function saveRoles() {
+      if (!roleChangeCount()) return;
+      try {
+        const changes = Object.keys(state.roleDrafts).map(id => Object.assign({ id }, state.roleDrafts[id]));
+        const res = await api('saveRoleChanges', { changes, newRoles: state.newRoles });
+        if (!res.ok && res.code === 'ROLE_DEACTIVATE_BLOCKED') {
+          const b = res.blocked[0];
+          openModal(`
+            <div class="modal">
+              <div class="modal-header"><h2>역할을 비활성화할 수 없습니다</h2>
+                <button class="btn btn-ghost" type="button" id="modalClose">✕</button></div>
+              <div class="modal-body">
+                <p>${escapeHtml(b.roleName)} 역할에 사용자 ${b.assignedCount}명이 배정되어 있습니다.</p>
+                <p>먼저 사용자의 역할을 변경하거나 제거해 주세요.</p>
+                <div class="summary-card is-changed">
+                  <div class="summary-head"><strong>${escapeHtml(b.roleName)}</strong></div>
+                  <div class="meta">배정 사용자 ${b.assignedCount}명</div>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button class="btn btn-secondary" type="button" id="modalCancel">닫기</button>
+                <button class="btn btn-primary" type="button" id="modalConfirm">배정 사용자 확인</button>
+              </div>
+            </div>`);
+          $('modalClose').onclick = $('modalCancel').onclick = closeModal;
+          $('modalConfirm').onclick = () => {
+            closeModal();
+            state.filters.users.roleId = b.roleId;
+            navigate('settings-users');
+          };
+          return;
+        }
+        toast(res.message || '저장되었습니다.');
+        await loadRoles();
+      } catch (err) {
+        toast(err.message || String(err));
       }
-    </style>
-  </head>
-  <body>
-    <main>
-      <h1>Council Project</h1>
-      <p>A simple Google Apps Script HTML page connected with clasp.</p>
-    </main>
-  </body>
+    }
+
+    /* ---------- Permissions ---------- */
+    async function loadPermissions(preferredRoleId) {
+      setPage('설정 / 사용자·권한 / 업무 권한 설정', '업무 권한 설정', '', { backTo: 'settings' });
+      $('workspace').innerHTML = '<div class="loading">권한 정보 불러오는 중…</div>';
+      try {
+        if (!state.roles.length) {
+          const roleRes = await api('getRoles', {});
+          state.roles = roleRes.roles;
+        }
+        const roleId = preferredRoleId || state.permRoleId || (state.roles.find(r => r.id === 'role_finance') || state.roles[0]).id;
+        const res = await api('getPermissionMatrix', roleId);
+        state.permRoleId = roleId;
+        state.permRole = res.role;
+        state.permTree = res.tree;
+        state.permColumns = res.columns;
+        state.permValues = JSON.parse(JSON.stringify(res.values || {}));
+        state.permBaseline = JSON.parse(JSON.stringify(res.values || {}));
+        state.permChanges = {};
+        state.permMeta = { savedAt: res.lastSavedAt, savedBy: res.lastSavedBy };
+        renderPermissions();
+      } catch (err) {
+        $('workspace').innerHTML = `<div class="placeholder-page">${escapeHtml(err.message || err)}</div>`;
+      }
+    }
+
+    function permChangeCount() {
+      return Object.keys(state.permChanges).reduce((n, sid) => n + Object.keys(state.permChanges[sid] || {}).length, 0);
+    }
+
+    function getPerm(screenId, key) {
+      const changed = state.permChanges[screenId];
+      if (changed && Object.prototype.hasOwnProperty.call(changed, key)) return changed[key];
+      return !!(state.permValues[screenId] && state.permValues[screenId][key]);
+    }
+
+    function setPerm(screenId, key, value, opts) {
+      opts = opts || {};
+      if (state.permRole && state.permRole.protected) {
+        showProtectedRoleModal();
+        return;
+      }
+      const base = !!(state.permBaseline[screenId] && state.permBaseline[screenId][key]);
+      if (!state.permChanges[screenId]) state.permChanges[screenId] = {};
+      if (base === value) {
+        delete state.permChanges[screenId][key];
+        if (!Object.keys(state.permChanges[screenId]).length) delete state.permChanges[screenId];
+      } else {
+        state.permChanges[screenId][key] = value;
+      }
+      if (!opts.silent) renderPermissions();
+    }
+
+    function showProtectedRoleModal() {
+      const r = state.permRole;
+      openModal(`
+        <div class="modal">
+          <div class="modal-header"><h2>보호 역할은 변경할 수 없습니다</h2>
+            <button class="btn btn-ghost" type="button" id="modalClose">✕</button></div>
+          <div class="modal-body">
+            <p>${escapeHtml(r.name)}는 모든 적용 가능한 권한을 가진 읽기 전용 역할입니다.</p>
+            <div class="summary-card">
+              <div class="summary-head"><strong>${escapeHtml(r.name)}</strong></div>
+              <div class="meta">보호된 기본 역할 · 전체 권한</div>
+            </div>
+            <div class="perm-sample">
+              <div class="meta">적용 가능한 권한</div>
+              <div class="perm-sample-screen">수입·지출 관리</div>
+              <div class="perm-sample-flags">
+                <span>메뉴(자동) ✓</span>
+                <span>조회 ✓</span>
+                <span>등록 및 수정 ✓</span>
+                <span>승인 및 보관 ✓</span>
+                <span>다운로드 ✓</span>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" type="button" id="modalCancel">닫기</button>
+            <button class="btn btn-primary" type="button" id="modalConfirm">역할 관리</button>
+          </div>
+        </div>`);
+      $('modalClose').onclick = $('modalCancel').onclick = closeModal;
+      $('modalConfirm').onclick = () => { closeModal(); navigate('settings-roles'); };
+    }
+
+    function aggregateParent(node, key) {
+      if (!node.children || !node.children.length) return getPerm(node.id, key) ? 'on' : 'off';
+      let on = 0, off = 0, applicable = 0;
+      node.children.forEach(c => {
+        if (!c.applicable[key]) return;
+        applicable++;
+        if (getPerm(c.id, key)) on++; else off++;
+      });
+      if (!applicable) return 'na';
+      if (on && off) return 'mixed';
+      return on ? 'on' : 'off';
+    }
+
+    function renderPermissions() {
+      const role = state.permRole;
+      const roleOptions = state.roles.map(r =>
+        `<option value="${r.id}" ${r.id === role.id ? 'selected' : ''}>${escapeHtml(r.name)}</option>`).join('');
+      const cols = state.permColumns;
+      const changeN = permChangeCount();
+
+      const bodyRows = [];
+      state.permTree.forEach(group => {
+        const expanded = !!state.expandedGroups[group.id];
+        bodyRows.push(`
+          <tr class="perm-group" data-expand="${group.id}">
+            <td>${expanded ? '▼' : '▶'} ${escapeHtml(group.name)}
+              <span class="meta-sub">${group.children.length}개 화면</span></td>
+            ${cols.map(c => {
+              const st = aggregateParent(group, c.key);
+              if (st === 'na') return '<td class="na">해당 없음</td>';
+              if (st === 'mixed') return '<td>−</td>';
+              const checked = st === 'on';
+              return `<td><input class="check" type="checkbox" ${checked ? 'checked' : ''} data-pparent="${group.id}" data-pkey="${c.key}"></td>`;
+            }).join('')}
+          </tr>`);
+        if (expanded) {
+          group.children.forEach(child => {
+            bodyRows.push(`
+              <tr class="perm-child">
+                <td>└ ${escapeHtml(child.name)}</td>
+                ${cols.map(c => {
+                  if (!child.applicable[c.key]) return '<td class="na">해당 없음</td>';
+                  const val = getPerm(child.id, c.key);
+                  const changed = state.permChanges[child.id] && Object.prototype.hasOwnProperty.call(state.permChanges[child.id], c.key);
+                  return `<td class="${changed ? 'cell-changed' : ''}">
+                    <input class="check" type="checkbox" ${val ? 'checked' : ''} data-pscreen="${child.id}" data-pkey="${c.key}">
+                    ${changed ? '<span class="change-badge">변경</span>' : ''}
+                  </td>`;
+                }).join('')}
+              </tr>`);
+          });
+        } else {
+          // still show leaf-less groups' own applicable cells already in parent row
+        }
+        // Also render groups with no children as single row already done
+        if (!group.children.length) {
+          // parent row already represents it
+        }
+      });
+
+      // count targets
+      let targetCount = 0;
+      state.permTree.forEach(g => {
+        targetCount += 1 + g.children.length;
+      });
+
+      $('workspace').innerHTML = `
+        <div class="role-panel">
+          <div>
+            <label>역할</label>
+            <select class="select" id="permRoleSelect" style="width:100%;">${roleOptions}</select>
+          </div>
+          <div><label>구분</label><div class="value">${escapeHtml(role.typeLabel)}</div></div>
+          <div><label>상태</label><div class="value"><span class="status-dot ${role.status === 'active' ? 'on' : ''}" style="display:inline-block;margin-right:6px;"></span>${statusLabel(role.status)}</div></div>
+          <div><label>배정 사용자</label><div class="value"><a class="link" href="#" id="permAssigned">${role.assignedCount}명</a></div></div>
+          <div><label>최근 저장</label><div class="value">${escapeHtml(state.permMeta.savedAt || '-')} · ${escapeHtml(state.permMeta.savedBy || '')}</div></div>
+          <div><button class="btn btn-secondary" type="button" id="gotoRoles">역할 관리</button></div>
+        </div>
+        <div class="change-bar ${changeN ? 'show' : ''}">
+          <strong>${changeN}개 변경됨</strong>
+          <div class="spacer"></div>
+          <button class="btn btn-secondary" type="button" id="permDiscard">변경사항 취소</button>
+          <button class="btn btn-primary" type="button" id="permSave">변경사항 저장 (${changeN})</button>
+        </div>
+        <div class="table-wrap">
+          <table class="data perm-table">
+            <thead>
+              <tr>
+                <th>화면·업무</th>
+                ${cols.map(c => `<th>${escapeHtml(c.label)}${c.hint ? `<span class="th-hint">${escapeHtml(c.hint)}</span>` : ''}</th>`).join('')}
+              </tr>
+            </thead>
+            <tbody>${bodyRows.join('')}</tbody>
+          </table>
+          <div class="table-footer">
+            <span>총 ${targetCount}개 권한 대상</span>
+            <span style="color:var(--primary);font-weight:600;">${escapeHtml(role.name)} · 변경 ${changeN}개</span>
+          </div>
+        </div>`;
+
+      $('permRoleSelect').onchange = () => loadPermissions($('permRoleSelect').value);
+      $('gotoRoles').onclick = () => navigate('settings-roles');
+      $('permAssigned').onclick = (e) => {
+        e.preventDefault();
+        state.filters.users.roleId = role.id;
+        navigate('settings-users');
+      };
+      $('permDiscard').onclick = () => {
+        state.permChanges = {};
+        renderPermissions();
+        toast('변경사항을 취소했습니다.');
+      };
+      $('permSave').onclick = confirmSavePermissions;
+
+      $('workspace').querySelectorAll('[data-expand]').forEach(row => {
+        row.onclick = (e) => {
+          if (e.target.closest('input')) return;
+          const id = row.getAttribute('data-expand');
+          state.expandedGroups[id] = !state.expandedGroups[id];
+          renderPermissions();
+        };
+      });
+      $('workspace').querySelectorAll('[data-pscreen]').forEach(chk => {
+        chk.onchange = () => setPerm(chk.getAttribute('data-pscreen'), chk.getAttribute('data-pkey'), chk.checked);
+      });
+      $('workspace').querySelectorAll('[data-pparent]').forEach(chk => {
+        chk.onchange = () => {
+          const gid = chk.getAttribute('data-pparent');
+          const key = chk.getAttribute('data-pkey');
+          const group = state.permTree.find(g => g.id === gid);
+          if (!group) return;
+          group.children.forEach(c => {
+            if (c.applicable[key]) setPerm(c.id, key, chk.checked, { silent: true });
+          });
+          if (group.applicable[key]) setPerm(group.id, key, chk.checked, { silent: true });
+          renderPermissions();
+        };
+      });
+    }
+
+    function confirmSavePermissions() {
+      const n = permChangeCount();
+      if (!n) return;
+      if (state.permRole.protected) return showProtectedRoleModal();
+
+      const grouped = {};
+      Object.keys(state.permChanges).forEach(sid => {
+        const screen = findScreen_(sid) || { id: sid, name: sid, group: '기타' };
+        const groupName = screen.group || '기타';
+        if (!grouped[groupName]) grouped[groupName] = [];
+        Object.keys(state.permChanges[sid]).forEach(key => {
+          const col = state.permColumns.find(c => c.key === key);
+          grouped[groupName].push({
+            screenName: screen.name,
+            permName: col ? col.label : key,
+            added: !!state.permChanges[sid][key]
+          });
+        });
+      });
+
+      const items = Object.keys(grouped).map(groupName => `
+        <div class="perm-change-group">
+          <div class="perm-change-group-title">${escapeHtml(groupName)}</div>
+          ${grouped[groupName].map(item => `
+            <div class="summary-card is-changed perm-change-item">
+              <div>
+                <strong>${escapeHtml(item.screenName)}</strong>
+                <div class="meta">${escapeHtml(item.permName)}</div>
+              </div>
+              <span class="${item.added ? 'badge-add' : 'badge-remove'}">${item.added ? '추가' : '제거'}</span>
+            </div>`).join('')}
+        </div>`).join('');
+
+      openModal(`
+        <div class="modal">
+          <div class="modal-header">
+            <h2>권한 변경사항 저장</h2>
+            <button class="btn btn-ghost" type="button" id="modalClose">✕</button>
+          </div>
+          <div class="modal-body">
+            <p>${escapeHtml(state.permRole.name)} 역할의 권한 변경 ${n}개를 저장하시겠습니까?</p>
+            ${items}
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" type="button" id="modalCancel">취소</button>
+            <button class="btn btn-primary" type="button" id="modalConfirm">권한 변경 저장</button>
+          </div>
+        </div>`);
+      $('modalClose').onclick = $('modalCancel').onclick = closeModal;
+      $('modalConfirm').onclick = async () => {
+        try {
+          const res = await api('savePermissionChanges', {
+            roleId: state.permRoleId,
+            changes: state.permChanges
+          });
+          closeModal();
+          if (!res.ok && res.code === 'PROTECTED_ROLE') {
+            showProtectedRoleModal();
+            return;
+          }
+          toast(res.message || '저장되었습니다.');
+          await loadPermissions(state.permRoleId);
+        } catch (err) {
+          toast(err.message || String(err));
+        }
+      };
+    }
+
+    function findScreen_(id) {
+      for (let i = 0; i < state.permTree.length; i++) {
+        const g = state.permTree[i];
+        if (g.id === id) return g;
+        for (let j = 0; j < g.children.length; j++) {
+          if (g.children[j].id === id) return g.children[j];
+        }
+      }
+      return null;
+    }
+
+    init();
+  </script>
+</body>
 </html>
