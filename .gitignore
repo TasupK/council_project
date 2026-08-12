@@ -2,3 +2,5 @@ node_modules/
 .clasprc.json
 .npm-cache/
 .worktrees/
+.clasp.json
+docs/
