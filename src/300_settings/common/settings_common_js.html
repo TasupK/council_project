@@ -1,0 +1,74 @@
+<script>
+  // 1. 설정 서버 API 호출
+  function callSettingsApi(functionName) {
+    var args = Array.prototype.slice.call(arguments, 1);
+    return new Promise(function (resolve, reject) {
+      google.script.run
+        .withSuccessHandler(function (result) {
+          resolve(parseSettingsApiResult(result));
+        })
+        .withFailureHandler(function (error) {
+          reject(
+            new Error(error && error.message ? error.message : String(error)),
+          );
+        })
+        [functionName].apply(google.script.run, args);
+    });
+  }
+
+  function parseSettingsApiResult(result) {
+    if (typeof result !== "string") return result;
+    try {
+      return JSON.parse(result);
+    } catch (error) {
+      return result;
+    }
+  }
+
+  // 2. 공통 사용자 및 상태 표시
+  function applySettingsShell(data) {
+    if (!data.session || !data.session.isAdmin) {
+      throw new Error("설정 화면은 시스템 관리자만 이용할 수 있습니다.");
+    }
+    var user = data.currentUser || {};
+    var app = data.app || {};
+    var database = data.database || {};
+    getAppElement("appUserName").textContent = user.name || "운영자";
+    getAppElement("appUserTitle").textContent = user.title || "관리자";
+    getAppElement("appTerm").innerHTML =
+      "<option>" + escapeSettingsHtml(app.term || "2026학년도") + "</option>";
+    getSettingsElement("statusBar").textContent =
+      "시스템 " + (app.version || "") + " · Google Sheets DB 연결됨";
+    return database;
+  }
+
+  function showSettingsContent() {
+    var loading = getSettingsElement("panel-loading");
+    var content = getSettingsElement("panel-content");
+    if (loading) loading.classList.remove("active");
+    if (content) content.classList.add("active");
+  }
+
+  function showSettingsError(error) {
+    var loading = getSettingsElement("panel-loading");
+    if (!loading) return;
+    loading.innerHTML =
+      '<div class="placeholder-page"><strong>초기화 실패</strong><p>' +
+      escapeSettingsHtml(error.message || error) +
+      "</p></div>";
+  }
+
+  // 3. 설정 문자열 처리
+  function escapeSettingsHtml(value) {
+    return String(value == null ? "" : value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  // 4. 설정 DOM 조회
+  function getSettingsElement(id) {
+    return document.getElementById(id);
+  }
+</script>

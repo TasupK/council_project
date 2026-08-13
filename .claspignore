@@ -1,0 +1,6 @@
+.git/**
+.gitignore
+.worktrees/**
+docs/**
+README.md
+.clasp.json

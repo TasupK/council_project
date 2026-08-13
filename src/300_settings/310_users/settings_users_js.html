@@ -1,0 +1,91 @@
+<script>
+  var settingsUsers = [];
+  var settingsRoles = [];
+
+  function renderSettingsUsers() {
+    var query = getSettingsElement("userQ").value.trim().toLowerCase();
+    var roleId = getSettingsElement("userRole").value;
+    var status = getSettingsElement("userStatus").value;
+    var filtered = settingsUsers.filter(function (user) {
+      var text = String(user.name || "") + " " + String(user.email || "");
+      var matchesQuery = !query || text.toLowerCase().indexOf(query) !== -1;
+      var matchesRole = !roleId || (user.roleIds || []).indexOf(roleId) !== -1;
+      var matchesStatus = !status || user.status === status;
+      return matchesQuery && matchesRole && matchesStatus;
+    });
+    var rows = filtered.map(function (user) {
+      var roles = (user.roles || [])
+        .map(function (role) {
+          return role.name;
+        })
+        .join(", ");
+      return (
+        "<tr><td>" +
+        escapeSettingsHtml(user.name) +
+        "</td><td>" +
+        escapeSettingsHtml(user.email) +
+        "</td><td>" +
+        escapeSettingsHtml(user.studentId) +
+        "</td><td>" +
+        escapeSettingsHtml(user.phone) +
+        "</td><td>" +
+        escapeSettingsHtml(user.department) +
+        "</td><td>" +
+        escapeSettingsHtml(roles) +
+        "</td><td>" +
+        escapeSettingsHtml(user.status === "active" ? "활성" : "비활성") +
+        "</td><td>" +
+        escapeSettingsHtml(user.updatedAt || "-") +
+        "</td></tr>"
+      );
+    });
+    getSettingsElement("userTbody").innerHTML =
+      rows.join("") || '<tr><td colspan="8">사용자가 없습니다.</td></tr>';
+    getSettingsElement("userCountLabel").textContent =
+      "사용자 " + filtered.length + "명";
+    getSettingsElement("userFooterTotal").textContent =
+      "총 " + filtered.length + "명";
+  }
+
+  async function loadSettingsUsers() {
+    try {
+      var data = await callSettingsApi("loadSettingsUsersData");
+      if (!data || !data.ok)
+        throw new Error(
+          data && data.message
+            ? data.message
+            : "사용자 데이터를 불러오지 못했습니다.",
+        );
+      applySettingsShell(data);
+      settingsUsers = data.users || [];
+      settingsRoles = data.roles || [];
+      getSettingsElement("userRole").innerHTML += settingsRoles
+        .map(function (role) {
+          return (
+            '<option value="' +
+            escapeSettingsHtml(role.id) +
+            '">' +
+            escapeSettingsHtml(role.name) +
+            "</option>"
+          );
+        })
+        .join("");
+      renderSettingsUsers();
+      showSettingsContent();
+    } catch (error) {
+      showSettingsError(error);
+    }
+  }
+
+  getSettingsElement("userQ").oninput = renderSettingsUsers;
+  getSettingsElement("userRole").onchange = renderSettingsUsers;
+  getSettingsElement("userStatus").onchange = renderSettingsUsers;
+  getSettingsElement("userReset").onclick = function () {
+    getSettingsElement("userQ").value = "";
+    getSettingsElement("userRole").value = "";
+    getSettingsElement("userStatus").value = "";
+    renderSettingsUsers();
+  };
+  // TODO: saveUserChanges 서버 함수 구현 후 사용자 저장 기능 연결
+  loadSettingsUsers();
+</script>

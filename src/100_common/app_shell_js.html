@@ -1,0 +1,33 @@
+<script>
+// 1. 공통 사용자 정보 표시
+getAppElement('appUserName').textContent = APP_USER_NAME || '운영자';
+getAppElement('appUserTitle').textContent = APP_USER_TITLE || '사용자';
+
+// 2. 공통 페이지 링크 및 활성 메뉴 연결
+getAppElement('appNavMain').href = buildAppPageUrl('main');
+getAppElement('appNavSettings').href = buildAppPageUrl('settings');
+setAppActiveNavigation(APP_CURRENT_PAGE);
+
+if (APP_IS_ADMIN) {
+  getAppElement('appNavSettings').classList.remove('hidden');
+}
+
+function setAppActiveNavigation(page) {
+  var mainLink = getAppElement('appNavMain');
+  var settingsLink = getAppElement('appNavSettings');
+  mainLink.classList.toggle('active', page === 'main');
+  settingsLink.classList.toggle('active', page.indexOf('settings') === 0);
+}
+
+// 3. 공통 웹앱 페이지 URL 생성
+function buildAppPageUrl(page) {
+  var url = new URL(WEB_APP_URL || window.location.href);
+  url.searchParams.set('page', page);
+  return url.toString();
+}
+
+// 4. 공통 DOM 조회
+function getAppElement(id) {
+  return document.getElementById(id);
+}
+</script>

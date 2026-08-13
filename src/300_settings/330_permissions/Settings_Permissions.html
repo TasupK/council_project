@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <base target="_top" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>업무 권한 설정</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <?!= include('100_common/App_Styles'); ?>
+    <script>
+      var WEB_APP_URL = "<?= getWebAppUrl() ?>";
+      var APP_USER_NAME = <?!= JSON.stringify(mainUserName || '') ?>;
+      var APP_USER_TITLE = <?!= JSON.stringify(mainUserTitle || '') ?>;
+      var APP_IS_ADMIN = <?!= JSON.stringify(!!isAdmin) ?>;
+      var APP_CURRENT_PAGE = <?!= JSON.stringify(currentPage || 'settings_permissions') ?>;
+    </script>
+  </head>
+  <body class="app-mode">
+    <div class="app">
+      <?!= include('100_common/App_Header'); ?>
+      <div class="body">
+        <?!= include('100_common/App_Sidebar'); ?>
+        <main class="main">
+          <?!= include('300_settings/330_permissions/Settings_Permissions_View'); ?>
+        </main>
+      </div>
+      <footer class="status-bar" id="statusBar">시스템 준비 중…</footer>
+    </div>
+    <?!= include('100_common/app_shell_js'); ?>
+    <?!= include('300_settings/common/settings_common_js'); ?><?!= include('300_settings/330_permissions/settings_permissions_js'); ?>
+  </body>
+</html>

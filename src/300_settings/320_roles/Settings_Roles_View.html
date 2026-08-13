@@ -1,0 +1,53 @@
+<header class="page-header">
+  <div>
+    <p class="crumb">설정 / 사용자·권한 / 역할 관리</p>
+    <h1 class="page-title">역할 관리</h1>
+  </div>
+  <button class="btn btn-primary" type="button" disabled>
+    역할 추가 준비 중
+  </button>
+</header>
+<div class="workspace">
+  <div class="page-panel active" id="panel-loading">
+    <div class="loading">역할 불러오는 중…</div>
+  </div>
+  <div class="page-panel" id="panel-content">
+    <div class="toolbar">
+      <input
+        class="search-field"
+        id="roleQ"
+        type="search"
+        placeholder="역할명 또는 설명 검색"
+      /><select class="select" id="roleType">
+        <option value="">구분 전체</option>
+        <option value="default">기본 역할</option>
+        <option value="custom">사용자 정의</option></select
+      ><select class="select" id="roleStatus">
+        <option value="">상태 전체</option>
+        <option value="active">활성</option>
+        <option value="inactive">비활성</option></select
+      ><button class="btn btn-secondary" id="roleReset" type="button">
+        초기화
+      </button>
+      <div class="count-label" id="roleCountLabel">역할 0개</div>
+    </div>
+    <div class="table-wrap">
+      <table class="data">
+        <thead>
+          <tr>
+            <th>역할명</th>
+            <th>구분</th>
+            <th>설명</th>
+            <th>배정 사용자</th>
+            <th>상태</th>
+            <th>최근 변경</th>
+          </tr>
+        </thead>
+        <tbody id="roleTbody"></tbody>
+      </table>
+      <div class="table-footer">
+        <span id="roleFooterTotal">총 0개</span><span>1 / 1</span>
+      </div>
+    </div>
+  </div>
+</div>

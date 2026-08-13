@@ -1,0 +1,28 @@
+<script>
+// 1. 로그인 성공 시 이동할 메인 페이지 연결
+getElement('loginButton').href = buildPageUrl('main');
+
+// 2. 로그인 실패 메시지 표시
+if (LOGIN_ERROR) {
+  setLoginAlert(LOGIN_ERROR);
+}
+
+// 3. 웹앱 페이지 URL 생성
+function buildPageUrl(page) {
+  var appUrl = WEB_APP_URL || window.location.href;
+  var url = new URL(appUrl);
+  url.searchParams.set('page', page);
+  return url.toString();
+}
+
+function setLoginAlert(message) {
+  var alert = getElement('loginAlert');
+  alert.textContent = message;
+  alert.classList.add('show');
+}
+
+// 5. DOM 조회
+function getElement(id) {
+  return document.getElementById(id);
+}
+</script>
