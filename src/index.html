@@ -574,8 +574,8 @@
       $('summaryNotifications').innerHTML = state.data.notifications.map(n => {
         let v = state.base[n.id];
         let channel = (key) => v[key] 
-          ? `<span style="color:var(--green); font-weight:700;">● 켜짐</span>` 
-          : `<span style="color:var(--muted);">○ 꺼짐</span>`;
+          ? `<span style="font-size: 16px;" title="켜짐">🔔</span>` 
+          : `<span style="font-size: 16px; opacity: 0.5;" title="꺼짐">🔕</span>`;
         return `
           <div class="n-row">
             <span class="n-name">${esc(n.name)}</span>
@@ -592,7 +592,7 @@
       $('modalNotifications').innerHTML = state.data.notifications.map(n => {
         let p = state.pending[n.id], v = p || state.base[n.id], cl = 'n-row' + (p ? ' changed' : '') + (p && p.error ? ' failed' : '');
         let channel = (key) => n.required 
-          ? `<span class="locked">●&nbsp; 켜짐 · 잠금</span>` 
+          ? `<span class="locked" style="font-size: 16px;" title="필수(잠금)">🔔🔒</span>` 
           : `<span class="${p && p[key] !== state.base[n.id][key] ? 'changed-cell' : ''}">${p && p[key] !== state.base[n.id][key] ? '변경&nbsp; ' : ''}<label class="toggle"><input type="checkbox" data-id="${n.id}" data-channel="${key}" ${v[key] ? 'checked' : ''}><span class="slider"></span></label></span>`;
         return `
           <div class="${cl}">
@@ -709,7 +709,7 @@
       if (!ids.length) return;
       $('saveList').innerHTML = ids.map(id => {
         let n = state.data.notifications.find(x => x.id === id), v = state.pending[id];
-        return `<strong>${esc(n.name)}</strong><br>앱 내 알림 ${v.inApp ? '켜짐' : '꺼짐'} · Gmail ${v.gmail ? '켜짐' : '꺼짐'}`;
+        return `<strong>${esc(n.name)}</strong><br>앱 내 알림: ${v.inApp ? '🔔' : '🔕'} · Gmail: ${v.gmail ? '🔔' : '🔕'}`;
       }).join('<hr style="border:0; border-top:1px solid #dde1e6; margin:12px 0;">');
       $('saveModal').classList.add('open');
     }
