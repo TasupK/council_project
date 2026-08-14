@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>행사 등록·수정</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <?!= include('100_common/App_Styles'); ?>
+  <?!= include('600_event/common/Event_Styles'); ?>
+  <script>
+    var WEB_APP_URL = '<?= getWebAppUrl() ?>';
+    var APP_USER_NAME = <?!= JSON.stringify(mainUserName || '') ?>;
+    var APP_USER_TITLE = <?!= JSON.stringify(mainUserTitle || '') ?>;
+    var APP_IS_ADMIN = <?!= JSON.stringify(!!isAdmin) ?>;
+    var APP_CURRENT_PAGE = <?!= JSON.stringify(currentPage || 'event') ?>;
+    var APP_RESOURCE_ID = <?!= JSON.stringify(resourceId || '') ?>;
+  </script>
+</head>
+<body class="app-mode">
+  <div class="app">
+    <?!= include('100_common/App_Header'); ?>
+    <div class="body">
+      <?!= include('100_common/App_Sidebar'); ?>
+      <main class="main event-main">
+        <?!= include('600_event/610_form/Event_Form_View'); ?>
+      </main>
+    </div>
+    <footer class="status-bar">시스템 v0.7 · Google Sheets DB 연결형</footer>
+  </div>
+  <?!= include('100_common/app_shell_js'); ?>
+  <?!= include('600_event/common/event_common_js'); ?>
+  <?!= include('600_event/610_form/event_form_js'); ?>
+</body>
+</html>

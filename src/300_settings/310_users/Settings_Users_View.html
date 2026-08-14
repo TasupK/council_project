@@ -1,0 +1,53 @@
+<header class="page-header">
+  <div>
+    <p class="crumb">설정 / 사용자·권한 / 사용자 관리</p>
+    <h1 class="page-title">사용자 관리</h1>
+  </div>
+  <button class="btn btn-primary" type="button" disabled>
+    사용자 추가 준비 중
+  </button>
+</header>
+<div class="workspace">
+  <div class="page-panel active" id="panel-loading">
+    <div class="loading">사용자 불러오는 중…</div>
+  </div>
+  <div class="page-panel" id="panel-content">
+    <div class="toolbar">
+      <input
+        class="search-field"
+        id="userQ"
+        type="search"
+        placeholder="이름 또는 이메일 검색"
+      /><select class="select" id="userRole">
+        <option value="">역할 전체</option></select
+      ><select class="select" id="userStatus">
+        <option value="">상태 전체</option>
+        <option value="active">활성</option>
+        <option value="inactive">비활성</option></select
+      ><button class="btn btn-secondary" type="button" id="userReset">
+        초기화
+      </button>
+      <div class="count-label" id="userCountLabel">사용자 0명</div>
+    </div>
+    <div class="table-wrap">
+      <table class="data">
+        <thead>
+          <tr>
+            <th>이름</th>
+            <th>Google 계정 이메일</th>
+            <th>학번</th>
+            <th>연락처</th>
+            <th>소속부서</th>
+            <th>역할</th>
+            <th>상태</th>
+            <th>최근변경</th>
+          </tr>
+        </thead>
+        <tbody id="userTbody"></tbody>
+      </table>
+      <div class="table-footer">
+        <span id="userFooterTotal">총 0명</span><span>1 / 1</span>
+      </div>
+    </div>
+  </div>
+</div>

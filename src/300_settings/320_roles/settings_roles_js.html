@@ -1,0 +1,68 @@
+<script>
+  var settingsRoles = [];
+  function renderSettingsRoles() {
+    var query = getSettingsElement("roleQ").value.trim().toLowerCase();
+    var type = getSettingsElement("roleType").value;
+    var status = getSettingsElement("roleStatus").value;
+    var filtered = settingsRoles.filter(function (role) {
+      var text = String(role.name || "") + " " + String(role.description || "");
+      return (
+        (!query || text.toLowerCase().indexOf(query) !== -1) &&
+        (!type || role.type === type) &&
+        (!status || role.status === status)
+      );
+    });
+    getSettingsElement("roleTbody").innerHTML =
+      filtered
+        .map(function (role) {
+          return (
+            "<tr><td>" +
+            escapeSettingsHtml(role.name) +
+            "</td><td>" +
+            escapeSettingsHtml(role.typeLabel || role.type) +
+            "</td><td>" +
+            escapeSettingsHtml(role.description) +
+            "</td><td>" +
+            escapeSettingsHtml(role.assignedCount || 0) +
+            "명</td><td>" +
+            escapeSettingsHtml(role.status === "active" ? "활성" : "비활성") +
+            "</td><td>" +
+            escapeSettingsHtml(role.updatedAt || "-") +
+            "</td></tr>"
+          );
+        })
+        .join("") || '<tr><td colspan="6">역할이 없습니다.</td></tr>';
+    getSettingsElement("roleCountLabel").textContent =
+      "역할 " + filtered.length + "개";
+    getSettingsElement("roleFooterTotal").textContent =
+      "총 " + filtered.length + "개";
+  }
+  async function loadSettingsRoles() {
+    try {
+      var data = await callSettingsApi("loadSettingsRolesData");
+      if (!data || !data.ok)
+        throw new Error(
+          data && data.message
+            ? data.message
+            : "역할 데이터를 불러오지 못했습니다.",
+        );
+      applySettingsShell(data);
+      settingsRoles = data.roles || [];
+      renderSettingsRoles();
+      showSettingsContent();
+    } catch (error) {
+      showSettingsError(error);
+    }
+  }
+  getSettingsElement("roleQ").oninput = renderSettingsRoles;
+  getSettingsElement("roleType").onchange = renderSettingsRoles;
+  getSettingsElement("roleStatus").onchange = renderSettingsRoles;
+  getSettingsElement("roleReset").onclick = function () {
+    getSettingsElement("roleQ").value = "";
+    getSettingsElement("roleType").value = "";
+    getSettingsElement("roleStatus").value = "";
+    renderSettingsRoles();
+  };
+  // TODO: saveRoleChanges 서버 함수 구현 후 역할 저장 기능 연결
+  loadSettingsRoles();
+</script>

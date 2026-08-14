@@ -1,0 +1,63 @@
+<header class="page-header">
+  <div>
+    <p class="crumb">설정 / 사용자·권한 / 업무 권한 설정</p>
+    <h1 class="page-title">업무 권한 설정</h1>
+  </div>
+</header>
+<div class="workspace">
+  <div class="page-panel active" id="panel-loading">
+    <div class="loading">권한 불러오는 중…</div>
+  </div>
+  <div class="page-panel" id="panel-content">
+    <div class="role-panel">
+      <div>
+        <label for="permissionRole">역할</label
+        ><select
+          class="select"
+          id="permissionRole"
+          style="width: 100%"
+        ></select>
+      </div>
+      <div>
+        <label>구분</label>
+        <div class="value" id="permissionRoleType">-</div>
+      </div>
+      <div>
+        <label>상태</label>
+        <div class="value" id="permissionRoleStatus">-</div>
+      </div>
+      <div>
+        <label>배정 사용자</label>
+        <div class="value" id="permissionAssigned">0명</div>
+      </div>
+      <div>
+        <label>최근 저장</label>
+        <div class="value" id="permissionSaved">-</div>
+      </div>
+      <div>
+        <button class="btn btn-primary" type="button" disabled>
+          저장 준비 중
+        </button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table class="data perm-table">
+        <thead>
+          <tr>
+            <th>화면·업무</th>
+            <th>메뉴 접근<span class="th-hint">(자동)</span></th>
+            <th>조회</th>
+            <th>등록 및 수정</th>
+            <th>승인 및 보관</th>
+            <th>다운로드</th>
+          </tr>
+        </thead>
+        <tbody id="permissionTbody"></tbody>
+      </table>
+      <div class="table-footer">
+        <span id="permissionTotal">총 0개 권한 대상</span
+        ><span id="permissionRoleName"></span>
+      </div>
+    </div>
+  </div>
+</div>

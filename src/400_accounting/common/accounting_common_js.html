@@ -1,0 +1,107 @@
+<script>
+var fallbackItems = [];
+var fallbackEvents = [];
+const state = { items: [], events: [], selectedType: '지출', selectedId: null, reconciliation: [], settlement: null, uploadFiles: { reconciliation: [], settlement: [], ledgerEntry: [] }, currentView: 'ledger', ledgerPage: 1, ledgerPageSize: 10, lastSavedId: null, localEvidence: {} };
+const won = new Intl.NumberFormat('ko-KR');
+const currency = function (value) {
+    return `₩${won.format(Number(value || 0))}`;
+};
+const gas = function () {
+    return typeof google !== 'undefined' && google.script && google.script.run;
+};
+
+function callServer(name, arg, fallback, options) {
+    return new Promise(function (resolve, reject) {
+        if (!gas())
+            return resolve(typeof fallback === 'function' ? fallback() : fallback);
+        google.script.run
+            .withSuccessHandler(resolve)
+            .withFailureHandler(function (error) {
+            if (options && options.strict)
+                return reject(error);
+            return resolve(typeof fallback === 'function' ? fallback(error) : fallback);
+        })[name](arg);
+    });
+}
+
+function toast(message) {
+    const el = document.getElementById('toast');
+    el.textContent = message;
+    el.classList.add('show');
+    setTimeout(function () {
+        return el.classList.remove('show');
+    }, 1700);
+}
+
+function setupAccountingPageLinks() {
+    document.querySelectorAll('[data-accounting-page]').forEach(function (link) {
+        link.href = WEB_APP_URL + '?page=' + link.dataset.accountingPage;
+        link.target = '_top';
+    });
+}
+
+function fileLabel(files, emptyText) {
+    if (!files.length)
+        return emptyText;
+    return files.length === 1 ? files[0].name : files[0].name + ' 외 ' + (files.length - 1) + '개';
+}
+
+function escapeHtml(value) {
+    return String(value || '').replace(/[&<>"]/g, function (char) {
+        return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[char]);
+    });
+}
+
+function applyFiles(input, files) {
+    if (!files.length)
+        return;
+    try {
+        const transfer = new DataTransfer();
+        files.forEach(function (file) {
+            return transfer.items.add(file);
+        });
+        input.files = transfer.files;
+    }
+    catch (error) {
+        // 일부 브라우저는 보안상 input.files 대입을 제한합니다. 화면 상태는 별도로 유지합니다.
+    }
+}
+
+function setupFileUpload(config) {
+    const zone = document.getElementById(config.zoneId);
+    const input = document.getElementById(config.inputId);
+    const name = document.getElementById(config.nameId);
+    if (!zone || !input || !name)
+        return;
+    const update = function (files) {
+        const selected = config.multiple ? Array.from(files) : Array.from(files).slice(0, 1);
+        state.uploadFiles[config.key] = selected;
+        name.textContent = fileLabel(selected, '선택된 파일 없음');
+        if (selected.length)
+            toast('파일이 첨부되었습니다.');
+    };
+    input.addEventListener('change', function () {
+        return update(input.files || []);
+    });
+    ['dragenter', 'dragover'].forEach(function (eventName) {
+        zone.addEventListener(eventName, function (event) {
+            event.preventDefault();
+            zone.classList.add('drag-over');
+        });
+    });
+    ['dragleave', 'drop'].forEach(function (eventName) {
+        zone.addEventListener(eventName, function (event) {
+            event.preventDefault();
+            if (eventName === 'dragleave' && zone.contains(event.relatedTarget))
+                return;
+            zone.classList.remove('drag-over');
+        });
+    });
+    zone.addEventListener('drop', function (event) {
+        const files = config.multiple ? Array.from(event.dataTransfer.files || []) : Array.from(event.dataTransfer.files || []).slice(0, 1);
+        applyFiles(input, files);
+        update(files);
+    });
+}
+</script>
+

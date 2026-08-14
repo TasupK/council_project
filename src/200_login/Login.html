@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>학생회 통합 업무관리</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <?!= include('100_common/App_Styles'); ?>
+  <script>
+    var WEB_APP_URL = '<?= getWebAppUrl() ?>';
+    var LOGIN_ERROR = <?!= JSON.stringify(loginError || '') ?>;
+  </script>
+</head>
+<body class="login-mode">
+  <?!= include('200_login/Login_View'); ?>
+  <?!= include('200_login/login_auth_js'); ?>
+</body>
+</html>

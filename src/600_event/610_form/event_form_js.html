@@ -1,0 +1,77 @@
+<script>
+function renderEventForm(event) {
+    var isEdit = Boolean(event);
+    var value = event || { status: '예정' };
+    populateEventForm(document.getElementById('ew-event-form'), value, isEdit);
+  }
+
+function populateEventForm(form, value, isEdit) {
+    var fields = ['name', 'category', 'description', 'applicationStartAt', 'applicationEndAt', 'eventStartAt', 'eventEndAt', 'capacity', 'managerId', 'payerFee', 'nonPayerFee'];
+    fields.forEach(function (name) {
+      if (form.elements[name]) form.elements[name].value = value[name] == null ? '' : value[name];
+    });
+    form.dataset.id = value.id || '';
+    document.getElementById('ew-form-title').textContent = isEdit ? '행사 수정' : '행사 생성';
+    var selectedStatus = value.status || '예정';
+    form.querySelectorAll('[name="status"]').forEach(function (radio) {
+      radio.checked = radio.value === selectedStatus;
+    });
+    var existingMaterial = document.getElementById('ew-existing-material');
+    var materialLink = safeRelatedMaterialLink(value.evidenceFolderId);
+    existingMaterial.hidden = !materialLink;
+    existingMaterial.innerHTML = materialLink ? '기존 자료: ' + materialLink : '';
+  }
+
+function safeRelatedMaterialLink(url) {
+    var text = String(url || '').trim();
+    if (!text) return '';
+    if (!/^https:\/\/(drive|docs)\.google\.com\//i.test(text)) return escapeHtml(text);
+    return '<a href="' + escapeHtml(text) + '" target="_blank" rel="noopener noreferrer">관련자료 열기</a>';
+  }
+
+function readRelatedMaterialFile(form) {
+    var input = form.querySelector('#ew-related-material-file');
+    var file = input && input.files ? input.files[0] : null;
+    if (!file) return Promise.resolve(null);
+    if (file.size > 5 * 1024 * 1024) {
+      return Promise.reject(new Error('관련자료 파일은 최대 5MB까지 업로드할 수 있습니다.'));
+    }
+    return new Promise(function (resolve, reject) {
+      var reader = new FileReader();
+      reader.onload = function () {
+        var result = String(reader.result || '');
+        var commaIndex = result.indexOf(',');
+        if (commaIndex < 0) {
+          reject(new Error('관련자료 파일을 읽을 수 없습니다.'));
+          return;
+        }
+        resolve({
+          name: file.name,
+          mimeType: file.type || 'application/octet-stream',
+          size: file.size,
+          base64: result.slice(commaIndex + 1)
+        });
+      };
+      reader.onerror = function () { reject(new Error('관련자료 파일을 읽을 수 없습니다.')); };
+      reader.readAsDataURL(file);
+    });
+  }
+
+document.getElementById('ew-event-form').addEventListener('submit', function (event) {
+  event.preventDefault();
+  var form = event.target, payload = readForm(form), id = form.dataset.id, saveButton = form.querySelector('button[type="submit"]');
+  saveButton.disabled = true;
+  readRelatedMaterialFile(form).then(function (fileInput) {
+    if (fileInput) payload.relatedMaterialFile = fileInput;
+    return api(id ? 'api_updateEvent' : 'api_createEvent', id ? { id: id, payload: payload } : { payload: payload });
+  }).then(function (saved) { showToast('행사 정보가 저장되었습니다.'); goDetail(saved.id, 'basic'); })
+    .catch(handleError).finally(function () { if (document.contains(saveButton)) saveButton.disabled = false; });
+});
+document.addEventListener('click', function (event) { var button = event.target.closest('[data-action="go-list"]'); if (button) goList(); });
+document.getElementById('ew-related-material-file').addEventListener('change', function (event) {
+  var file = event.target.files && event.target.files[0];
+  document.getElementById('ew-related-material-name').textContent = file ? file.name + ' (' + Math.ceil(file.size / 1024) + 'KB)' : '선택된 파일 없음';
+});
+if (APP_RESOURCE_ID) api('api_getEventForEdit', { id: APP_RESOURCE_ID }).then(renderEventForm).catch(handleError);
+else renderEventForm(null);
+</script>
