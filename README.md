@@ -1,6 +1,8 @@
-# 학생회 통합 업무관리
+# council_project
 
-Google Apps Script + clasp 웹앱 프로젝트
+Google Apps Script + clasp 웹앱 프로젝트.
+
+최근 변경·핵심 동작은 [docs/변경사항-요약.md](docs/변경사항-요약.md)를 보면 됩니다.
 
 ## API 설계 (1차)
 
@@ -46,9 +48,9 @@ Google Apps Script + clasp 웹앱 프로젝트
 
 ## DB 연결 정책
 
-- **지금**: 운영 Drive/DB 미정 → **미리보기 모드** (시드 데이터, 저장 불가)
-- **나중에**: 실제 Google Drive 폴더 ID 전달 → `connectDriveFolder`로 연결
-- 개인 Drive에 임의 생성하던 자동 DB 생성은 **비활성화**
+- **운영 DB**: [사용자_2026](https://docs.google.com/spreadsheets/d/1ofZ0M6lclOZudKp_36WCUk1_7ZjBCS8ACQ0x0dshe7g/edit)
+- 시트: 부서, 사용자, 역할, 권한, 사용자역할, 역할권한, 알림유형, 사용자알림설정, 권한감사로그
+- 앱이 열리지 않으면 해당 시트를 Apps Script 실행 계정과 공유해야 합니다.
 
 ## 로컬 개발
 

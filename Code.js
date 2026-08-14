@@ -7,6 +7,10 @@ var DB_KEY = 'COUNCIL_SETTINGS_DB_V1';
 var SPREADSHEET_ID_KEY = 'COUNCIL_DB_SPREADSHEET_ID';
 var DRIVE_FOLDER_ID_KEY = 'COUNCIL_DRIVE_FOLDER_ID';
 var ADMIN_ROLE_ID = 'role_admin';
+/** 운영 DB: 사용자_2026 (계정·역할·권한) */
+var OPERATIONAL_SPREADSHEET_ID = '1ofZ0M6lclOZudKp_36WCUk1_7ZjBCS8ACQ0x0dshe7g';
+/** 운영 DB: 학생회_운영_2026 (학년도·장부·회비·행사) */
+var OPERATIONAL_OPS_SPREADSHEET_ID = '1EI8MbFx2HSuizl0QFygRAZydYiv77W-6pQO10mRN55E';
 /** 1차 API 정의 시트 (기능 설계 참조용) */
 var API_SPEC_SPREADSHEET_ID = '1XUPJO-tY3wI4SSb8lWORL084Y4QNSNGgPmaIU8sgzzE';
 var PERM_KEYS = ['menu', 'view', 'edit', 'approve', 'export'];
@@ -18,14 +22,37 @@ var PERM_COLUMNS = [
   { key: 'export', label: '다운로드' }
 ];
 var SHEETS = {
-  meta: '메타',
   departments: '부서',
-  roles: '역할',
   users: '사용자',
-  screens: '화면',
-  permissions: '권한',
-  permissionMeta: '권한저장이력'
+  roles: '역할',
+  permissionCatalog: '권한',
+  userRoles: '사용자역할',
+  rolePermissions: '역할권한',
+  notificationTypes: '알림유형',
+  userNotifications: '사용자알림설정',
+  auditLogs: '권한감사로그'
 };
+var ACTION_TO_KEY = {
+  '메뉴 접근': 'menu',
+  '조회': 'view',
+  '등록 및 수정': 'edit',
+  '승인 및 보관': 'approve',
+  '다운로드': 'export'
+};
+var KEY_TO_ACTION = {
+  menu: '메뉴 접근',
+  view: '조회',
+  edit: '등록 및 수정',
+  approve: '승인 및 보관',
+  export: '다운로드'
+};
+var PAGE_PERMISSION_DEFS = [
+  { id: 'home', area: '메인화면', actions: ['조회'] },
+  { id: 'ledger', area: '장부관리', actions: ['조회', '등록 및 수정', '승인 및 보관', '다운로드'] },
+  { id: 'fee', area: '학생회비관리', actions: ['조회', '등록 및 수정', '승인 및 보관', '다운로드'] },
+  { id: 'event', area: '행사복지관리', actions: ['조회', '등록 및 수정', '승인 및 보관', '다운로드'] },
+  { id: 'settings', area: '설정', actions: ['조회', '등록 및 수정', '승인 및 보관', '다운로드'] }
+];
 
 function toClient_(obj) {
   return JSON.parse(JSON.stringify(obj == null ? {} : obj));
@@ -39,23 +66,27 @@ function fail_(code, message, extra) {
   return toClient_(Object.assign({ ok: false, code: code || 'ERROR', message: message || '오류가 발생했습니다.' }, extra || {}));
 }
 
-function isDbConfigured_() {
+function getConfiguredSpreadsheetId_() {
   var props = PropertiesService.getScriptProperties();
-  var folderId = props.getProperty(DRIVE_FOLDER_ID_KEY);
-  var sheetId = props.getProperty(SPREADSHEET_ID_KEY);
-  if (!folderId || !sheetId) return false;
+  return props.getProperty(SPREADSHEET_ID_KEY) || OPERATIONAL_SPREADSHEET_ID;
+}
+
+function isDbConfigured_() {
+  var id = getConfiguredSpreadsheetId_();
+  if (!id) return false;
   try {
-    SpreadsheetApp.openById(sheetId);
+    SpreadsheetApp.openById(id);
     return true;
   } catch (e) {
     return false;
   }
 }
 
-/** 운영 Drive 미연결 시 예전 임시 스프레드시트 ID 정리 */
+/** 예전 임시 시트 ID만 정리. 운영 DB ID는 유지 */
 function cleanupOrphanDbLink_() {
   var props = PropertiesService.getScriptProperties();
-  if (!props.getProperty(DRIVE_FOLDER_ID_KEY) && props.getProperty(SPREADSHEET_ID_KEY)) {
+  var id = props.getProperty(SPREADSHEET_ID_KEY);
+  if (id && id !== OPERATIONAL_SPREADSHEET_ID && !props.getProperty(DRIVE_FOLDER_ID_KEY)) {
     props.deleteProperty(SPREADSHEET_ID_KEY);
   }
 }
@@ -104,7 +135,7 @@ function loadAllData() {
     dbMode: getDbMode_(),
     app: {
       name: '학생회 통합 업무관리',
-      version: 'v0.5',
+      version: 'v0.7',
       term: meta.term || '2026학년도',
       baseDate: meta.baseDate || '',
       syncStatus: info.connected ? 'Google Sheets DB 연결됨' : '미리보기(운영 Drive 미연결)'
@@ -115,17 +146,21 @@ function loadAllData() {
       type: 'Google Sheets',
       spreadsheetId: info.spreadsheetId || '',
       spreadsheetUrl: info.spreadsheetUrl || '',
+      opsSpreadsheetId: OPERATIONAL_OPS_SPREADSHEET_ID,
+      opsSpreadsheetUrl: 'https://docs.google.com/spreadsheets/d/' + OPERATIONAL_OPS_SPREADSHEET_ID + '/edit',
+      opsConnected: !!(meta.ops && meta.ops.connected),
       folderId: PropertiesService.getScriptProperties().getProperty(DRIVE_FOLDER_ID_KEY) || '',
       error: info.error || ''
     },
     session: {
       email: email,
       isAdmin: isAdmin,
-      preview: getDbMode_() === 'preview'
+      preview: getDbMode_() === 'preview',
+      allowedPages: (current.permissions && current.permissions.allowedPages) || []
     },
     currentUser: current.user || {},
     academicYears: apiV1_getAcademicYearList().items || [],
-    departments: db.departments && db.departments.length ? db.departments : createSeedDb_().departments,
+    departments: departmentNames_(db),
     users: users,
     roles: roles,
     permissionTree: tree,
@@ -176,6 +211,10 @@ function apiV1_checkLogin() {
 
   var db = ensureDb_();
   var user = findUserByEmail_(db, email);
+  if (!user && getDbMode_() === 'connected') {
+    db = provisionCurrentUser_(db, email);
+    user = findUserByEmail_(db, email);
+  }
 
   if (!user && getDbMode_() === 'preview') {
     return ok_({
@@ -386,25 +425,33 @@ function apiV1_updateMyNotification(payload) {
 /** COM_API_020 학년도 목록 조회 */
 function apiV1_getAcademicYearList() {
   var db = ensureDb_();
+  var ops = db.meta && db.meta.ops ? db.meta.ops : {};
   var current = db.meta.term || '2026학년도';
-  return ok_({
-    current: current,
-    items: [
-      { id: '2026', label: '2026학년도', isCurrent: current.indexOf('2026') >= 0 },
-      { id: '2025', label: '2025학년도', isCurrent: current.indexOf('2025') >= 0 }
-    ]
+  var items = (ops.semesters || []).map(function (s) {
+    return {
+      id: s.id,
+      label: (s.year ? s.year + '학년도 ' : '') + (s.term || s.id),
+      isCurrent: !!s.active
+    };
   });
+  if (!items.length) {
+    items = [{ id: '2026', label: current, isCurrent: true }];
+  }
+  return ok_({ current: current, items: items });
 }
 
 /** COM_API_021 부서 목록 조회 */
 function apiV1_getDepartmentList() {
   var db = ensureDb_();
-  return ok_({
-    total: db.departments.length,
-    items: db.departments.map(function (name, i) {
-      return { id: 'dept_' + (i + 1), name: name, status: 'active' };
-    })
-  });
+  var records = db.departmentRecords || [];
+  var items = records.length
+    ? records.map(function (d) {
+        return { id: d.id, name: d.name, status: d.status || 'active' };
+      })
+    : (db.departments || []).map(function (name, i) {
+        return { id: 'dept_' + (i + 1), name: name, status: 'active' };
+      });
+  return ok_({ total: items.length, items: items });
 }
 
 /** COM_API_022 담당자 목록 조회 */
@@ -470,15 +517,25 @@ function apiV1_listAuditLogs(filters) {
 }
 
 function buildNavForUser_(current) {
+  var allowed = (current && current.permissions && current.permissions.allowedPages) || [];
   var isAdmin = !!(current && current.ok && current.isAdmin);
-  var nav = [
+  var all = [
     { id: 'home', label: '메인화면', group: 'main' },
     { id: 'ledger', label: '장부관리', group: 'main' },
     { id: 'fee', label: '학생회비관리', group: 'main' },
-    { id: 'event', label: '행사복지관리', group: 'main' }
+    { id: 'event', label: '행사복지관리', group: 'main' },
+    { id: 'settings', label: '설정', group: 'system', adminOnly: true }
   ];
-  if (isAdmin) nav.push({ id: 'settings', label: '설정', group: 'system', adminOnly: true });
-  return nav;
+  return all.filter(function (item) {
+    if (isAdmin) return true;
+    return allowed.indexOf(item.id) >= 0;
+  });
+}
+
+function canAccessPage_(permissions, pageId, isAdmin) {
+  if (isAdmin) return true;
+  var allowed = (permissions && permissions.allowedPages) || [];
+  return allowed.indexOf(pageId) >= 0;
 }
 
 function buildUserPermissions_(db, roleIds) {
@@ -493,10 +550,16 @@ function buildUserPermissions_(db, roleIds) {
       });
     });
   });
+  var pageIds = PAGE_PERMISSION_DEFS.map(function (p) { return p.id; });
+  var allowedPages = pageIds.filter(function (id) {
+    var p = merged[id];
+    return p && (p.menu || p.view);
+  });
   var menus = screens.filter(function (s) {
-    return merged[s.id] && merged[s.id].menu;
+    var p = merged[s.id];
+    return p && (p.menu || p.view);
   }).map(function (s) { return { id: s.id, name: s.name, group: s.group }; });
-  return { byScreen: merged, menus: menus };
+  return { byScreen: merged, menus: menus, allowedPages: allowedPages };
 }
 
 function assertAdmin_() {
@@ -516,11 +579,21 @@ function appendAuditLog_(category, actor, summary, detail) {
   if (!isDbConfigured_()) return;
   try {
     var ss = getSpreadsheet_();
-    var sheet = ss.getSheetByName('감사이력') || ss.insertSheet('감사이력');
-    if (sheet.getLastRow() === 0) {
-      sheet.appendRow(['일시', '구분', '수행자', '요약', '상세']);
-    }
-    sheet.appendRow([new Date(), category, actor || '', summary || '', detail || '']);
+    var sheet = ss.getSheetByName(SHEETS.auditLogs);
+    if (!sheet) return;
+    var now = nowStamp_();
+    var email = getActiveUserEmail_() || actor || '';
+    sheet.appendRow([
+      'log_' + Utilities.getUuid().replace(/-/g, '').slice(0, 12),
+      now,
+      email,
+      category || '',
+      '설정',
+      '',
+      '',
+      String(detail || ''),
+      String(summary || '')
+    ]);
   } catch (e) {
     // 감사 이력 실패는 본 업무를 막지 않음
   }
@@ -529,15 +602,15 @@ function appendAuditLog_(category, actor, summary, detail) {
 function readAuditLogs_() {
   if (!isDbConfigured_()) return [];
   try {
-    var sheet = getSpreadsheet_().getSheetByName('감사이력');
-    if (!sheet || sheet.getLastRow() < 2) return [];
-    return sheet.getRange(2, 1, sheet.getLastRow() - 1, 5).getValues().map(function (r) {
+    return readRows_(getSpreadsheet_(), SHEETS.auditLogs).filter(function (r) {
+      return String(r[0] || '').trim();
+    }).map(function (r) {
       return {
-        at: formatCellDate_(r[0]),
-        category: String(r[1] || ''),
+        at: formatCellDate_(r[1]),
+        category: String(r[3] || ''),
         actor: String(r[2] || ''),
-        summary: String(r[3] || ''),
-        target: String(r[4] || '')
+        summary: String(r[8] || ''),
+        target: String(r[5] || '')
       };
     }).reverse();
   } catch (e) {
@@ -619,7 +692,7 @@ function getUsers(filters) {
     total: list.length,
     users: list,
     roles: db.roles.map(summarizeRole_),
-    departments: db.departments
+    departments: departmentNames_(db)
   });
 }
 
@@ -629,7 +702,7 @@ function saveUserChanges(payload) {
   var newUsers = payload.newUsers || [];
   var db = ensureDb_();
   var now = today_();
-  var actor = db.meta.currentUser.name;
+  var actor = getActiveUserEmail_() || db.meta.currentUser.name;
 
   newUsers.forEach(function (nu) {
     validateUserInput_(nu, true);
@@ -637,14 +710,17 @@ function saveUserChanges(payload) {
       throw new Error('이미 등록된 이메일입니다: ' + nu.email);
     }
     db.users.push({
-      id: nextId_(db, 'user'),
+      id: String(nu.email).trim().toLowerCase(),
       name: String(nu.name).trim(),
       email: String(nu.email).trim().toLowerCase(),
       studentId: String(nu.studentId || '').trim(),
       phone: String(nu.phone || '').trim(),
       department: nu.department,
+      departmentId: departmentIdByName_(db, nu.department),
       roleIds: normalizeRoleIds_(nu.roleIds || nu.roleId),
       status: nu.status === 'inactive' ? 'inactive' : 'active',
+      createdAt: now,
+      createdBy: actor,
       updatedAt: now,
       updatedBy: actor,
       isNew: false
@@ -668,7 +744,10 @@ function saveUserChanges(payload) {
     }
     if (ch.studentId != null) user.studentId = String(ch.studentId).trim();
     if (ch.phone != null) user.phone = String(ch.phone).trim();
-    if (ch.department != null) user.department = ch.department;
+    if (ch.department != null) {
+      user.department = ch.department;
+      user.departmentId = departmentIdByName_(db, ch.department);
+    }
     if (ch.roleIds != null || ch.roleId != null) {
       user.roleIds = normalizeRoleIds_(ch.roleIds || ch.roleId);
     }
@@ -712,7 +791,7 @@ function saveRoleChanges(payload) {
   var newRoles = payload.newRoles || [];
   var db = ensureDb_();
   var now = today_();
-  var actor = db.meta.currentUser.name;
+  var actor = getActiveUserEmail_() || db.meta.currentUser.name;
 
   newRoles.forEach(function (nr) {
     if (!nr.name || !String(nr.name).trim()) throw new Error('역할명을 입력하세요.');
@@ -723,6 +802,8 @@ function saveRoleChanges(payload) {
       description: String(nr.description || '').trim(),
       status: nr.status === 'inactive' ? 'inactive' : 'active',
       protected: false,
+      createdAt: now,
+      createdBy: actor,
       updatedAt: now,
       updatedBy: actor
     });
@@ -853,272 +934,552 @@ function setupDatabase() {
     counts: {
       users: db.users.length,
       roles: db.roles.length,
-      screens: db.screens.length
+      screens: (db.screens || []).length
     }
   };
 }
 
-/** ---------- Google Sheets DB ---------- */
+/** ---------- Google Sheets DB (사용자_2026 스키마) ---------- */
 
 function ensureDb_() {
   if (!isDbConfigured_()) {
     return createSeedDb_();
   }
   var ss = getSpreadsheet_();
-  if (!hasInitializedSheets_(ss)) {
-    var seed = createSeedDb_();
-    var legacy = readLegacyPropertiesDb_();
-    if (legacy) seed = mergeDbDefaults_(legacy, seed);
-    writeDbToSheet_(ss, seed);
-    return seed;
-  }
-  var db = mergeDbDefaults_(readDbFromSheet_(ss), createSeedDb_());
-  if (!userSheetHasStudentColumns_(ss)) {
-    writeDbToSheet_(ss, db);
-  }
-  return db;
-}
-
-function mergeDbDefaults_(db, fallback) {
-  fallback = fallback || createSeedDb_();
-  db = db || {};
-  var meta = db.meta || {};
-  var currentUser = meta.currentUser || fallback.meta.currentUser;
-  return {
-    meta: {
-      term: meta.term || fallback.meta.term,
-      baseDate: meta.baseDate || fallback.meta.baseDate,
-      seq: {
-        user: (meta.seq && meta.seq.user) || (fallback.meta.seq && fallback.meta.seq.user) || 0,
-        role: (meta.seq && meta.seq.role) || (fallback.meta.seq && fallback.meta.seq.role) || 0
-      },
-      currentUser: {
-        name: (currentUser && currentUser.name) || '운영자',
-        title: (currentUser && currentUser.title) || '관리자'
-      }
-    },
-    departments: (db.departments && db.departments.length) ? db.departments : fallback.departments,
-    roles: (db.roles && db.roles.length) ? db.roles : fallback.roles,
-    users: (db.users && db.users.length) ? db.users : fallback.users,
-    screens: (db.screens && db.screens.length) ? db.screens : fallback.screens,
-    permissions: db.permissions || fallback.permissions || {},
-    permissionMeta: db.permissionMeta || fallback.permissionMeta || {}
-  };
+  PropertiesService.getScriptProperties().setProperty(SPREADSHEET_ID_KEY, ss.getId());
+  return readOperationalDb_(ss);
 }
 
 function saveDb_(db) {
   assertWritableDb_();
-  writeDbToSheet_(getSpreadsheet_(), db);
+  writeOperationalDb_(getSpreadsheet_(), db);
 }
 
 function getSpreadsheet_() {
-  var id = PropertiesService.getScriptProperties().getProperty(SPREADSHEET_ID_KEY);
+  var id = getConfiguredSpreadsheetId_();
   if (!id) throw new Error('운영 DB가 연결되지 않았습니다.');
   return SpreadsheetApp.openById(id);
 }
 
-/** @deprecated 자동 생성하지 않음 — connectDriveFolder / connectSpreadsheet 사용 */
 function getOrCreateSpreadsheet_() {
   return getSpreadsheet_();
 }
 
 function getSpreadsheetInfo_() {
-  var id = PropertiesService.getScriptProperties().getProperty(SPREADSHEET_ID_KEY) || '';
+  var id = getConfiguredSpreadsheetId_() || '';
+  var connected = false;
+  var error = '';
+  if (id) {
+    try {
+      SpreadsheetApp.openById(id);
+      connected = true;
+    } catch (e) {
+      error = e && e.message ? e.message : String(e);
+    }
+  }
   return {
-    connected: !!id,
+    connected: connected,
     type: 'Google Sheets',
     spreadsheetId: id,
     spreadsheetUrl: id ? ('https://docs.google.com/spreadsheets/d/' + id + '/edit') : '',
-    error: ''
+    error: error
   };
 }
 
-function hasInitializedSheets_(ss) {
-  return !!(ss.getSheetByName(SHEETS.users) && ss.getSheetByName(SHEETS.roles));
+function departmentNames_(db) {
+  return (db.departmentRecords || []).filter(function (d) {
+    return d.status === 'active' && d.name;
+  }).sort(function (a, b) {
+    return (a.order || 0) - (b.order || 0);
+  }).map(function (d) { return d.name; });
 }
 
-function readLegacyPropertiesDb_() {
-  var props = PropertiesService.getScriptProperties();
-  var raw = props.getProperty(DB_KEY);
-  if (!raw) return null;
-  try {
-    var db = JSON.parse(raw);
-    props.deleteProperty(DB_KEY);
-    return db;
-  } catch (e) {
-    return null;
-  }
+function departmentIdByName_(db, name) {
+  var found = (db.departmentRecords || []).filter(function (d) { return d.name === name; })[0];
+  return found ? found.id : '';
 }
 
-function writeDbToSheet_(ss, db) {
-  writeSheet_(ss, SHEETS.meta, ['키', '값'], [
-    ['term', db.meta.term],
-    ['baseDate', db.meta.baseDate],
-    ['currentUserName', db.meta.currentUser.name],
-    ['currentUserTitle', db.meta.currentUser.title],
-    ['seqUser', db.meta.seq.user || 0],
-    ['seqRole', db.meta.seq.role || 0]
-  ]);
-
-  writeSheet_(ss, SHEETS.departments, ['부서명', '순서'], db.departments.map(function (name, i) {
-    return [name, i + 1];
-  }));
-
-  writeSheet_(ss, SHEETS.roles, ['ID', '역할명', '구분', '설명', '상태', '보호됨', '변경일', '변경자'], db.roles.map(function (r) {
-    return [r.id, r.name, r.type, r.description || '', r.status, !!r.protected, r.updatedAt || '', r.updatedBy || ''];
-  }));
-
-  writeSheet_(ss, SHEETS.users, ['ID', '이름', '이메일', '학번', '연락처', '소속부서', '역할ID', '상태', '변경일', '변경자'], db.users.map(function (u) {
-    return [u.id, u.name, u.email, u.studentId || '', u.phone || '', u.department || '', (u.roleIds || []).join(','), u.status, u.updatedAt || '', u.updatedBy || ''];
-  }));
-
-  writeSheet_(ss, SHEETS.screens, ['ID', '화면명', '상위ID', '그룹', '메뉴', '조회', '등록수정', '승인처리', '출력다운로드'], db.screens.map(function (s) {
-    var a = s.applicable || {};
-    return [s.id, s.name, s.parentId || '', s.group || '', !!a.menu, !!a.view, !!a.edit, !!a.approve, !!a.export];
-  }));
-
-  var permRows = [];
-  Object.keys(db.permissions || {}).forEach(function (roleId) {
-    var byScreen = db.permissions[roleId] || {};
-    Object.keys(byScreen).forEach(function (screenId) {
-      var p = byScreen[screenId] || {};
-      permRows.push([roleId, screenId, !!p.menu, !!p.view, !!p.edit, !!p.approve, !!p.export]);
-    });
-  });
-  writeSheet_(ss, SHEETS.permissions, ['역할ID', '화면ID', '메뉴', '조회', '등록수정', '승인처리', '출력다운로드'], permRows);
-
-  var metaRows = Object.keys(db.permissionMeta || {}).map(function (roleId) {
-    var m = db.permissionMeta[roleId] || {};
-    return [roleId, m.savedAt || '', m.savedBy || ''];
-  });
-  writeSheet_(ss, SHEETS.permissionMeta, ['역할ID', '저장일', '저장자'], metaRows);
-
-  removeDefaultSheet_(ss);
+function departmentNameById_(db, id) {
+  var found = (db.departmentRecords || []).filter(function (d) { return d.id === id; })[0];
+  return found ? found.name : '';
 }
 
-function readDbFromSheet_(ss) {
-  var metaMap = readKeyValueSheet_(ss, SHEETS.meta);
-  var departmentRows = readRows_(ss, SHEETS.departments);
-  var roleRows = readRows_(ss, SHEETS.roles);
-  var screenRows = readRows_(ss, SHEETS.screens);
-  var permRows = readRows_(ss, SHEETS.permissions);
-  var permMetaRows = readRows_(ss, SHEETS.permissionMeta);
-
-  var departments = departmentRows
-    .sort(function (a, b) { return Number(a[1] || 0) - Number(b[1] || 0); })
-    .map(function (r) { return String(r[0] || '').trim(); })
-    .filter(Boolean);
-
-  var roles = roleRows.map(function (r) {
+function readOperationalDb_(ss) {
+  var deptRows = nonemptyRows_(readRows_(ss, SHEETS.departments));
+  var departmentRecords = deptRows.map(function (r) {
     return {
-      id: String(r[0]),
-      name: String(r[1] || ''),
-      type: String(r[2] || 'custom'),
-      description: String(r[3] || ''),
-      status: String(r[4] || 'active'),
-      protected: asBool_(r[5]),
-      updatedAt: formatCellDate_(r[6]),
-      updatedBy: String(r[7] || '')
+      id: String(r[0] || '').trim(),
+      name: String(r[1] || '').trim(),
+      description: String(r[2] || '').trim(),
+      status: asActiveStatus_(r[3]),
+      order: Number(r[4] || 0),
+      createdAt: formatCellDate_(r[5]),
+      createdBy: String(r[6] || ''),
+      updatedAt: formatCellDate_(r[7])
+    };
+  }).filter(function (d) { return d.id || d.name; });
+
+  var roleRows = nonemptyRows_(readRows_(ss, SHEETS.roles));
+  var roles = roleRows.map(function (r) {
+    var system = asBool_(r[4]);
+    return {
+      id: String(r[0] || '').trim(),
+      name: String(r[1] || '').trim(),
+      description: String(r[2] || '').trim(),
+      status: asActiveStatus_(r[3]),
+      protected: system,
+      type: system ? 'default' : 'custom',
+      createdAt: formatCellDate_(r[5]),
+      createdBy: String(r[6] || ''),
+      updatedAt: formatCellDate_(r[7]),
+      updatedBy: String(r[6] || '')
     };
   }).filter(function (r) { return r.id; });
 
-  var userSheet = readSheetWithHeader_(ss, SHEETS.users);
-  var uh = userSheet.headers;
-  var hasStudentCol = uh.indexOf('학번') >= 0;
-  var iUserId = colIndex_(uh, 'ID', 0);
-  var iUserName = colIndex_(uh, '이름', 1);
-  var iUserEmail = colIndex_(uh, '이메일', 2);
-  var iStudentId = colIndex_(uh, '학번', -1);
-  var iPhone = colIndex_(uh, '연락처', -1);
-  var iDept = colIndex_(uh, '소속부서', hasStudentCol ? 5 : 3);
-  var iRoleIds = colIndex_(uh, '역할ID', hasStudentCol ? 6 : 4);
-  var iUserStatus = colIndex_(uh, '상태', hasStudentCol ? 7 : 5);
-  var iUserUpdatedAt = colIndex_(uh, '변경일', hasStudentCol ? 8 : 6);
-  var iUserUpdatedBy = colIndex_(uh, '변경자', hasStudentCol ? 9 : 7);
-
-  var users = userSheet.rows.map(function (r, idx) {
-    var studentId = iStudentId >= 0 ? String(r[iStudentId] || '').trim() : '';
-    var phone = iPhone >= 0 ? String(r[iPhone] || '').trim() : '';
-    if (!studentId) studentId = String(20260001 + idx);
-    if (!phone) phone = '010-0000-' + ('000' + (idx + 1)).slice(-4);
+  var userRoleRows = nonemptyRows_(readRows_(ss, SHEETS.userRoles)).map(function (r) {
     return {
-      id: String(r[iUserId] || ''),
-      name: String(r[iUserName] || ''),
-      email: String(r[iUserEmail] || '').trim().toLowerCase(),
-      studentId: studentId,
-      phone: phone,
-      department: String(r[iDept] || ''),
-      roleIds: String(r[iRoleIds] || '').split(',').map(function (x) { return x.trim(); }).filter(Boolean),
-      status: String(r[iUserStatus] || 'active'),
-      updatedAt: formatCellDate_(r[iUserUpdatedAt]),
-      updatedBy: String(r[iUserUpdatedBy] || '')
+      id: String(r[0] || '').trim(),
+      email: String(r[1] || '').trim().toLowerCase(),
+      roleId: String(r[2] || '').trim(),
+      assignStatus: String(r[3] || '').trim(),
+      assignedAt: formatCellDate_(r[4]),
+      assignedBy: String(r[5] || ''),
+      releasedAt: formatCellDate_(r[6]),
+      releasedBy: String(r[7] || ''),
+      releaseReason: String(r[8] || '')
     };
-  }).filter(function (u) { return u.id; });
+  }).filter(function (x) { return x.email && x.roleId; });
 
-  var screens = screenRows.map(function (r) {
+  var rolesByEmail = {};
+  userRoleRows.forEach(function (ur) {
+    if (ur.assignStatus && ur.assignStatus !== '활성') return;
+    if (!rolesByEmail[ur.email]) rolesByEmail[ur.email] = [];
+    if (rolesByEmail[ur.email].indexOf(ur.roleId) === -1) rolesByEmail[ur.email].push(ur.roleId);
+  });
+
+  var userRows = nonemptyRows_(readRows_(ss, SHEETS.users));
+  var users = userRows.map(function (r) {
+    var email = String(r[0] || '').trim().toLowerCase();
+    var deptId = String(r[4] || '').trim();
     return {
-      id: String(r[0]),
-      name: String(r[1] || ''),
-      parentId: String(r[2] || '').trim() || null,
-      group: String(r[3] || ''),
-      applicable: {
-        menu: asBool_(r[4]),
-        view: asBool_(r[5]),
-        edit: asBool_(r[6]),
-        approve: asBool_(r[7]),
-        export: asBool_(r[8])
-      }
+      id: email,
+      email: email,
+      name: String(r[1] || '').trim(),
+      studentId: String(r[2] || '').trim(),
+      phone: String(r[3] || '').trim(),
+      departmentId: deptId,
+      department: departmentNameById_({ departmentRecords: departmentRecords }, deptId),
+      status: asActiveStatus_(r[5]),
+      createdAt: formatCellDate_(r[6]),
+      createdBy: String(r[7] || ''),
+      inactiveAt: formatCellDate_(r[8]),
+      inactiveBy: String(r[9] || ''),
+      inactiveReason: String(r[10] || ''),
+      updatedAt: formatCellDate_(r[11]),
+      updatedBy: String(r[7] || ''),
+      roleIds: rolesByEmail[email] || []
     };
-  }).filter(function (s) { return s.id; });
+  }).filter(function (u) { return u.email; });
 
-  if (!screens.length) screens = buildScreenCatalog_();
+  var catalog = nonemptyRows_(readRows_(ss, SHEETS.permissionCatalog)).map(function (r) {
+    return {
+      id: String(r[0] || '').trim(),
+      area: String(r[1] || '').trim(),
+      action: String(r[2] || '').trim(),
+      name: String(r[3] || '').trim(),
+      description: String(r[4] || '').trim(),
+      active: asBool_(r[5])
+    };
+  }).filter(function (p) { return p.id; });
+  catalog = ensurePagePermissionCatalog_(catalog);
 
+  var rolePermRows = nonemptyRows_(readRows_(ss, SHEETS.rolePermissions));
   var permissions = {};
-  permRows.forEach(function (r) {
-    var roleId = String(r[0] || '');
-    var screenId = String(r[1] || '');
-    if (!roleId || !screenId) return;
+  var permIdToAreaKey = {};
+  catalog.forEach(function (p) {
+    var key = ACTION_TO_KEY[p.action];
+    if (!key) return;
+    permIdToAreaKey[p.id] = { areaId: areaId_(p.area), key: key };
+  });
+  rolePermRows.forEach(function (r) {
+    var roleId = String(r[0] || '').trim();
+    var permId = String(r[1] || '').trim();
+    if (!roleId || !permId) return;
     if (!permissions[roleId]) permissions[roleId] = {};
-    permissions[roleId][screenId] = {
-      menu: asBool_(r[2]),
-      view: asBool_(r[3]),
-      edit: asBool_(r[4]),
-      approve: asBool_(r[5]),
-      export: asBool_(r[6])
-    };
+    var mapped = permIdToAreaKey[permId];
+    if (!mapped) return;
+    if (!permissions[roleId][mapped.areaId]) permissions[roleId][mapped.areaId] = emptyPerm_();
+    permissions[roleId][mapped.areaId][mapped.key] = true;
+  });
+
+  var screens = screensFromCatalog_(catalog);
+  roles.forEach(function (role) {
+    if (!role.protected) return;
+    if (!permissions[role.id]) permissions[role.id] = {};
+    screens.forEach(function (s) {
+      if (!permissions[role.id][s.id]) permissions[role.id][s.id] = emptyPerm_();
+      PERM_KEYS.forEach(function (k) {
+        if (s.applicable && s.applicable[k]) permissions[role.id][s.id][k] = true;
+      });
+    });
   });
 
   var permissionMeta = {};
-  permMetaRows.forEach(function (r) {
-    var roleId = String(r[0] || '');
+  rolePermRows.forEach(function (r) {
+    var roleId = String(r[0] || '').trim();
     if (!roleId) return;
     permissionMeta[roleId] = {
-      savedAt: formatCellDate_(r[1]),
-      savedBy: String(r[2] || '')
+      savedAt: formatCellDate_(r[2]),
+      savedBy: String(r[3] || '')
     };
   });
 
+  var ops = readOpsConfig_();
+  var actor = getActiveUserEmail_() || 'system';
+  var term = ops.settings && ops.settings['학년도']
+    ? String(ops.settings['학년도']).replace(/\.0$/, '') + '학년도'
+    : '2026학년도';
+  var baseDate = (ops.settings && (ops.settings['운영시작일'] || ops.settings['회계시작일'])) || today_();
   return {
     meta: {
-      term: metaMap.term || '2026학년도',
-      baseDate: metaMap.baseDate || today_(),
-      seq: {
-        user: Number(metaMap.seqUser || users.length || 0),
-        role: Number(metaMap.seqRole || roles.length || 0)
-      },
-      currentUser: {
-        name: metaMap.currentUserName || '운영자',
-        title: metaMap.currentUserTitle || '관리자'
-      }
+      term: term,
+      baseDate: baseDate,
+      seq: { user: users.length, role: roles.length },
+      currentUser: { name: actor, title: '관리자' },
+      ops: ops
     },
-    departments: departments.length ? departments : ['운영국', '회계국', '복지국', '감사위원회', '대외협력국'],
+    departmentRecords: departmentRecords,
+    departments: departmentRecords.map(function (d) { return d.name; }).filter(Boolean),
     roles: roles,
     users: users,
+    userRoles: userRoleRows,
+    permissionCatalog: catalog,
     screens: screens,
     permissions: permissions,
     permissionMeta: permissionMeta
   };
 }
+
+function writeOperationalDb_(ss, db) {
+  var actor = getActiveUserEmail_() || (db.meta && db.meta.currentUser && db.meta.currentUser.name) || '';
+  var now = today_();
+
+  writeDataSheet_(ss, SHEETS.departments,
+    ['부서ID', '부서명', '부서설명', '활성여부', '표시순서', '등록일시', '등록자이메일', '수정일시'],
+    (db.departmentRecords || []).map(function (d, i) {
+      return [
+        d.id || ('dept_' + (i + 1)),
+        d.name || '',
+        d.description || '',
+        asFlag_(d.status === 'active'),
+        d.order || (i + 1),
+        d.createdAt || now,
+        d.createdBy || actor,
+        d.updatedAt || now
+      ];
+    })
+  );
+
+  writeDataSheet_(ss, SHEETS.roles,
+    ['역할ID', '역할명', '역할설명', '활성여부', '시스템역할여부', '등록일시', '등록자이메일', '수정일시'],
+    (db.roles || []).map(function (r) {
+      return [
+        r.id,
+        r.name || '',
+        r.description || '',
+        asFlag_(r.status === 'active'),
+        asFlag_(!!r.protected || r.type === 'default'),
+        r.createdAt || now,
+        r.createdBy || actor,
+        r.updatedAt || now
+      ];
+    })
+  );
+
+  writeDataSheet_(ss, SHEETS.users,
+    ['Google이메일', '성명', '학번', '연락처', '부서ID', '활성여부', '등록일시', '등록자이메일', '비활성일시', '비활성처리자이메일', '비활성사유', '최종수정일시'],
+    (db.users || []).map(function (u) {
+      var deptId = u.departmentId || departmentIdByName_(db, u.department);
+      var inactive = u.status !== 'active';
+      return [
+        u.email,
+        u.name || '',
+        u.studentId || '',
+        u.phone || '',
+        deptId || '',
+        asFlag_(!inactive),
+        u.createdAt || now,
+        u.createdBy || actor,
+        inactive ? (u.inactiveAt || now) : '',
+        inactive ? (u.inactiveBy || actor) : '',
+        inactive ? (u.inactiveReason || '') : '',
+        u.updatedAt || now
+      ];
+    })
+  );
+
+  var userRoleRows = syncUserRoleRows_(db, actor, now);
+  writeDataSheet_(ss, SHEETS.userRoles,
+    ['사용자역할ID', 'Google이메일', '역할ID', '배정상태', '배정일시', '배정자이메일', '해제일시', '해제자이메일', '해제사유'],
+    userRoleRows.map(function (ur) {
+      return [
+        ur.id,
+        ur.email,
+        ur.roleId,
+        ur.assignStatus || '활성',
+        ur.assignedAt || now,
+        ur.assignedBy || actor,
+        ur.releasedAt || '',
+        ur.releasedBy || '',
+        ur.releaseReason || ''
+      ];
+    })
+  );
+
+  writeDataSheet_(ss, SHEETS.permissionCatalog,
+    ['권한ID', '업무영역', '행위', '권한명', '권한설명', '활성여부'],
+    (db.permissionCatalog || []).map(function (p) {
+      return [p.id, p.area || '', p.action || '', p.name || '', p.description || '', asFlag_(p.active !== false)];
+    })
+  );
+
+  var rolePermRows = [];
+  Object.keys(db.permissions || {}).forEach(function (roleId) {
+    var byArea = db.permissions[roleId] || {};
+    Object.keys(byArea).forEach(function (areaId) {
+      var flags = byArea[areaId] || {};
+      PERM_KEYS.forEach(function (key) {
+        if (!flags[key]) return;
+        var permId = catalogPermId_(db, areaId, key);
+        if (!permId) return;
+        var meta = db.permissionMeta[roleId] || {};
+        rolePermRows.push([roleId, permId, meta.savedAt || now, meta.savedBy || actor]);
+      });
+    });
+  });
+  writeDataSheet_(ss, SHEETS.rolePermissions,
+    ['역할ID', '권한ID', '등록일시', '등록자이메일'],
+    rolePermRows
+  );
+}
+
+function syncUserRoleRows_(db, actor, now) {
+  var existing = (db.userRoles || []).slice();
+  var byKey = {};
+  existing.forEach(function (ur) {
+    byKey[ur.email + '|' + ur.roleId] = ur;
+  });
+  (db.users || []).forEach(function (u) {
+    var wanted = u.roleIds || [];
+    wanted.forEach(function (roleId) {
+      var key = u.email + '|' + roleId;
+      if (byKey[key] && byKey[key].assignStatus === '활성') return;
+      if (byKey[key]) {
+        byKey[key].assignStatus = '활성';
+        byKey[key].assignedAt = now;
+        byKey[key].assignedBy = actor;
+        byKey[key].releasedAt = '';
+        byKey[key].releasedBy = '';
+        byKey[key].releaseReason = '';
+      } else {
+        var row = {
+          id: 'user_role_' + String(u.email).split('@')[0] + '_' + roleId,
+          email: u.email,
+          roleId: roleId,
+          assignStatus: '활성',
+          assignedAt: now,
+          assignedBy: actor
+        };
+        existing.push(row);
+        byKey[key] = row;
+      }
+    });
+    existing.forEach(function (ur) {
+      if (ur.email !== u.email) return;
+      if (wanted.indexOf(ur.roleId) === -1 && ur.assignStatus === '활성') {
+        ur.assignStatus = '해제';
+        ur.releasedAt = now;
+        ur.releasedBy = actor;
+        ur.releaseReason = '역할 변경';
+      }
+    });
+  });
+  db.userRoles = existing;
+  return existing.filter(function (ur) { return ur.email && ur.roleId; });
+}
+
+function catalogPermId_(db, areaId, key) {
+  var action = KEY_TO_ACTION[key];
+  var found = (db.permissionCatalog || []).filter(function (p) {
+    return areaId_(p.area) === areaId && p.action === action;
+  })[0];
+  return found ? found.id : '';
+}
+
+function ensurePagePermissionCatalog_(catalog) {
+  catalog = catalog || [];
+  var byId = {};
+  catalog.forEach(function (p) { byId[p.id] = true; });
+  PAGE_PERMISSION_DEFS.forEach(function (page) {
+    page.actions.forEach(function (action) {
+      var key = ACTION_TO_KEY[action];
+      var id = page.id + '_' + (key || 'view');
+      if (byId[id]) return;
+      catalog.push({
+        id: id,
+        area: page.area,
+        action: action,
+        name: page.area + ' ' + action,
+        description: page.area + ' 페이지의 ' + action + ' 권한입니다. 조회가 있어야 해당 메뉴에 들어갈 수 있습니다.',
+        active: true
+      });
+      byId[id] = true;
+    });
+  });
+  return catalog;
+}
+
+function readOpsConfig_() {
+  var result = {
+    connected: false,
+    spreadsheetId: OPERATIONAL_OPS_SPREADSHEET_ID,
+    spreadsheetUrl: 'https://docs.google.com/spreadsheets/d/' + OPERATIONAL_OPS_SPREADSHEET_ID + '/edit',
+    settings: {},
+    semesters: [],
+    error: ''
+  };
+  try {
+    var ss = SpreadsheetApp.openById(OPERATIONAL_OPS_SPREADSHEET_ID);
+    result.connected = true;
+    nonemptyRows_(readRows_(ss, '_설정')).forEach(function (r) {
+      var key = String(r[0] || '').trim();
+      if (!key) return;
+      result.settings[key] = formatCellDate_(r[1]) || String(r[1] == null ? '' : r[1]).replace(/\.0$/, '');
+    });
+    nonemptyRows_(readRows_(ss, '학기기준')).forEach(function (r) {
+      var id = String(r[0] || '').trim();
+      if (!id) return;
+      result.semesters.push({
+        id: id,
+        year: String(r[1] || '').replace(/\.0$/, ''),
+        term: String(r[2] || ''),
+        start: formatCellDate_(r[3]),
+        end: formatCellDate_(r[4]),
+        active: asBool_(r[5])
+      });
+    });
+  } catch (e) {
+    result.error = e && e.message ? e.message : String(e);
+  }
+  return result;
+}
+
+function screensFromCatalog_(catalog) {
+  var areas = {};
+  (catalog || []).forEach(function (p) {
+    if (!p.active && p.active !== undefined && p.active !== true) return;
+    if (!p.area) return;
+    var id = areaId_(p.area);
+    if (!areas[id]) {
+      areas[id] = { id: id, name: p.area, parentId: null, group: p.area, applicable: emptyPerm_() };
+    }
+    var key = ACTION_TO_KEY[p.action];
+    if (key) areas[id].applicable[key] = true;
+  });
+  return Object.keys(areas).map(function (k) { return areas[k]; });
+}
+
+function areaId_(name) {
+  var map = {
+    '설정': 'settings',
+    '사용자': 'users',
+    '역할': 'roles',
+    '권한': 'permissions',
+    '메인화면': 'home',
+    '장부관리': 'ledger',
+    '학생회비관리': 'fee',
+    '행사복지관리': 'event'
+  };
+  if (map[name]) return map[name];
+  return String(name || 'area').toLowerCase().replace(/\s+/g, '_');
+}
+
+function nonemptyRows_(rows) {
+  return (rows || []).filter(function (r) {
+    return r && r.some(function (cell) {
+      var s = String(cell == null ? '' : cell).trim();
+      return s && s !== '0';
+    });
+  });
+}
+
+function asActiveStatus_(value) {
+  return asBool_(value) ? 'active' : 'inactive';
+}
+
+function asFlag_(on) {
+  return on ? 1 : 0;
+}
+
+function nowStamp_() {
+  return Utilities.formatDate(new Date(), Session.getScriptTimeZone() || 'Asia/Seoul', 'yyyy-MM-dd HH:mm:ss');
+}
+
+function writeDataSheet_(ss, name, headers, rows) {
+  var sheet = ss.getSheetByName(name);
+  if (!sheet) sheet = ss.insertSheet(name);
+  var lastRow = Math.max(sheet.getLastRow(), 1);
+  var lastCol = Math.max(sheet.getLastColumn(), headers.length);
+  if (lastRow > 1) sheet.getRange(2, 1, lastRow - 1, lastCol).clearContent();
+  sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+  if (rows && rows.length) {
+    sheet.getRange(2, 1, rows.length, headers.length).setValues(rows);
+  }
+}
+
+function provisionCurrentUser_(db, email) {
+  var now = today_();
+  db.users.push({
+    id: email,
+    email: email,
+    name: email.split('@')[0],
+    studentId: '',
+    phone: '',
+    departmentId: '',
+    department: '',
+    roleIds: [ADMIN_ROLE_ID],
+    status: 'active',
+    createdAt: now,
+    createdBy: email,
+    updatedAt: now,
+    updatedBy: email
+  });
+  if (!findById_(db.roles, ADMIN_ROLE_ID)) {
+    db.roles.unshift({
+      id: ADMIN_ROLE_ID,
+      name: '관리자',
+      description: '시스템 관리자',
+      status: 'active',
+      protected: true,
+      type: 'default',
+      createdAt: now,
+      createdBy: email,
+      updatedAt: now,
+      updatedBy: email
+    });
+  }
+  try {
+    saveDb_(db);
+  } catch (e) {
+    // 시트 쓰기 권한이 없으면 메모리에서만 관리자 세션 유지
+  }
+  return db;
+}
+
+function mergeDbDefaults_(db, fallback) {
+  return db || fallback || createSeedDb_();
+}
+
 
 function writeSheet_(ss, name, headers, rows) {
   var sheet = ss.getSheetByName(name) || ss.insertSheet(name);
@@ -1226,6 +1587,11 @@ function createSeedDb_() {
       currentUser: { name: '운영자', title: '관리자' }
     },
     departments: ['운영국', '회계국', '복지국', '감사위원회', '대외협력국'],
+    departmentRecords: ['운영국', '회계국', '복지국', '감사위원회', '대외협력국'].map(function (name, i) {
+      return { id: 'dept_' + (i + 1), name: name, description: '', status: 'active', order: i + 1 };
+    }),
+    permissionCatalog: [],
+    userRoles: [],
     roles: roles,
     users: users,
     screens: screens,
@@ -1298,14 +1664,19 @@ function defaultPermissionsForRole_(roleId, screens) {
 }
 
 function buildPermissionTree_(db) {
-  var roots = db.screens.filter(function (s) { return !s.parentId; });
+  var screens = db.screens && db.screens.length
+    ? db.screens
+    : screensFromCatalog_(db.permissionCatalog || []);
+  if (!screens.length) screens = buildScreenCatalog_();
+  var roots = screens.filter(function (s) { return !s.parentId; });
+  if (!roots.length) roots = screens;
   return roots.map(function (root) {
-    var children = db.screens.filter(function (s) { return s.parentId === root.id; });
+    var children = screens.filter(function (s) { return s.parentId === root.id; });
     return {
       id: root.id,
       name: root.name,
-      group: root.group,
-      applicable: root.applicable,
+      group: root.group || root.name,
+      applicable: root.applicable || emptyPerm_(),
       children: children.map(function (c) {
         return {
           id: c.id,
@@ -1331,7 +1702,7 @@ function enrichUser_(u, db) {
     studentId: u.studentId || '',
     phone: u.phone || '',
     department: u.department,
-    roleIds: u.roleIds.slice(),
+    roleIds: (u.roleIds || []).slice(),
     roles: roles,
     status: u.status,
     updatedAt: u.updatedAt,
@@ -1376,7 +1747,9 @@ function validateUserInput_(nu, requireEmail) {
   if (nu.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(nu.email).trim())) {
     throw new Error('이메일 형식이 올바르지 않습니다.');
   }
-  if (!nu.department) throw new Error('소속·부서를 선택하세요.');
+  if (nu.department) {
+    /* optional when 부서 시트가 비어 있음 */
+  }
   var roleIds = normalizeRoleIds_(nu.roleIds || nu.roleId);
   if (!roleIds.length) throw new Error('역할을 선택하세요.');
 }
