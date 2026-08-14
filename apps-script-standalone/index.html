@@ -1,0 +1,2170 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <base target="_top">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>학생회 통합 업무관리</title>
+    <style>
+      :root {
+        --blue: #0f62fe;
+        --blue-soft: #e5f2ff;
+        --blue-text: #257ad8;
+        --red: #b22626;
+        --red-strong: #da1e28;
+        --pink: #ffd6e0;
+        --yellow: #ffe9b3;
+        --green: #1b7a3d;
+        --green-soft: #d4edda;
+        --bg: #f2f4f8;
+        --line: #dde1e6;
+        --line-dark: #c1c7cd;
+        --muted: #697077;
+        --text: #121619;
+        --panel: #ffffff;
+      }
+
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-width: 1180px;
+        min-height: 100vh;
+        background: var(--bg);
+        color: var(--text);
+        font-family: Inter, Roboto, Arial, sans-serif;
+        letter-spacing: 0;
+      }
+      button, input, select, textarea { font: inherit; }
+      button { cursor: pointer; }
+
+      .app {
+        min-height: 100vh;
+        padding: 64px 0 32px 248px;
+      }
+
+      .topbar {
+        position: fixed;
+        z-index: 20;
+        inset: 0 0 auto 0;
+        height: 64px;
+        display: grid;
+        grid-template-columns: 220px minmax(360px, 640px) 124px 48px 168px;
+        gap: 24px;
+        align-items: center;
+        padding: 0 22px 0 24px;
+        border-bottom: 1px solid var(--line);
+        background: var(--panel);
+      }
+      .brand {
+        color: #001d6c;
+        font-size: 18px;
+        font-weight: 800;
+        white-space: nowrap;
+      }
+      .global-search {
+        height: 40px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 0 12px;
+        border: 1px solid var(--line-dark);
+        background: var(--bg);
+        color: var(--muted);
+        font-size: 14px;
+      }
+      .term {
+        height: 40px;
+        border: 1px solid var(--line-dark);
+        background: var(--panel);
+        color: #21272a;
+        font-size: 14px;
+        font-weight: 650;
+      }
+      .alert {
+        position: relative;
+        width: 48px;
+        height: 48px;
+        border: 0;
+        background: var(--panel);
+        font-size: 21px;
+      }
+      .alert::after {
+        content: "";
+        position: absolute;
+        top: 9px;
+        right: 10px;
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        background: var(--red-strong);
+      }
+      .user {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .avatar {
+        width: 40px;
+        height: 40px;
+        display: grid;
+        place-items: center;
+        border-radius: 999px;
+        background: var(--bg);
+        color: var(--muted);
+      }
+      .user strong {
+        display: block;
+        font-size: 14px;
+      }
+      .user span {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .sidebar {
+        position: fixed;
+        z-index: 10;
+        top: 64px;
+        left: 0;
+        bottom: 32px;
+        width: 248px;
+        padding: 24px 16px;
+        border-right: 1px solid var(--line);
+        background: var(--panel);
+      }
+      .menu, .submenu {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        border: 0;
+        background: var(--panel);
+        color: #212629;
+        text-align: left;
+      }
+      .menu {
+        height: 44px;
+        justify-content: space-between;
+        padding: 0 16px;
+        border-radius: 8px;
+        font-size: 15px;
+        font-weight: 650;
+      }
+      .submenu {
+        height: 40px;
+        justify-content: flex-start;
+        margin-top: 6px;
+        padding: 0 14px 0 32px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 650;
+      }
+      .menu.active, .submenu.active {
+        background: var(--blue-soft);
+        color: var(--blue-text);
+        font-weight: 850;
+      }
+      .sidebar.ledger-collapsed .ledger-submenu {
+        display: none;
+      }
+      .system-menu {
+        position: absolute;
+        left: 16px;
+        right: 16px;
+        bottom: 40px;
+        border-top: 1px solid var(--line);
+        padding-top: 14px;
+      }
+      .system-menu p {
+        margin: 0 0 10px;
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .page-head {
+        height: 112px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 32px;
+        border-bottom: 1px solid var(--line);
+        background: var(--panel);
+      }
+      .breadcrumb {
+        margin: 0 0 8px;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 700;
+      }
+      h1 {
+        margin: 0;
+        font-size: 24px;
+      }
+      .desc {
+        margin: 7px 0 0;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .primary, .secondary, .approve, .danger, .small {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 750;
+      }
+      .primary {
+        min-width: 120px;
+        height: 44px;
+        gap: 10px;
+        border: 2px solid var(--blue);
+        background: var(--blue);
+        color: white;
+      }
+      .secondary {
+        height: 40px;
+        padding: 0 22px;
+        border: 1px solid var(--line-dark);
+        background: white;
+        color: #212629;
+      }
+      .approve {
+        height: 40px;
+        min-width: 120px;
+        border: 1.5px solid var(--green);
+        background: var(--green-soft);
+        color: var(--green);
+      }
+      .danger {
+        height: 40px;
+        min-width: 96px;
+        padding: 0 18px;
+        border: 1.5px solid var(--red);
+        background: var(--red-soft);
+        color: var(--red);
+      }
+      .small {
+        width: 72px;
+        height: 28px;
+        border: 1px solid var(--line-dark);
+        border-radius: 4px;
+        background: white;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .workspace {
+        max-width: 1224px;
+        padding: 32px;
+      }
+      .cards {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+      .card {
+        min-height: 108px;
+        padding: 16px 20px;
+        border-radius: 8px;
+        background: white;
+      }
+      .card.wait { background: var(--yellow); }
+      .card.review { background: var(--pink); }
+      .card p {
+        margin: 0 0 8px;
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 700;
+      }
+      .card strong {
+        font-size: 24px;
+      }
+      .card.count strong {
+        font-size: 28px;
+      }
+
+      .filters {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+      .filters input, .filters select {
+        height: 40px;
+        border: 1px solid var(--line-dark);
+        border-radius: 8px;
+        background: white;
+        color: #212629;
+        font-size: 14px;
+      }
+      .filters input {
+        width: 280px;
+        padding: 0 14px;
+      }
+      .filters select {
+        min-width: 112px;
+        padding: 0 12px;
+      }
+
+      .table-wrap {
+        min-height: 656px;
+        padding: 10px;
+        border: 1px solid var(--line);
+        background: white;
+      }
+      .pagination {
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        margin-top: 12px;
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 750;
+      }
+      .page-icon {
+        width: 34px;
+        height: 34px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--line-dark);
+        border-radius: 999px;
+        background: white;
+        color: #212629;
+        font-size: 22px;
+        line-height: 1;
+        font-weight: 850;
+      }
+      .page-count {
+        min-width: 52px;
+        text-align: center;
+        color: #212629;
+        font-size: 14px;
+        font-weight: 850;
+      }
+      .page-icon:disabled {
+        cursor: not-allowed;
+        opacity: 0.35;
+      }
+      .view-hidden {
+        display: none !important;
+      }
+      .feature-view {
+        display: grid;
+        gap: 16px;
+      }
+      .feature-card {
+        padding: 24px;
+        border: 1px solid var(--line-dark);
+        background: white;
+      }
+      .feature-card h2 {
+        margin: 0 0 14px;
+        font-size: 20px;
+      }
+      .feature-card p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 14px;
+      }
+      .upload-zone-large {
+        min-height: 120px;
+        display: grid;
+        place-items: center;
+        margin: 16px 0;
+        border: 1px solid var(--line-dark);
+        background: #f7f7f7;
+        color: #808080;
+        font-weight: 700;
+        cursor: pointer;
+        transition: border-color 0.16s ease, background 0.16s ease, color 0.16s ease;
+      }
+      .upload-zone-large.drag-over {
+        border-color: var(--blue);
+        background: var(--blue-soft);
+        color: var(--blue-text);
+      }
+      .upload-zone-large input {
+        display: none;
+      }
+      .upload-zone-large span {
+        display: block;
+        text-align: center;
+      }
+      .file-name {
+        margin-top: 8px;
+        color: var(--blue-text);
+        font-size: 13px;
+        font-weight: 850;
+      }
+      .action-row {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .feature-search {
+        width: 320px;
+        height: 40px;
+        padding: 0 14px;
+        border: 1px solid var(--line-dark);
+        border-radius: 4px;
+      }
+      .compact-table {
+        min-height: 0;
+      }
+      .compact-table td,
+      .compact-table th {
+        height: 44px;
+        font-size: 13px;
+      }
+      .status-ok {
+        color: #1a9933;
+        font-weight: 850;
+      }
+      .status-bad {
+        color: #c00;
+        font-weight: 850;
+      }
+      .reconcile-upload-panel {
+        padding: 20px 24px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: white;
+      }
+      .reconcile-upload-copy {
+        display: flex;
+        align-items: baseline;
+        gap: 14px;
+        color: #212629;
+      }
+      .reconcile-upload-copy strong { font-size: 15px; font-weight: 900; }
+      .reconcile-upload-copy span { color: var(--muted); font-size: 12px; font-weight: 700; }
+      .format-help {
+        float: right;
+        margin-top: -18px;
+        color: #4f6280;
+        font-size: 12px;
+        font-weight: 850;
+        text-decoration: none;
+      }
+      .reconcile-upload-row {
+        display: grid;
+        grid-template-columns: 1fr 250px;
+        gap: 28px;
+        align-items: stretch;
+        margin-top: 18px;
+      }
+      .reconcile-dropzone {
+        min-height: 136px;
+        display: grid;
+        place-items: center;
+        gap: 4px;
+        border: 2px dashed #4c84ff;
+        border-radius: 8px;
+        background: #fbfdff;
+        color: #1f2a44;
+        cursor: pointer;
+      }
+      .reconcile-dropzone.drag-over { background: var(--blue-soft); }
+      .reconcile-dropzone input { display: none; }
+      .upload-icon { color: #536d9a; font-size: 42px; line-height: 1; }
+      .upload-main { font-size: 15px; font-weight: 900; }
+      .upload-sub { color: var(--muted); font-size: 12px; font-weight: 700; }
+      .reconcile-run { width: 100%; height: 84px; align-self: center; border-radius: 6px; }
+      .upload-note { margin-top: 12px; color: var(--muted); font-size: 12px; font-weight: 700; }
+      .reconciliation-run-result {
+        margin-top: 12px;
+        padding: 10px 12px;
+        border: 1px solid #d7dfeb;
+        border-radius: 6px;
+        background: #f8fafc;
+        color: #3f4b5d;
+        font-size: 12px;
+        font-weight: 750;
+        line-height: 1.55;
+      }
+      .reconciliation-run-result strong { color: #1f2a44; }
+      .reconciliation-run-result .failed-file { color: var(--red-strong); }
+      .ocr-result-list { display: grid; gap: 8px; margin-top: 10px; }
+      .ocr-result {
+        padding: 10px 12px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: white;
+      }
+      .ocr-result-line { color: #344054; line-height: 1.6; }
+      .ocr-result-line b { color: #1f2a44; }
+      .ocr-result-line .ocr-failed { color: var(--red-strong); }
+      .ocr-raw { margin-top: 7px; }
+      .ocr-raw summary { cursor: pointer; color: var(--blue-text); font-weight: 850; }
+      .ocr-raw pre {
+        max-height: 260px;
+        overflow: auto;
+        margin: 8px 0 0;
+        padding: 12px;
+        border: 1px solid var(--line);
+        border-radius: 4px;
+        background: #f8fafc;
+        color: #20262b;
+        font: 12px/1.55 Consolas, monospace;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+      }
+      .reconcile-filterbar {
+        display: grid;
+        grid-template-columns: 290px 148px 170px 1fr 120px;
+        gap: 14px;
+        align-items: center;
+      }
+      .filter-chip, .reconcile-search {
+        height: 42px;
+        display: flex;
+        align-items: center;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: white;
+        overflow: hidden;
+      }
+      .filter-chip span {
+        height: 100%;
+        min-width: 72px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-right: 1px solid var(--line);
+        background: #f8fafc;
+        color: #212629;
+        font-size: 12px;
+        font-weight: 900;
+      }
+      .filter-chip select, .filter-chip input, .reconcile-search input {
+        height: 100%;
+        border: 0;
+        border-radius: 0;
+        font-size: 12px;
+        font-weight: 750;
+      }
+      .filter-chip select { min-width: 74px; padding: 0 12px; }
+      .date-range input { width: 102px; padding: 0 8px; }
+      .date-range b { color: var(--muted); font-size: 12px; }
+      .reconcile-search input { padding: 0 12px; }
+      .reconcile-search span { width: 42px; color: #56657a; text-align: center; }
+      .reset-filter { width: 100%; padding: 0; }
+      .reconciliation-table-wrap { min-height: 0; padding: 0; border: 0; border-radius: 8px; overflow: hidden; }
+      .reconciliation-table th { height: 54px; background: #f7f8fb; }
+      .reconciliation-table td { height: 66px; }
+      .reconciliation-table th:nth-child(1), .reconciliation-table td:nth-child(1) { width: 90px; }
+      .reconciliation-table th:nth-child(2), .reconciliation-table td:nth-child(2) { width: 64px; }
+      .reconciliation-table th:nth-child(4), .reconciliation-table td:nth-child(4),
+      .reconciliation-table th:nth-child(6), .reconciliation-table td:nth-child(6) { width: 112px; }
+      .reconciliation-table th:nth-child(7), .reconciliation-table td:nth-child(7) { width: 104px; text-align: center; }
+      .reconciliation-table th:nth-child(8), .reconciliation-table td:nth-child(8) { width: 74px; text-align: center; }
+      .reconciliation-table th:nth-child(9), .reconciliation-table td:nth-child(9) { width: 116px; text-align: center; }
+      .reconciliation-table .small { min-width: 88px; padding: 0 10px; white-space: nowrap; font-size: 11px; }
+      .two-line strong, .two-line span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .two-line span { margin-top: 4px; color: #4f5661; font-size: 11px; }
+      .amount-income { color: var(--blue); font-weight: 900; }
+      .amount-expense { color: var(--red-strong); font-weight: 900; }
+      .match-pill { display: inline-flex; min-width: 58px; min-height: 26px; align-items: center; justify-content: center; border-radius: 999px; font-size: 12px; font-weight: 900; }
+      .match-ok { background: var(--green-soft); color: var(--green); }
+      .match-check { background: #fff0c2; color: #c06b00; }
+      .match-bad { background: #ffe8e8; color: var(--red-strong); }
+      .evidence-check { color: #0f9f4d; font-size: 28px; font-weight: 900; }
+      .evidence-missing { color: var(--red-strong); font-size: 30px; font-weight: 900; }
+      .reconcile-table-footer {
+        min-height: 58px;
+        display: grid;
+        grid-template-columns: 1fr auto 120px;
+        align-items: center;
+        gap: 16px;
+        padding: 0 18px;
+        border: 1px solid var(--line);
+        border-top: 0;
+        background: white;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 800;
+      }
+      .reconcile-page { color: #334155; word-spacing: 14px; }
+      .reconcile-page b { display: inline-flex; width: 28px; height: 28px; align-items: center; justify-content: center; border-radius: 6px; background: var(--blue); color: white; word-spacing: 0; }
+      .reconcile-table-footer select { height: 34px; border: 1px solid var(--line); border-radius: 6px; color: #334155; font-size: 12px; }      .settlement-summary-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 16px;
+      }
+      .settlement-summary-card {
+        min-height: 126px;
+        display: grid;
+        grid-template-columns: 52px 1fr;
+        gap: 14px;
+        align-items: center;
+        padding: 22px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: white;
+      }
+      .settlement-summary-card .summary-icon {
+        width: 46px;
+        height: 46px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 999px;
+        font-size: 24px;
+        font-weight: 900;
+      }
+      .settlement-summary-card p { margin: 0 0 6px; color: #212629; font-size: 13px; font-weight: 900; }
+      .settlement-summary-card strong { display: block; font-size: 20px; font-weight: 950; }
+      .settlement-summary-card small { display: block; margin-top: 12px; color: var(--muted); font-size: 12px; font-weight: 750; }
+      .income-card .summary-icon { background: #e8f0ff; color: var(--blue); }
+      .income-card strong { color: var(--blue); }
+      .expense-card .summary-icon { background: #ffe8e8; color: var(--red-strong); }
+      .expense-card strong { color: var(--red-strong); }
+      .balance-card .summary-icon { background: #ddf7e4; color: var(--green); }
+      .balance-card strong { color: var(--green); }
+      .event-card .summary-icon { background: #fff0d3; color: #d87a00; }
+      .settlement-setting-panel {
+        padding: 24px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: white;
+      }
+      .setting-title-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 22px;
+      }
+      .setting-title-row h2 { margin: 0; font-size: 17px; }
+      .settlement-form-row {
+        display: grid;
+        grid-template-columns: 260px 170px 170px minmax(270px, 1fr) 140px;
+        gap: 16px;
+        align-items: end;
+      }
+      .setting-field { display: grid; gap: 8px; min-width: 0; }
+      .setting-field > span { color: #212629; font-size: 12px; font-weight: 900; }
+      .setting-field b { color: var(--red-strong); }
+      .setting-field select, .setting-field input {
+        height: 40px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        color: #212629;
+        font-size: 12px;
+        font-weight: 750;
+      }
+      .settlement-period div {
+        display: grid;
+        grid-template-columns: 1fr 18px 1fr;
+        align-items: center;
+        gap: 8px;
+      }
+      .settlement-period em { color: var(--muted); font-style: normal; text-align: center; }
+      .include-options {
+        min-height: 40px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .include-options label {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        margin: 0;
+        color: #212629;
+        font-size: 12px;
+        font-weight: 850;
+        white-space: nowrap;
+      }
+      .include-options input { width: 16px; height: 16px; accent-color: var(--blue); }
+      .settlement-generate { width: 100%; height: 50px; border-radius: 6px; }      .settlement-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+      }
+      .metric-box {
+        padding: 18px;
+        border: 1px solid var(--line);
+        background: var(--bg);
+      }
+      .metric-box span {
+        display: block;
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 750;
+      }
+      .metric-box strong {
+        display: block;
+        margin-top: 8px;
+        font-size: 22px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+      }
+      th, td {
+        height: 52px;
+        padding: 0 10px;
+        overflow: hidden;
+        text-align: left;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 12px;
+      }
+      th {
+        height: 48px;
+        background: var(--bg);
+        color: #4d4d4d;
+        font-weight: 850;
+      }
+      .sortable-th {
+        width: 100%;
+        height: 100%;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        border: 0;
+        background: transparent;
+        color: inherit;
+        font: inherit;
+        font-weight: inherit;
+        padding: 0;
+        text-align: left;
+      }
+      .sort-mark {
+        min-width: 10px;
+        color: var(--blue);
+        font-size: 11px;
+        font-weight: 900;
+      }
+      td {
+        border: 1px solid #e6e6e6;
+        background: white;
+      }
+      tr.review td { background: var(--pink); }
+      tr.just-created td {
+        background: var(--blue-soft);
+        box-shadow: inset 3px 0 0 var(--blue);
+      }
+      .income { color: var(--blue); font-weight: 850; }
+      .expense { color: var(--red); font-weight: 850; }
+      .muted { color: #808080; }
+      .badge {
+        display: inline-flex;
+        min-width: 72px;
+        height: 28px;
+        align-items: center;
+        justify-content: center;
+        padding: 0 12px;
+        border-radius: 14px;
+        font-size: 12px;
+        font-weight: 850;
+      }
+      .badge.pending { background: var(--yellow); color: var(--text); }
+      .badge.approved { background: var(--green-soft); color: var(--green); }
+      .badge.review { background: var(--pink); color: var(--red-strong); }
+
+      .statusbar a {
+        color: var(--blue-text);
+        font-weight: 850;
+        text-decoration: none;
+      }
+      .statusbar {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        padding: 0 24px;
+        border-top: 1px solid var(--line);
+        background: white;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .backdrop {
+        position: fixed;
+        z-index: 40;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: rgba(18, 22, 25, 0.32);
+      }
+      .backdrop.open { display: flex; }
+      .modal {
+        position: relative;
+        width: 560px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: white;
+        box-shadow: 0 18px 44px rgba(18, 22, 25, 0.18);
+      }
+      .register { min-height: 920px; }
+      .detail {
+        height: min(820px, calc(100vh - 32px));
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+      }
+      .modal-head {
+        height: 73px;
+        margin: 0 28px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid var(--line);
+      }
+      .modal-head h2 {
+        margin: 0;
+        font-size: 20px;
+      }
+      .title-row {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+      .close {
+        width: 28px;
+        height: 28px;
+        border: 0;
+        background: transparent;
+        color: var(--muted);
+        font-size: 22px;
+      }
+      .modal-body { padding: 66px 28px 80px; }
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px 18px;
+      }
+      .field.full { grid-column: 1 / -1; }
+      label, .upload-label {
+        display: block;
+        margin-bottom: 8px;
+        color: #212629;
+        font-size: 13px;
+        font-weight: 850;
+      }
+      input, select, textarea {
+        width: 100%;
+        border: 1px solid var(--line-dark);
+        border-radius: 4px;
+        background: white;
+        color: #212629;
+        font-size: 14px;
+      }
+      .field input, .field select {
+        height: 40px;
+        padding: 0 14px;
+      }
+      textarea {
+        height: 72px;
+        padding: 13px 14px;
+        resize: none;
+      }
+      .segments {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+      .segment {
+        height: 40px;
+        border: 1px solid var(--line-dark);
+        border-radius: 4px;
+        background: white;
+        color: #212629;
+        font-weight: 750;
+      }
+      .segment.expense-on {
+        border-color: var(--pink);
+        background: var(--pink);
+        color: var(--red);
+      }
+      .segment.income-on {
+        border-color: var(--blue-soft);
+        background: var(--blue-soft);
+        color: var(--blue);
+      }
+      .balance {
+        height: 36px;
+        display: flex;
+        align-items: center;
+        margin-top: 8px;
+        padding: 0 14px;
+        border-radius: 4px;
+        background: var(--blue-soft);
+        color: var(--blue-text);
+        font-size: 13px;
+        font-weight: 850;
+      }
+      .upload {
+        height: 120px;
+        display: grid;
+        place-items: center;
+        border: 1px solid var(--line-dark);
+        border-radius: 4px;
+        background: #f8fafc;
+        color: var(--muted);
+        text-align: center;
+      }
+      .upload.drag-over {
+        border-color: var(--blue);
+        background: var(--blue-soft);
+        color: var(--blue-text);
+      }
+      .upload input {
+        display: none;
+      }
+      .upload.clickable {
+        cursor: pointer;
+        transition: border-color 0.16s ease, background 0.16s ease, color 0.16s ease;
+      }
+      .upload.small-upload { height: 88px; }
+      .upload strong {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 13px;
+      }
+      .upload span {
+        color: #999ea6;
+        font-size: 11px;
+      }
+      .evidence-list {
+        display: grid;
+        gap: 12px;
+        margin-top: 10px;
+      }
+      .evidence-preview {
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #f8fafc;
+      }
+      .evidence-preview img {
+        width: 100%;
+        max-height: 210px;
+        display: block;
+        object-fit: contain;
+        background: white;
+      }
+      .evidence-preview-loading {
+        min-height: 180px;
+        display: grid;
+        place-items: center;
+        background: white;
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 800;
+      }      .evidence-preview-meta {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 10px 12px;
+        border-top: 1px solid var(--line);
+      }
+      .evidence-name {
+        overflow: hidden;
+        color: #212629;
+        font-size: 13px;
+        font-weight: 850;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .evidence-download {
+        min-width: 88px;
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--line-dark);
+        border-radius: 6px;
+        background: white;
+        color: var(--blue-text);
+        font-size: 12px;
+        font-weight: 850;
+        text-decoration: none;
+      }
+      .evidence-empty, .evidence-file {
+        min-height: 42px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 0 12px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: #f8fafc;
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 800;
+      }
+      .actions {
+        position: absolute;
+        right: 28px;
+        bottom: 20px;
+        display: flex;
+        gap: 12px;
+      }
+      .detail .actions {
+        left: 28px;
+        right: 28px;
+        gap: 10px;
+      }
+      .detail .actions button {
+        min-width: 0;
+        flex: 1 1 0;
+        height: 44px;
+        padding: 0 10px;
+        border-radius: 4px;
+        font-size: 15px;
+        line-height: 1;
+        white-space: nowrap;
+      }
+      .candidate-modal {
+        width: min(680px, calc(100vw - 32px));
+        max-height: min(760px, calc(100vh - 32px));
+        display: flex;
+        flex-direction: column;
+      }
+      .candidate-body {
+        min-height: 0;
+        overflow-y: auto;
+        padding: 20px 28px 28px;
+      }
+      .candidate-reason {
+        margin: 0 0 16px;
+        padding: 12px 14px;
+        border: 1px solid #efd08a;
+        border-radius: 6px;
+        background: #fff8e5;
+        color: #76520d;
+        font-size: 13px;
+        font-weight: 800;
+        line-height: 1.5;
+      }
+      .candidate-list { display: grid; gap: 10px; }
+      .candidate-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 16px;
+        align-items: center;
+        padding: 14px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+      }
+      .candidate-info { min-width: 0; }
+      .candidate-info strong, .candidate-info span { display: block; }
+      .candidate-info strong { margin-bottom: 5px; color: #20262b; font-size: 14px; }
+      .candidate-info span { overflow-wrap: anywhere; color: var(--muted); font-size: 12px; line-height: 1.5; }
+      .candidate-link { min-width: 86px; white-space: nowrap; }
+      .danger-alert {
+        margin: 18px 28px 20px;
+        padding: 14px 16px;
+        border: 1px solid var(--red-strong);
+        border-radius: 4px;
+        background: var(--pink);
+        color: var(--red-strong);
+        font-size: 13px;
+        font-weight: 850;
+      }
+      .detail-body {
+        min-height: 0;
+        flex: 1 1 auto;
+        overflow-y: auto;
+        padding: 0 28px 96px;
+      }
+      .detail-row {
+        min-height: 36px;
+        display: grid;
+        grid-template-columns: 132px 1fr;
+        align-items: center;
+      }
+      .detail-label {
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 750;
+      }
+      .detail-value {
+        font-size: 14px;
+        font-weight: 800;
+      }
+      .detail-value.expense {
+        color: var(--red);
+        font-size: 16px;
+        font-weight: 900;
+      }
+      .detail-upload { margin-top: 26px; }
+      .toast {
+        position: fixed;
+        z-index: 60;
+        right: 24px;
+        bottom: 48px;
+        display: none;
+        padding: 12px 16px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: white;
+        box-shadow: 0 10px 26px rgba(18, 22, 25, 0.15);
+        font-size: 13px;
+        font-weight: 850;
+      }
+      .toast.show { display: block; }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <header class="topbar">
+        <div class="brand">학생회 통합 업무관리</div>
+        <div class="global-search">⌕ <span>업무·신청자·거래 검색</span></div>
+        <select class="term"><option>2026학년도</option></select>
+        <button class="alert" type="button" aria-label="알림">♢</button>
+        <div class="user"><div class="avatar">♙</div><div><strong>운영자</strong><span>관리자</span></div></div>
+      </header>
+
+      <aside class="sidebar" id="sidebar">
+        <button class="menu" type="button">메인화면</button>
+        <button class="menu active" id="ledgerMenuToggle" type="button" aria-expanded="true"><span>장부관리</span><span id="ledgerMenuIcon">▲</span></button>
+        <button class="submenu active ledger-submenu" type="button" data-view="ledger">수입·지출 관리</button>
+        <button class="submenu ledger-submenu" type="button" data-view="reconciliation">계좌·장부 대조</button>
+        <button class="submenu ledger-submenu" type="button" data-view="settlement">결산 보고서</button>
+        <button class="menu" type="button"><span>학생회비관리</span><span>▼</span></button>
+        <button class="menu" type="button"><span>행사복지관리</span><span>▼</span></button>
+        <div class="system-menu"><p>시스템</p><button class="menu" type="button">설정</button></div>
+      </aside>
+
+      <section class="page-head">
+        <div>
+          <p class="breadcrumb" id="pageBreadcrumb">장부관리 / 수입·지출 관리</p>
+          <h1 id="pageTitle">수입·지출 내역</h1>
+          <p class="desc" id="pageDesc">수입·지출을 검색·필터하고 등록·상세로 이동합니다.</p>
+        </div>
+        <button class="primary" id="openRegister" type="button"><span>＋</span><span>등록</span></button>
+      </section>
+
+      <main class="workspace">
+        <section class="cards ledger-only">
+          <article class="card"><p>현재 잔액</p><strong id="sumIncome">₩0</strong></article>
+          <article class="card"><p>이번 달 총 지출</p><strong id="sumExpense">₩0</strong></article>
+          <article class="card wait count"><p>승인 대기</p><strong id="sumPending">0건</strong></article>
+          <article class="card review count"><p>확인 요청</p><strong id="sumReview">0건</strong></article>
+        </section>
+
+        <section class="filters ledger-only">
+          <input id="keyword" type="search" placeholder="날짜·거래처·적요 검색">
+          <select id="dateSort"><option value="">날짜</option><option value="asc">오름차순</option><option value="desc">내림차순</option></select>
+          <select id="type"><option value="전체">구분</option><option>수입</option><option>지출</option></select>
+          <select id="department"><option value="전체" selected>부서</option></select>
+          <select id="event"><option value="전체" selected>행사</option></select>
+          <select id="status"><option value="전체" selected>상태</option><option>임시저장</option><option>대기</option><option>승인</option><option>확인요청</option></select>
+        </section>
+
+        <section class="table-wrap ledger-only">
+          <table>
+            <colgroup>
+              <col style="width:84px"><col style="width:60px"><col style="width:80px"><col style="width:120px">
+              <col style="width:100px"><col style="width:100px"><col style="width:160px"><col style="width:80px">
+              <col style="width:100px"><col style="width:80px"><col style="width:92px">
+            </colgroup>
+            <thead>
+              <tr>
+                <th><button class="sortable-th" id="dateSortToggle" type="button">날짜 <span class="sort-mark" id="dateSortMark"></span></button></th><th>구분</th><th>부서</th><th>거래처</th><th>수입</th><th>지출</th><th>행사</th><th>증빙</th><th>상태</th><th>담당자</th><th></th>
+              </tr>
+            </thead>
+            <tbody id="rows"></tbody>
+          </table>
+          <div class="pagination" id="ledgerPagination">
+            <button class="page-icon" id="prevLedgerPage" type="button" aria-label="이전 페이지">‹</button>
+            <span class="page-count" id="ledgerPageInfo">1 / 1</span>
+            <button class="page-icon" id="nextLedgerPage" type="button" aria-label="다음 페이지">›</button>
+          </div>
+        </section>
+
+        <section class="feature-view view-hidden" id="reconciliationView">
+          <article class="reconcile-upload-panel">
+            <div class="reconcile-upload-copy">
+              <strong>은행 거래내역 업로드</strong>
+            </div>
+            <a class="format-help" href="#" onclick="return false;">지원 형식 안내 ⓘ</a>
+            <div class="reconcile-upload-row">
+              <label class="reconcile-dropzone" id="reconciliationDropzone" for="reconciliationFile">
+                <input id="reconciliationFile" type="file" accept=".xlsx,.xls,.csv,.pdf,.png,.jpg,.jpeg,.webp" multiple>
+                <span class="upload-icon">⇧</span>
+                <span class="upload-main">파일을 드래그하거나 클릭하여 업로드하세요</span>
+                <span class="upload-sub">Excel(.xlsx), CSV(.csv), PDF, 이미지 파일 업로드 가능합니다.</span>
+                <span class="file-name" id="reconciliationFileName">선택된 파일 없음</span>
+              </label>
+              <button class="primary reconcile-run" id="runReconcile" type="button">대조 실행</button>
+            </div>
+            <div class="upload-note">업로드한 파일은 안전하게 처리되며, 대조 완료 후 자동 삭제됩니다.</div>
+            <div class="reconciliation-run-result" id="reconciliationRunResult" hidden></div>
+          </article>
+
+          <section class="reconcile-filterbar">
+            <label class="filter-chip date-range"><span>거래일</span><input id="reconciliationStartDate" type="date" ><b>~</b><input id="reconciliationEndDate" type="date" ></label>
+            <label class="filter-chip"><span>구분</span><select id="reconciliationType"><option>전체</option><option>지출</option></select></label>
+            <label class="filter-chip"><span>대조 결과</span><select id="reconciliationStatus"><option>전체</option><option>정상</option><option>확인 필요</option><option>장부 누락 의심</option></select></label>
+            <label class="reconcile-search"><input class="feature-search" id="reconciliationSearch" type="search" placeholder="거래처 · 내용 검색"><span>⌕</span></label>
+            <button class="secondary reset-filter" id="resetReconciliationFilters" type="button">필터 초기화</button>
+          </section>
+
+          <section class="table-wrap compact-table reconciliation-table-wrap">
+            <table class="reconciliation-table">
+              <thead><tr><th>거래일</th><th>구분</th><th>거래처 / 내용</th><th>계좌 금액</th><th>연결된 장부</th><th>장부 금액</th><th>대조 결과</th><th>증빙</th><th>관리</th></tr></thead>
+              <tbody id="reconciliationRows"></tbody>
+            </table>
+            <div class="reconcile-table-footer">
+              <span id="reconciliationSummary">총 0건</span>
+              <span class="reconcile-page">‹ <b>1</b> 2 3 4 5 ··· ›</span>
+              <select aria-label="표시 개수"><option>10건씩 보기</option></select>
+            </div>
+          </section>
+        </section>
+
+        <section class="feature-view view-hidden" id="settlementView">
+          <section class="settlement-summary-grid">
+            <article class="settlement-summary-card income-card">
+              <span class="summary-icon">↓</span>
+              <div><p>총 수입</p><strong id="settlementIncome">₩0</strong><small id="settlementIncomeCount">건수 0건</small></div>
+            </article>
+            <article class="settlement-summary-card expense-card">
+              <span class="summary-icon">↑</span>
+              <div><p>총 지출</p><strong id="settlementExpense">₩0</strong><small id="settlementExpenseCount">건수 0건</small></div>
+            </article>
+            <article class="settlement-summary-card balance-card">
+              <span class="summary-icon">₩</span>
+              <div><p>총 잔액(기말)</p><strong id="settlementBalance">₩0</strong><small>(기초 잔액 + 수입 - 지출)</small></div>
+            </article>
+            <article class="settlement-summary-card event-card">
+              <span class="summary-icon">▣</span>
+              <div><p>행사 수</p><strong id="settlementEventCount">0건</strong><small>포함된 행사 기준</small></div>
+            </article>
+          </section>
+
+          <article class="settlement-setting-panel">
+            <div class="setting-title-row">
+              <h2>결산 보고서 설정</h2>
+              <a class="format-help" href="#" onclick="return false;">결산 가이드 ⓘ</a>
+            </div>
+            <div class="settlement-form-row">
+              <label class="setting-field settlement-period"><span>회계 기간 <b>*</b></span><div><input id="settlementStartDate" type="date" value="2026-03-01"><em>~</em><input id="settlementEndDate" type="date" value="2026-05-31"></div></label>
+              <label class="setting-field"><span>대상 장부</span><select id="settlementDepartment"><option>전체 장부</option></select></label>
+              <label class="setting-field"><span>기준</span><select id="settlementBasis"><option>발생일 기준</option><option>등록일 기준</option><option>승인일 기준</option></select></label>
+              <div class="setting-field include-field"><span>보고서 포함 항목</span><div class="include-options"><label><input id="includeIncome" type="checkbox" checked> 수입</label><label><input id="includeExpense" type="checkbox" checked> 지출</label><label><input id="includeBalance" type="checkbox" checked> 잔액</label><label><input id="includeEvidence" type="checkbox" checked> 증빙</label></div></div>
+              <button class="primary settlement-generate" id="generateSettlement" type="button">보고서 생성</button>
+            </div>
+          </article>
+        </section>
+
+      </main>
+      <footer class="statusbar" id="statusbar">시스템 v0.3 · 데이터 동기화 정상 · 기준일 2026-07-31 · <a id="ledgerDbLink" href="#" target="_blank" rel="noopener">DB 시트 확인</a></footer>
+    </div>
+
+    <div class="backdrop" id="registerModal">
+      <section class="modal register">
+        <div class="modal-head"><h2 id="entryModalTitle">수입·지출 등록</h2><button class="close" data-close="registerModal" type="button">×</button></div>
+        <div class="modal-body">
+          <form id="entryForm">
+            <div class="field full">
+              <label>구분 *</label>
+              <div class="segments">
+                <button class="segment expense-on" id="expenseBtn" type="button">지출</button>
+                <button class="segment" id="incomeBtn" type="button">수입</button>
+              </div>
+            </div>
+            <div class="grid">
+              <div class="field"><label>거래일자 *</label><input name="transaction_date" placeholder="연도-월-일" required></div>
+              <div class="field"><label>부서명 *</label><select id="formDepartment" name="department_name" required></select></div>
+              <div class="field"><label>금액 *</label><input name="amount" type="number" min="0" placeholder="금액 입력" required></div>
+              <div class="field"><label>거래처/입금자명 *</label><input name="counterparty" placeholder="거래처/입금자명 입력" required></div>
+              <div class="field full"><label>행사 항목 연결</label><select id="formEvent" name="event_name"></select><div class="balance" id="eventBalance">선택한 행사 잔액: ₩0</div></div>
+              <div class="field full"><label>적요</label><input name="description" placeholder="예: MT 간식 구매"></div>
+              <div class="field full"><label>비고</label><textarea name="note" placeholder="추가 설명 (선택)"></textarea></div>
+              <div class="field full">
+                <span class="upload-label">증빙자료</span>
+                <label class="upload clickable" id="entryEvidenceDropzone" for="entryEvidenceFile">
+                  <input id="entryEvidenceFile" type="file" accept=".png,.jpg,.jpeg,.pdf,.xlsx,.xls,.csv" multiple>
+                  <div><strong>파일을 드래그하거나 클릭해서 업로드</strong><span id="entryEvidenceFileName">선택된 파일 없음</span></div>
+                </label>
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="actions"><button class="secondary" id="draft" type="button">임시저장</button><button class="primary" id="create" type="button">등록하기</button></div>
+      </section>
+    </div>
+
+    <div class="backdrop" id="detailModal">
+      <section class="modal detail">
+        <div class="modal-head">
+          <h2 id="detailTitle">지출 상세</h2>
+          <div class="title-row"><span class="badge pending" id="detailStatus">대기</span><button class="close" data-close="detailModal" type="button">×</button></div>
+        </div>
+        <div class="danger-alert" id="detailAlert">계좌 거래내역과 3,000원 차이가 확인되었습니다.</div>
+        <div class="detail-body">
+          <div id="detailRows"></div>
+          <div class="detail-upload">
+            <span class="upload-label">증빙자료</span>
+            <div class="evidence-list" id="detailEvidenceList"></div>
+          </div>
+        </div>
+        <div class="actions"><button class="approve" id="approve" type="button">승인</button><button class="secondary" id="requestReview" type="button">확인요청</button><button class="secondary" id="requestPending" type="button">검토요청</button><button class="secondary" id="editEntry" type="button">수정</button><button class="danger" id="deleteEntry" type="button">삭제</button></div>
+      </section>
+    </div>
+
+    <div class="backdrop" id="reconciliationCandidateModal">
+      <section class="modal candidate-modal">
+        <div class="modal-head"><h2>장부 후보 확인</h2><button class="close" data-close="reconciliationCandidateModal" type="button">×</button></div>
+        <div class="candidate-body">
+          <p class="candidate-reason" id="candidateReason">후보 장부를 확인해 주세요.</p>
+          <div class="candidate-list" id="candidateList"></div>
+        </div>
+      </section>
+    </div>
+
+    <div class="toast" id="toast">처리되었습니다.</div>
+
+    <script>
+      const fallbackItems = [
+        { transaction_id: 'TRX-20260502-001', transaction_type: '지출', transaction_date: '2026-05-02', department_name: '문화체육국', amount: 120000, counterparty: '이마트', event_name: '봄학기 MT', description: 'MT 간식 구매', note: '계좌 거래내역과 3,000원 차이 확인 필요', manager: '김○○', status: '대기', has_evidence: true, alert: '계좌 거래내역과 3,000원 차이가 확인되었습니다.' },
+        { transaction_id: 'TRX-20260503-001', transaction_type: '수입', transaction_date: '2026-05-03', department_name: '회장단', amount: 50000, counterparty: '홍길동', event_name: '봄학기 MT', description: '참가비 입금', note: '', manager: '이○○', status: '승인', has_evidence: true, alert: '' },
+        { transaction_id: 'TRX-20260504-001', transaction_type: '지출', transaction_date: '2026-05-04', department_name: '홍보국', amount: 35000, counterparty: '카페○○', event_name: '중간고사 간식', description: '간식 행사 음료 구매', note: '증빙자료 누락', manager: '박○○', status: '확인요청', has_evidence: false, alert: '증빙자료가 아직 첨부되지 않았습니다.' },
+        { transaction_id: 'TRX-20260505-001', transaction_type: '수입', transaction_date: '2026-05-05', department_name: '사무국', amount: 200000, counterparty: '토스입금', event_name: '해당없음', description: '운영비 입금', note: '', manager: '최○○', status: '대기', has_evidence: null, alert: '' }
+      ];
+      const fallbackEvents = [
+        { event_id: 'EVT-001', event_name: '봄학기 MT', balance: 340000 },
+        { event_id: 'EVT-002', event_name: '중간고사 간식', balance: 180000 },
+        { event_id: 'EVT-003', event_name: '해당없음', balance: 0 }
+      ];
+      const viewMeta = {
+        ledger: ['장부관리 / 수입·지출 관리', '수입·지출 내역', '수입·지출을 검색·필터하고 등록·상세로 이동합니다.'],
+        reconciliation: ['장부관리 / 계좌·장부 대조', '계좌내역 대조', '은행 거래내역과 장부 내역을 비교하고 불일치 항목을 처리합니다.'],
+        settlement: ['장부관리 / 결산 보고서', '결산 보고서', '수입·지출 집계와 증빙 현황을 기준으로 결산 보고서를 생성합니다.']
+      };
+      const state = { items: [], events: [], selectedType: '지출', selectedId: null, editingId: null, selectedReconciliationId: null, reconciliation: [], settlement: null, uploadFiles: { reconciliation: [], settlement: [], ledgerEntry: [] }, currentView: 'ledger', ledgerPage: 1, ledgerPageSize: 10, lastSavedId: null, localEvidence: {} };
+      const won = new Intl.NumberFormat('ko-KR');
+      const currency = (value) => `₩${won.format(Number(value || 0))}`;
+      const gas = () => typeof google !== 'undefined' && google.script && google.script.run;
+
+      function callServer(name, arg, fallback, options) {
+        return new Promise((resolve, reject) => {
+          if (!gas()) return resolve(typeof fallback === 'function' ? fallback() : fallback);
+          google.script.run
+            .withSuccessHandler(resolve)
+            .withFailureHandler((error) => {
+              if (options && options.strict) return reject(error);
+              return resolve(typeof fallback === 'function' ? fallback(error) : fallback);
+            })[name](arg);
+        });
+      }
+      function optionHtml(values) {
+        return values.map((value) => `<option value="${value}">${value}</option>`).join('');
+      }
+      function filter() {
+        return {
+          keyword: document.getElementById('keyword').value.trim().toLowerCase(),
+          dateSort: document.getElementById('dateSort').value,
+          type: document.getElementById('type').value,
+          department: document.getElementById('department').value,
+          event: document.getElementById('event').value,
+          status: document.getElementById('status').value
+        };
+      }
+      function resetLedgerFilters() {
+        document.getElementById('keyword').value = '';
+        document.getElementById('dateSort').value = '';
+        document.getElementById('type').value = '전체';
+        document.getElementById('department').value = '전체';
+        document.getElementById('event').value = '전체';
+        document.getElementById('status').value = '전체';
+        state.ledgerPage = 1;
+      }
+      function dateSearchTerms(item) {
+        const rawDate = String(item.transaction_date || '');
+        const match = rawDate.match(/^(\d{4})[-./년\s]*(\d{1,2})[-./월\s]*(\d{1,2})/);
+        if (!match) return [rawDate, rawDate.replace(/\D/g, '')].filter(Boolean);
+        const month = String(Number(match[2]));
+        const day = String(Number(match[3]));
+        const paddedMonth = month.padStart(2, '0');
+        const paddedDay = day.padStart(2, '0');
+        return [
+          rawDate,
+          rawDate.replace(/\D/g, ''),
+          match[1] + paddedMonth,
+          paddedMonth,
+          month,
+          paddedMonth + '월',
+          month + '월',
+          paddedDay,
+          day,
+          paddedDay + '일',
+          day + '일'
+        ];
+      }
+      function dateValue(item) {
+        return Date.parse(item.transaction_date || '') || 0;
+      }
+      function sortLedgerItems(items, direction) {
+        if (!direction) return items;
+        return items.slice().sort((a, b) => {
+          const diff = dateValue(a) - dateValue(b);
+          return direction === 'asc' ? diff : -diff;
+        });
+      }
+      function updateDateSortMark(direction) {
+        const mark = document.getElementById('dateSortMark');
+        if (mark) mark.textContent = direction === 'asc' ? '↑' : direction === 'desc' ? '↓' : '';
+      }
+      function filteredItems() {
+        const f = filter();
+        const items = state.items.filter((item) => {
+          const haystack = [
+            ...dateSearchTerms(item),
+            item.counterparty,
+            item.description,
+            item.event_name,
+            item.department_name
+          ].join(' ').toLowerCase();
+          return (!f.keyword || haystack.includes(f.keyword)) &&
+            (f.type === '전체' || item.transaction_type === f.type) &&
+            (!f.department || f.department === '전체' || item.department_name === f.department) &&
+            (!f.event || f.event === '전체' || item.event_name === f.event) &&
+            (!f.status || f.status === '전체' || item.status === f.status);
+        });
+        return sortLedgerItems(items, f.dateSort);
+      }
+      function badgeClass(status) {
+        if (status === '승인') return 'approved';
+        if (status === '확인요청') return 'review';
+        return 'pending';
+      }
+      function renderPagination(totalItems, totalPages) {
+        const pageInfo = document.getElementById('ledgerPageInfo');
+        const prev = document.getElementById('prevLedgerPage');
+        const next = document.getElementById('nextLedgerPage');
+        pageInfo.textContent = state.ledgerPage + ' / ' + totalPages;
+        pageInfo.title = totalItems + '건 중 현재 페이지';
+        prev.disabled = state.ledgerPage <= 1;
+        next.disabled = state.ledgerPage >= totalPages;
+      }
+      function render() {
+        const items = filteredItems();
+        updateDateSortMark(document.getElementById('dateSort').value);
+        const totalPages = Math.max(1, Math.ceil(items.length / state.ledgerPageSize));
+        state.ledgerPage = Math.min(Math.max(1, state.ledgerPage), totalPages);
+        const pageStart = (state.ledgerPage - 1) * state.ledgerPageSize;
+        const pageItems = items.slice(pageStart, pageStart + state.ledgerPageSize);
+        const totalIncome = items.filter((i) => i.transaction_type === '수입').reduce((s, i) => s + i.amount, 0);
+        const totalExpense = items.filter((i) => i.transaction_type === '지출').reduce((s, i) => s + i.amount, 0);
+        document.getElementById('sumIncome').textContent = currency(totalIncome - totalExpense);
+        document.getElementById('sumExpense').textContent = currency(totalExpense);
+        document.getElementById('sumPending').textContent = `${items.filter((i) => i.status === '대기').length}건`;
+        document.getElementById('sumReview').textContent = `${items.filter((i) => i.status === '확인요청').length}건`;
+        document.getElementById('rows').innerHTML = pageItems.length ? pageItems.map((item) => {
+          const income = item.transaction_type === '수입';
+          const evidence = item.has_evidence === true ? 'O' : item.has_evidence === false ? 'X' : '-';
+                    const rowClass = [item.status === '확인요청' ? 'review' : '', item.transaction_id === state.lastSavedId ? 'just-created' : ''].filter(Boolean).join(' ');
+          return `<tr class="${rowClass}">
+            <td>${item.transaction_date}</td><td class="${income ? 'income' : 'expense'}">${item.transaction_type}</td><td>${item.department_name}</td><td>${item.counterparty}</td>
+            <td class="${income ? 'income' : 'muted'}">${income ? won.format(item.amount) : '-'}</td><td class="${income ? 'muted' : 'expense'}">${income ? '-' : won.format(item.amount)}</td>
+            <td>${item.event_name}</td><td><strong>${evidence}</strong></td><td><span class="badge ${badgeClass(item.status)}">${item.status}</span></td><td>${item.manager}</td>
+            <td><button class="small" type="button" data-id="${item.transaction_id}">상세보기</button></td></tr>`;
+        }).join('') : '<tr><td colspan="11" class="muted">표시할 수입·지출 내역이 없습니다.</td></tr>';
+        renderPagination(items.length, totalPages);
+      }
+      function goLedgerPage(page) {
+        const totalPages = Math.max(1, Math.ceil(filteredItems().length / state.ledgerPageSize));
+        state.ledgerPage = Math.min(Math.max(1, page), totalPages);
+        render();
+      }
+      function fillControls() {
+        const departments = [...new Set(state.items.map((i) => i.department_name).filter(Boolean))];
+        const events = [...new Set([...state.events.map((e) => e.event_name), ...state.items.map((i) => i.event_name)].filter(Boolean))];
+        const departmentSelect = document.getElementById('department');
+        const eventSelect = document.getElementById('event');
+        const currentDepartment = departmentSelect.value || '전체';
+        const currentEvent = eventSelect.value || '전체';
+        departmentSelect.innerHTML = '<option value="전체">부서</option>' + optionHtml(departments);
+        eventSelect.innerHTML = '<option value="전체">행사</option>' + optionHtml(events);
+        departmentSelect.value = departments.indexOf(currentDepartment) > -1 ? currentDepartment : '전체';
+        eventSelect.value = events.indexOf(currentEvent) > -1 ? currentEvent : '전체';
+        document.getElementById('formDepartment').innerHTML = optionHtml(departments);
+        document.getElementById('formEvent').innerHTML = optionHtml(state.events.map((e) => e.event_name));
+        updateBalance();
+      }
+      function openModal(id) { document.getElementById(id).classList.add('open'); }
+      function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+      function setType(type) {
+        state.selectedType = type;
+        document.getElementById('expenseBtn').className = type === '지출' ? 'segment expense-on' : 'segment';
+        document.getElementById('incomeBtn').className = type === '수입' ? 'segment income-on' : 'segment';
+      }
+      function updateBalance() {
+        const selected = document.getElementById('formEvent').value;
+        const found = state.events.find((e) => e.event_name === selected) || state.events[0];
+        document.getElementById('eventBalance').textContent = `선택한 행사 잔액: ${currency(found ? found.balance : 0)}`;
+      }
+      function setEntryMode(item) {
+        state.editingId = item ? item.transaction_id : null;
+        document.getElementById('entryModalTitle').textContent = item ? '수입·지출 수정' : '수입·지출 등록';
+        document.getElementById('draft').style.display = item ? 'none' : '';
+        document.getElementById('create').textContent = item ? '수정 저장' : '등록하기';
+      }
+      function resetEntryForm() {
+        setEntryMode(null);
+        document.getElementById('entryForm').reset();
+        document.getElementById('entryEvidenceFile').value = '';
+        document.getElementById('entryEvidenceFileName').textContent = '선택된 파일 없음';
+        state.uploadFiles.ledgerEntry = [];
+        setType('지출');
+        updateBalance();
+      }
+      function openRegisterModal() {
+        resetEntryForm();
+        openModal('registerModal');
+      }
+      function ensureSelectOption(select, value) {
+        if (!value || [...select.options].some((option) => option.value === value)) return;
+        const option = document.createElement('option');
+        option.value = value;
+        option.textContent = value;
+        select.appendChild(option);
+      }
+      function openEditEntry() {
+        const item = state.items.find((entry) => entry.transaction_id === state.selectedId);
+        if (!item) return;
+        const form = document.getElementById('entryForm');
+        setEntryMode(item);
+        setType(item.transaction_type || '지출');
+        ensureSelectOption(form.elements.department_name, item.department_name || '');
+        ensureSelectOption(form.elements.event_name, item.event_name || '');
+        form.elements.transaction_date.value = item.transaction_date || '';
+        form.elements.department_name.value = item.department_name || '';
+        form.elements.amount.value = item.amount || '';
+        form.elements.counterparty.value = item.counterparty || '';
+        form.elements.event_name.value = item.event_name || '';
+        form.elements.description.value = item.description || '';
+        form.elements.note.value = item.note || '';
+        document.getElementById('entryEvidenceFile').value = '';
+        document.getElementById('entryEvidenceFileName').textContent = '새 증빙을 추가로 첨부할 수 있습니다.';
+        state.uploadFiles.ledgerEntry = [];
+        updateBalance();
+        closeModal('detailModal');
+        openModal('registerModal');
+      }
+      function readForm() {
+        const data = new FormData(document.getElementById('entryForm'));
+        return {
+          transaction_type: state.selectedType,
+          transaction_date: data.get('transaction_date'),
+          department_name: data.get('department_name'),
+          amount: Number(data.get('amount') || 0),
+          counterparty: data.get('counterparty'),
+          event_name: data.get('event_name'),
+          description: data.get('description') || '',
+          note: data.get('note') || '',
+          has_evidence: state.uploadFiles.ledgerEntry.length > 0
+        };
+      }
+      function setEntrySaving(saving) {
+        document.getElementById('draft').disabled = saving;
+        document.getElementById('create').disabled = saving;
+        document.getElementById('create').textContent = saving ? (state.editingId ? '수정 중...' : '등록 중...') : (state.editingId ? '수정 저장' : '등록하기');
+      }
+      async function refreshLedgerList(fallbackItemsValue) {
+        const list = await callServer('apiV1_getLedgerList', {}, { items: fallbackItemsValue || state.items });
+        state.items = (list.items || fallbackItemsValue || state.items).map(mergeLocalEvidence);
+        fillControls();
+        render();
+      }
+      async function saveEntry(draft) {
+        const item = readForm();
+        const editingId = state.editingId;
+        if (!draft && (!item.transaction_date || !item.department_name || !item.amount || !item.counterparty)) return toast('필수 항목을 입력해 주세요.');
+        setEntrySaving(true);
+        try {
+          const evidenceFiles = await readFilePayloads(state.uploadFiles.ledgerEntry);
+          item.evidence_files = evidenceFiles;
+          item.evidence = evidenceFiles.map((file) => ({ file_name: file.file_name, file_path: '' }));
+          if (editingId) item.transaction_id = editingId;
+          const apiName = editingId ? 'apiV1_updateLedgerEntry' : (draft ? 'apiV1_saveLedgerDraft' : 'apiV1_createLedgerEntry');
+          const result = await callServer(apiName, item, null, { strict: true });
+          if (!result || !result.ok || !result.item) throw new Error('저장 결과가 올바르지 않습니다.');
+          const savedItem = Object.assign({ transaction_id: editingId || `LOCAL-${Date.now()}`, manager: '운영자', status: draft ? '임시저장' : '대기' }, result.item || item);
+          const localFiles = buildLocalEvidenceFiles(state.uploadFiles.ledgerEntry);
+          if (localFiles.length) {
+            state.localEvidence[savedItem.transaction_id] = localFiles;
+            savedItem.evidence = localFiles;
+            savedItem.has_evidence = true;
+          }
+          const fallback = [savedItem, ...state.items.filter((entry) => entry.transaction_id !== savedItem.transaction_id)];
+          state.lastSavedId = savedItem.transaction_id;
+          closeModal('registerModal');
+          resetLedgerFilters();
+          switchView('ledger');
+          resetEntryForm();
+          await refreshLedgerList(fallback);
+          await updateDatabaseLink();
+          await loadAccountingExtras();
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          toast((editingId ? '수정 저장되었습니다.' : draft ? '임시저장되었습니다.' : '등록되었습니다.') + ((result.evidence && result.evidence.errors && result.evidence.errors.length) ? ' 증빙 파일은 권한 확인이 필요합니다.' : ''));
+        } catch (error) {
+          toast((error && error.message) ? error.message : '저장 중 문제가 발생했습니다. 다시 시도해 주세요.');
+        } finally {
+          setEntrySaving(false);
+        }
+      }
+      function openDetail(id) {
+        const item = state.items.find((entry) => entry.transaction_id === id) || state.items[0];
+        state.selectedId = item.transaction_id;
+        document.getElementById('detailTitle').textContent = `${item.transaction_type} 상세`;
+        document.getElementById('detailStatus').className = `badge ${badgeClass(item.status)}`;
+        document.getElementById('detailStatus').textContent = item.status;
+        document.getElementById('detailAlert').style.display = item.alert ? 'block' : 'none';
+        document.getElementById('detailAlert').textContent = item.alert || '';
+        document.getElementById('detailRows').innerHTML = [
+          ['거래일자', item.transaction_date], ['부서명', item.department_name], ['금액', currency(item.amount), 'expense'],
+          ['거래처/입금자명', item.counterparty], ['행사 연결', item.event_name], ['적요', item.description || '-'], ['비고', item.note || '-'], ['담당자', item.manager]
+        ].map(([label, value, cls]) => `<div class="detail-row"><span class="detail-label">${label}</span><span class="detail-value ${cls || ''}">${value}</span></div>`).join('');
+        renderDetailEvidence(item);
+        openModal('detailModal');
+      }
+      async function approve() {
+        await processSelectedEntry('approve', '승인 처리되었습니다.');
+      }
+      async function requestReview() {
+        await processSelectedEntry('review', '확인요청으로 변경되었습니다.');
+      }
+      async function requestPending() {
+        await processSelectedEntry('pending', '검토요청 상태로 변경되었습니다.');
+      }
+      async function processSelectedEntry(action, successMessage) {
+        const item = state.items.find((entry) => entry.transaction_id === state.selectedId);
+        if (!item) return;
+        const result = await callServer('apiV1_processLedgerEntry', { transaction_id: item.transaction_id, action: action }, { ok: true });
+        if (result && result.item) Object.assign(item, mergeLocalEvidence(result.item));
+        else {
+          item.status = action === 'approve' ? '승인' : action === 'pending' ? '대기' : '확인요청';
+          if (action === 'approve') item.alert = '';
+        }
+        await loadAccountingExtras();
+        closeModal('detailModal');
+        render();
+        toast(successMessage);
+      }
+      async function deleteSelectedEntry() {
+        const item = state.items.find((entry) => entry.transaction_id === state.selectedId);
+        if (!item) return;
+        if (!confirm('이 장부 항목을 삭제 처리할까요? 삭제된 항목은 목록, 대조, 결산에서 제외됩니다.')) return;
+        const result = await callServer('apiV1_deleteLedgerEntry', { transaction_id: item.transaction_id }, { ok: true }, { strict: true });
+        if (!result || !result.ok) throw new Error('삭제 처리에 실패했습니다.');
+        state.items = state.items.filter((entry) => entry.transaction_id !== item.transaction_id);
+        closeModal('detailModal');
+        await loadAccountingExtras();
+        render();
+        await updateDatabaseLink();
+        toast('삭제 처리되었습니다.');
+      }
+      function toast(message) {
+        const el = document.getElementById('toast');
+        el.textContent = message;
+        el.classList.add('show');
+        setTimeout(() => el.classList.remove('show'), 1700);
+      }
+      function switchView(view) {
+        state.currentView = view;
+        const meta = viewMeta[view] || viewMeta.ledger;
+        document.getElementById('pageBreadcrumb').textContent = meta[0];
+        document.getElementById('pageTitle').textContent = meta[1];
+        document.getElementById('pageDesc').textContent = meta[2];
+        document.getElementById('openRegister').classList.toggle('view-hidden', view !== 'ledger');
+        document.querySelectorAll('.ledger-only').forEach((el) => el.classList.toggle('view-hidden', view !== 'ledger'));
+        ['reconciliation', 'settlement'].forEach((name) => {
+          document.getElementById(name + 'View').classList.toggle('view-hidden', view !== name);
+        });
+        document.querySelectorAll('[data-view]').forEach((button) => button.classList.toggle('active', button.dataset.view === view));
+        if (view === 'reconciliation') renderReconciliation();
+        if (view === 'settlement') renderSettlement();
+      }
+      function syncReconciliationDateFilters() {
+        const dates = state.reconciliation.map((item) => item.transaction_date).filter(Boolean).sort();
+        const start = document.getElementById('reconciliationStartDate');
+        const end = document.getElementById('reconciliationEndDate');
+        if (!dates.length || !start || !end || start.value || end.value) return;
+        start.value = dates[0];
+        end.value = dates[dates.length - 1];
+      }
+      function renderReconciliation() {
+        const keyword = (document.getElementById('reconciliationSearch')?.value || '').toLowerCase();
+        const type = document.getElementById('reconciliationType')?.value || '전체';
+        const status = document.getElementById('reconciliationStatus')?.value || '전체';
+        const startDate = document.getElementById('reconciliationStartDate')?.value || '';
+        const endDate = document.getElementById('reconciliationEndDate')?.value || '';
+        const items = state.reconciliation.filter((item) => {
+          const itemType = reconcileType(item);
+          const displayStatus = reconcileDisplayStatus(item.status);
+          const searchable = [item.transaction_date, item.bank_description, item.ledger_description, item.source_file_name, item.raw_text, item.storage_status, item.status, item.action_label, currency(item.amount)].join(' ').toLowerCase();
+          if (keyword && !searchable.includes(keyword)) return false;
+          if (type !== '전체' && itemType !== type) return false;
+          if (status !== '전체' && displayStatus !== status) return false;
+          if (startDate && item.transaction_date < startDate) return false;
+          if (endDate && item.transaction_date > endDate) return false;
+          return true;
+        });
+        const matched = items.filter((item) => reconcileDisplayStatus(item.status) === '정상').length;
+        const review = items.filter((item) => reconcileDisplayStatus(item.status) === '확인 필요').length;
+        const missing = items.filter((item) => reconcileDisplayStatus(item.status) === '장부 누락 의심').length;
+        document.getElementById('reconciliationSummary').textContent = '전체 ' + items.length + '건 · 정상 ' + matched + '건 · 확인 필요 ' + review + '건 · 장부 누락 의심 ' + missing + '건';
+        document.getElementById('reconciliationRows').innerHTML = items.length ? items.map((item) => {
+          const itemType = reconcileType(item);
+          const accountAmount = Number(item.amount || 0);
+          const ledgerAmount = item.transaction_id && item.ledger_amount !== null ? Number(item.ledger_amount) : null;
+          const statusText = reconcileDisplayStatus(item.status);
+          const statusClass = reconciliationStatusClass(statusText);
+          const evidence = item.has_evidence ? '<span class="evidence-check" title="증빙 있음">✓</span>' : '<span class="evidence-missing" title="증빙 없음">×</span>';
+          const sourceLabel = item.source_file_name || item.bank_detail || '-';
+          const action = statusText === '정상' ? 'detail' : statusText === '확인 필요' ? 'candidates' : 'register';
+          const actionLabel = statusText === '정상' ? '장부 상세보기' : statusText === '확인 필요' ? '후보 보기' : '장부 등록';
+          return '<tr><td>' + item.transaction_date + '</td>' +
+            '<td><span class="' + (itemType === '수입' ? 'income' : 'expense') + '">' + itemType + '</span></td>' +
+            '<td><div class="two-line"><strong>' + escapeHtml(item.bank_description || item.counterparty || '-') + '</strong><span>' + escapeHtml(sourceLabel) + '</span></div></td>' +
+            '<td class="' + amountClass(accountAmount) + '">' + signedCurrency(accountAmount) + '</td>' +
+            '<td>' + escapeHtml(item.ledger_description || '-') + '</td>' +
+            '<td class="' + amountClass(ledgerAmount) + '">' + (ledgerAmount === null ? '-' : signedCurrency(ledgerAmount)) + '</td>' +
+            '<td><span class="match-pill ' + statusClass + '">' + statusText + '</span></td>' +
+            '<td>' + evidence + '</td>' +
+            '<td><button class="small" type="button" data-reconciliation-action="' + action + '" data-reconciliation-id="' + escapeHtml(item.reconciliation_id) + '">' + actionLabel + '</button></td></tr>';
+        }).join('') : '<tr><td colspan="9" class="muted">표시할 계좌 대조 내역이 없습니다.</td></tr>';
+      }
+      function reconcileType(item) {
+        return Number(item.amount || 0) >= 0 ? '수입' : '지출';
+      }
+      function signedCurrency(value) {
+        if (value === null || value === undefined || value === '') return '-';
+        const amount = Number(value || 0);
+        const sign = amount > 0 ? '+' : amount < 0 ? '-' : '';
+        return sign + won.format(Math.abs(amount)) + '원';
+      }
+      function amountClass(value) {
+        const amount = Number(value || 0);
+        if (amount > 0) return 'amount-income';
+        if (amount < 0) return 'amount-expense';
+        return 'muted';
+      }
+      function reconcileDisplayStatus(status) {
+        if (status === '정상' || status === '수동연결') return '정상';
+        if (status === '장부 누락 의심' || status === '불일치') return '장부 누락 의심';
+        return '확인 필요';
+      }
+      function reconciliationStatusClass(status) {
+        if (status === '정상') return 'match-ok';
+        if (status === '장부 누락 의심') return 'match-bad';
+        return 'match-check';
+      }
+      async function openReconciliationLedgerDetail(item) {
+        if (!item.transaction_id) return toast('연결된 승인 장부가 없습니다.');
+        let ledger = state.items.find((entry) => entry.transaction_id === item.transaction_id);
+        if (!ledger) {
+          ledger = await callServer('apiV1_getLedgerDetail', item.transaction_id, null, { strict: true });
+          if (ledger) state.items.push(ledger);
+        }
+        if (!ledger) return toast('연결된 장부를 불러오지 못했습니다.');
+        openDetail(ledger.transaction_id);
+      }
+      async function openReconciliationCandidates(item) {
+        state.selectedReconciliationId = item.reconciliation_id;
+        document.getElementById('candidateReason').textContent = item.match_reason || '금액과 날짜가 가까운 승인 지출 장부 후보입니다.';
+        document.getElementById('candidateList').innerHTML = '<div class="muted">후보를 불러오는 중...</div>';
+        openModal('reconciliationCandidateModal');
+        try {
+          const result = await callServer('apiV1_getReconciliationCandidates', { reconciliation_id: item.reconciliation_id }, null, { strict: true });
+          const candidates = result?.items || [];
+          document.getElementById('candidateReason').textContent = result?.reason || item.match_reason || '후보 장부를 확인해 주세요.';
+          document.getElementById('candidateList').innerHTML = candidates.length ? candidates.map((candidate) => {
+            const details = [candidate.transaction_date, candidate.department_name, candidate.description || '적요 없음', candidate.match_detail, '일치 점수 ' + candidate.score].filter(Boolean).join(' · ');
+            return '<div class="candidate-row"><div class="candidate-info"><strong>' + escapeHtml(candidate.counterparty || '-') + ' · ' + currency(candidate.amount) + '</strong><span>' + escapeHtml(details) + '</span></div><button class="primary candidate-link" type="button" data-candidate-transaction-id="' + escapeHtml(candidate.transaction_id) + '">연결</button></div>';
+          }).join('') : '<div class="evidence-empty">연결할 수 있는 승인 지출 장부 후보가 없습니다.</div>';
+        } catch (error) {
+          document.getElementById('candidateList').innerHTML = '<div class="evidence-empty">후보를 불러오지 못했습니다.</div>';
+          toast(error?.message || '장부 후보를 불러오지 못했습니다.');
+        }
+      }
+      function openLedgerRegistrationFromReconciliation(item) {
+        resetEntryForm();
+        setType('지출');
+        const form = document.getElementById('entryForm');
+        form.elements.transaction_date.value = item.transaction_date || '';
+        form.elements.amount.value = Math.abs(Number(item.amount || 0)) || '';
+        form.elements.counterparty.value = item.bank_counterparty || item.bank_description || '';
+        form.elements.description.value = item.bank_detail || item.bank_description || '';
+        form.elements.note.value = '계좌 대조의 장부 누락 의심 항목에서 등록';
+        ensureSelectOption(form.elements.event_name, '해당 없음');
+        form.elements.event_name.value = '해당 없음';
+        updateBalance();
+        openModal('registerModal');
+      }
+      async function linkReconciliationCandidate(transactionId) {
+        const reconciliationId = state.selectedReconciliationId;
+        if (!reconciliationId || !transactionId) return;
+        const result = await callServer('apiV1_linkReconciliation', {
+          reconciliation_id: reconciliationId,
+          transaction_id: transactionId
+        }, null, { strict: true });
+        if (!result?.ok) throw new Error('장부 연결에 실패했습니다.');
+        closeModal('reconciliationCandidateModal');
+        await loadAccountingExtras();
+        renderReconciliation();
+        toast('승인된 지출 장부와 연결했습니다.');
+      }
+      function renderReconciliationRunResult(result) {
+        const target = document.getElementById('reconciliationRunResult');
+        if (!target) return;
+        const failedFiles = result.failedFiles || [];
+        const reviewItems = result.reviewRequiredItems || [];
+        const ocrResults = result.ocrResults || [];
+        const match = result.matchSummary || {};
+        const textSuccessCount = ocrResults.filter((item) => Number(item.text_length || 0) > 0).length;
+        const title = textSuccessCount > 0 ? 'OCR 텍스트 확인 완료' : result.ok ? '처리 완료' : '처리 실패';
+        const lines = [
+          '<strong>' + title + '</strong> · 업로드 ' + Number(result.uploadedFileCount || 0) + '개 · 텍스트 추출 ' + textSuccessCount + '개 · 지출 ' + Number(result.expenditureCount || 0) + '건 · 신규 저장 ' + Number(result.savedCount || 0) + '건 · 중복 제외 ' + Number(result.duplicateCount || 0) + '건 · 정상 ' + Number(match.normalCount || 0) + '건 · 확인 필요 ' + Number(match.reviewCount || reviewItems.length) + '건 · 장부 누락 의심 ' + Number(match.missingCount || 0) + '건'
+        ];
+        failedFiles.forEach((file) => {
+          lines.push('<span class="failed-file">' + escapeHtml(file.file_name || '파일') + ': ' + escapeHtml(file.reason || '처리 실패') + '</span>');
+        });
+        const ocrHtml = ocrResults.length ? '<div class="ocr-result-list">' + ocrResults.map((item) => {
+          const extracted = Number(item.text_length || 0) > 0;
+          const statusClass = extracted ? '' : 'ocr-failed';
+          const rawText = item.raw_text || '';
+          const rawContent = rawText
+            ? '<details class="ocr-raw"><summary>OCR 원문 확인 (' + Number(item.text_length || 0) + '자)</summary><pre>' + escapeHtml(rawText) + '</pre></details>'
+            : '<div class="failed-file">저장된 OCR 원문이 없습니다. ' + escapeHtml(item.error_message || '') + '</div>';
+          return '<div class="ocr-result"><div class="ocr-result-line"><b>' + escapeHtml(item.file_name || '파일') + '</b> · <span class="' + statusClass + '">' + escapeHtml(item.ocr_status || '실패') + '</span> · ' + escapeHtml(item.parse_status || '미실행') + ' · 거래 후보 ' + Number(item.extracted_transaction_count || 0) + '건 · 지출 ' + Number(item.expense_count || 0) + '건</div>' + rawContent + '</div>';
+        }).join('') + '</div>' : '';
+        target.innerHTML = lines.join('<br>') + ocrHtml;
+        target.hidden = false;
+      }
+      function renderSettlement() {
+        const data = state.settlement || { totalIncome: 0, totalExpense: 0, balance: 0, eventCount: 0 };
+        const totalIncome = data.totalIncome || data.total_income || 0;
+        const totalExpense = data.totalExpense || data.total_expense || 0;
+        document.getElementById('settlementIncome').textContent = currency(totalIncome);
+        document.getElementById('settlementExpense').textContent = currency(totalExpense);
+        document.getElementById('settlementBalance').textContent = currency(data.balance || 0);
+        const approvedItems = state.items.filter((item) => item.status === '승인');
+        const incomeCount = approvedItems.filter((item) => item.transaction_type === '수입').length;
+        const expenseCount = approvedItems.filter((item) => item.transaction_type === '지출').length;
+        document.getElementById('settlementIncomeCount').textContent = '건수 ' + incomeCount + '건';
+        document.getElementById('settlementExpenseCount').textContent = '건수 ' + expenseCount + '건';
+        document.getElementById('settlementEventCount').textContent = (data.eventCount || data.event_count || state.events.length || 0) + '건';
+      }
+      async function updateDatabaseLink() {
+        const info = await callServer('apiV1_getLedgerDatabaseInfo', {}, null);
+        const link = document.getElementById('ledgerDbLink');
+        if (!info || !info.spreadsheetUrl) {
+          link.textContent = 'DB 시트 확인 불가';
+          link.removeAttribute('href');
+          return;
+        }
+        link.href = info.spreadsheetUrl;
+        link.textContent = 'DB 시트 확인 (' + info.transactionRowCount + '건)';
+      }
+      async function loadAccountingExtras() {
+        const [reconciliation, settlement] = await Promise.all([
+          callServer('apiV1_getReconciliationList', {}, { items: [] }),
+          callServer('apiV1_getSettlementSummary', {}, { totalIncome: 0, totalExpense: 0, balance: 0 })
+        ]);
+        state.reconciliation = reconciliation.items || [];
+        syncReconciliationDateFilters();
+        state.settlement = settlement || {};
+      }
+      async function init() {
+        const [list, events] = await Promise.all([
+          callServer('apiV1_getLedgerList', {}, { items: fallbackItems }),
+          callServer('apiV1_getLedgerEventOptions', {}, fallbackEvents)
+        ]);
+        state.items = list.items || fallbackItems;
+        state.events = events || fallbackEvents;
+        fillControls();
+        await loadAccountingExtras();
+        render();
+        switchView('ledger');
+        updateDatabaseLink();
+      }
+      document.getElementById('openRegister').addEventListener('click', openRegisterModal);
+      document.getElementById('ledgerMenuToggle').addEventListener('click', () => {
+        const sidebar = document.getElementById('sidebar');
+        const collapsed = sidebar.classList.toggle('ledger-collapsed');
+        document.getElementById('ledgerMenuToggle').setAttribute('aria-expanded', String(!collapsed));
+        document.getElementById('ledgerMenuIcon').textContent = collapsed ? '▼' : '▲';
+      });
+      document.querySelectorAll('[data-view]').forEach((button) => button.addEventListener('click', () => switchView(button.dataset.view)));
+      function fileLabel(files, emptyText) {
+        if (!files.length) return emptyText;
+        return files.length === 1 ? files[0].name : files[0].name + ' 외 ' + (files.length - 1) + '개';
+      }
+      function escapeHtml(value) {
+        return String(value || '').replace(/[&<>"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[char]));
+      }
+      function readFilePayloads(files) {
+        return Promise.all(files.map((file) => new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const result = String(reader.result || '');
+            resolve({
+              file_name: file.name,
+              file_type: file.type || 'application/octet-stream',
+              file_size: file.size,
+              content_base64: result.includes(',') ? result.split(',')[1] : result
+            });
+          };
+          reader.onerror = () => reject(new Error(file.name + ' 파일을 읽을 수 없습니다.'));
+          reader.readAsDataURL(file);
+        })));
+      }
+      function buildLocalEvidenceFiles(files) {
+        return files.map((file) => {
+          const url = URL.createObjectURL(file);
+          return {
+            file_name: file.name,
+            mime_type: file.type || 'application/octet-stream',
+            file_size: file.size,
+            local_preview_url: (String(file.type || '').indexOf('image/') === 0 || /\.(png|jpe?g|gif|webp|bmp)$/i.test(file.name)) ? url : '',
+            local_download_url: url
+          };
+        });
+      }
+      function mergeLocalEvidence(item) {
+        const local = state.localEvidence[item.transaction_id] || [];
+        if (!local.length) return item;
+        return Object.assign({}, item, { evidence: local.length ? local : (item.evidence || []), has_evidence: true });
+      }
+      function renderDetailEvidence(item) {
+        const files = item.evidence || [];
+        const target = document.getElementById('detailEvidenceList');
+        if (!files.length) {
+          target.innerHTML = '<div class="evidence-empty">첨부된 증빙자료가 없습니다.</div>';
+          return;
+        }
+        target.innerHTML = files.map((file, index) => {
+          const rawName = file.file_name || '증빙자료';
+          const name = escapeHtml(rawName);
+          const downloadUrl = file.local_download_url || file.download_url || file.file_path || file.file_url || '#';
+          const mimeType = file.mime_type || file.file_type || '';
+          const imageByType = mimeType.indexOf('image/') === 0;
+          const imageByName = /\.(png|jpe?g|gif|webp|bmp)$/i.test(rawName);
+          const previewUrl = file.local_preview_url || file.preview_url || '';
+          const canLoadFromDrive = Boolean(file.file_id && (imageByType || imageByName));
+          if (previewUrl) {
+            return '<div class="evidence-preview"><img src="' + escapeHtml(previewUrl) + '" alt="' + name + '"><div class="evidence-preview-meta"><span class="evidence-name">' + name + '</span><a class="evidence-download" href="' + escapeHtml(downloadUrl) + '" download="' + name + '">다운로드</a></div></div>';
+          }
+          if (canLoadFromDrive) {
+            return '<div class="evidence-preview"><div id="evidencePreview' + index + '" class="evidence-preview-loading">미리보기 불러오는 중...</div><div class="evidence-preview-meta"><span class="evidence-name">' + name + '</span><a id="evidenceDownload' + index + '" class="evidence-download" href="#" download="' + name + '">준비 중</a></div></div>';
+          }
+          return '<div class="evidence-file"><span class="evidence-name">' + name + '</span><a class="evidence-download" href="' + escapeHtml(downloadUrl) + '" target="_blank" rel="noopener" download="' + name + '">다운로드</a></div>';
+        }).join('');
+        files.forEach((file, index) => loadDriveEvidencePreview(file, index));
+      }
+      async function loadDriveEvidencePreview(file, index) {
+        if (!file.file_id || file.local_preview_url || file.preview_url) return;
+        const rawName = file.file_name || '증빙자료';
+        const mimeType = file.mime_type || file.file_type || '';
+        const isImage = mimeType.indexOf('image/') === 0 || /\.(png|jpe?g|gif|webp|bmp)$/i.test(rawName);
+        if (!isImage) return;
+        const previewTarget = document.getElementById('evidencePreview' + index);
+        const downloadTarget = document.getElementById('evidenceDownload' + index);
+        if (!previewTarget) return;
+        try {
+          const result = await callServer('apiV1_getEvidenceFileContent', { file_id: file.file_id, evidence_id: file.evidence_id }, null, { strict: true });
+          if (!result || !result.content_base64) throw new Error('증빙 파일을 불러오지 못했습니다.');
+          const dataUrl = 'data:' + (result.mime_type || mimeType || 'application/octet-stream') + ';base64,' + result.content_base64;
+          const img = document.createElement('img');
+          img.src = dataUrl;
+          img.alt = rawName;
+          previewTarget.replaceChildren(img);
+          if (downloadTarget) {
+            downloadTarget.href = dataUrl;
+            downloadTarget.download = rawName;
+            downloadTarget.textContent = '다운로드';
+          }
+        } catch (error) {
+          previewTarget.textContent = (error && error.message) ? error.message : '미리보기를 불러오지 못했습니다.';
+          if (downloadTarget) downloadTarget.textContent = '다운로드 불가';
+        }
+      }      function applyFiles(input, files) {
+        if (!files.length) return;
+        try {
+          const transfer = new DataTransfer();
+          files.forEach((file) => transfer.items.add(file));
+          input.files = transfer.files;
+        } catch (error) {
+          // 일부 브라우저는 보안상 input.files 대입을 제한합니다. 화면 상태는 별도로 유지합니다.
+        }
+      }
+      function setupFileUpload(config) {
+        const zone = document.getElementById(config.zoneId);
+        const input = document.getElementById(config.inputId);
+        const name = document.getElementById(config.nameId);
+        if (!zone || !input || !name) return;
+        const update = (files) => {
+          const selected = config.multiple ? Array.from(files) : Array.from(files).slice(0, 1);
+          state.uploadFiles[config.key] = selected;
+          name.textContent = fileLabel(selected, '선택된 파일 없음');
+          if (selected.length) toast('파일이 첨부되었습니다.');
+        };
+        input.addEventListener('change', () => update(input.files || []));
+        ['dragenter', 'dragover'].forEach((eventName) => {
+          zone.addEventListener(eventName, (event) => {
+            event.preventDefault();
+            zone.classList.add('drag-over');
+          });
+        });
+        ['dragleave', 'drop'].forEach((eventName) => {
+          zone.addEventListener(eventName, (event) => {
+            event.preventDefault();
+            if (eventName === 'dragleave' && zone.contains(event.relatedTarget)) return;
+            zone.classList.remove('drag-over');
+          });
+        });
+        zone.addEventListener('drop', (event) => {
+          const files = config.multiple ? Array.from(event.dataTransfer.files || []) : Array.from(event.dataTransfer.files || []).slice(0, 1);
+          applyFiles(input, files);
+          update(files);
+        });
+      }
+      setupFileUpload({ key: 'reconciliation', zoneId: 'reconciliationDropzone', inputId: 'reconciliationFile', nameId: 'reconciliationFileName', multiple: true });
+      setupFileUpload({ key: 'ledgerEntry', zoneId: 'entryEvidenceDropzone', inputId: 'entryEvidenceFile', nameId: 'entryEvidenceFileName', multiple: true });
+      document.getElementById('runReconcile').addEventListener('click', async (event) => {
+        const files = state.uploadFiles.reconciliation;
+        if (!files.length) return toast('계좌내역 파일을 첨부해 주세요.');
+        const button = event.currentTarget;
+        button.disabled = true;
+        button.textContent = 'OCR 분석 중...';
+        const resultTarget = document.getElementById('reconciliationRunResult');
+        resultTarget.innerHTML = '<strong>OCR 분석 중...</strong> · 파일 크기와 개수에 따라 시간이 걸릴 수 있습니다.';
+        resultTarget.hidden = false;
+        try {
+          const payloadFiles = await readFilePayloads(files);
+          const result = await callServer('apiV1_reconcileBankTransactions', {
+            files: payloadFiles
+          }, null, { strict: true });
+          state.reconciliation = result.reconciliationItems || [];
+          document.getElementById('reconciliationStartDate').value = '';
+          document.getElementById('reconciliationEndDate').value = '';
+          syncReconciliationDateFilters();
+          renderReconciliationRunResult(result);
+          renderReconciliation();
+          const failedCount = Number(result.failedFileCount || 0);
+          const textSuccessCount = (result.ocrResults || []).filter((item) => Number(item.text_length || 0) > 0).length;
+          const expenseCount = Number(result.expenditureCount || 0);
+          toast(failedCount ? '일부 파일의 OCR에 실패했습니다.' : textSuccessCount && !expenseCount ? '텍스트는 추출됐지만 지출 거래는 찾지 못했습니다.' : '계좌·장부 대조를 실행했습니다.');
+        } catch (error) {
+          const reason = error && error.message ? error.message : '계좌 거래내역 처리에 실패했습니다.';
+          renderReconciliationRunResult({
+            ok: false,
+            failedFiles: [{ file_name: '업로드 처리', reason }]
+          });
+          toast('계좌 거래내역을 처리하지 못했습니다.');
+        } finally {
+          button.disabled = false;
+          button.textContent = '대조 실행';
+        }
+      });
+      document.getElementById('generateSettlement').addEventListener('click', async () => {
+        const startDate = document.getElementById('settlementStartDate').value;
+        const endDate = document.getElementById('settlementEndDate').value;
+        const department = document.getElementById('settlementDepartment').value;
+        const result = await callServer('apiV1_generateSettlementReport', {
+          period_name: (startDate && endDate) ? startDate + ' ~ ' + endDate : '선택 기간',
+          filter: { department_name: department === '전체 장부' ? '전체' : department },
+          basis: document.getElementById('settlementBasis').value,
+          include: {
+            income: document.getElementById('includeIncome').checked,
+            expense: document.getElementById('includeExpense').checked,
+            balance: document.getElementById('includeBalance').checked,
+            evidence: document.getElementById('includeEvidence').checked
+          }
+        }, { ok: true, summary: state.settlement });
+        state.settlement = result.summary || state.settlement;
+        renderSettlement();
+        toast('결산 보고서를 생성했습니다.');
+      });
+      document.getElementById('expenseBtn').addEventListener('click', () => setType('지출'));
+      document.getElementById('incomeBtn').addEventListener('click', () => setType('수입'));
+      document.getElementById('formEvent').addEventListener('change', updateBalance);
+      document.getElementById('draft').addEventListener('click', () => saveEntry(true));
+      document.getElementById('create').addEventListener('click', () => saveEntry(false));
+      document.getElementById('approve').addEventListener('click', approve);
+      document.getElementById('requestReview').addEventListener('click', requestReview);
+      document.getElementById('requestPending').addEventListener('click', requestPending);
+      document.getElementById('editEntry').addEventListener('click', openEditEntry);
+      document.getElementById('deleteEntry').addEventListener('click', async () => {
+        try {
+          await deleteSelectedEntry();
+        } catch (error) {
+          toast((error && error.message) ? error.message : '삭제 중 문제가 발생했습니다.');
+        }
+      });
+      document.getElementById('dateSortToggle').addEventListener('click', () => {
+        const control = document.getElementById('dateSort');
+        control.value = control.value === '' ? 'asc' : control.value === 'asc' ? 'desc' : '';
+        state.ledgerPage = 1;
+        render();
+      });
+      document.querySelectorAll('[data-close]').forEach((button) => button.addEventListener('click', () => closeModal(button.dataset.close)));
+      document.querySelectorAll('.filters input, .filters select').forEach((el) => el.addEventListener('input', () => { state.ledgerPage = 1; render(); }));
+      ['reconciliationSearch', 'reconciliationStartDate', 'reconciliationEndDate', 'reconciliationType', 'reconciliationStatus'].forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.addEventListener('input', renderReconciliation);
+          el.addEventListener('change', renderReconciliation);
+        }
+      });
+      document.getElementById('resetReconciliationFilters').addEventListener('click', () => {
+        document.getElementById('reconciliationStartDate').value = '';
+        document.getElementById('reconciliationEndDate').value = '';
+        document.getElementById('reconciliationType').value = '전체';
+        document.getElementById('reconciliationStatus').value = '전체';
+        document.getElementById('reconciliationSearch').value = '';
+        renderReconciliation();
+      });
+      document.getElementById('prevLedgerPage').addEventListener('click', () => goLedgerPage(state.ledgerPage - 1));
+      document.getElementById('nextLedgerPage').addEventListener('click', () => goLedgerPage(state.ledgerPage + 1));
+      document.getElementById('rows').addEventListener('click', (event) => {
+        const button = event.target.closest('[data-id]');
+        if (button) openDetail(button.dataset.id);
+      });
+      document.getElementById('reconciliationRows').addEventListener('click', async (event) => {
+        const button = event.target.closest('[data-reconciliation-action]');
+        if (!button) return;
+        const item = state.reconciliation.find((entry) => entry.reconciliation_id === button.dataset.reconciliationId);
+        if (!item) return;
+        try {
+          if (button.dataset.reconciliationAction === 'detail') await openReconciliationLedgerDetail(item);
+          else if (button.dataset.reconciliationAction === 'candidates') await openReconciliationCandidates(item);
+          else openLedgerRegistrationFromReconciliation(item);
+        } catch (error) {
+          toast(error?.message || '대조 결과를 처리하지 못했습니다.');
+        }
+      });
+      document.getElementById('candidateList').addEventListener('click', async (event) => {
+        const button = event.target.closest('[data-candidate-transaction-id]');
+        if (!button) return;
+        button.disabled = true;
+        try {
+          await linkReconciliationCandidate(button.dataset.candidateTransactionId);
+        } catch (error) {
+          toast(error?.message || '장부 연결에 실패했습니다.');
+          button.disabled = false;
+        }
+      });
+      init();
+    </script>
+  </body>
+</html>
+
