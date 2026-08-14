@@ -1,4 +1,4 @@
-/** 행사 관련자료를 Google Drive에 저장하고 EVT_01_EVENT에는 파일 URL만 기록한다. */
+/** 레거시 관련자료 업로드 보조 함수. 현재 행사 생성 화면에서는 사용하지 않는다. */
 function ewUploadRelatedMaterial_(fileInput, eventId) {
   if (!fileInput || typeof fileInput !== 'object') return '';
 

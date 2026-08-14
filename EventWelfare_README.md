@@ -1,25 +1,38 @@
 # 행사복지관리 구현 메모
 
-이 문서는 행사복지관리 전용 구현의 실행 조건과 설계 미확정 범위를 기록한다. 기존 `README.md`, DB/API 설계서, 다른 업무 영역은 변경하지 않는다.
+행사복지 기능은 아래 Google Spreadsheet를 전용 DB로 사용한다.
 
-## 실행 전 설정
+- Spreadsheet ID: `1EI8MbFx2HSuizl0QFygRAZydYiv77W-6pQO10mRN55E`
+- 사용자 제공 gid `1521739742`: `_설정` 시트
+- 행사 데이터 시트: `행사`
+- 신청 데이터 시트: `행사신청`
+- 출석 데이터 시트: `행사출석`
+- Google Form 연결 시트: `행사폼`
+- 참가비 입금 시트: `행사입금`
+- 추가 문항 답변 시트: `신청추가답변`
 
-기존 행사복지 Google Spreadsheet를 사용할 때는 Apps Script 프로젝트의 Script Properties에
-`EVENT_WELFARE_SPREADSHEET_ID`를 등록하고 값에 Spreadsheet ID를 입력한다.
+코드는 시트 이름으로 테이블을 찾고, 논리 필드를 실제 한글 헤더에 매핑한다. gid를 행사
+테이블 식별자로 사용하지 않는다. 필수 헤더가 없을 때만 데이터를 덮어쓰지 않고
+`PROCESS_FAILED`로 중단한다. 시트에 설계 외 추가 열이 있어도 읽기와 쓰기를 허용한다.
 
-Script Property와 Active Spreadsheet가 모두 없으면 최초 실행 시 사용자가 승인한
-`Council Project 행사복지 DB` Spreadsheet를 자동 생성하고 ID를 Script Property에 저장한다.
-행사 테이블 시트가 없으면 DB 설계서의 물리 필드명으로 다음 시트를 만든다.
+## 행사 생성 저장 항목
 
-- `EVT_01_EVENT`
-- `EVT_02_EVENT_PARTICIPANT`
-- `EVT_03_ATTENDANCE`
+행사 생성 화면에는 `행사` 시트에 실제로 존재하는 항목만 표시한다.
 
-기존 시트의 헤더가 설계서와 다르면 데이터를 덮어쓰지 않고 `PROCESS_FAILED`로 중단한다.
+- 행사명, 행사분류, 설명
+- 신청 시작·종료일시, 행사 시작·종료일시
+- 신청정원, 담당자ID, 진행상태
+- 신청관리여부, 참가비여부, 출석관리여부, 결산잔액분배여부
+- 납부자참가비, 비납부자참가비
+
+참가비는 선택 입력이다. `참가비여부`가 아니오이면 두 참가비는 `0`으로 저장한다.
+관리 여부는 기존 DB 열에 `1` 또는 `0`으로 저장한다. 행사ID는 공식 채번 규칙이 없어
+현재 UUID를 사용하며, 등록일시·수정일시는 저장 시 자동 입력한다.
+
+새 DB에 미리 만들어 둔 빈 템플릿 행이 있으면 첫 번째 빈 `행사ID` 행을 재사용한다.
+이때 환불관리여부 등 화면에서 수정하지 않는 기존 기본값은 보존한다.
 
 ## API 호출 형식
-
-API 설계서의 공통 초안 형식에 맞춰 다음 envelope를 사용한다.
 
 ```javascript
 {
@@ -32,42 +45,28 @@ API 설계서의 공통 초안 형식에 맞춰 다음 envelope를 사용한다.
 }
 ```
 
-응답은 `{ ok, data, error, meta: { requestId, executedAt } }` 형식이다. 행사복지 API 상세 시트에 Request/Response 필드가 확정되면 `request` 내부 계약을 대조해야 한다.
+응답 형식은 `{ ok, data, error, meta: { requestId, executedAt } }`이다.
 
-## 설계 확인 전 실행하지 않는 기능
+## Google Form 응답 동기화
 
-- Google Forms 신청자 동기화: Form ID와 열 매핑 없음
-- 출석 명단 원본 동기화: 원본 ID와 동기화 기준 없음
-- 행사 장부 조회/동기화: 행사 장부 DB 테이블과 타 영역 연동 키 없음
-- 단체 환불 파일 생성: 은행명·계좌번호의 물리 필드명 없음
-- 환불 이체 결과 반영: 처리 상태 필드와 반영 규칙 없음
-- 신청자 송금 증빙 업로드: 신청자 파일 저장 필드와 API 없음
-- 공통 사용자 권한 검증: USER/ROLE/PERMISSION 계약 확인 필요
+행사 상세의 `Google Form 응답 불러오기` 버튼에서 행사별 Google Form ID 또는 응답
+Spreadsheet ID를 등록한다. Form ID만 등록하면 연결된 응답 Spreadsheet ID를 자동으로
+찾아 `행사폼`에 함께 저장한다.
 
-위 기능은 임의 데이터를 만들거나 다른 팀 영역을 수정하지 않도록 `PROCESS_FAILED` 또는 비활성 UI로 남겨 두었다.
+- 원본 응답 Spreadsheet는 버튼을 누를 때만 한 번 읽는다.
+- 학번과 성명(이름)은 필수 문항이며, 문항 제목의 공백·안내 문구가 달라도 별칭으로 찾는다.
+- 가져온 응답은 `원본응답ID`로 식별하여 다시 눌러도 중복 저장하지 않는다.
+- 기본 신청 정보는 `행사신청`, 그 밖의 문항은 `신청추가답변`에 저장한다.
+- 참가비는 신청자 구분과 행사의 납부자·비납부자 참가비로 계산한다.
+- 입금 확인 처리 결과는 `행사입금`에 저장한다.
+- 상세 페이지 진입 시 DB 작업 데이터를 한 번 불러와 브라우저에 보관하며, 탭 이동·검색·
+  신청자 상세 열기에서는 DB를 다시 조회하지 않는다.
 
-## 파생 표시값
+## 아직 자동 실행하지 않는 기능
 
-- 행사 종료 여부: `event_status === '종료'`
-- 참가비 입금 완료: `amount_paid >= amount_due`
-- KPI 신청/승인/입금/출석 인원: 행사 참가자 및 출석 테이블 집계
+- 출석 원본 명단 동기화
+- 행사 장부 연동
+- 단체 환불 파일 생성 및 이체 결과 반영
+- 공통 사용자 권한 검증
 
-## 승인된 행사 참가비 확장
-
-- `fee_amount`: 학생회비 납부자 참가비
-- `non_member_fee_amount`: 학생회비 미납부자 참가비
-
-기존 `EVT_01_EVENT` 헤더가 최신 헤더의 앞부분과 정확히 일치하면 기존 데이터는 유지하고
-`non_member_fee_amount`, `event_purpose`, `related_materials`, `additional_notes` 중 누락된 마지막 열만 추가한다.
-
-## 행사 설명 및 관련자료
-
-- `event_purpose`: 행사 목적과 취지
-- `related_materials`: Google Drive에 업로드된 관련자료 URL
-- `additional_notes`: 추가 전달사항 및 특이사항
-
-관련자료는 `EVENT_WELFARE_MATERIAL_FOLDER_ID` Script Property의 Google Drive 폴더에 저장한다.
-Property가 없으면 최초 업로드 시 `Council Project 행사복지 관련자료` 폴더를 만들고 ID를 저장한다.
-허용 확장자는 PDF, HWP/HWPX, Office 문서, JPG/PNG, ZIP이며 파일당 최대 크기는 5MB이다.
-
-`event_id` 채번 규칙이 설계서에 없어 생성 시 충돌 방지를 위해 UUID를 사용한다. 공식 채번 규칙 확정 후 확인이 필요하다.
+위 기능은 원본 ID, 연동 규칙 또는 권한 계약이 확정되지 않아 임의로 데이터를 만들지 않는다.

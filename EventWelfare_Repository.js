@@ -1,10 +1,16 @@
 /**
  * 행사복지 시트 저장소.
- * Script Property EVENT_WELFARE_SPREADSHEET_ID를 우선 사용하고,
- * 컨테이너 바운드 스크립트인 경우 Active Spreadsheet를 사용한다.
+ * 전용 설정의 Spreadsheet ID를 우선 사용하고,
+ * 미설정 시 Script Property와 Active Spreadsheet 순으로 fallback한다.
  */
 function ewGetSpreadsheet_() {
   var config = ewConfig_();
+  var configuredSpreadsheetId = String(config.spreadsheetId || '').trim();
+
+  if (configuredSpreadsheetId) {
+    return SpreadsheetApp.openById(configuredSpreadsheetId);
+  }
+
   var spreadsheetId = PropertiesService.getScriptProperties()
     .getProperty(config.spreadsheetPropertyKey);
 
@@ -31,14 +37,28 @@ function ewInitializeEventWelfareSheets_(spreadsheet) {
   var defaultSheet = spreadsheet.getSheets()[0];
   tableKeys.forEach(function (tableKey, index) {
     var table = tables[tableKey];
-    var sheet = spreadsheet.getSheetByName(table.sheetName);
+    var sheet = ewFindConfiguredSheet_(spreadsheet, table);
     if (!sheet && index === 0 && defaultSheet && defaultSheet.getLastRow() === 0) {
       sheet = defaultSheet.setName(table.sheetName);
     }
     if (!sheet) sheet = spreadsheet.insertSheet(table.sheetName);
-    sheet.getRange(1, 1, 1, table.headers.length).setValues([table.headers]);
+    var physicalHeaders = ewGetPhysicalHeaders_(table);
+    sheet.getRange(1, 1, 1, physicalHeaders.length).setValues([physicalHeaders]);
     sheet.setFrozenRows(1);
   });
+}
+
+function ewFindConfiguredSheet_(spreadsheet, table) {
+  if (typeof table.sheetId !== 'undefined' && table.sheetId !== null) {
+    var targetSheetId = Number(table.sheetId);
+    var sheets = spreadsheet.getSheets();
+    for (var index = 0; index < sheets.length; index += 1) {
+      if (sheets[index].getSheetId() === targetSheetId) {
+        return sheets[index];
+      }
+    }
+  }
+  return spreadsheet.getSheetByName(table.sheetName);
 }
 
 function ewGetTableConfig_(tableKey) {
@@ -49,64 +69,65 @@ function ewGetTableConfig_(tableKey) {
   return table;
 }
 
+function ewGetPhysicalHeaders_(table) {
+  return table.physicalHeaders && table.physicalHeaders.length
+    ? table.physicalHeaders.slice()
+    : table.headers.map(function (header) {
+      return table.fieldMap && table.fieldMap[header] ? table.fieldMap[header] : header;
+    });
+}
+
+function ewGetPhysicalHeader_(table, logicalHeader) {
+  return table.fieldMap && table.fieldMap[logicalHeader]
+    ? table.fieldMap[logicalHeader]
+    : logicalHeader;
+}
+
+function ewGetHeaderState_(sheet, table) {
+  var existingHeaders = sheet.getRange(1, 1, 1, sheet.getLastColumn())
+    .getDisplayValues()[0]
+    .map(function (header) { return String(header || '').trim(); });
+  var expectedHeaders = ewGetPhysicalHeaders_(table);
+  var missingHeaders = expectedHeaders.filter(function (header) {
+    return existingHeaders.indexOf(header) < 0;
+  });
+  if (missingHeaders.length) {
+    ewThrow_(
+      'PROCESS_FAILED',
+      table.sheetName + ' 시트에 필수 헤더가 없습니다: ' + missingHeaders.join(', ')
+    );
+  }
+  var indexByHeader = {};
+  existingHeaders.forEach(function (header, index) {
+    indexByHeader[header] = index;
+  });
+  return {
+    headers: existingHeaders,
+    indexByHeader: indexByHeader
+  };
+}
+
 function ewGetOrCreateSheet_(tableKey) {
   var spreadsheet = ewGetSpreadsheet_();
   var table = ewGetTableConfig_(tableKey);
-  var sheet = spreadsheet.getSheetByName(table.sheetName);
+  var sheet = ewFindConfiguredSheet_(spreadsheet, table);
 
   if (!sheet) {
     sheet = spreadsheet.insertSheet(table.sheetName);
-    sheet.getRange(1, 1, 1, table.headers.length).setValues([table.headers]);
+    var physicalHeaders = ewGetPhysicalHeaders_(table);
+    sheet.getRange(1, 1, 1, physicalHeaders.length).setValues([physicalHeaders]);
     sheet.setFrozenRows(1);
     return sheet;
   }
 
   if (sheet.getLastColumn() === 0 || sheet.getLastRow() === 0) {
-    sheet.getRange(1, 1, 1, table.headers.length).setValues([table.headers]);
+    var emptySheetHeaders = ewGetPhysicalHeaders_(table);
+    sheet.getRange(1, 1, 1, emptySheetHeaders.length).setValues([emptySheetHeaders]);
     sheet.setFrozenRows(1);
     return sheet;
   }
 
-  var lastColumn = sheet.getLastColumn();
-  var existingHeaders = sheet.getRange(1, 1, 1, lastColumn).getDisplayValues()[0];
-
-  // 최신 DB 설계 순서로 신규 3개 필드가 먼저 추가된 경우, 승인된 미납부자 참가비 열을 13번째에 삽입한다.
-  var nonMemberFeeIndex = table.headers.indexOf('non_member_fee_amount');
-  var designHeadersWithoutNonMember = tableKey === 'event'
-    ? table.headers.filter(function (header) { return header !== 'non_member_fee_amount'; })
-    : [];
-  if (
-    tableKey === 'event' &&
-    nonMemberFeeIndex >= 0 &&
-    existingHeaders.join('|') === designHeadersWithoutNonMember.join('|')
-  ) {
-    sheet.insertColumnAfter(nonMemberFeeIndex);
-    sheet.getRange(1, nonMemberFeeIndex + 1, 1, 1)
-      .setValues([['non_member_fee_amount']]);
-    existingHeaders = table.headers.slice();
-  }
-
-  // 기존 헤더가 최신 헤더의 접두사일 때만 누락된 마지막 열을 추가한다.
-  var expectedPrefix = tableKey === 'event'
-    ? table.headers.slice(0, existingHeaders.length)
-    : [];
-  if (
-    tableKey === 'event' &&
-    existingHeaders.length < table.headers.length &&
-    existingHeaders.join('|') === expectedPrefix.join('|')
-  ) {
-    var missingHeaders = table.headers.slice(existingHeaders.length);
-    sheet.getRange(1, existingHeaders.length + 1, 1, missingHeaders.length)
-      .setValues([missingHeaders]);
-    existingHeaders = table.headers.slice();
-  }
-
-  if (existingHeaders.join('|') !== table.headers.join('|')) {
-    ewThrow_(
-      'PROCESS_FAILED',
-      table.sheetName + ' 시트의 헤더가 DB 설계와 다릅니다. 자동으로 덮어쓰지 않았습니다.'
-    );
-  }
+  ewGetHeaderState_(sheet, table);
   return sheet;
 }
 
@@ -118,11 +139,16 @@ function ewReadTable_(tableKey) {
     return [];
   }
 
-  var values = sheet.getRange(2, 1, lastRow - 1, table.headers.length).getValues();
+  var headerState = ewGetHeaderState_(sheet, table);
+  var values = sheet.getRange(2, 1, lastRow - 1, headerState.headers.length).getValues();
   return values.map(function (row, index) {
     var item = { __rowNumber: index + 2 };
-    table.headers.forEach(function (header, columnIndex) {
-      item[header] = ewPlainCellValue_(row[columnIndex]);
+    table.headers.forEach(function (header) {
+      var physicalHeader = ewGetPhysicalHeader_(table, header);
+      var columnIndex = headerState.indexByHeader[physicalHeader];
+      item[header] = typeof columnIndex === 'number'
+        ? ewPlainCellValue_(row[columnIndex])
+        : '';
     });
     return item;
   }).filter(function (item) {
@@ -141,11 +167,69 @@ function ewFindById_(tableKey, id) {
 function ewAppendItem_(tableKey, item) {
   var table = ewGetTableConfig_(tableKey);
   var sheet = ewGetOrCreateSheet_(tableKey);
-  var row = table.headers.map(function (header) {
-    return Object.prototype.hasOwnProperty.call(item, header) ? item[header] : '';
+  var headerState = ewGetHeaderState_(sheet, table);
+  var idHeader = ewGetPhysicalHeader_(table, table.idField);
+  var idColumnIndex = headerState.indexByHeader[idHeader];
+  var lastRow = Math.max(1, sheet.getLastRow());
+  var targetRow = lastRow + 1;
+  if (lastRow >= 2) {
+    var idValues = sheet.getRange(2, idColumnIndex + 1, lastRow - 1, 1)
+      .getDisplayValues();
+    for (var rowIndex = 0; rowIndex < idValues.length; rowIndex += 1) {
+      if (String(idValues[rowIndex][0] || '').trim() === '') {
+        targetRow = rowIndex + 2;
+        break;
+      }
+    }
+  }
+  var row = targetRow <= lastRow
+    ? sheet.getRange(targetRow, 1, 1, headerState.headers.length).getValues()[0]
+    : headerState.headers.map(function () { return ''; });
+  table.headers.forEach(function (header) {
+    if (!Object.prototype.hasOwnProperty.call(item, header)) return;
+    var physicalHeader = ewGetPhysicalHeader_(table, header);
+    var columnIndex = headerState.indexByHeader[physicalHeader];
+    if (typeof columnIndex === 'number') row[columnIndex] = item[header];
   });
-  sheet.appendRow(row);
+  sheet.getRange(targetRow, 1, 1, headerState.headers.length).setValues([row]);
   return ewFindById_(tableKey, item[table.idField]);
+}
+
+/**
+ * 여러 행을 추가할 때 헤더와 기존 행을 한 번만 읽는다.
+ * DB에 미리 만들어 둔 빈 템플릿 행을 앞에서부터 재사용하고, 화면에서 다루지 않는 기본값은 보존한다.
+ */
+function ewAppendItems_(tableKey, items) {
+  if (!Array.isArray(items) || !items.length) return [];
+  var table = ewGetTableConfig_(tableKey);
+  var sheet = ewGetOrCreateSheet_(tableKey);
+  var headerState = ewGetHeaderState_(sheet, table);
+  var idHeader = ewGetPhysicalHeader_(table, table.idField);
+  var idColumnIndex = headerState.indexByHeader[idHeader];
+  var lastRow = Math.max(1, sheet.getLastRow());
+  var existingRows = lastRow >= 2
+    ? sheet.getRange(2, 1, lastRow - 1, headerState.headers.length).getValues()
+    : [];
+  var blankRows = [];
+  existingRows.forEach(function (row, index) {
+    if (String(row[idColumnIndex] || '').trim() === '') blankRows.push(index + 2);
+  });
+  var appendRow = lastRow + 1;
+
+  items.forEach(function (item) {
+    var targetRow = blankRows.length ? blankRows.shift() : appendRow++;
+    var row = targetRow <= lastRow
+      ? existingRows[targetRow - 2].slice()
+      : headerState.headers.map(function () { return ''; });
+    table.headers.forEach(function (header) {
+      if (!Object.prototype.hasOwnProperty.call(item, header)) return;
+      var physicalHeader = ewGetPhysicalHeader_(table, header);
+      var columnIndex = headerState.indexByHeader[physicalHeader];
+      if (typeof columnIndex === 'number') row[columnIndex] = item[header];
+    });
+    sheet.getRange(targetRow, 1, 1, headerState.headers.length).setValues([row]);
+  });
+  return items.map(ewWithoutRowNumber_);
 }
 
 function ewUpdateItem_(tableKey, id, patch) {
@@ -156,14 +240,17 @@ function ewUpdateItem_(tableKey, id, patch) {
     ewThrow_('NOT_FOUND', '대상 정보를 찾을 수 없습니다.');
   }
 
-  var merged = {};
-  table.headers.forEach(function (header) {
-    merged[header] = Object.prototype.hasOwnProperty.call(patch, header)
-      ? patch[header]
-      : current[header];
+  var headerState = ewGetHeaderState_(sheet, table);
+  var row = sheet.getRange(current.__rowNumber, 1, 1, headerState.headers.length)
+    .getValues()[0];
+  Object.keys(patch).forEach(function (header) {
+    if (table.headers.indexOf(header) < 0) return;
+    var physicalHeader = ewGetPhysicalHeader_(table, header);
+    var columnIndex = headerState.indexByHeader[physicalHeader];
+    if (typeof columnIndex === 'number') row[columnIndex] = patch[header];
   });
-  sheet.getRange(current.__rowNumber, 1, 1, table.headers.length)
-    .setValues([table.headers.map(function (header) { return merged[header]; })]);
+  sheet.getRange(current.__rowNumber, 1, 1, headerState.headers.length)
+    .setValues([row]);
   return ewFindById_(tableKey, id);
 }
 

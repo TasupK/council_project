@@ -59,10 +59,7 @@ function apiV1_getApplicantDetail(input) {
 
 function apiV1_syncApplicantsFromForms(input) {
   return ewExecuteApi_(function () {
-    ewParseRequest_(input);
-    return ewUnavailable_(
-      'Google Forms 원본 ID와 응답 열 매핑이 API/DB 설계서에 없어 동기화를 실행하지 않았습니다.'
-    );
+    return ewSyncApplicantsFromFormsData_(ewParseRequest_(input).request);
   });
 }
 
