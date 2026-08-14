@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <base target="_top" />
+  <title>학생회 통합 업무관리</title>
+  <style>
+    :root {
+      --bg: #f5f6f8;
+      --card: #ffffff;
+      --border: #e5e7eb;
+      --text: #1f2430;
+      --text-muted: #6b7280;
+      --primary: #2f3b52;
+      --primary-hover: #3f4d6b;
+      --accent: #4f6df5;
+      --blue-bg: #eaf1fd; --blue-fg: #1d4ed8;
+      --green-bg: #e7f7ee; --green-fg: #17803d;
+      --amber-bg: #fff6e0; --amber-fg: #92650a;
+      --red-bg: #fdecec; --red-fg: #c22b2b;
+      --gray-bg: #eef0f3; --gray-fg: #5b6472;
+      --radius: 10px;
+      --sidebar-w: 230px;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: -apple-system, "Pretendard", "Noto Sans KR", "Segoe UI", sans-serif; background: var(--bg); color: var(--text); font-size: 13.5px; }
+    .shell { display: flex; flex-direction: column; min-height: 100vh; }
+
+    .topbar { display: flex; align-items: center; gap: 16px; padding: 0 20px; height: 56px; background: var(--card); border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .topbar .logo { font-weight: 700; font-size: 15px; white-space: nowrap; }
+    .topbar .search { flex: 1; max-width: 420px; position: relative; }
+    .topbar .search input { width: 100%; padding: 8px 10px 8px 30px; border: 1px solid var(--border); border-radius: 8px; font-size: 12.5px; background: var(--bg); }
+    .topbar .search::before { content: "\1F50D"; position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 12px; opacity: .5; }
+    .topbar .right { margin-left: auto; display: flex; align-items: center; gap: 16px; }
+    select.year { padding: 7px 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 12.5px; background: #fff; }
+    .bell { font-size: 16px; cursor: pointer; }
+    .profile { display: flex; align-items: center; gap: 8px; }
+    .profile .avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--gray-bg); display: flex; align-items: center; justify-content: center; font-size: 13px; }
+    .profile .name { font-size: 12.5px; font-weight: 600; line-height: 1.2; }
+    .profile .role { font-size: 11px; color: var(--text-muted); }
+
+    .body { display: flex; flex: 1; min-height: 0; }
+    .sidebar { width: var(--sidebar-w); background: var(--card); border-right: 1px solid var(--border); flex-shrink: 0; display: flex; flex-direction: column; justify-content: space-between; padding: 14px 10px; }
+    .sidebar .menu-item { display: block; padding: 9px 10px; border-radius: 8px; color: var(--text); text-decoration: none; font-size: 13px; cursor: pointer; margin-bottom: 2px; }
+    .sidebar .menu-item.disabled { color: var(--text-muted); cursor: default; }
+    .sidebar .menu-item.active-group { background: var(--bg); font-weight: 600; }
+    .sidebar .submenu { margin-left: 6px; border-left: 1px solid var(--border); padding-left: 10px; }
+    .sidebar .submenu a { display: block; padding: 7px 8px; border-radius: 6px; color: var(--text-muted); text-decoration: none; font-size: 12.5px; cursor: pointer; margin-bottom: 1px; }
+    .sidebar .submenu a:hover { background: var(--bg); }
+    .sidebar .submenu a.active { background: var(--accent); color: #fff; font-weight: 600; }
+    .sidebar-footer a { display: block; padding: 8px 10px; color: var(--text-muted); text-decoration: none; font-size: 12.5px; }
+
+    .main { flex: 1; overflow-y: auto; padding: 22px 28px 60px; }
+    .crumb { font-size: 12px; color: var(--text-muted); margin-bottom: 4px; }
+    .page-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px; }
+    .page-head h1 { font-size: 19px; margin: 0; }
+    .page-head .actions { display: flex; gap: 8px; }
+    .page-desc { color: var(--text-muted); font-size: 12.5px; margin: 4px 0 16px; }
+
+    .stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+    .stat-row.cols-5 { grid-template-columns: repeat(5, 1fr); }
+    .stat-card { border-radius: var(--radius); padding: 14px 16px; }
+    .stat-card .label { font-size: 12px; margin-bottom: 6px; opacity: .85; }
+    .stat-card .value { font-size: 21px; font-weight: 700; }
+    .stat-card.c-blue { background: var(--blue-bg); color: var(--blue-fg); }
+    .stat-card.c-green { background: var(--green-bg); color: var(--green-fg); }
+    .stat-card.c-amber { background: var(--amber-bg); color: var(--amber-fg); }
+    .stat-card.c-red { background: var(--red-bg); color: var(--red-fg); }
+    .stat-card.c-gray { background: var(--gray-bg); color: var(--gray-fg); }
+
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 14px; }
+    .toolbar { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; align-items: center; }
+    input[type=text], input[type=number], input[type=date], select { padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 12.5px; background: #fff; color: var(--text); }
+    button.btn { padding: 8px 14px; border-radius: 8px; border: 1px solid var(--primary); background: var(--primary); color: #fff; font-size: 12.5px; cursor: pointer; }
+    button.btn:hover { background: var(--primary-hover); }
+    button.btn.outline { background: #fff; color: var(--primary); }
+    button.btn.danger { background: #fff; color: var(--red-fg); border-color: var(--red-fg); }
+    button.btn.success { background: #fff; color: var(--green-fg); border-color: var(--green-fg); }
+    button.btn.link { background: transparent; border: none; color: var(--accent); padding: 4px; }
+    button.btn.sm { padding: 5px 10px; font-size: 11.5px; }
+    button.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .bulk-bar { display: none; align-items: center; gap: 12px; background: var(--blue-bg); border-radius: 8px; padding: 10px 14px; margin-bottom: 12px; font-size: 12.5px; }
+    .bulk-bar.show { display: flex; }
+    .bulk-bar .count { font-weight: 700; color: var(--blue-fg); }
+    .bulk-bar .warn { color: var(--amber-fg); }
+    .bulk-bar .spacer { flex: 1; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+    thead th { text-align: left; color: var(--text-muted); font-weight: 600; font-size: 11.5px; border-bottom: 1px solid var(--border); padding: 9px 8px; background: #fafbfc; }
+    tbody td { padding: 9px 8px; border-bottom: 1px solid var(--border); }
+    tbody tr:hover { background: #fafbfc; }
+
+    .badge { display: inline-block; padding: 3px 9px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+    .badge.접수, .badge.대기 { background: var(--amber-bg); color: var(--amber-fg); }
+    .badge.승인, .badge.완료, .badge.정식 { background: var(--green-bg); color: var(--green-fg); }
+    .badge.반려, .badge.불일치, .badge.실패 { background: var(--red-bg); color: var(--red-fg); }
+    .badge.임시 { background: var(--gray-bg); color: var(--gray-fg); }
+
+    .pagination { display: flex; justify-content: flex-end; gap: 6px; margin-top: 10px; }
+    .pagination button { padding: 6px 10px; border: 1px solid var(--border); background: #fff; border-radius: 6px; cursor: pointer; font-size: 11.5px; }
+    .pagination button.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .list-footnote { color: var(--text-muted); font-size: 11.5px; margin-top: 10px; }
+
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(20,22,30,0.45); align-items: center; justify-content: center; z-index: 50; padding: 20px; }
+    .modal-overlay.open { display: flex; }
+    .modal { background: #fff; border-radius: 12px; width: 620px; max-width: 100%; max-height: 90vh; overflow-y: auto; padding: 22px; }
+    .modal h2 { margin: 0 0 4px; font-size: 16px; }
+    .modal .modal-desc { color: var(--text-muted); font-size: 12px; margin: 0 0 16px; }
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+    .info-box { background: var(--bg); border-radius: 8px; padding: 12px 14px; }
+    .info-box h3 { font-size: 12px; color: var(--text-muted); margin: 0 0 8px; font-weight: 600; }
+    .info-row { display: flex; justify-content: space-between; font-size: 12.5px; padding: 4px 0; }
+    .info-row .k { color: var(--text-muted); }
+    .info-row .v { font-weight: 600; }
+    .evidence-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+    .evidence-box { border: 1px dashed var(--border); border-radius: 8px; padding: 12px; text-align: center; }
+    .evidence-box .fname { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
+    .field { margin-bottom: 12px; }
+    .field label { display: block; font-size: 12px; color: var(--text-muted); margin-bottom: 5px; }
+    .field input, .field select, .field textarea { width: 100%; padding: 9px 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 12.5px; }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+
+    .empty { text-align: center; color: var(--text-muted); padding: 40px 0; font-size: 12.5px; }
+    .toast { position: fixed; bottom: 46px; right: 24px; background: var(--primary); color: #fff; padding: 12px 18px; border-radius: 8px; font-size: 12.5px; display: none; z-index: 100; }
+    .toast.error { background: var(--red-fg); }
+    .checkbox-cell { width: 26px; }
+
+    .status-bar { flex-shrink: 0; border-top: 1px solid var(--border); background: var(--card); padding: 8px 20px; font-size: 11.5px; color: var(--text-muted); }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="topbar">
+      <div class="logo">학생회 통합 업무관리</div>
+      <div class="search"><input type="text" placeholder="업무·신청자·거래 검색" /></div>
+      <div class="right">
+        <select class="year"><option>2026학년도</option></select>
+        <div class="bell">&#128276;</div>
+        <div class="profile">
+          <div class="avatar">&#128100;</div>
+          <div><div class="name">운영자</div><div class="role">관리자</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="body">
+      <aside class="sidebar">
+        <div>
+          <a class="menu-item" data-view="summary">메인화면</a>
+          <a class="menu-item disabled">장부관리</a>
+          <a class="menu-item active-group">학생회비관리</a>
+          <div class="submenu">
+            <a data-view="members">가입자 조회</a>
+            <a data-view="payments">납부 관리</a>
+            <a data-view="refunds">환불 관리</a>
+          </div>
+          <a class="menu-item disabled">행사복지관리</a>
+        </div>
+        <div class="sidebar-footer">
+          <div style="font-size:11.5px;color:var(--text-muted);padding:6px 10px 2px;">시스템</div>
+          <a>설정</a>
+        </div>
+      </aside>
+
+      <main class="main">
+        <!-- 전체 현황 -->
+        <section class="view" id="view-summary">
+          <div class="crumb">메인화면</div>
+          <div class="page-head"><h1>전체 현황</h1></div>
+          <p class="page-desc">학생회비관리 전체 지표를 한눈에 확인합니다.</p>
+
+          <div class="card">
+            <h2 style="font-size:13px;margin:0 0 12px;">가입자</h2>
+            <div class="stat-row cols-5" id="s_payer"></div>
+          </div>
+          <div class="card">
+            <h2 style="font-size:13px;margin:0 0 12px;">납부</h2>
+            <div class="stat-row cols-5" id="s_payment"></div>
+          </div>
+          <div class="card">
+            <h2 style="font-size:13px;margin:0 0 12px;">환불</h2>
+            <div class="stat-row" id="s_refund"></div>
+          </div>
+        </section>
+
+        <!-- 가입자 조회 -->
+        <section class="view" id="view-members" style="display:none">
+          <div class="crumb">학생회비관리 / 가입자 조회</div>
+          <div class="page-head">
+            <div><h1>가입자 조회</h1></div>
+            <div class="actions">
+              <button class="btn outline" onclick="openMemberCreateModal()">수기 등록</button>
+              <button class="btn" onclick="exportData('member')">내보내기</button>
+            </div>
+          </div>
+          <p class="page-desc">학생회비 납부자 기준정보를 조회합니다.</p>
+
+          <div class="stat-row" id="m_stats"></div>
+
+          <div class="card">
+            <div class="toolbar">
+              <input type="text" id="memberKeyword" placeholder="이름·학번 검색" />
+              <select id="memberDeptFilter"><option value="">소속 전체</option><option value="경영정보학과">경영정보학과</option><option value="경영대학">경영대학</option></select>
+              <select id="memberTypeFilter"><option value="">유형 전체</option><option value="정식">정식</option><option value="임시">임시</option></select>
+              <button class="btn outline" onclick="loadMembers(1)">검색</button>
+              <button class="btn outline" onclick="resetFilters('member')">초기화</button>
+            </div>
+            <table>
+              <thead><tr><th>성명</th><th>학번</th><th>소속</th><th>유형</th><th>적용시작학기</th><th>적용종료학기</th></tr></thead>
+              <tbody id="memberRows"></tbody>
+            </table>
+            <div class="empty" id="memberEmpty" style="display:none;">조회된 가입자가 없습니다.</div>
+            <div class="pagination" id="memberPagination"></div>
+            <div class="list-footnote" id="memberFootnote"></div>
+          </div>
+        </section>
+
+        <!-- 납부 관리 -->
+        <section class="view" id="view-payments" style="display:none">
+          <div class="crumb">학생회비관리 / 납부 관리</div>
+          <div class="page-head">
+            <div><h1>납부 관리</h1></div>
+            <div class="actions"><button class="btn" onclick="exportData('payment')">거래내역 대조용 내보내기</button></div>
+          </div>
+          <p class="page-desc">납부 신청과 실제 입금을 구분하여 확인하고 처리합니다.</p>
+
+          <div class="stat-row cols-5" id="p_stats"></div>
+
+          <div class="card">
+            <div class="toolbar">
+              <input type="text" id="paymentKeyword" placeholder="이름·학번 검색" />
+              <select id="paymentTypeFilter"><option value="">유형 전체</option><option value="정식">정식</option><option value="임시">임시</option></select>
+              <select id="paymentStatusFilter"><option value="">신청상태 전체</option><option value="접수">접수</option><option value="승인">승인</option><option value="반려">반려</option></select>
+              <button class="btn outline" onclick="loadPayments(1)">검색</button>
+              <button class="btn outline" onclick="resetFilters('payment')">초기화</button>
+            </div>
+
+            <div class="bulk-bar" id="paymentBulkBar">
+              <span><span class="count" id="paymentSelCount">0</span>개 선택됨</span>
+              <span class="warn" id="paymentSelWarn"></span>
+              <span class="spacer"></span>
+              <button class="btn outline sm" onclick="clearSelection('payment')">선택 해제</button>
+              <button class="btn success sm" onclick="processSelected('payment','APPROVE')">일괄 승인</button>
+              <button class="btn danger sm" onclick="processSelected('payment','REJECT')">반려</button>
+            </div>
+
+            <table>
+              <thead><tr>
+                <th class="checkbox-cell"><input type="checkbox" onclick="toggleAll('payment', this)"></th>
+                <th>신청자</th><th>소속</th><th>유형</th><th>예정금액</th><th>납부금액</th><th>금전처리상태</th><th>신청상태</th><th>처리</th>
+              </tr></thead>
+              <tbody id="paymentRows"></tbody>
+            </table>
+            <div class="empty" id="paymentEmpty" style="display:none;">조회된 납부신청이 없습니다.</div>
+            <div class="pagination" id="paymentPagination"></div>
+            <div class="list-footnote" id="paymentFootnote"></div>
+          </div>
+        </section>
+
+        <!-- 환불 관리 -->
+        <section class="view" id="view-refunds" style="display:none">
+          <div class="crumb">학생회비관리 / 환불 관리</div>
+          <div class="page-head">
+            <div><h1>환불 관리</h1></div>
+            <div class="actions"><button class="btn" onclick="exportData('refund')">송금용 엑셀</button></div>
+          </div>
+          <p class="page-desc">납부 건별 자동 계산금액을 확인하고 환불과 송금을 관리합니다.</p>
+
+          <div class="stat-row" id="r_stats"></div>
+
+          <div class="card">
+            <div class="toolbar">
+              <input type="text" id="refundKeyword" placeholder="이름·학번 검색" />
+              <select id="refundStatusFilter"><option value="">신청상태 전체</option><option value="접수">접수</option><option value="승인">승인</option><option value="반려">반려</option></select>
+              <button class="btn outline" onclick="loadRefunds(1)">검색</button>
+              <button class="btn outline" onclick="resetFilters('refund')">초기화</button>
+            </div>
+
+            <div class="bulk-bar" id="refundBulkBar">
+              <span><span class="count" id="refundSelCount">0</span>개 선택됨</span>
+              <span class="spacer"></span>
+              <button class="btn outline sm" onclick="clearSelection('refund')">선택 해제</button>
+              <button class="btn success sm" onclick="processSelected('refund','APPROVE')">환불 승인</button>
+              <button class="btn danger sm" onclick="processSelected('refund','REJECT')">반려</button>
+            </div>
+
+            <table>
+              <thead><tr>
+                <th class="checkbox-cell"><input type="checkbox" onclick="toggleAll('refund', this)"></th>
+                <th>신청자</th><th>환불사유</th><th>자동계산금액</th><th>신청상태</th><th>금전처리상태</th><th>처리</th>
+              </tr></thead>
+              <tbody id="refundRows"></tbody>
+            </table>
+            <div class="empty" id="refundEmpty" style="display:none;">조회된 환불신청이 없습니다.</div>
+            <div class="pagination" id="refundPagination"></div>
+            <div class="list-footnote" id="refundFootnote"></div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div class="status-bar" id="statusBar">시스템 v0.1 · 데이터 동기화 정상</div>
+  </div>
+
+  <!-- 가입자 등록 모달 -->
+  <div class="modal-overlay" id="memberModal">
+    <div class="modal">
+      <h2>가입자 수기 등록</h2>
+      <p class="modal-desc">구글폼 유입 없이 예외적으로 가입자를 등록합니다.</p>
+      <div class="field"><label>학번 *</label><input type="text" id="f_학번"></div>
+      <div class="field"><label>성명 *</label><input type="text" id="f_성명"></div>
+      <div class="field"><label>소속</label><select id="f_소속"><option value="경영정보학과">경영정보학과</option><option value="경영대학">경영대학</option></select></div>
+      <div class="field"><label>유형</label><select id="f_유형"><option value="정식">정식</option><option value="임시">임시</option></select></div>
+      <div class="field"><label>적용시작학기 *</label><input type="number" id="f_적용시작학기"></div>
+      <div class="field"><label>적용종료학기 *</label><input type="number" id="f_적용종료학기"></div>
+      <div class="modal-actions">
+        <button class="btn outline" onclick="closeModal('memberModal')">취소</button>
+        <button class="btn" onclick="submitMemberCreate()">등록</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 납부 상세/승인 모달 -->
+  <div class="modal-overlay" id="paymentModal">
+    <div class="modal">
+      <h2>납부 승인</h2>
+      <p class="modal-desc">신청 정보, 납부금액 및 제출 이미지를 확인합니다.</p>
+      <div id="paymentModalBody"></div>
+      <div class="modal-actions" id="paymentModalActions"></div>
+    </div>
+  </div>
+
+  <!-- 환불 상세/승인 모달 -->
+  <div class="modal-overlay" id="refundModal">
+    <div class="modal">
+      <h2>환불 상세</h2>
+      <p class="modal-desc">환불 신청 정보, 자동 계산금액 및 제출 이미지를 확인합니다.</p>
+      <div id="refundModalBody"></div>
+      <div class="modal-actions" id="refundModalActions"></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    var state = {
+      member: { page: 1, pageSize: 10 },
+      payment: { page: 1, pageSize: 10, selected: {} },
+      refund: { page: 1, pageSize: 10, selected: {} }
+    };
+
+    document.querySelectorAll('[data-view]').forEach(function (a) {
+      a.addEventListener('click', function () { switchView(a.dataset.view); });
+    });
+
+    function switchView(view) {
+      document.querySelectorAll('.view').forEach(function (v) { v.style.display = 'none'; });
+      document.getElementById('view-' + view).style.display = 'block';
+      document.querySelectorAll('.submenu a').forEach(function (a) { a.classList.toggle('active', a.dataset.view === view); });
+      if (view === 'summary') loadSummary();
+      if (view === 'members') { loadMemberStats(); loadMembers(1); }
+      if (view === 'payments') { loadPaymentStats(); loadPayments(1); }
+      if (view === 'refunds') { loadRefundStats(); loadRefunds(1); }
+    }
+
+    function showToast(msg, isError) {
+      var t = document.getElementById('toast');
+      t.textContent = msg;
+      t.className = 'toast' + (isError ? ' error' : '');
+      t.style.display = 'block';
+      setTimeout(function () { t.style.display = 'none'; }, 2600);
+    }
+    function badge(status) { return status ? '<span class="badge ' + status + '">' + status + '</span>' : '-'; }
+    function money(v) { return Number(v || 0).toLocaleString() + '원'; }
+    function fmtDate(v) {
+      if (!v) return '-';
+      try { var d = new Date(v); return d.toLocaleString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }); }
+      catch (e) { return v; }
+    }
+    function driveLink(fileId) { return fileId ? 'https://drive.google.com/file/d/' + fileId + '/view' : ''; }
+
+    function runApi(fnName, params) {
+      return new Promise(function (resolve, reject) {
+        google.script.run
+          .withSuccessHandler(function (res) {
+            if (res && res.success) resolve(res.data); else reject(new Error(res && res.error || '알 수 없는 오류'));
+          })
+          .withFailureHandler(function (err) { reject(err); })
+          [fnName](params);
+      });
+    }
+    function statCard(label, value, color) {
+      return '<div class="stat-card c-' + color + '"><div class="label">' + label + '</div><div class="value">' + value + '</div></div>';
+    }
+
+    /* ---------------- 전체 현황 ---------------- */
+    function loadSummary() {
+      Promise.all([runApi('apiV1_getMemberStats', {}), runApi('apiV1_getPaymentStats', {}), runApi('apiV1_getRefundStats', {})])
+        .then(function (r) {
+          var m = r[0], p = r[1], rf = r[2];
+          document.getElementById('s_payer').innerHTML =
+            statCard('전체 가입자', m.전체, 'blue') + statCard('정식', m.정식, 'green') + statCard('임시', m.임시, 'amber') + statCard('만료 예정', m.만료예정, 'red') + statCard('', '', 'gray');
+          document.getElementById('s_payment').innerHTML =
+            statCard('신청 접수', p.신청접수, 'blue') + statCard('입금 대기', p.입금대기, 'amber') + statCard('입금 완료', p.입금완료, 'green') + statCard('임시 신청', p.임시신청, 'gray') + statCard('입금 불일치', p.입금불일치, 'red');
+          document.getElementById('s_refund').innerHTML =
+            statCard('신청 접수', rf.신청접수, 'blue') + statCard('송금 대기', rf.송금대기, 'amber') + statCard('송금 완료', rf.송금완료, 'green') + statCard('신청 반려', rf.신청반려, 'red');
+        }).catch(function (e) { showToast(e.message, true); });
+    }
+
+    /* ---------------- 가입자 조회 ---------------- */
+    function loadMemberStats() {
+      runApi('apiV1_getMemberStats', {}).then(function (m) {
+        document.getElementById('m_stats').innerHTML =
+          statCard('전체 납부자', m.전체, 'blue') + statCard('정식', m.정식, 'green') + statCard('임시', m.임시, 'amber') + statCard('만료 예정', m.만료예정, 'red');
+      }).catch(function (e) { showToast(e.message, true); });
+    }
+    function loadMembers(page) {
+      state.member.page = page;
+      var params = { keyword: document.getElementById('memberKeyword').value, 소속: document.getElementById('memberDeptFilter').value, 유형: document.getElementById('memberTypeFilter').value, page: page, pageSize: state.member.pageSize };
+      runApi('apiV1_listMembers', params).then(function (d) {
+        var rows = d.items.map(function (m) {
+          return '<tr><td>' + m.성명 + '</td><td>' + m.학번 + '</td><td>' + (m.소속 || '-') + '</td><td>' + badge(m.유형) + '</td>' +
+            '<td>' + (m.적용시작학기 || '-') + '</td><td>' + (m.적용종료학기 || '-') + '</td></tr>';
+        }).join('');
+        document.getElementById('memberRows').innerHTML = rows;
+        document.getElementById('memberEmpty').style.display = d.items.length ? 'none' : 'block';
+        document.getElementById('memberFootnote').textContent = '현재 검색 결과 ' + d.total + '명';
+        renderPagination('memberPagination', d.total, d.page, d.pageSize, loadMembers);
+      }).catch(function (e) { showToast(e.message, true); });
+    }
+    function resetFilters(type) {
+      if (type === 'member') { document.getElementById('memberKeyword').value = ''; document.getElementById('memberDeptFilter').value = ''; document.getElementById('memberTypeFilter').value = ''; loadMembers(1); }
+      if (type === 'payment') { document.getElementById('paymentKeyword').value = ''; document.getElementById('paymentTypeFilter').value = ''; document.getElementById('paymentStatusFilter').value = ''; loadPayments(1); }
+      if (type === 'refund') { document.getElementById('refundKeyword').value = ''; document.getElementById('refundStatusFilter').value = ''; loadRefunds(1); }
+    }
+    function openMemberCreateModal() { document.getElementById('memberModal').classList.add('open'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+    function submitMemberCreate() {
+      var params = {
+        학번: document.getElementById('f_학번').value, 성명: document.getElementById('f_성명').value,
+        소속: document.getElementById('f_소속').value, 유형: document.getElementById('f_유형').value,
+        적용시작학기: document.getElementById('f_적용시작학기').value, 적용종료학기: document.getElementById('f_적용종료학기').value
+      };
+      if (!params.학번 || !params.성명) { showToast('학번과 성명은 필수입니다.', true); return; }
+      runApi('apiV1_createMember', params).then(function () {
+        showToast('가입자가 등록되었습니다.'); closeModal('memberModal'); loadMembers(1); loadMemberStats();
+      }).catch(function (e) { showToast(e.message, true); });
+    }
+
+    /* ---------------- 납부 관리 ---------------- */
+    function loadPaymentStats() {
+      runApi('apiV1_getPaymentStats', {}).then(function (p) {
+        document.getElementById('p_stats').innerHTML =
+          statCard('신청 접수', p.신청접수, 'blue') + statCard('입금 대기', p.입금대기, 'amber') + statCard('입금 완료', p.입금완료, 'green') + statCard('임시 신청', p.임시신청, 'gray') + statCard('입금 불일치', p.입금불일치, 'red');
+      }).catch(function (e) { showToast(e.message, true); });
+    }
+    function loadPayments(page) {
+      state.payment.page = page; state.payment.selected = {};
+      updateBulkBar('payment');
+      var params = { keyword: document.getElementById('paymentKeyword').value, 유형: document.getElementById('paymentTypeFilter').value, status: document.getElementById('paymentStatusFilter').value, page: page, pageSize: state.payment.pageSize };
+      runApi('apiV1_listPayments', params).then(function (d) {
+        var rows = d.items.map(function (p) {
+          return '<tr><td class="checkbox-cell"><input type="checkbox" onchange="toggleRow(\'payment\',\'' + p.납부신청ID + '\',this)"></td>' +
+            '<td>' + p.성명 + ' · ' + p.학번 + '</td><td>' + (p.소속 || '-') + '</td><td>' + badge(p.유형) + '</td>' +
+            '<td>' + money(p.예정금액) + '</td><td>' + (p.납부금액 !== '' ? money(p.납부금액) : '-') + '</td>' +
+            '<td>' + badge(p.금전처리상태) + '</td><td>' + badge(p.신청상태) + '</td>' +
+            '<td><button class="btn outline sm" onclick="viewPayment(\'' + p.납부신청ID + '\')">상세보기</button></td></tr>';
+        }).join('');
+        document.getElementById('paymentRows').innerHTML = rows;
+        document.getElementById('paymentEmpty').style.display = d.items.length ? 'none' : 'block';
+        document.getElementById('paymentFootnote').textContent = '총 ' + d.total + '건 · 보관함은 필터에서 별도로 조회합니다.';
+        renderPagination('paymentPagination', d.total, d.page, d.pageSize, loadPayments);
+      }).catch(function (e) { showToast(e.message, true); });
+    }
+    function viewPayment(id) {
+      runApi('apiV1_getPayment', { 납부신청ID: id }).then(function (d) {
+        var a = d.application, p = d.payment;
+        var body = document.getElementById('paymentModalBody');
+        body.innerHTML =
+          '<div class="info-grid">' +
+            '<div class="info-box"><h3>신청 · 납부 정보</h3>' +
+              infoRow('신청자', a.성명 + ' · ' + a.학번) + infoRow('소속', a.소속) + infoRow('유형', a.유형) +
+              infoRow('예정금액', money(a.예정금액)) + infoRow('실제 납부금액', p ? money(p.납부금액) : '-') +
+            '</div>' +
+            '<div class="info-box"><h3>적용 정보 · 처리 상태</h3>' +
+              infoRow('적용학기수', a.적용학기수) + infoRow('적용시작학기', a.적용시작학기) +
+              infoRow('금전처리상태', badge(p ? p.금전처리상태 : '')) + infoRow('신청상태', badge(a.신청상태)) +
+            '</div>' +
+          '</div>' +
+          '<div class="evidence-grid">' +
+            evidenceBox('학생카드 캡쳐', a.학생카드캡쳐파일ID) + evidenceBox('입금 캡쳐', a.입금캡쳐파일ID) +
+          '</div>';
+
+        var actions = document.getElementById('paymentModalActions');
+        actions.innerHTML = '';
+        if (a.신청상태 === '접수') {
+          actions.innerHTML =
+            '<button class="btn outline" onclick="doArchivePayment(\'' + a.납부신청ID + '\')">보관</button>' +
+            '<button class="btn danger" onclick="doProcessSingle(\'payment\',\'' + a.납부신청ID + '\',\'REJECT\')">반려</button>' +
+            '<button class="btn" onclick="doProcessSingle(\'payment\',\'' + a.납부신청ID + '\',\'APPROVE\')">납부 승인</button>';
+        } else if (p && p.금전처리상태 === '대기') {
+          actions.innerHTML =
+            '<div class="field" style="width:100%"><label>입금자명</label><input type="text" id="pm_입금자명" value="' + (p.입금자명 || '') + '"></div>' +
+            '<button class="btn danger" onclick="confirmPayment(\'' + p.납부ID + '\',\'MISMATCH\')">불일치 처리</button>' +
+            '<button class="btn success" onclick="confirmPayment(\'' + p.납부ID + '\',\'DONE\')">입금 완료</button>';
+        } else {
+          actions.innerHTML = '<button class="btn outline" onclick="doArchivePayment(\'' + a.납부신청ID + '\')">보관</button>' +
+            '<button class="btn outline" onclick="closeModal(\'paymentModal\')">닫기</button>';
+        }
+        document.getElementById('paymentModal').classList.add('open');
+      }).catch(function (e) { showToast(e.message, true); });
+    }
+    function confirmPayment(paymentId, result) {
+      var el = document.getElementById('pm_입금자명');
+      runApi('apiV1_confirmPaymentReceipt', { 납부ID: paymentId, result: result, 입금자명: el ? el.value : '' }).then(function () {
+        showToast('입금 대사가 처리되었습니다.'); closeModal('paymentModal'); loadPayments(state.payment.page); loadPaymentStats();
+      }).catch(function (e) { showToast(e.message, true); });
+    }
+    function doArchivePayment(id) {
+      runApi('apiV1_archivePayment', { 납부신청ID: id }).then(function () {
+        showToast('보관 처리되었습니다.'); closeModal('paymentModal'); loadPayments(state.payment.page); loadPaymentStats();
+      }).catch(function (e) { showToast(e.message, true); });
+    }
+
+    /* ---------------- 환불 관리 ---------------- */
+    function loadRefundStats() {
+      runApi('apiV1_getRefundStats', {}).then(function (r) {
+        document.getElementById('r_stats').innerHTML =
+          statCard('신청 접수', r.신청접수, 'blue') + statCard('송금 대기', r.송금대기, 'amber') + statCard('송금 완료', r.송금완료, 'green') + statCard('신청 반려', r.신청반려, 'red');
+      }).catch(function (e) { showToast(e.message, true); });
+    }
+    function loadRefunds(page) {
+      state.refund.page = page; state.refund.selected = {};
+      updateBulkBar('refund');
+      var params = { keyword: document.getElementById('refundKeyword').value, status: document.getElementById('refundStatusFilter').value, page: page, pageSize: state.refund.pageSize };
+      runApi('apiV1_listRefunds', params).then(function (d) {
+        var rows = d.items.map(function (r) {
+          return '<tr><td class="checkbox-cell"><input type="checkbox" onchange="toggleRow(\'refund\',\'' + r.환불신청ID + '\',this)"></td>' +
+            '<td>' + r.성명 + ' · ' + r.학번 + '</td><td>' + (r.환불사유 || '-') + '</td>' +
+            '<td>' + money(r.자동계산금액) + '</td><td>' + badge(r.신청상태) + '</td><td>' + badge(r.금전처리상태) + '</td>' +
+            '<td><button class="btn outline sm" onclick="viewRefund(\'' + r.환불신청ID + '\')">상세보기</button></td></tr>';
+        }).join('');
+        document.getElementById('refundRows').innerHTML = rows;
+        document.getElementById('refundEmpty').style.display = d.items.length ? 'none' : 'block';
+        document.getElementById('refundFootnote').textContent = '총 ' + d.total + '건 · 완료·반려 건만 보관할 수 있습니다.';
+        renderPagination('refundPagination', d.total, d.page, d.pageSize, loadRefunds);
+      }).catch(function (e) { showToast(e.message, true); });
+    }
+    function viewRefund(id) {
+      runApi('apiV1_getRefund', { 환불신청ID: id, hasFullAccess: true }).then(function (d) {
+        var req = d.request, rf = d.refund;
+        var body = document.getElementById('refundModalBody');
+        body.innerHTML =
+          '<div class="info-grid">' +
+            '<div class="info-box"><h3>신청 · 납부 정보</h3>' +
+              infoRow('신청자', req.학번) + infoRow('환불사유', req.환불사유) + infoRow('은행', req.은행명) + infoRow('계좌', req.계좌번호) +
+            '</div>' +
+            '<div class="info-box"><h3>환불 자동 계산</h3>' +
+              infoRow('환불기준학기', req.환불기준학기) + infoRow('사용학기수', req.사용학기수) + infoRow('환불대상학기수', req.환불대상학기수) +
+              infoRow('자동계산금액', money(req.자동계산금액)) + infoRow('신청상태', badge(req.신청상태)) + infoRow('금전처리상태', badge(rf ? rf.금전처리상태 : '')) +
+            '</div>' +
+          '</div>' +
+          '<div class="evidence-grid">' +
+            evidenceBox('학생카드 캡쳐', req.학생카드캡쳐파일ID) + evidenceBox('학적변동내역', req.학적변동내역파일ID) +
+          '</div>';
+
+        var actions = document.getElementById('refundModalActions');
+        actions.innerHTML = '';
+        if (req.신청상태 === '접수') {
+          actions.innerHTML =
+            '<button class="btn outline" onclick="doArchiveRefund(\'' + req.환불신청ID + '\')">보관</button>' +
+            '<button class="btn danger" onclick="doProcessSingle(\'refund\',\'' + req.환불신청ID + '\',\'REJECT\')">반려</button>' +
+            '<button class="btn" onclick="doProcessSingle(\'refund\',\'' + req.환불신청ID + '\',\'APPROVE\')">환불 승인</button>';
+        } else if (rf && rf.금전처리상태 === '대기') {
+          actions.innerHTML =
+            '<button class="btn danger" onclick="confirmRefund(\'' + rf.환불ID + '\',\'FAILED\')">송금 실패</button>' +
+            '<button class="btn success" onclick="confirmRefund(\'' + rf.환불ID + '\',\'DONE\')">송금 완료</button>';
+        } else {
+          actions.innerHTML = '<button class="btn outline" onclick="doArchiveRefund(\'' + req.환불신청ID + '\')">보관</button>' +
+            '<button class="btn outline" onclick="closeModal(\'refundModal\')">닫기</button>';
+        }
+        document.getElementById('refundModal').classList.add('open');
+      }).catch(function (e) { showToast(e.message, true); });
+    }
+    function confirmRefund(refundId, result) {
+      runApi('apiV1_confirmRefundTransfer', { 환불ID: refundId, result: result }).then(function () {
+        showToast('송금 확정이 처리되었습니다.'); closeModal('refundModal'); loadRefunds(state.refund.page); loadRefundStats();
+      }).catch(function (e) { showToast(e.message, true); });
+    }
+    function doArchiveRefund(id) {
+      runApi('apiV1_archiveRefund', { 환불신청ID: id }).then(function () {
+        showToast('보관 처리되었습니다.'); closeModal('refundModal'); loadRefunds(state.refund.page); loadRefundStats();
+      }).catch(function (e) { showToast(e.message, true); });
+    }
+
+    function infoRow(k, v) { return '<div class="info-row"><span class="k">' + k + '</span><span class="v">' + (v === undefined || v === '' ? '-' : v) + '</span></div>'; }
+    function evidenceBox(label, fileId) {
+      return '<div class="evidence-box"><div class="fname">' + label + '</div>' +
+        (fileId ? '<a class="btn outline sm" href="' + driveLink(fileId) + '" target="_blank">이미지 보기</a>' : '<span style="color:var(--text-muted);font-size:12px">제출된 파일 없음</span>') +
+        '</div>';
+    }
+
+    /* ---------------- 공통: 선택/일괄처리/내보내기/페이지네이션 ---------------- */
+    function toggleRow(type, id, el) { state[type].selected[id] = el.checked; updateBulkBar(type); }
+    function toggleAll(type, el) {
+      var body = type === 'payment' ? 'paymentRows' : 'refundRows';
+      document.querySelectorAll('#' + body + ' tr').forEach(function (tr) {
+        var cb = tr.querySelector('input[type=checkbox]');
+        var btn = tr.querySelector('button');
+        if (!cb || !btn) return;
+        cb.checked = el.checked;
+        var m = btn.getAttribute('onclick').match(/'([^']+)'\)$/);
+        if (m) state[type].selected[m[1]] = el.checked;
+      });
+      updateBulkBar(type);
+    }
+    function clearSelection(type) {
+      state[type].selected = {};
+      document.querySelectorAll('#' + (type === 'payment' ? 'paymentRows' : 'refundRows') + ' input[type=checkbox]').forEach(function (cb) { cb.checked = false; });
+      updateBulkBar(type);
+    }
+    function updateBulkBar(type) {
+      var ids = Object.keys(state[type].selected).filter(function (k) { return state[type].selected[k]; });
+      var bar = document.getElementById(type + 'BulkBar');
+      bar.classList.toggle('show', ids.length > 0);
+      document.getElementById(type + 'SelCount').textContent = ids.length;
+      if (type === 'payment') {
+        var warnEl = document.getElementById('paymentSelWarn');
+        var rowsMap = {};
+        document.querySelectorAll('#paymentRows tr').forEach(function (tr) {
+          var btn = tr.querySelector('button');
+          if (!btn) return;
+          var m = btn.getAttribute('onclick').match(/'([^']+)'\)$/);
+          if (m) rowsMap[m[1]] = tr.children[3].textContent.trim();
+        });
+        var types = ids.map(function (id) { return rowsMap[id]; }).filter(Boolean);
+        var unique = types.filter(function (v, i) { return types.indexOf(v) === i; });
+        warnEl.textContent = unique.length > 1 ? '승인 결과 유형이 달라 일괄 승인할 수 없습니다.' : '';
+      }
+    }
+    function processSelected(type, action) {
+      var ids = Object.keys(state[type].selected).filter(function (k) { return state[type].selected[k]; });
+      if (!ids.length) { showToast('선택된 항목이 없습니다.', true); return; }
+      var reason = action === 'REJECT' ? (prompt('반려 사유를 입력하세요.') || '') : '';
+      var apiName = type === 'payment' ? 'apiV1_processPayments' : 'apiV1_processRefunds';
+      runApi(apiName, { ids: ids, action: action, reason: reason }).then(function (results) {
+        var failed = results.filter(function (r) { return !r.success; });
+        showToast(failed.length ? (results.length - failed.length) + '건 처리, ' + failed.length + '건 실패: ' + failed[0].message : '처리되었습니다.', failed.length > 0);
+        if (type === 'payment') { loadPayments(state.payment.page); loadPaymentStats(); } else { loadRefunds(state.refund.page); loadRefundStats(); }
+      }).catch(function (e) { showToast(e.message, true); });
+    }
+    function doProcessSingle(type, id, action) {
+      var reason = action === 'REJECT' ? (prompt('반려 사유를 입력하세요.') || '') : '';
+      var apiName = type === 'payment' ? 'apiV1_processPayments' : 'apiV1_processRefunds';
+      var modalId = type === 'payment' ? 'paymentModal' : 'refundModal';
+      runApi(apiName, { ids: [id], action: action, reason: reason }).then(function (results) {
+        if (results[0] && !results[0].success) { showToast(results[0].message, true); return; }
+        showToast('처리되었습니다.'); closeModal(modalId);
+        if (type === 'payment') { loadPayments(state.payment.page); loadPaymentStats(); } else { loadRefunds(state.refund.page); loadRefundStats(); }
+      }).catch(function (e) { showToast(e.message, true); });
+    }
+    function exportData(type) {
+      var apiName = type === 'payment' ? 'apiV1_exportPayments' : type === 'refund' ? 'apiV1_exportRefunds' : null;
+      if (!apiName) { showToast('가입자 목록 내보내기는 준비 중입니다.', true); return; }
+      runApi(apiName, {}).then(function (d) {
+        showToast('내보내기 완료: ' + d.rowCount + '건');
+        window.open(d.fileUrl, '_blank');
+      }).catch(function (e) { showToast(e.message, true); });
+    }
+    function renderPagination(elId, total, page, pageSize, loader) {
+      var pages = Math.max(Math.ceil(total / pageSize), 1);
+      var html = '';
+      for (var i = 1; i <= pages; i++) html += '<button class="' + (i === page ? 'active' : '') + '" onclick="(' + loader.name + ')(' + i + ')">' + i + '</button>';
+      document.getElementById(elId).innerHTML = html;
+    }
+
+    loadSummary();
+  </script>
+</body>
+</html>
