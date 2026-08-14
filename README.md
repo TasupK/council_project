@@ -82,7 +82,6 @@ src/000_server/020_schema/operation_db_schema.gs
 
 탭 이름이나 필드 이름이 바뀌면 기능 파일이 아니라 schema 파일을 먼저 수정합니다.
 
-
 ## 로컬 개발
 
 Apps Script 프로젝트에 반영할 때는 clasp를 사용합니다.
