@@ -5,6 +5,8 @@ getAppElement('appUserTitle').textContent = APP_USER_TITLE || '사용자';
 
 // 2. 공통 페이지 링크 및 활성 메뉴 연결
 getAppElement('appNavMain').href = buildAppPageUrl('main');
+getAppElement('appNavAccounting').href = buildAppPageUrl('accounting');
+getAppElement('appNavEvent').href = buildAppPageUrl('event');
 getAppElement('appNavSettings').href = buildAppPageUrl('settings');
 setAppActiveNavigation(APP_CURRENT_PAGE);
 
@@ -14,8 +16,12 @@ if (APP_IS_ADMIN) {
 
 function setAppActiveNavigation(page) {
   var mainLink = getAppElement('appNavMain');
+  var accountingLink = getAppElement('appNavAccounting');
+  var eventLink = getAppElement('appNavEvent');
   var settingsLink = getAppElement('appNavSettings');
   mainLink.classList.toggle('active', page === 'main');
+  accountingLink.classList.toggle('active', page.indexOf('accounting') === 0);
+  eventLink.classList.toggle('active', page.indexOf('event') === 0);
   settingsLink.classList.toggle('active', page.indexOf('settings') === 0);
 }
 

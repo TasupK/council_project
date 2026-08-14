@@ -1,0 +1,36 @@
+<script>
+function renderSettlement() {
+    const data = state.settlement || { totalIncome: 0, totalExpense: 0, balance: 0, eventCount: 0 };
+    const totalIncome = data.totalIncome || data.total_income || 0;
+    const totalExpense = data.totalExpense || data.total_expense || 0;
+    document.getElementById('settlementIncome').textContent = currency(totalIncome);
+    document.getElementById('settlementExpense').textContent = currency(totalExpense);
+    document.getElementById('settlementBalance').textContent = currency(data.balance || 0);
+    const incomeCount = state.items.filter(function (item) {
+        return item.transaction_type === '수입';
+    }).length;
+    const expenseCount = state.items.filter(function (item) {
+        return item.transaction_type === '지출';
+    }).length;
+    document.getElementById('settlementIncomeCount').textContent = '건수 ' + incomeCount + '건';
+    document.getElementById('settlementExpenseCount').textContent = '건수 ' + expenseCount + '건';
+    document.getElementById('settlementEventCount').textContent = (data.eventCount || data.event_count || state.events.length || 0) + '건';
+}
+
+setupAccountingPageLinks();
+// TODO(결산 보고서): 저장 대상과 출력 형식 확정 후 생성 이벤트를 연결한다.
+document.getElementById('generateSettlement').disabled = true;
+
+async function initializeSettlementPage() {
+  var results = await Promise.all([
+    callServer('api_getLedgerList', {}, { items: fallbackItems }),
+    callServer('api_getLedgerEventOptions', {}, fallbackEvents),
+    callServer('api_getSettlementSummary', {}, { totalIncome: 0, totalExpense: 0, balance: 0 })
+  ]);
+  state.items = results[0].items || fallbackItems;
+  state.events = results[1] || fallbackEvents;
+  state.settlement = results[2] || {};
+  renderSettlement();
+}
+initializeSettlementPage();
+</script>

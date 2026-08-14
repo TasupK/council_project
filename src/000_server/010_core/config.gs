@@ -6,20 +6,20 @@ var DB_CONFIG = {
   userSpreadsheetId: '1ofZ0M6lclOZudKp_36WCUk1_7ZjBCS8ACQ0x0dshe7g',
   operationSpreadsheetId: '1EI8MbFx2HSuizl0QFygRAZydYiv77W-6pQO10mRN55E',
   rootFolderId: '1Mw8LwWS3ZhdntQwvQ8dgvThGcKG35fG1',
-  apiSpecSpreadsheetId: '1A_GoPWLltGGkemlERmRl0Z2J2MUjxcLHc5kgK4Iw8PI'
 };
 
 // 3. 운영 DB 테이블 이름
 var OPERATION_TABLES = {
   settings: '_설정',
   businessAuditLogs: '업무감사로그',
+  semesters: '학기기준',
+  feeRates: '회비금액기준',
   feePayers: '회비납부자',
   feeApplications: '납부신청',
   feePayments: '납부내역',
   feeRefundRequests: '환불신청',
   feeRefunds: '환불내역',
   events: '행사',
-  eventPrices: '행사요금',
   eventForms: '행사폼',
   eventApplications: '행사신청',
   eventExtraAnswers: '신청추가답변',

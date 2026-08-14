@@ -1,0 +1,123 @@
+<script>
+function syncReconciliationDateFilters() {
+    const dates = state.reconciliation.map(function (item) {
+        return item.transaction_date;
+    }).filter(Boolean).sort();
+    const start = document.getElementById('reconciliationStartDate');
+    const end = document.getElementById('reconciliationEndDate');
+    if (!dates.length || !start || !end || start.value || end.value)
+        return;
+    start.value = dates[0];
+    end.value = dates[dates.length - 1];
+}
+
+function renderReconciliation() {
+    const keyword = (document.getElementById('reconciliationSearch')?.value || '').toLowerCase();
+    const type = document.getElementById('reconciliationType')?.value || '전체';
+    const status = document.getElementById('reconciliationStatus')?.value || '전체';
+    const startDate = document.getElementById('reconciliationStartDate')?.value || '';
+    const endDate = document.getElementById('reconciliationEndDate')?.value || '';
+    const items = state.reconciliation.filter(function (item) {
+        const itemType = reconcileType(item);
+        const displayStatus = reconcileDisplayStatus(item.status);
+        const searchable = [item.transaction_date, item.bank_description, item.ledger_description, item.status, item.action_label, currency(item.amount)].join(' ').toLowerCase();
+        if (keyword && !searchable.includes(keyword))
+            return false;
+        if (type !== '전체' && itemType !== type)
+            return false;
+        if (status !== '전체' && displayStatus !== status)
+            return false;
+        if (startDate && item.transaction_date < startDate)
+            return false;
+        if (endDate && item.transaction_date > endDate)
+            return false;
+        return true;
+    });
+    const matched = items.filter(function (item) {
+        return item.status === '정상' || item.status === '수동연결';
+    }).length;
+    document.getElementById('reconciliationSummary').textContent = '전체 ' + items.length + '건 · 정상 ' + matched + '건 · 확인 필요 ' + (items.length - matched) + '건';
+    document.getElementById('reconciliationRows').innerHTML = items.length ? items.map(function (item) {
+        const itemType = reconcileType(item);
+        const accountAmount = Number(item.amount || 0);
+        const ledgerAmount = item.transaction_id ? accountAmount - Number(item.difference_amount || 0) : null;
+        const statusText = reconcileDisplayStatus(item.status);
+        const statusClass = reconciliationStatusClass(statusText);
+        const evidence = item.transaction_id ? '<span class="evidence-check">✓</span>' : '<span class="evidence-missing">×</span>';
+        return '<tr><td>' + item.transaction_date + '</td>' +
+            '<td><span class="' + (itemType === '수입' ? 'income' : 'expense') + '">' + itemType + '</span></td>' +
+            '<td><div class="two-line"><strong>' + escapeHtml(item.bank_description || '-') + '</strong><span>' + escapeHtml(item.ledger_description || '-') + '</span></div></td>' +
+            '<td class="' + amountClass(accountAmount) + '">' + signedCurrency(accountAmount) + '</td>' +
+            '<td>' + escapeHtml(item.ledger_description || '-') + '</td>' +
+            '<td class="' + amountClass(ledgerAmount) + '">' + (ledgerAmount === null ? '-' : signedCurrency(ledgerAmount)) + '</td>' +
+            '<td><span class="match-pill ' + statusClass + '">' + statusText + '</span></td>' +
+            '<td>' + evidence + '</td>' +
+            '<td><button class="small" type="button">' + escapeHtml(item.action_label || '상세보기') + '</button></td></tr>';
+    }).join('') : '<tr><td colspan="9" class="muted">표시할 계좌 대조 내역이 없습니다.</td></tr>';
+}
+
+function reconcileType(item) {
+    return Number(item.amount || 0) >= 0 ? '수입' : '지출';
+}
+
+function signedCurrency(value) {
+    if (value === null || value === undefined || value === '')
+        return '-';
+    const amount = Number(value || 0);
+    const sign = amount > 0 ? '+' : amount < 0 ? '-' : '';
+    return sign + won.format(Math.abs(amount)) + '원';
+}
+
+function amountClass(value) {
+    const amount = Number(value || 0);
+    if (amount > 0)
+        return 'amount-income';
+    if (amount < 0)
+        return 'amount-expense';
+    return 'muted';
+}
+
+function reconcileDisplayStatus(status) {
+    if (status === '정상' || status === '수동연결')
+        return '정상';
+    if (status === '불일치')
+        return '불일치';
+    return '확인 필요';
+}
+
+function reconciliationStatusClass(status) {
+    if (status === '정상')
+        return 'match-ok';
+    if (status === '불일치')
+        return 'match-bad';
+    return 'match-check';
+}
+
+setupAccountingPageLinks();
+// TODO(계좌 대조): 은행별 파일 파싱 규칙 확정 후 파일 업로드와 실행 이벤트를 연결한다.
+// setupFileUpload({ key: 'reconciliation', zoneId: 'reconciliationDropzone', inputId: 'reconciliationFile', nameId: 'reconciliationFileName', multiple: false });
+['reconciliationSearch', 'reconciliationStartDate', 'reconciliationEndDate', 'reconciliationType', 'reconciliationStatus'].forEach(function (id) {
+  var element = document.getElementById(id);
+  element.addEventListener('input', renderReconciliation);
+  element.addEventListener('change', renderReconciliation);
+});
+document.getElementById('resetReconciliationFilters').addEventListener('click', function () {
+  document.getElementById('reconciliationStartDate').value = '2026-05-01';
+  document.getElementById('reconciliationEndDate').value = '2026-05-31';
+  document.getElementById('reconciliationType').value = '전체';
+  document.getElementById('reconciliationStatus').value = '전체';
+  document.getElementById('reconciliationSearch').value = '';
+  renderReconciliation();
+});
+// document.getElementById('runReconcile').addEventListener('click', function () {
+//   callServer('reconcileBankTransactions', {});
+// });
+
+async function initializeReconciliationPage() {
+  // TODO(계좌 대조): 감사대사와 은행 원본의 상세 비교 계약 확정 후 조회 API를 연결한다.
+  state.reconciliation = [];
+  syncReconciliationDateFilters();
+  renderReconciliation();
+}
+initializeReconciliationPage();
+</script>
