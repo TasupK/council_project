@@ -4,7 +4,7 @@ function getApplicantListData_(request) {
   var filter = request.filter && typeof request.filter === 'object' ? request.filter : {};
   var keyword = normalizeEventText_(filter.keyword).toLowerCase();
   var paymentTotals = getEventPaymentTotalsByApplicationId_();
-  var rows = readOperationTableClientRows_('eventApplications').filter(function (row) {
+  var rows = findAllEventApplicationClientRows_().filter(function (row) {
     if (String(row.eventId) !== String(eventId)) return false;
     if (keyword && [row.name, row.studentId, row.phone, row.accountHolder]
       .join(' ').toLowerCase().indexOf(keyword) < 0) return false;
@@ -20,7 +20,7 @@ function getApplicantListData_(request) {
 }
 
 function getApplicantDetailData_(request) {
-  var applicant = findOperationTableRowById_('eventApplications', requireEventRequestId_(request));
+  var applicant = findEventApplicationRowById_(requireEventRequestId_(request));
   if (!applicant) throwEventError_('NOT_FOUND', '신청자를 찾을 수 없습니다.');
   var attendance = findEventAttendanceByApplicationId_(applicant.id);
   applicant.paidAmount = getEventPaymentTotalsByApplicationId_()[applicant.id] || 0;
@@ -38,7 +38,7 @@ function processApplicantData_(request) {
     throwEventError_('VALIDATION_FAILED', '지원하지 않는 신청자 처리 action입니다.', { allowed: allowed });
   }
   return withOperationWriteLock_(function () {
-    var applicant = findOperationTableRowById_('eventApplications', id);
+    var applicant = findEventApplicationRowById_(id);
     if (!applicant) throwEventError_('NOT_FOUND', '신청자를 찾을 수 없습니다.');
     var patch = {};
     if (action === 'confirmDeposit') {
@@ -50,8 +50,8 @@ function processApplicantData_(request) {
       patch.status = '반려';
       patch.processedAt = '';
     }
-    updateOperationTableRow_('eventApplications', id, patch);
-    return withoutInternalRowNumber_(findOperationTableRowById_('eventApplications', id));
+    updateEventApplicationRowById_(id, patch);
+    return withoutInternalRowNumber_(findEventApplicationRowById_(id));
   });
 }
 

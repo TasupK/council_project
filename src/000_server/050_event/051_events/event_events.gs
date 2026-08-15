@@ -39,7 +39,7 @@
 function getEventListData_(request) {
   var filter = request.filter && typeof request.filter === 'object' ? request.filter : {};
   var keyword = normalizeEventText_(filter.keyword).toLowerCase();
-  var rows = readOperationTableClientRows_('events').filter(function (item) {
+  var rows = findAllEventClientRows_().filter(function (item) {
     if (keyword) {
       var haystack = [item.name, item.id, item.managerId]
         .join(' ').toLowerCase();
@@ -61,7 +61,7 @@ function getEventListData_(request) {
   });
 
   var result = paginateEventItems_(rows, request);
-  var allRows = readOperationTableClientRows_('events');
+  var allRows = findAllEventClientRows_();
   // TODO(API 상세 계약): 행사복지 Response 상세 필드 확정 후 summary/options 이름을 대조한다.
   result.summary = {
     total: allRows.length,
@@ -108,7 +108,7 @@ function createEventData_(request) {
     if (source.relatedMaterialFile) {
       uploadEventRelatedMaterial_(source.relatedMaterialFile, payload.id);
     }
-    appendOperationTableRow_('events', payload);
+    insertEventRow_(payload);
     return withoutInternalRowNumber_(payload);
   });
 }
@@ -118,7 +118,7 @@ function updateEventData_(request) {
   var source = request.payload && typeof request.payload === 'object' ? request.payload : {};
   var patch = buildEventPayload_(source, false);
   patch.updatedAt = getCurrentIsoDateTime_();
-  if (!findOperationTableRowById_('events', id)) {
+  if (!findEventRowById_(id)) {
     throwEventError_('NOT_FOUND', '행사를 찾을 수 없습니다.');
   }
   if (source.relatedMaterialFile) {
@@ -128,8 +128,8 @@ function updateEventData_(request) {
     throwEventError_('VALIDATION_FAILED', '수정할 행사 정보가 없습니다.');
   }
   return withOperationWriteLock_(function () {
-    updateOperationTableRow_('events', id, patch);
-    return withoutInternalRowNumber_(findOperationTableRowById_('events', id));
+    updateEventRowById_(id, patch);
+    return withoutInternalRowNumber_(findEventRowById_(id));
   });
 }
 
@@ -139,32 +139,32 @@ function updateEventStatusData_(request) {
   var status = requireEventText_(payload.status, 'status');
   validateEventChoice_(status, EVENT_STATUSES, 'status');
   return withOperationWriteLock_(function () {
-    updateOperationTableRow_('events', id, { status: status });
-    return withoutInternalRowNumber_(findOperationTableRowById_('events', id));
+    updateEventRowById_(id, { status: status });
+    return withoutInternalRowNumber_(findEventRowById_(id));
   });
 }
 
 function closeEventData_(request) {
   var id = requireEventRequestId_(request);
   return withOperationWriteLock_(function () {
-    updateOperationTableRow_('events', id, { status: '종료' });
-    return withoutInternalRowNumber_(findOperationTableRowById_('events', id));
+    updateEventRowById_(id, { status: '종료' });
+    return withoutInternalRowNumber_(findEventRowById_(id));
   });
 }
 
 function getEventData_(request) {
-  var event = findOperationTableRowById_('events', requireEventRequestId_(request));
+  var event = findEventRowById_(requireEventRequestId_(request));
   if (!event) throwEventError_('NOT_FOUND', '행사를 찾을 수 없습니다.');
   return withoutInternalRowNumber_(event);
 }
 
 function getEventDetailData_(request) {
   var event = getEventData_(request);
-  var applicants = readOperationTableClientRows_('eventApplications').filter(function (row) {
+  var applicants = findAllEventApplicationClientRows_().filter(function (row) {
     return String(row.eventId) === String(event.id);
   });
   var attendanceById = {};
-  readOperationTableClientRows_('eventAttendance').forEach(function (row) {
+  findAllEventAttendanceClientRows_().forEach(function (row) {
     attendanceById[String(row.applicationId)] = row;
   });
   var approved = applicants.filter(function (row) { return row.status === '승인'; });

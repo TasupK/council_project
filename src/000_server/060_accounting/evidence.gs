@@ -2,25 +2,34 @@
 
 // 1. 증빙 파일 조회
 function api_getEvidenceFileContent(request) {
-  requireLoginContext_();
-  request = request || {};
-  var fileId = request.file_id || '';
-  if (!fileId && request.evidence_id) {
-    var evidence = readOperationTableRows_('evidence').filter(function (item) {
-      return String(item.id) === String(request.evidence_id);
-    })[0];
-    fileId = evidence ? evidence.driveFileId : '';
-  }
-  if (!fileId) throw new Error('증빙 파일 ID가 없습니다.');
-  var file = DriveApp.getFileById(fileId);
-  var blob = file.getBlob();
-  return {
-    ok: true,
-    file_id: fileId,
-    file_name: file.getName(),
-    mime_type: blob.getContentType(),
-    content_base64: Utilities.base64Encode(blob.getBytes())
-  };
+  return apiHandler_({
+    operation: 'getEvidenceFileContent',
+    input: request,
+    requireLogin: true,
+    service: function (input) {
+      var fileId;
+      var file;
+      var blob;
+      input = input || {};
+      fileId = input.file_id || '';
+      if (!fileId && input.evidence_id) {
+        var evidence = findAllLedgerEvidenceRows_().filter(function (item) {
+          return String(item.id) === String(input.evidence_id);
+        })[0];
+        fileId = evidence ? evidence.driveFileId : '';
+      }
+      if (!fileId) throw new Error('증빙 파일 ID가 없습니다.');
+      file = DriveApp.getFileById(fileId);
+      blob = file.getBlob();
+      return {
+        ok: true,
+        file_id: fileId,
+        file_name: file.getName(),
+        mime_type: blob.getContentType(),
+        content_base64: Utilities.base64Encode(blob.getBytes())
+      };
+    }
+  });
 }
 
 // 2. 증빙 파일과 메타데이터 저장
@@ -56,7 +65,7 @@ function saveEvidenceFiles_(transactionId, files, timestamp) {
       note: file.note || ''
     };
 
-    appendOperationTableRow_('evidence', evidence);
+    insertLedgerEvidenceRow_(evidence);
     result.savedCount += 1;
   });
   return result;

@@ -4,11 +4,11 @@ function getAttendanceListData_(request) {
   var filter = request.filter && typeof request.filter === 'object' ? request.filter : {};
   var keyword = normalizeEventText_(filter.keyword).toLowerCase();
   var attendanceById = {};
-  readOperationTableClientRows_('eventAttendance').forEach(function (row) {
+  findAllEventAttendanceClientRows_().forEach(function (row) {
     attendanceById[String(row.applicationId)] = row;
   });
   var paymentTotals = getEventPaymentTotalsByApplicationId_();
-  var rows = readOperationTableClientRows_('eventApplications').filter(function (row) {
+  var rows = findAllEventApplicationClientRows_().filter(function (row) {
     return String(row.eventId) === String(eventId);
   }).map(function (applicant) {
     var attendance = attendanceById[String(applicant.id)] || {};
@@ -46,7 +46,7 @@ function applyAttendanceChangesData_(request) {
   return withOperationWriteLock_(function () {
     return items.map(function (item) {
       var applicationId = requireEventText_(item.applicationId, 'applicationId');
-      var applicant = findOperationTableRowById_('eventApplications', applicationId);
+      var applicant = findEventApplicationRowById_(applicationId);
       if (!applicant) throwEventError_('NOT_FOUND', '신청자를 찾을 수 없습니다: ' + applicationId);
       if (String(applicant.eventId) !== String(eventId)) {
         throwEventError_('VALIDATION_FAILED', '다른 행사의 출석 정보는 변경할 수 없습니다: ' + applicationId);
@@ -62,18 +62,18 @@ function applyAttendanceChangesData_(request) {
       };
       var current = findEventAttendanceByApplicationId_(applicationId);
       if (current) {
-        updateOperationTableRow_('eventAttendance', current.id, patch);
-        return withoutInternalRowNumber_(findOperationTableRowById_('eventAttendance', current.id));
+        updateEventAttendanceRowById_(current.id, patch);
+        return withoutInternalRowNumber_(findEventAttendanceRowById_(current.id));
       }
       patch.id = Utilities.getUuid();
-      appendOperationTableRow_('eventAttendance', patch);
+      insertEventAttendanceRow_(patch);
       return withoutInternalRowNumber_(patch);
     });
   });
 }
 
 function findEventAttendanceByApplicationId_(applicationId) {
-  return readOperationTableClientRows_('eventAttendance').filter(function (item) {
+  return findAllEventAttendanceClientRows_().filter(function (item) {
     return String(item.applicationId) === String(applicationId);
   })[0] || null;
 }

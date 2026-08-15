@@ -3,8 +3,7 @@
 // TODO(장부 권한): UserDB의 장부 권한 ID 확정 후 동작별 권한을 검사한다.
 
 // 1. 장부 저장
-function saveLedgerEntry_(request) {
-  var context = requireLoginContext_();
+function saveLedgerEntry_(request, context) {
   var now = getCurrentIsoDateTime_();
   var item = {
     id: request.transaction_id || makeId_('TRX'),
@@ -23,19 +22,19 @@ function saveLedgerEntry_(request) {
     createdAt: now,
     updatedAt: now
   };
-  appendOperationTableRow_('ledger', item);
+  insertLedgerRow_(item);
   var evidence = saveEvidenceFiles_(item.id, request.evidence_files || request.evidence || [], now);
   return { ok: true, evidence: evidence, item: getLedgerEntryDto_(item) };
 }
 
 // 2. 장부 조회와 화면 DTO 변환
 function getLedgerEntries_() {
-  var evidenceByTransaction = groupBy_(readOperationTableRows_('evidence'), 'transactionId');
-  var eventsById = readOperationTableRows_('events').reduce(function (index, event) {
+  var evidenceByTransaction = groupBy_(findAllLedgerEvidenceRows_(), 'transactionId');
+  var eventsById = findAllAccountingEventRows_().reduce(function (index, event) {
     index[event.id] = event;
     return index;
   }, {});
-  return readOperationTableRows_('ledger').map(function (item) {
+  return findAllLedgerRows_().map(function (item) {
     var dto = getLedgerEntryDto_(item);
     dto.event_name = eventsById[item.eventId] ? eventsById[item.eventId].name : '해당없음';
     dto.evidence = (evidenceByTransaction[item.id] || []).map(getEvidenceDto_);
