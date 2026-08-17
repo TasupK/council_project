@@ -1,146 +1,142 @@
 # Event Domain Refactor Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans or subagent-driven-development for future extensions. This document records the finalized structural refactor baseline.
 
-**Goal:** Reorganize `src/000_server/050_event` into responsibility-based feature modules while preserving all existing public API behavior.
+**Goal:** Reorganize `src/000_server/050_event` into feature-owned API/Service/Query/DAO boundaries while preserving all existing public API behavior.
 
-**Architecture:** Keep public API contracts unchanged. Separate feature mutation logic into Services, validation into Validators, table access into Sheet DAOs, cross-feature read composition into `event_query_service.gs`, and promote Payment to the independent `053_payment` feature.
+**Architecture:** `050_common` contains primitive Event utilities only. Each feature owns its read composition through a local Query Service, mutation logic through Service, and persistence through Sheet DAO. Payment is an independent `053_payment` feature, Attendance is `054`, Refunds is `055`, and Drive behavior is `056_files`.
 
-**Tech Stack:** Google Apps Script JavaScript, clasp-style source layout, Node.js verification scripts.
+**Tech Stack:** Google Apps Script JavaScript, Apps Script global functions, Node.js verification/regression scripts.
 
 ## Global Constraints
 
-- Preserve every existing public `api_*` function name, input shape, return shape, validation result, error code, UUID behavior, lock behavior, and Drive policy.
-- Do not change client HTML/JavaScript.
-- Do not implement currently-unimplemented payment/refund/forms/attendance-sync behavior.
-- Do not introduce classes, DI, repository interfaces, ORM, or query builders.
+- Preserve public `api_*` names, input/output shapes, validation, errors, UUID, locking, Drive behavior, defaults, and TODO behavior.
+- No client HTML/JavaScript changes in the structural refactor.
+- No classes, DI containers, generic repositories, ORM, or query builders.
 - No arrow functions.
+- Query Services are read-only.
+- No bidirectional feature Service dependencies.
+- Do not create empty files solely for symmetry.
 
----
+## Final File Structure
 
-### Task 1: Promote Payment to `053_payment`
+```text
+src/000_server/050_event/
+├─ 050_common/
+│  ├─ event_constants.gs
+│  ├─ event_error.gs
+│  ├─ event_request.gs
+│  └─ event_pagination.gs
+├─ 051_events/
+│  ├─ events_api.gs
+│  ├─ events_service.gs
+│  ├─ events_query_service.gs
+│  ├─ events_validator.gs
+│  └─ events_sheet_dao.gs
+├─ 052_applicants/
+│  ├─ applicants_api.gs
+│  ├─ applicants_service.gs
+│  ├─ applicants_query_service.gs
+│  └─ applicants_sheet_dao.gs
+├─ 053_payment/
+│  ├─ payment_service.gs
+│  └─ payment_sheet_dao.gs
+├─ 054_attendance/
+│  ├─ attendance_api.gs
+│  ├─ attendance_service.gs
+│  ├─ attendance_query_service.gs
+│  └─ attendance_sheet_dao.gs
+├─ 055_refunds/
+│  ├─ refunds_api.gs
+│  ├─ refunds_query_service.gs
+│  └─ refunds_sheet_dao.gs
+└─ 056_files/
+   └─ event_file_service.gs
+```
 
-**Files:**
-- Create: `src/000_server/050_event/053_payment/payment_service.gs`
-- Create: `src/000_server/050_event/053_payment/payment_sheet_dao.gs`
-- Delete: `src/000_server/050_event/050_common/event_payments.gs`
-- Delete: `src/000_server/050_event/050_common/event_payment_sheet_dao.gs`
-- Test: `scripts/verify-server-architecture.js`
+## Ownership Map
 
-**Interfaces:**
-- Produces: `getEventPaymentTotalsByApplicationId_()`, `findAllEventPaymentClientRows_()` with unchanged signatures.
+```text
+Events Query:
+  getEventData_
+  getEventListData_
+  getUniqueEventValues_
+  getEventDetailData_
 
-- [ ] Add a structural test that requires `053_payment/payment_service.gs` and `053_payment/payment_sheet_dao.gs` and rejects the old Common payment files.
-- [ ] Run the structural test and confirm failure before moving files.
-- [ ] Move the two functions without changing implementation.
-- [ ] Run `node scripts/verify-server-architecture.js` and the structural test.
-- [ ] Commit the payment promotion.
+Events Service:
+  createEventData_
+  updateEventData_
+  updateEventStatusData_
+  closeEventData_
 
-### Task 2: Renumber Attendance, Refunds, and Files
+Applicants Query:
+  getApplicantListData_
+  getApplicantDetailData_
 
-**Files:**
-- Move: `053_attendance` -> `054_attendance`
-- Move: `054_refunds` -> `055_refunds`
-- Move: `055_files` -> `056_files`
+Applicants Service:
+  processApplicantData_
 
-**Interfaces:**
-- All existing function names remain unchanged.
+Payment Service:
+  getEventPaymentTotalsByApplicationId_
 
-- [ ] Extend the structural test with required target folders and forbidden legacy folders.
-- [ ] Run it and confirm failure.
-- [ ] Recreate files under new paths and remove legacy paths without changing contents.
-- [ ] Run `node scripts/verify-server-architecture.js` and structural test.
-- [ ] Commit directory renumbering.
+Attendance Query:
+  getAttendanceListData_
 
-### Task 3: Make API File Roles Explicit
+Attendance Service:
+  applyAttendanceChangesData_
 
-**Files:**
-- Rename: `051_events/events.gs` -> `051_events/events_api.gs`
-- Rename: `052_applicants/applicants.gs` -> `052_applicants/applicants_api.gs`
-- Rename: `054_attendance/attendance.gs` -> `054_attendance/attendance_api.gs`
-- Rename: `055_refunds/refunds.gs` -> `055_refunds/refunds_api.gs`
+Attendance DAO:
+  findEventAttendanceByApplicationId_
 
-**Interfaces:**
-- Preserve all public `api_*` functions exactly.
+Refunds Query:
+  getEventRefundListData_
+```
 
-- [ ] Extend structural test with new API filenames and forbidden legacy filenames.
-- [ ] Confirm failing test.
-- [ ] Move files unchanged.
-- [ ] Run both verification scripts.
-- [ ] Commit API file renames.
+## Completed Structural Tasks
 
-### Task 4: Split Events Validation and Mutation Service
+- [x] Move Payment from Common into `053_payment`.
+- [x] Renumber Attendance/Refunds/Files to `054/055/056`.
+- [x] Split Events API, mutation Service, Validator, and DAO.
+- [x] Split Applicants API, mutation Service, and DAO.
+- [x] Split Attendance API, mutation Service, and DAO.
+- [x] Keep Refunds without an empty mutation Service.
+- [x] Keep Attendance without an empty Validator.
+- [x] Add Event behavior regression tests.
+- [x] Replace central `050_common/event_query_service.gs` with feature-owned Query Services.
+- [x] Move `getEventData_()` from Events Service to Events Query Service.
+- [x] Move `findEventAttendanceByApplicationId_()` from Attendance Service to Attendance DAO.
+- [x] Update architecture verifier to enforce final ownership and read-only Query boundaries.
+- [x] Update `test-event.js` to load feature Query Services.
+- [x] Align spec/plan documents with final architecture.
 
-**Files:**
-- Create: `051_events/events_validator.gs`
-- Create: `051_events/events_service.gs`
-- Modify/Delete: `051_events/event_events.gs`
+## Verification Commands
 
-**Interfaces:**
-- Validator produces unchanged `buildEventPayload_(payload, requireAll)`.
-- Service produces unchanged `createEventData_`, `updateEventData_`, `updateEventStatusData_`, `closeEventData_`, `getEventData_`.
+Run from a full repository checkout before merge:
 
-- [ ] Add structural assertions for required functions in the new files and absence from `event_events.gs`.
-- [ ] Confirm failing test.
-- [ ] Move functions verbatim.
-- [ ] Run verification.
-- [ ] Commit Events split.
+```bash
+node scripts/test-core.js
+node scripts/verify-server-architecture.js
+node scripts/verify-event-architecture.js
+node scripts/test-event.js
+node scripts/verify-accounting-architecture.js
+node scripts/test-accounting.js
+```
 
-### Task 5: Split Applicant and Attendance Mutation Services
+Expected Event-specific output:
 
-**Files:**
-- Create: `052_applicants/applicants_service.gs`
-- Create: `054_attendance/attendance_service.gs`
-- Modify/Delete: `052_applicants/event_applicants.gs`
-- Modify/Delete: `054_attendance/event_attendance.gs`
+```text
+Event architecture verification passed.
+Event behavior regression tests passed.
+```
 
-**Interfaces:**
-- Applicants Service: `processApplicantData_()`.
-- Attendance Service: `applyAttendanceChangesData_()`, `findEventAttendanceByApplicationId_()`.
+Do not claim repository-wide completion unless the full command set above has been executed against the final branch state.
 
-- [ ] Add structural assertions and confirm failure.
-- [ ] Move mutation functions verbatim.
-- [ ] Run verification.
-- [ ] Commit feature service split.
+## Deferred Work
 
-### Task 6: Create Event Query Service
+The following are intentionally outside this structural refactor:
 
-**Files:**
-- Create: `050_common/event_query_service.gs`
-- Remove query functions from legacy `event_events.gs`, `event_applicants.gs`, `event_attendance.gs`, `event_refunds.gs`.
-
-**Interfaces:**
-- Produces unchanged `getEventListData_`, `getUniqueEventValues_`, `getEventDetailData_`, `getApplicantListData_`, `getApplicantDetailData_`, `getAttendanceListData_`, `getEventRefundListData_`.
-
-- [ ] Add structural assertions that these functions exist exactly once and are located in `event_query_service.gs`.
-- [ ] Confirm failure.
-- [ ] Move query functions verbatim.
-- [ ] Remove empty legacy feature implementation files.
-- [ ] Run verification.
-- [ ] Commit Query Service extraction.
-
-### Task 7: Rename File Integration Boundary
-
-**Files:**
-- Rename: `056_files/event_files.gs` -> `056_files/event_file_service.gs`
-
-**Interfaces:**
-- Preserve `uploadEventRelatedMaterial_`, `getEventMaterialFolder_`, `sanitizeEventDriveFileName_` and constants unchanged.
-
-- [ ] Extend structural test and confirm failure.
-- [ ] Rename file without changing behavior.
-- [ ] Run verification.
-- [ ] Commit File Service rename.
-
-### Task 8: Final Architecture Verification
-
-**Files:**
-- Modify: `scripts/verify-server-architecture.js` only if needed to encode stable Event architecture rules.
-- Test: all server sources.
-
-- [ ] Run `node scripts/test-core.js`.
-- [ ] Run `node scripts/verify-server-architecture.js`.
-- [ ] Run the Event structural verification.
-- [ ] Search for duplicate function definitions and references to removed Event paths.
-- [ ] Compare `login_and_setting...refactor/event-domain` and confirm the diff is structural only.
-- [ ] Commit verification updates.
+- optimize duplicate Event list reads
+- implement unresolved Payment/Refund/Attendance sync business rules
+- replace `currentBalance: null` before an authoritative accounting integration exists
+- change public API contracts
+- add new Payment public APIs
