@@ -12,6 +12,15 @@ function maskStudentFeeAccountNumber_(accountNumber) {
   return text.slice(0, 3) + '****' + text.slice(-3);
 }
 
+function requireFeeRefundLookupId_(request, keys, label) {
+  var source = request && typeof request === 'object' ? request : {};
+  for (var i = 0; i < keys.length; i += 1) {
+    var value = String(source[keys[i]] == null ? '' : source[keys[i]]).trim();
+    if (value) return value;
+  }
+  throw new Error(label + ' 값이 필요합니다.');
+}
+
 // 3. 납부건 기준 환불 가능 잔액 계산
 function calculateRefundableAmount_(paymentId) {
   var payment = findFeePaymentRowById_(paymentId);
@@ -34,7 +43,7 @@ function calculateRefundableAmount_(paymentId) {
 
 // 4. 환불 가능액 조회
 function calculateFeeRefundData_(request) {
-  var paymentId = requireStudentFeeId_(request, ['paymentId', 'id']);
+  var paymentId = requireFeeRefundLookupId_(request, ['paymentId', 'id'], 'paymentId');
   var payment = findFeePaymentRowById_(paymentId);
   if (!payment) throw new Error('납부내역을 찾을 수 없습니다: ' + paymentId);
   return {
@@ -88,7 +97,7 @@ function getFeeRefundRequestListData_(request) {
 
 // 6. 환불신청 상세 조회
 function getFeeRefundRequestDetailData_(request) {
-  var requestId = requireStudentFeeId_(request, ['refundRequestId', 'requestId', 'id']);
+  var requestId = requireFeeRefundLookupId_(request, ['refundRequestId', 'requestId', 'id'], 'refundRequestId');
   var row = findFeeRefundRequestRowById_(requestId);
   if (!row) throw new Error('환불신청을 찾을 수 없습니다: ' + requestId);
   return {
