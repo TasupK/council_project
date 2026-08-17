@@ -82,25 +82,34 @@ function statusClass(value) {
     return 'ew-status-gray';
   }
 
+function sharedStatusClass(value) {
+    var text = String(value || '');
+    if (['승인', '납부', '출석', '진행', '입금 완료', '처리 완료'].indexOf(text) >= 0) return 'success';
+    if (['반려', '미납', '미참석'].indexOf(text) >= 0) return 'danger';
+    if (['모집', '대기', '입금 대기', '처리 대기', '예정'].indexOf(text) >= 0) return 'info';
+    if (text === '동기화 필요') return 'warning';
+    return 'neutral';
+  }
+
 function statusBadge(value, fallback) {
     var label = value || fallback || '확인 필요';
-    return '<span class="ew-status ' + statusClass(label) + '">' + escapeHtml(label) + '</span>';
+    return '<span class="ew-status ' + statusClass(label) + ' ui-badge ' + sharedStatusClass(label) + '">' + escapeHtml(label) + '</span>';
   }
 
 function paginationHtml(data, action) {
-    if (!data || data.totalPages <= 1) return '<div class="ew-pagination"></div>';
+    if (!data || data.totalPages <= 1) return '<div class="ew-pagination ui-pagination"></div>';
     var buttons = '';
     var start = Math.max(1, data.page - 2);
     var end = Math.min(data.totalPages, start + 4);
     for (var page = start; page <= end; page += 1) {
-      buttons += '<button type="button" class="ew-page-btn ' + (page === data.page ? 'active' : '') +
+      buttons += '<button type="button" class="ew-page-btn ui-page-btn ' + (page === data.page ? 'active' : '') +
         '" data-action="' + action + '" data-page="' + page + '">' + page + '</button>';
     }
-    return '<div class="ew-pagination">' +
-      '<button type="button" class="ew-page-btn" data-action="' + action + '" data-page="' +
+    return '<div class="ew-pagination ui-pagination">' +
+      '<button type="button" class="ew-page-btn ui-page-btn" data-action="' + action + '" data-page="' +
       Math.max(1, data.page - 1) + '" ' + (data.page === 1 ? 'disabled' : '') + '>‹</button>' +
       buttons +
-      '<button type="button" class="ew-page-btn" data-action="' + action + '" data-page="' +
+      '<button type="button" class="ew-page-btn ui-page-btn" data-action="' + action + '" data-page="' +
       Math.min(data.totalPages, data.page + 1) + '" ' + (data.page === data.totalPages ? 'disabled' : '') + '>›</button>' +
       '</div>';
   }
