@@ -62,6 +62,24 @@ function testFeeRateResolution_() {
   assert.throws(function () { overlapping.resolveStudentFeeRate_('2026-08-17'); }, /여러 건/);
 }
 
+function testStudentFeeReferenceData_() {
+  var context = createContext_();
+  context.readOperationTableClientRows_ = function (table) {
+    assert.strictEqual(table, 'semesters');
+    return [
+      { id: '2025-2', year: 2025, type: '2학기', startDate: '2025-09-01', endDate: '2025-12-31', active: false },
+      { id: '2026-1', year: 2026, type: '1학기', startDate: '2026-03-01', endDate: '2026-06-30', active: true }
+    ];
+  };
+  context.isTruthyValue_ = function (value) { return value === true; };
+  context.findOperationTableRowById_ = function () { return null; };
+  load_(context, 'src/000_server/080_student_fee/080_common/student_fee_reference_query_service.gs');
+  var data = context.getStudentFeeReferenceData_();
+  assert.strictEqual(data.semesters[0].id, '2026-1');
+  assert.strictEqual(data.semesters[0].label, '2026학년도 1학기');
+  assert.strictEqual(data.semesters[1].active, false);
+}
+
 function testAuditAttribution_() {
   var context = createContext_();
   var captured;
@@ -121,6 +139,7 @@ function testPayerBehavior_() {
   load_(query, 'src/000_server/080_student_fee/081_payers/fee_payers_query_service.gs');
   var list = query.getFeePayerListData_({ keyword: '김', page: 1, pageSize: 10 });
   assert.strictEqual(list.items[0].studentId, '60****34');
+  assert.strictEqual(list.items[0].studentIdKey, '60201234');
   assert.strictEqual(query.getFeePayerDetailData_({ studentId: '60201234' }).studentId, '60201234');
 }
 
@@ -256,14 +275,17 @@ function testApiRequiresLogin_() {
   context.apiHandler_ = function (options) { seen.push(options); return options.operation; };
   context.parseStudentFeeRequest_ = function (input) { return { request: input || {} }; };
   [
+    'getStudentFeeReferenceData_',
     'getStudentFeeSummaryData_', 'getFeePayerListData_', 'getFeePayerDetailData_', 'createFeePayerData_', 'updateFeePayerData_',
     'getFeeApplicationListData_', 'getFeeApplicationDetailData_', 'processFeeApplicationsData_', 'calculateFeeAmountData_', 'confirmFeePaymentData_',
     'getFeeRefundRequestListData_', 'getFeeRefundRequestDetailData_', 'processFeeRefundRequestsData_', 'calculateFeeRefundData_', 'confirmFeeRefundData_'
   ].forEach(function (name) { context[name] = function () {}; });
+  load_(context, 'src/000_server/080_student_fee/080_common/student_fee_reference_api.gs');
   load_(context, 'src/000_server/080_student_fee/081_payers/fee_payers_api.gs');
   load_(context, 'src/000_server/080_student_fee/082_payments/fee_payments_api.gs');
   load_(context, 'src/000_server/080_student_fee/083_refunds/fee_refunds_api.gs');
 
+  context.api_getStudentFeeReferenceData({});
   context.api_getFeePayerList({});
   context.api_getFeePayerDetail({});
   context.api_createFeePayer({});
@@ -280,7 +302,7 @@ function testApiRequiresLogin_() {
   context.api_calculateFeeRefund({});
   context.api_confirmFeeRefund({});
 
-  assert.strictEqual(seen.length, 15);
+  assert.strictEqual(seen.length, 16);
   seen.forEach(function (options) {
     assert.strictEqual(options.requireLogin, true, options.operation + ' must require login');
     assert.strictEqual(typeof options.parse, 'function');
@@ -289,6 +311,7 @@ function testApiRequiresLogin_() {
 }
 
 testFeeRateResolution_();
+testStudentFeeReferenceData_();
 testAuditAttribution_();
 testPayerBehavior_();
 testPaymentBehavior_();
