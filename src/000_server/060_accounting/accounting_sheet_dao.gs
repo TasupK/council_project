@@ -1,14 +1,10 @@
-// 1. 회계 장부 행 조회
+// 1. 회계 장부/증빙 행 조회
 function findAllLedgerRows_() {
   return readOperationTableRows_('ledger');
 }
 
 function findAllLedgerEvidenceRows_() {
   return readOperationTableRows_('evidence');
-}
-
-function findAllAccountingEventRows_() {
-  return readOperationTableRows_('events');
 }
 
 // 2. 회계 장부 행 저장
