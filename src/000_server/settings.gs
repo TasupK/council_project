@@ -1,14 +1,4 @@
-// 1. 역할 관리 데이터 조회
-function loadSettingsRolesData() {
-  var current = getAdminSettingsCurrent_();
-  if (!current.ok) return current;
-
-  return okResponse_(Object.assign(buildSettingsBaseData_(current), {
-    roles: listRolesForSettings_()
-  }));
-}
-
-// 2. 업무 권한 설정 데이터 조회
+// 업무 권한 설정 데이터 조회
 function loadSettingsPermissionsData() {
   var current = getAdminSettingsCurrent_();
   if (!current.ok) return current;
