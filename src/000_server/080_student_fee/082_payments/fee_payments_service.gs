@@ -1,9 +1,22 @@
-// 1. 납부신청 승인/반려 처리
+// 1. 납부 처리용 Auth email 검증
+function requireFeePaymentActorEmail_(context) {
+  var email = String(context && context.email || '').trim();
+  if (!email) throw new Error('actorEmail 값이 필요합니다.');
+  return email;
+}
+
+function requireFeePaymentId_(request) {
+  var id = String(request && (request.paymentId || request.id) || '').trim();
+  if (!id) throw new Error('paymentId 값이 필요합니다.');
+  return id;
+}
+
+// 2. 납부신청 승인/반려 처리
 function processFeeApplicationsData_(request, context) {
   var source = request && typeof request === 'object' ? request : {};
   var ids = source.ids && source.ids.length ? source.ids : [];
   var action = String(source.action || '').trim().toUpperCase();
-  var actorEmail = requireStudentFeeText_(context && context.email, 'actorEmail');
+  var actorEmail = requireFeePaymentActorEmail_(context);
   if (!ids.length) throw new Error('처리할 납부신청 ID가 필요합니다.');
   if (action !== 'APPROVE' && action !== 'REJECT') throw new Error('알 수 없는 납부신청 처리 action입니다: ' + action);
 
@@ -65,10 +78,10 @@ function processFeeApplicationsData_(request, context) {
   });
 }
 
-// 2. 납부 입금 확인 처리
+// 3. 납부 입금 확인 처리
 function confirmFeePaymentData_(request, context) {
-  var paymentId = requireStudentFeeId_(request, ['paymentId', 'id']);
-  var actorEmail = requireStudentFeeText_(context && context.email, 'actorEmail');
+  var paymentId = requireFeePaymentId_(request);
+  var actorEmail = requireFeePaymentActorEmail_(context);
   var result = String(request && request.result || '').trim().toUpperCase();
   if (result !== 'DONE' && result !== 'MISMATCH') throw new Error('알 수 없는 납부 확인 result입니다: ' + result);
 
