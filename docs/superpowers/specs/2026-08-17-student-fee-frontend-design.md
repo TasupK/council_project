@@ -1,62 +1,59 @@
 # Student Fee Frontend Design
 
-## 1. Goal
+## 1. Goal and phase boundary
 
-Port the approved Student Fee frontend from `feature/student-fee-management` into the current application shell while making the Student Fee visual language the basis for a reusable shared design system.
+Port the Student Fee frontend from `feature/student-fee-management` into the current application shell, and use its visual language as the basis of a reusable shared design system.
 
-This phase delivers only:
+This phase includes:
 
 - shared design tokens and UI primitives in `100_common`
-- Student Fee navigation and four frontend routes
-- Student Fee summary, payer, payment, and refund screens
-- modal-centered mutations
+- four Student Fee routes and expandable sidebar navigation
+- summary, payer, payment, and refund screens
+- modal-centered operational flows
+- one minimal read-only Student Fee reference API for semester options
 - frontend regression tests and architecture verification
 
-Existing Main, Accounting, Event, and Settings screens are not visually migrated in this phase. Their migration is a separate next phase.
+This phase does **not** visually migrate Main, Accounting, Event, or Settings. Their business behavior and current page structure remain unchanged; visual migration is phase 3.
 
-## 2. Base and constraints
+Persistent data remains governed by the current `020_schema`. No DB fields are added.
 
-Implementation is based on `refactor/student-fee-server`, which already exposes the approved Student Fee server APIs.
+## 2. Non-goals and constraints
 
-Persistent data remains governed by the current `020_schema`.
+Do not add or reintroduce:
 
-This phase MUST NOT:
+- Google Form integration
+- export
+- archive
+- feature-only fields such as `유형`, `적용종료학기`, or `보관여부`
+- `apiV1_*`, `API_REGISTRY`, or `callApi_`
+- client-controlled authorization such as `hasFullAccess`
+- new IAM permission IDs
+- a frontend framework or generic component runtime
+- a copied standalone topbar/sidebar/shell from the feature branch
 
-- add DB fields
-- change Student Fee server business semantics
-- add Google Form integration
-- add export or archive behavior
-- add `apiV1_*` compatibility wrappers
-- add client-controlled authorization such as `hasFullAccess`
-- redesign the IAM permission model
-- redesign existing Main/Accounting/Event/Settings pages
-- introduce a frontend framework or generic component system
-
-The frontend uses the current Apps Script HTML-template architecture and `google.script.run` integration pattern.
+The frontend continues to use Apps Script HTML templates and `google.script.run`.
 
 ## 3. Design direction
 
-The Student Fee feature branch is the visual reference for this application going forward.
+The Student Fee feature branch becomes the visual reference for the application going forward:
 
-Its useful characteristics are retained:
-
-- soft neutral page background
+- soft neutral background
 - white cards
 - 8-10px rounded surfaces
-- compact controls and tables
-- status-specific soft colors
-- summary/stat cards
-- clear bulk-action states
-- modal-centered operational flows
+- compact controls/tables
+- semantic soft status colors
+- summary cards
+- contextual bulk-action bars
+- modal-centered workflows
 - lightweight toast feedback
 
-However, the standalone feature shell is not copied. Student Fee is rendered inside the current `100_common` application shell.
+The feature's standalone shell is discarded. Student Fee renders inside the current `100_common` header/sidebar shell.
 
-The design-system strategy is:
+Design-system layering:
 
 ```text
 100_common
-  shared visual tokens and primitives
+  reusable tokens + UI primitives
         ↓
 500_student_fee/common
   Student Fee-specific composition/layout
@@ -64,9 +61,9 @@ The design-system strategy is:
 Student Fee pages
 ```
 
-Do not create a large JavaScript UI-component framework. Reuse is expressed primarily through semantic HTML classes and small common helpers.
+Reuse is primarily semantic HTML classes plus small JS helpers. Do not build a large JS component abstraction.
 
-## 4. Frontend file structure
+## 4. Target file structure
 
 ```text
 src/
@@ -75,33 +72,32 @@ src/
 │  ├─ App_Sidebar.html
 │  └─ app_shell_js.html
 │
+├─ 000_server/080_student_fee/080_common/
+│  └─ student_fee_reference_api.gs
+│
 └─ 500_student_fee/
    ├─ common/
    │  ├─ Student_Fee_Styles.html
    │  └─ student_fee_common_js.html
-   │
    ├─ 500_home/
    │  ├─ Student_Fee_Home.html
    │  ├─ Student_Fee_Home_View.html
    │  └─ student_fee_home_js.html
-   │
    ├─ 510_payers/
    │  ├─ Student_Fee_Payers.html
    │  ├─ Student_Fee_Payers_View.html
    │  └─ student_fee_payers_js.html
-   │
    ├─ 520_payments/
    │  ├─ Student_Fee_Payments.html
    │  ├─ Student_Fee_Payments_View.html
    │  └─ student_fee_payments_js.html
-   │
    └─ 530_refunds/
       ├─ Student_Fee_Refunds.html
       ├─ Student_Fee_Refunds_View.html
       └─ student_fee_refunds_js.html
 ```
 
-No other Student Fee frontend directories are added in this phase.
+No `084_forms` or additional Student Fee frontend feature directory is introduced.
 
 ## 5. Routes and authentication
 
@@ -114,13 +110,13 @@ student_fee_payments -> 500_student_fee/520_payments/Student_Fee_Payments
 student_fee_refunds  -> 500_student_fee/530_refunds/Student_Fee_Refunds
 ```
 
-The existing login-protection rule must treat every route whose page starts with `student_fee` as authenticated application content.
+All `student_fee*` routes are login-protected using the existing page-prefix authentication pattern.
 
-No new permission ID is introduced in this frontend phase.
+No new route is added for detail screens; operational details are modal-centered.
 
 ## 6. Sidebar behavior
 
-`학생회비관리` becomes an expandable navigation group.
+`학생회비관리` becomes an expandable navigation group:
 
 ```text
 학생회비관리 ▼
@@ -132,45 +128,42 @@ No new permission ID is introduced in this frontend phase.
 
 Rules:
 
-- the submenu is expanded by default on any `student_fee*` route
-- each submenu item is a real Apps Script page route, not a client-side tab
-- the current submenu item is visibly active
-- the parent group is visibly active while any Student Fee route is open
-- the sidebar continues to expose Main, Accounting, Event, and Settings according to current behavior
-
-The shell JS owns URL construction and active-navigation state. Student Fee page JS must not duplicate application navigation logic.
+- expanded by default on any `student_fee*` route
+- submenu items use real Apps Script routes, not client-side tabs
+- current submenu item is visibly active
+- parent group is visibly active on all Student Fee routes
+- existing Main/Accounting/Event/Settings navigation remains available according to current rules
+- URL construction and active-state logic stay in `app_shell_js.html`
 
 ## 7. Shared design-system additions
 
-`100_common/App_Styles.html` becomes the source of reusable UI primitives that future pages can adopt.
+`100_common/App_Styles.html` remains the shared source of reusable visual primitives.
 
 ### Tokens
 
-Add or normalize tokens for:
+Normalize/add tokens for:
 
 - page background
 - surface/card background
-- text hierarchy
-- muted text
+- text hierarchy and muted text
 - border colors
-- primary action color
-- hover state
-- semantic status colors
+- primary/hover colors
+- semantic success/warning/danger/info colors
 - radius scale
-- shadows
-- spacing
+- shadow scale
+- spacing scale
 
-The resulting visual language should be closer to the Student Fee feature branch than to the current sharper enterprise styling.
+The new token values should move the application toward the softer Student Fee visual language while remaining backward compatible with existing class usage.
 
 ### Shared primitives
 
-The common layer should support semantic classes for:
+Provide reusable styles for:
 
 - page header/title/description
 - card
 - stat card
 - button variants
-- form fields
+- form field/control
 - toolbar/filter row
 - data table
 - status badge
@@ -181,92 +174,106 @@ The common layer should support semantic classes for:
 - loading state
 - toast
 
-Existing class behavior used by current pages must remain functional. This phase extends and normalizes `App_Styles`; it does not force existing pages to migrate to the new primitives.
+Existing pages are not rewritten to these primitives in this phase. Shared-style changes must not break their current classes.
 
 ## 8. Student Fee common frontend layer
 
-`500_student_fee/common/Student_Fee_Styles.html` contains only Student Fee-specific layout/composition rules that are not generally reusable.
+`Student_Fee_Styles.html` contains only domain-specific composition, for example:
 
-Examples:
-
-- Student Fee dashboard grid composition
-- payer/payment/refund table column sizing
+- summary-grid layout
+- Student Fee table column sizing
 - evidence-information layout
-- Student Fee modal-specific field grouping
+- modal field grouping
 
-`student_fee_common_js.html` contains small shared frontend helpers only:
+`student_fee_common_js.html` contains only shared presentation helpers:
 
-- Student Fee server API invocation wrapper
+- Student Fee API wrapper around `google.script.run`
 - error normalization
-- toast display
+- toast
 - modal open/close
 - HTML escaping
-- date display formatting
+- date formatting
 - currency formatting
 - badge rendering
 - pagination rendering
-- confirm helper
-- loading/busy state helper
+- confirmation helper
+- busy/loading helper
 
 It must not contain payer/payment/refund business rules.
 
-## 9. Home / summary page
+## 9. Minimal Student Fee reference API
+
+The payer create/update modal requires a valid `startSemesterId` foreign key to `semesters`. The current Student Fee server has internal semester lookup helpers but no public API that can populate a selector.
+
+Add one read-only endpoint:
+
+```text
+api_getStudentFeeReferenceData
+```
+
+Location:
+
+```text
+080_student_fee/080_common/student_fee_reference_api.gs
+```
+
+Contract:
+
+```js
+{
+  semesters: [
+    {
+      id: 'semester-id',
+      year: 2026,
+      type: '1학기',
+      startDate: '2026-03-01',
+      endDate: '2026-06-30',
+      active: true,
+      label: '2026학년도 1학기'
+    }
+  ]
+}
+```
+
+Rules:
+
+- `requireLogin: true`
+- read-only
+- reads only the existing `semesters` table through Student Fee reference-query functions/Core primitives
+- does not add schema fields
+- returns deterministic semester ordering, newest year/semester first
+- UI normally presents active semesters; an existing payer's inactive referenced semester may still be shown while editing so current data remains representable
+
+This is the only Student Fee server API addition in the frontend phase. It exists solely to expose current-schema reference data required by the UI.
+
+## 10. Summary page
 
 Route: `student_fee`
 
-Server API:
+API:
 
 ```text
 api_getStudentFeeSummary
 ```
 
-The page is read-only.
+Read-only grouped cards:
 
-Show grouped summary cards for:
+- payer total
+- application total / 접수 / 승인 / 반려
+- payment total / 대기 / 완료 / 불일치 / 완료금액
+- refund-request total / 접수 / 승인 / 반려
+- refund total / 대기 / 완료 / 실패 / 완료금액
 
-### Payers
+Relevant cards link to the matching Student Fee route.
 
-- total payers
-
-### Applications
-
-- total
-- pending (`접수`)
-- approved (`승인`)
-- rejected (`반려`)
-
-### Payments
-
-- total
-- pending (`대기`)
-- completed (`완료`)
-- mismatch (`불일치`)
-- completed amount
-
-### Refund requests
-
-- total
-- pending (`접수`)
-- approved (`승인`)
-- rejected (`반려`)
-
-### Refunds
-
-- total
-- pending (`대기`)
-- completed (`완료`)
-- failed (`실패`)
-- completed amount
-
-Relevant cards may link to their corresponding Student Fee route.
-
-## 10. Payer page
+## 11. Payer page
 
 Route: `student_fee_payers`
 
-Server APIs:
+APIs:
 
 ```text
+api_getStudentFeeReferenceData
 api_getFeePayerList
 api_getFeePayerDetail
 api_createFeePayer
@@ -277,19 +284,19 @@ api_updateFeePayer
 
 Provide:
 
-- keyword search for student ID/name
-- affiliation filter
+- student ID/name keyword search
+- affiliation text filter
 - pagination
 - total count
 - payer table
 - new payer button
-- edit action per row
+- row edit action
 
-The list uses the server-provided masked student ID.
+Use the server-provided masked student ID in list rows.
 
 ### Create modal
 
-Fields are limited to current-schema data:
+Fields:
 
 ```text
 학번
@@ -298,7 +305,7 @@ Fields are limited to current-schema data:
 적용 시작 학기
 ```
 
-Do not expose feature-only concepts such as `유형`, `적용종료학기`, or archive state.
+`적용 시작 학기` is a select populated from `api_getStudentFeeReferenceData`, never a free-form semester ID field.
 
 ### Update modal
 
@@ -310,19 +317,15 @@ Editable:
 적용 시작 학기
 ```
 
-Student ID is immutable in the UI, matching the server contract.
+Student ID is immutable.
 
-After a successful mutation:
+On success: close modal, show toast, reload list.
 
-1. close modal
-2. show success toast
-3. reload the payer list
-
-## 11. Payment page
+## 12. Payment page
 
 Route: `student_fee_payments`
 
-Server APIs:
+APIs:
 
 ```text
 api_getFeeApplicationList
@@ -334,30 +337,17 @@ api_confirmFeePayment
 
 ### List
 
-Provide:
+Provide keyword search, application-status filter, pagination, checkboxes, conditional bulk-action bar, and detail action.
 
-- keyword search
-- application-status filter
-- pagination
-- checkboxes
-- bulk action bar shown only when rows are selected
-- detail action
+### Approval/rejection
 
-List rows display current-schema application data and joined payment state returned by the server.
+Single and bulk processing are supported.
 
-### Approval / rejection
+Before approval, call `api_calculateFeeAmount` for the relevant payment date and display the server-calculated amount. If calculation fails, approval does not proceed.
 
-Both single-row and bulk application processing are supported.
+### Detail modal
 
-Before approval, the UI calls `api_calculateFeeAmount` using the relevant payment date and displays the server-calculated amount.
-
-If amount calculation fails, approval must not proceed.
-
-Financial/business validation remains server-authoritative.
-
-### Application detail modal
-
-Show:
+Show current-schema data only:
 
 - applicant information
 - application status
@@ -365,27 +355,29 @@ Show:
 - server-derived amount
 - student-card evidence file ID
 - deposit evidence file ID
-- existing payment status when present
+- associated payment status/data when present
 
-For `접수` applications, expose approve/reject actions.
+For `접수`, expose approve/reject actions.
 
-### Payment confirmation modal
+### Receipt-confirmation modal
 
-Only shown when an associated payment is in `대기`.
+Only for associated payment status `대기`.
 
 Inputs/actions:
 
-- depositor name
-- `완료`
-- `불일치`
+```text
+입금자명
+완료
+불일치
+```
 
-After mutation, close the confirmation modal and refresh the underlying detail/list state.
+After success, refresh detail/list state.
 
-## 12. Refund page
+## 13. Refund page
 
 Route: `student_fee_refunds`
 
-Server APIs:
+APIs:
 
 ```text
 api_getFeeRefundRequestList
@@ -397,134 +389,119 @@ api_confirmFeeRefund
 
 ### List
 
-Provide:
+Provide keyword search, request-status filter, pagination, checkboxes, conditional bulk-action bar, and detail action.
 
-- keyword search
-- request-status filter
-- pagination
-- checkboxes
-- bulk action bar
-- detail action
+List views use server-masked student IDs/account numbers.
 
-Use server-masked student IDs/account numbers in list views.
-
-### Refund detail modal
+### Detail modal
 
 Show:
 
 - student ID
-- bank
-- masked/unmasked detail data as returned by the authenticated server contract
-- account holder
+- bank/account/account holder as returned by the authenticated server detail contract
 - reason
 - related payment ID
 - request status
 - evidence file IDs
 - calculated payment amount
-- calculated maximum refundable amount
+- maximum refundable amount
 - existing refund row when present
 
-The UI must never send or interpret a `hasFullAccess` flag.
+Never send or interpret `hasFullAccess`.
 
-### Refund approval
+### Approval
 
-Before approval, call `api_calculateFeeRefund`.
+Call `api_calculateFeeRefund` before approval.
 
-The approval modal shows the maximum refundable amount and accepts an approved amount.
+The modal shows maximum refundable amount and allows an explicit approved amount for single-request approval. Client validation rejects `<= 0` or values above the fresh maximum; server validation remains authoritative.
 
-Client-side validation prevents values less than or equal to zero or greater than the current calculated maximum, but the server remains authoritative and recalculates on mutation.
+For multi-select approval, do not send one shared explicit `approvedAmount`. Approve selected requests using each request's server-derived maximum by omitting the shared amount, matching the current server contract.
 
-For multi-select approval, do not provide one shared explicit approved amount across multiple requests. Either approve each at its server-calculated maximum or require per-row processing; this must match the server contract that rejects a shared explicit amount for multiple IDs.
+### Transfer-confirmation modal
 
-### Refund confirmation modal
-
-Only shown when the associated refund is in `대기`.
+Only for refund status `대기`.
 
 Inputs/actions:
 
-- transfer date
-- transfer evidence file ID
-- `완료`
-- `실패`
+```text
+송금일
+송금 증빙 파일 ID
+완료
+실패
+```
 
-## 13. Modal and mutation interaction rules
+## 14. Modal and mutation interaction rules
 
-Operational actions are modal-centered rather than separate detail routes.
+Operational actions use modals rather than new routes.
 
-Common mutation sequence:
+Common flow:
 
 ```text
-user action
-  -> local field validation
+local validation
   -> confirmation for financial/destructive action
-  -> mark modal/action busy
-  -> call server
-  -> server validates current state and mutates
+  -> set busy / disable mutation controls
+  -> server call
   -> success: toast + close/refresh
   -> failure: keep modal open + restore controls + error toast
 ```
 
 Rules:
 
-- mutation buttons are disabled while a request is in flight
-- double submission is prevented
-- stale-state errors from the server are surfaced rather than silently coerced
-- list/detail data is refreshed after mutation
-- server errors remain visible enough for an operator to understand why an operation failed
+- prevent double submission
+- stale-state server errors are surfaced, not coerced
+- refresh list/detail after mutation
+- preserve operator input on recoverable failures
+- server remains final authority for state transitions, duplicate prevention, rates, payment amounts, refund calculations, actor identity, and authorization
 
-## 14. Bulk action rules
+## 15. Bulk-action rules
 
-Bulk action bars are hidden until one or more rows are selected.
+Bulk bars remain hidden until rows are selected.
 
-Payment application bulk processing supports:
+Payment applications:
 
 - approve
 - reject
 
-Refund request bulk processing supports:
+Refund requests:
 
-- approve using each request's server-derived maximum
+- approve using each server-derived maximum
 - reject
 
-Do not add bulk confirmation of payment receipt or refund transfer; those are transaction-specific confirmation actions handled from detail modals.
+Payment receipt confirmation and refund transfer confirmation are never bulk actions; they remain transaction-specific detail-modal actions.
 
-## 15. Data and authorization boundaries
+## 16. Error/loading/empty states
 
-Frontend code does not reproduce domain calculations as authoritative logic.
+Every Student Fee page has explicit loading and empty states.
+
+List-load failures keep the application shell visible and replace the data region with an error state instead of leaving stale loading UI.
+
+Mutation failures keep the modal open unless a server response makes reloading necessary.
+
+Financial mutations require confirmation before execution.
+
+## 17. Data and authorization boundary
 
 Allowed client logic:
 
-- input presence checks
+- required-field checks
 - formatting
-- UI enable/disable decisions
-- simple max/min validation using fresh server results
+- enable/disable decisions
+- simple validation against fresh server-calculated limits
 
 Server-owned logic:
 
-- application/refund state transitions
+- state transitions
 - duplicate prevention
 - fee-rate resolution
 - payment amount calculation
 - refundable amount calculation
 - maximum refund validation
-- authenticated actor identity
+- authenticated actor
 - authorization
 
-The frontend must not call Sheets/Drive APIs directly.
+Frontend code never accesses Sheets/Drive directly.
 
-## 16. Error, loading, and empty states
-
-Every page has explicit loading and empty states.
-
-API failures use the shared error handler and toast presentation.
-
-Financial mutations use confirmation dialogs before execution.
-
-If a list request fails, keep the page shell rendered and replace the data region with an actionable error state rather than leaving stale loading UI.
-
-If a mutation fails, keep the modal open and preserve operator input unless the server result proves that reloading is necessary.
-
-## 17. Frontend verification
+## 18. Verification
 
 Add:
 
@@ -533,55 +510,52 @@ scripts/test-student-fee-frontend.js
 scripts/verify-student-fee-frontend.js
 ```
 
-The frontend regression harness should verify meaningful behavior by evaluating relevant page/common JavaScript with a lightweight DOM/API stub where practical.
+The behavior harness evaluates meaningful page/common JS with lightweight DOM/API stubs where practical.
 
-The architecture verifier must check at minimum:
+The frontend verifier checks at minimum:
 
-- four Student Fee route templates exist
-- four route mappings exist in `Code.js`
-- `student_fee*` routes are login protected
-- Student Fee submenu links point to the correct routes
-- Student Fee parent/submenu active-navigation logic exists
-- all four page shells include `100_common/App_Styles`
-- all four page shells include `App_Header` and `App_Sidebar`
+- four Student Fee templates/routes exist
+- all `student_fee*` routes are login protected
+- sidebar submenu routes and active-state behavior are correct
+- all Student Fee page shells include `100_common/App_Styles`, `App_Header`, and `App_Sidebar`
 - Student Fee common styles/JS are included
-- page JS only calls approved Student Fee `api_*` functions
+- only approved Student Fee `api_*` calls are used, including `api_getStudentFeeReferenceData`
 - no `apiV1_*`
 - no `hasFullAccess`
-- no standalone copied shell/topbar/sidebar from the source feature
-- no UI fields for `유형`, `적용종료학기`, or `보관여부`
+- no copied standalone feature shell/topbar/sidebar
+- no feature-only UI fields (`유형`, `적용종료학기`, `보관여부`)
+- payer semester selector is populated through the reference API
 - mutation UIs implement busy/double-submit protection
-- payer/payment/refund operational flows use modals
-- payment/refund list screens contain bulk-selection/action structure
+- payer/payment/refund operational flows are modal-centered
+- payment/refund screens contain bulk-selection/action structure
 
-Update `scripts/verify-server-architecture.js` for the four new routes/templates only as required by the current repository verifier contract.
+Update existing server architecture verification for:
 
-## 18. Scope boundary with phase 3
+- the four new routes/templates
+- the new public `api_getStudentFeeReferenceData`
 
-This phase establishes the shared visual system but applies it fully only to Student Fee.
+## 19. Phase 3 boundary
 
-The following pages remain visually unchanged beyond any backward-compatible shared-style additions required not to break them:
+This phase establishes the shared visual system but fully applies it only to Student Fee.
 
-- Main
-- Accounting
-- Event
-- Settings
+Main, Accounting, Event, and Settings remain visually unchanged apart from backward-compatible shared-style additions needed to preserve current behavior.
 
-A separate phase 3 will migrate those screens to the Student Fee-derived shared design system without changing their business behavior.
+Phase 3 migrates those screens to the Student Fee-derived shared design system without changing business logic.
 
-## 19. Definition of done
+## 20. Definition of done
 
-This frontend phase is complete when:
+Complete when:
 
-- all four Student Fee routes render within the current app shell
-- Student Fee submenu navigation works and shows correct active state
-- summary data loads from the server API
-- payer create/update works through modals
+- all four Student Fee routes render in the current shell
+- expandable Student Fee navigation and active states work
+- summary cards load and route correctly
+- payer create/update works through modals with a server-backed semester selector
 - payment approve/reject and receipt confirmation work through modals
 - refund approve/reject and transfer confirmation work through modals
-- search/filter/pagination and bulk actions work as specified
-- common cards/tables/badges/modals/toast/loading primitives are available from `100_common`
-- no current-schema violations are introduced
-- no feature-branch standalone shell or legacy API contract is reintroduced
-- Student Fee frontend tests and architecture verifier pass
+- search/filter/pagination and specified bulk actions work
+- shared card/table/badge/modal/toast/loading primitives exist in `100_common`
+- no current-schema violation or feature-only persistence concept is introduced
+- no standalone feature shell or legacy API contract is reintroduced
+- Student Fee frontend tests/verifier pass
+- Student Fee server regression verification remains green after the reference API addition
 - existing page classes remain backward compatible
