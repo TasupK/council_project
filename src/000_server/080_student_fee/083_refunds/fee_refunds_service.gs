@@ -1,9 +1,22 @@
-// 1. 환불신청 승인/반려 처리
+// 1. 환불 처리용 Auth email/ID 검증
+function requireFeeRefundActorEmail_(context) {
+  var email = String(context && context.email || '').trim();
+  if (!email) throw new Error('actorEmail 값이 필요합니다.');
+  return email;
+}
+
+function requireFeeRefundId_(request) {
+  var id = String(request && (request.refundId || request.id) || '').trim();
+  if (!id) throw new Error('refundId 값이 필요합니다.');
+  return id;
+}
+
+// 2. 환불신청 승인/반려 처리
 function processFeeRefundRequestsData_(request, context) {
   var source = request && typeof request === 'object' ? request : {};
   var ids = source.ids && source.ids.length ? source.ids : [];
   var action = String(source.action || '').trim().toUpperCase();
-  var actorEmail = requireStudentFeeText_(context && context.email, 'actorEmail');
+  var actorEmail = requireFeeRefundActorEmail_(context);
   var hasApprovedAmount = Object.prototype.hasOwnProperty.call(source, 'approvedAmount') && source.approvedAmount !== '' && source.approvedAmount != null;
 
   if (!ids.length) throw new Error('처리할 환불신청 ID가 필요합니다.');
@@ -79,10 +92,10 @@ function processFeeRefundRequestsData_(request, context) {
   });
 }
 
-// 2. 환불 송금 확인 처리
+// 3. 환불 송금 확인 처리
 function confirmFeeRefundData_(request, context) {
-  var refundId = requireStudentFeeId_(request, ['refundId', 'id']);
-  var actorEmail = requireStudentFeeText_(context && context.email, 'actorEmail');
+  var refundId = requireFeeRefundId_(request);
+  var actorEmail = requireFeeRefundActorEmail_(context);
   var result = String(request && request.result || '').trim().toUpperCase();
   if (result !== 'DONE' && result !== 'FAILED') throw new Error('알 수 없는 환불 확인 result입니다: ' + result);
 
