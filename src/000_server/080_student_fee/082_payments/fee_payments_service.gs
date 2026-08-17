@@ -19,6 +19,9 @@ function processFeeApplicationsData_(request, context) {
     var existingPayment = findFeePaymentRowByApplicationId_(applicationId);
     if (existingPayment) throw new Error('이미 생성된 납부내역이 있습니다: ' + applicationId);
 
+    var rate = null;
+    if (action === 'APPROVE') rate = resolveStudentFeeRate_(before.paymentDate);
+
     var newStatus = action === 'APPROVE' ? '승인' : '반려';
     var applicationChanges = {
       status: newStatus,
@@ -44,7 +47,6 @@ function processFeeApplicationsData_(request, context) {
 
     var payment = null;
     if (action === 'APPROVE') {
-      var rate = resolveStudentFeeRate_(before.paymentDate);
       payment = {
         id: Utilities.getUuid(),
         applicationId: applicationId,
