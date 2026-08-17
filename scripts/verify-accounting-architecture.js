@@ -61,8 +61,15 @@ requireFile_('060_common/accounting_event_read_dao.gs');
 requireFile_('061_ledger/ledger_api.gs');
 requireFile_('061_ledger/ledger_service.gs');
 requireFile_('061_ledger/ledger_sheet_dao.gs');
+requireFile_('062_evidence/evidence_api.gs');
+requireFile_('062_evidence/evidence_service.gs');
+requireFile_('062_evidence/evidence_sheet_dao.gs');
+requireFile_('062_evidence/evidence_file_service.gs');
 forbidFile_('accounting_common.gs');
 forbidFile_('ledger.gs');
+forbidFile_('evidence.gs');
+forbidFile_('accounting_service.gs');
+forbidFile_('accounting_sheet_dao.gs');
 
 var functions = collectFunctions_();
 var ownership = {
@@ -89,7 +96,15 @@ var ownership = {
   insertLedgerRow_: '061_ledger/ledger_sheet_dao.gs',
   updateLedgerRowById_: '061_ledger/ledger_sheet_dao.gs',
   getLedgerDatabaseInfo_: '060_common/accounting_query_service.gs',
-  getLedgerEventOptions_: '060_common/accounting_query_service.gs'
+  getLedgerEventOptions_: '060_common/accounting_query_service.gs',
+  api_getEvidenceFileContent: '062_evidence/evidence_api.gs',
+  saveEvidenceFiles_: '062_evidence/evidence_service.gs',
+  findAllLedgerEvidenceRows_: '062_evidence/evidence_sheet_dao.gs',
+  insertLedgerEvidenceRow_: '062_evidence/evidence_sheet_dao.gs',
+  getEvidenceFileContent_: '062_evidence/evidence_file_service.gs',
+  sanitizeFileName_: '062_evidence/evidence_file_service.gs',
+  createEvidenceDriveFile_: '062_evidence/evidence_file_service.gs',
+  getEvidenceFolder_: '062_evidence/evidence_file_service.gs'
 };
 
 Object.keys(ownership).forEach(function (name) {
