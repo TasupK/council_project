@@ -1,4 +1,11 @@
-// 1. 납부신청 목록 조회와 납부내역 조합
+// 1. 납부신청 목록용 학번 마스킹
+function maskFeeApplicationStudentId_(studentId) {
+  var text = String(studentId || '');
+  if (text.length <= 4) return text;
+  return text.slice(0, 2) + '****' + text.slice(-2);
+}
+
+// 2. 납부신청 목록 조회와 납부내역 조합
 function getFeeApplicationListData_(request) {
   var source = request && typeof request === 'object' ? request : {};
   var keyword = String(source.keyword || '').trim().toLowerCase();
@@ -30,7 +37,7 @@ function getFeeApplicationListData_(request) {
   var items = rows.slice(start, start + pageSize).map(function (row) {
     var item = {};
     Object.keys(row).forEach(function (key) { item[key] = row[key]; });
-    item.studentId = maskStudentFeeStudentId_(row.studentId);
+    item.studentId = maskFeeApplicationStudentId_(row.studentId);
     item.payment = paymentByApplicationId[String(row.id)] || null;
     return item;
   });
@@ -38,7 +45,7 @@ function getFeeApplicationListData_(request) {
   return { items: items, page: page, pageSize: pageSize, total: total };
 }
 
-// 2. 납부신청 상세 조회
+// 3. 납부신청 상세 조회
 function getFeeApplicationDetailData_(request) {
   var applicationId = requireStudentFeeId_(request, ['applicationId', 'id']);
   var application = findFeeApplicationRowById_(applicationId);
@@ -49,7 +56,7 @@ function getFeeApplicationDetailData_(request) {
   };
 }
 
-// 3. 납부 예정 금액 계산
+// 4. 납부 예정 금액 계산
 function calculateFeeAmountData_(request) {
   var paymentDate = String(request && request.paymentDate || '').trim().slice(0, 10);
   if (!paymentDate) throw new Error('paymentDate 값이 필요합니다.');
