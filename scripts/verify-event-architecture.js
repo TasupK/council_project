@@ -55,21 +55,39 @@ function requireFunctionIn_(functions, name, relativePath) {
   }
 }
 
-requireFile_('050_common/event_query_service.gs');
-requireFile_('051_events/events_api.gs');
-requireFile_('051_events/events_service.gs');
-requireFile_('051_events/events_validator.gs');
-requireFile_('052_applicants/applicants_api.gs');
-requireFile_('052_applicants/applicants_service.gs');
-requireFile_('053_payment/payment_service.gs');
-requireFile_('053_payment/payment_sheet_dao.gs');
-requireFile_('054_attendance/attendance_api.gs');
-requireFile_('054_attendance/attendance_service.gs');
-requireFile_('054_attendance/attendance_sheet_dao.gs');
-requireFile_('055_refunds/refunds_api.gs');
-requireFile_('055_refunds/refunds_sheet_dao.gs');
-requireFile_('056_files/event_file_service.gs');
+function forbidPatternIn_(relativePath, pattern, message) {
+  if (!exists_(relativePath)) return;
+  var source = fs.readFileSync(path.join(EVENT_ROOT, relativePath), 'utf8');
+  if (pattern.test(source)) failures.push(message + ': ' + relativePath);
+}
 
+[
+  '050_common/event_constants.gs',
+  '050_common/event_error.gs',
+  '050_common/event_request.gs',
+  '050_common/event_pagination.gs',
+  '051_events/events_api.gs',
+  '051_events/events_service.gs',
+  '051_events/events_query_service.gs',
+  '051_events/events_validator.gs',
+  '051_events/events_sheet_dao.gs',
+  '052_applicants/applicants_api.gs',
+  '052_applicants/applicants_service.gs',
+  '052_applicants/applicants_query_service.gs',
+  '052_applicants/applicants_sheet_dao.gs',
+  '053_payment/payment_service.gs',
+  '053_payment/payment_sheet_dao.gs',
+  '054_attendance/attendance_api.gs',
+  '054_attendance/attendance_service.gs',
+  '054_attendance/attendance_query_service.gs',
+  '054_attendance/attendance_sheet_dao.gs',
+  '055_refunds/refunds_api.gs',
+  '055_refunds/refunds_query_service.gs',
+  '055_refunds/refunds_sheet_dao.gs',
+  '056_files/event_file_service.gs'
+].forEach(requireFile_);
+
+forbidFile_('050_common/event_query_service.gs');
 forbidFile_('050_common/event_payments.gs');
 forbidFile_('050_common/event_payment_sheet_dao.gs');
 forbidFile_('051_events/events.gs');
@@ -81,10 +99,12 @@ forbidFile_('053_attendance/attendance_sheet_dao.gs');
 forbidFile_('053_attendance/event_attendance.gs');
 forbidFile_('054_attendance/attendance.gs');
 forbidFile_('054_attendance/event_attendance.gs');
+forbidFile_('054_attendance/attendance_validator.gs');
 forbidFile_('054_refunds/refunds.gs');
 forbidFile_('054_refunds/refunds_sheet_dao.gs');
 forbidFile_('054_refunds/event_refunds.gs');
 forbidFile_('055_refunds/refunds.gs');
+forbidFile_('055_refunds/refunds_service.gs');
 forbidFile_('055_refunds/event_refunds.gs');
 forbidFile_('055_files/event_files.gs');
 forbidFile_('056_files/event_files.gs');
@@ -96,19 +116,19 @@ var ownership = {
   updateEventData_: '051_events/events_service.gs',
   updateEventStatusData_: '051_events/events_service.gs',
   closeEventData_: '051_events/events_service.gs',
-  getEventData_: '051_events/events_service.gs',
+  getEventData_: '051_events/events_query_service.gs',
+  getEventListData_: '051_events/events_query_service.gs',
+  getUniqueEventValues_: '051_events/events_query_service.gs',
+  getEventDetailData_: '051_events/events_query_service.gs',
   processApplicantData_: '052_applicants/applicants_service.gs',
+  getApplicantListData_: '052_applicants/applicants_query_service.gs',
+  getApplicantDetailData_: '052_applicants/applicants_query_service.gs',
   getEventPaymentTotalsByApplicationId_: '053_payment/payment_service.gs',
   findAllEventPaymentClientRows_: '053_payment/payment_sheet_dao.gs',
   applyAttendanceChangesData_: '054_attendance/attendance_service.gs',
-  findEventAttendanceByApplicationId_: '054_attendance/attendance_service.gs',
-  getEventListData_: '050_common/event_query_service.gs',
-  getUniqueEventValues_: '050_common/event_query_service.gs',
-  getEventDetailData_: '050_common/event_query_service.gs',
-  getApplicantListData_: '050_common/event_query_service.gs',
-  getApplicantDetailData_: '050_common/event_query_service.gs',
-  getAttendanceListData_: '050_common/event_query_service.gs',
-  getEventRefundListData_: '050_common/event_query_service.gs',
+  getAttendanceListData_: '054_attendance/attendance_query_service.gs',
+  findEventAttendanceByApplicationId_: '054_attendance/attendance_sheet_dao.gs',
+  getEventRefundListData_: '055_refunds/refunds_query_service.gs',
   uploadEventRelatedMaterial_: '056_files/event_file_service.gs',
   getEventMaterialFolder_: '056_files/event_file_service.gs',
   sanitizeEventDriveFileName_: '056_files/event_file_service.gs'
@@ -116,6 +136,25 @@ var ownership = {
 
 Object.keys(ownership).forEach(function (name) {
   requireFunctionIn_(functions, name, ownership[name]);
+});
+
+Object.keys(functions).forEach(function (name) {
+  if (functions[name].length > 1) {
+    failures.push('Duplicate Event function: ' + name + ' in ' + functions[name].join(', '));
+  }
+});
+
+[
+  '051_events/events_query_service.gs',
+  '052_applicants/applicants_query_service.gs',
+  '054_attendance/attendance_query_service.gs',
+  '055_refunds/refunds_query_service.gs'
+].forEach(function (relativePath) {
+  forbidPatternIn_(
+    relativePath,
+    /withOperationWriteLock_|appendOperationTableRow_|updateOperationTableRow_|DriveApp|createFile\s*\(/,
+    'Event Query Service must be read-only'
+  );
 });
 
 if (failures.length) {
