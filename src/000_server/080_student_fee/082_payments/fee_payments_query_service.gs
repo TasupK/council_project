@@ -67,3 +67,56 @@ function calculateFeeAmountData_(request) {
     amount: Number(rate.amountPerSemester)
   };
 }
+
+// 5. 학생회비 전체 현황 조회
+function getStudentFeeSummaryData_() {
+  var payers = findAllFeePayerRows_();
+  var applications = findAllFeeApplicationRows_();
+  var payments = findAllFeePaymentRows_();
+  var refundRequests = findAllFeeRefundRequestRows_();
+  var refunds = findAllFeeRefundRows_();
+
+  function countByStatus_(rows, status) {
+    return rows.filter(function (row) { return String(row.status || '') === status; }).length;
+  }
+  function countByMoneyStatus_(rows, status) {
+    return rows.filter(function (row) { return String(row.moneyStatus || '') === status; }).length;
+  }
+  function sumCompleted_(rows, amountField) {
+    return rows.filter(function (row) {
+      return String(row.moneyStatus || '') === '완료';
+    }).reduce(function (sum, row) {
+      return sum + (Number(row[amountField]) || 0);
+    }, 0);
+  }
+
+  return {
+    payers: { total: payers.length },
+    applications: {
+      total: applications.length,
+      pending: countByStatus_(applications, '접수'),
+      approved: countByStatus_(applications, '승인'),
+      rejected: countByStatus_(applications, '반려')
+    },
+    payments: {
+      total: payments.length,
+      pending: countByMoneyStatus_(payments, '대기'),
+      completed: countByMoneyStatus_(payments, '완료'),
+      mismatch: countByMoneyStatus_(payments, '불일치'),
+      completedAmount: sumCompleted_(payments, 'amount')
+    },
+    refundRequests: {
+      total: refundRequests.length,
+      pending: countByStatus_(refundRequests, '접수'),
+      approved: countByStatus_(refundRequests, '승인'),
+      rejected: countByStatus_(refundRequests, '반려')
+    },
+    refunds: {
+      total: refunds.length,
+      pending: countByMoneyStatus_(refunds, '대기'),
+      completed: countByMoneyStatus_(refunds, '완료'),
+      failed: countByMoneyStatus_(refunds, '실패'),
+      completedAmount: sumCompleted_(refunds, 'approvedAmount')
+    }
+  };
+}
