@@ -3,109 +3,17 @@ const path = require('path');
 
 const ROOT = path.resolve(__dirname, '..');
 const failures = [];
-
-const REQUIRED_SHARED_PRIMITIVES = [
-  'ui-page-head', 'ui-page-actions',
-  'ui-card', 'ui-stat-card',
-  'ui-btn', 'ui-field', 'ui-toolbar',
-  'ui-table-wrap', 'ui-table', 'ui-badge',
-  'ui-tabs', 'ui-tab',
-  'ui-modal-overlay', 'ui-modal',
-  'ui-loading', 'ui-empty', 'ui-toast'
-];
-
-const DEFAULT_MIGRATED_DOMAINS = [];
+const ALL_DOMAINS = ['settings', 'main', 'accounting', 'event'];
+const DEFAULT_MIGRATED_DOMAINS = ALL_DOMAINS;
 const MIGRATED_DOMAINS = process.env.UI_MIGRATED_DOMAINS
   ? process.env.UI_MIGRATED_DOMAINS.split(',').map((value) => value.trim()).filter(Boolean)
   : DEFAULT_MIGRATED_DOMAINS;
 
-const DOMAIN_TARGETS = {
-  settings: [
-    'src/300_settings/300_home/Settings_Home_View.html',
-    'src/300_settings/310_users/Settings_Users_View.html',
-    'src/300_settings/320_roles/Settings_Roles_View.html',
-    'src/300_settings/330_permissions/Settings_Permissions_View.html'
-  ],
-  main: ['src/250_main/Main_View.html'],
-  accounting: [
-    'src/400_accounting/400_home/Accounting_Home_View.html',
-    'src/400_accounting/410_ledger/Accounting_Ledger_View.html',
-    'src/400_accounting/420_reconciliation/Accounting_Reconciliation_View.html',
-    'src/400_accounting/430_settlement/Accounting_Settlement_View.html'
-  ],
-  event: [
-    'src/600_event/600_home/Event_Home_View.html',
-    'src/600_event/610_form/Event_Form_View.html',
-    'src/600_event/620_detail/Event_Detail_View.html'
-  ]
-};
-
-const REQUIRED_IDS = {
-  settings: {
-    'src/300_settings/310_users/Settings_Users_View.html': [
-      'userQ', 'userRole', 'userStatus', 'userReset', 'userCountLabel',
-      'userTbody', 'userFooterTotal'
-    ]
-  },
-  accounting: {
-    'src/400_accounting/410_ledger/Accounting_Ledger_View.html': [
-      'ledgerDbLink', 'openRegister', 'sumIncome', 'sumExpense', 'sumPending', 'sumReview',
-      'keyword', 'type', 'department', 'event', 'status', 'rows',
-      'ledgerPagination', 'prevLedgerPage', 'ledgerPageInfo', 'nextLedgerPage',
-      'registerModal', 'entryForm', 'expenseBtn', 'incomeBtn', 'formDepartment', 'formEvent',
-      'eventBalance', 'entryEvidenceDropzone', 'entryEvidenceFile', 'entryEvidenceFileName',
-      'draft', 'create', 'detailModal', 'detailTitle', 'detailStatus', 'detailAlert',
-      'detailRows', 'detailEvidenceList', 'approve', 'toast'
-    ]
-  },
-  event: {
-    'src/600_event/600_home/Event_Home_View.html': [
-      'ew-event-search', 'ew-managerId-filter', 'ew-type-filter', 'ew-status-filter',
-      'ew-event-summary', 'ew-event-table', 'ew-loading', 'ew-modal-root', 'ew-toast'
-    ],
-    'src/600_event/610_form/Event_Form_View.html': [
-      'ew-app', 'ew-form-breadcrumb', 'ew-form-title', 'ew-event-form',
-      'ew-member-fee', 'ew-non-member-fee', 'ew-event-status-radios',
-      'ew-related-material-file', 'ew-related-material-name', 'ew-existing-material',
-      'ew-loading', 'ew-modal-root', 'ew-toast'
-    ],
-    'src/600_event/620_detail/Event_Detail_View.html': [
-      'ew-app', 'ew-edit-event', 'ew-detail-name', 'ew-detail-status', 'ew-detail-meta',
-      'ew-kpi-total', 'ew-kpi-approved', 'ew-kpi-paid', 'ew-kpi-attended', 'ew-kpi-balance',
-      'ew-tab-panel', 'ew-loading', 'ew-modal-root', 'ew-toast'
-    ]
-  }
-};
-
-const REQUIRED_FORM_NAMES = {
-  accounting: {
-    'src/400_accounting/410_ledger/Accounting_Ledger_View.html': [
-      'transaction_date', 'department_name', 'amount', 'counterparty', 'event_name', 'description', 'note'
-    ]
-  },
-  event: {
-    'src/600_event/610_form/Event_Form_View.html': [
-      'name', 'category', 'description', 'applicationStartAt', 'applicationEndAt',
-      'eventStartAt', 'capacity', 'managerId', 'payerFee', 'nonPayerFee', 'status'
-    ]
-  }
-};
-
-const REQUIRED_DATA_ACTIONS = {
-  event: {
-    'src/600_event/600_home/Event_Home_View.html': ['go-create', 'reset-event-filters'],
-    'src/600_event/610_form/Event_Form_View.html': ['go-list'],
-    'src/600_event/620_detail/Event_Detail_View.html': ['go-list', 'edit-event', 'detail-tab']
-  }
-};
-
-const REQUIRED_DETAIL_TABS = ['basic', 'applicants', 'attendance', 'ledger', 'refund'];
-
-const FORBIDDEN_GLOBAL_SELECTORS = [
-  '.settings-list', '.settings-row', '.role-panel', '.perm-table', '.perm-group', '.perm-child',
-  '.dashboard-section', '.status-grid', '.status-card', '.quick-grid', '.quick-action',
-  '.accounting-page', '.accounting-tabs',
-  '.ew-app', '.ew-btn', '.ew-card', '.ew-field', '.ew-table', '.ew-toast', '.ew-loading'
+const REQUIRED_SHARED_PRIMITIVES = [
+  'ui-page-head', 'ui-page-actions', 'ui-card', 'ui-stat-card',
+  'ui-btn', 'ui-field', 'ui-toolbar', 'ui-table-wrap', 'ui-table',
+  'ui-badge', 'ui-tabs', 'ui-tab', 'ui-modal-overlay', 'ui-modal',
+  'ui-loading', 'ui-empty', 'ui-toast'
 ];
 
 const DOMAIN_SHELLS = {
@@ -129,6 +37,70 @@ const DOMAIN_SHELLS = {
   ]
 };
 
+const REQUIRED_IDS = {
+  settings: {
+    'src/300_settings/310_users/Settings_Users_View.html': [
+      'userQ', 'userRole', 'userStatus', 'userReset', 'userCountLabel', 'userTbody', 'userFooterTotal'
+    ]
+  },
+  accounting: {
+    'src/400_accounting/410_ledger/Accounting_Ledger_View.html': [
+      'ledgerDbLink', 'openRegister', 'sumIncome', 'sumExpense', 'sumPending', 'sumReview',
+      'keyword', 'type', 'department', 'event', 'status', 'rows', 'ledgerPagination',
+      'prevLedgerPage', 'ledgerPageInfo', 'nextLedgerPage', 'registerModal', 'entryForm',
+      'expenseBtn', 'incomeBtn', 'formDepartment', 'formEvent', 'eventBalance',
+      'entryEvidenceDropzone', 'entryEvidenceFile', 'entryEvidenceFileName', 'draft', 'create',
+      'detailModal', 'detailTitle', 'detailStatus', 'detailAlert', 'detailRows',
+      'detailEvidenceList', 'approve', 'toast'
+    ]
+  },
+  event: {
+    'src/600_event/600_home/Event_Home_View.html': [
+      'ew-event-search', 'ew-managerId-filter', 'ew-type-filter', 'ew-status-filter',
+      'ew-event-summary', 'ew-event-table', 'ew-loading', 'ew-modal-root', 'ew-toast'
+    ],
+    'src/600_event/610_form/Event_Form_View.html': [
+      'ew-app', 'ew-form-breadcrumb', 'ew-form-title', 'ew-event-form', 'ew-member-fee',
+      'ew-non-member-fee', 'ew-event-status-radios', 'ew-related-material-file',
+      'ew-related-material-name', 'ew-existing-material', 'ew-loading', 'ew-modal-root', 'ew-toast'
+    ],
+    'src/600_event/620_detail/Event_Detail_View.html': [
+      'ew-app', 'ew-edit-event', 'ew-detail-name', 'ew-detail-status', 'ew-detail-meta',
+      'ew-kpi-total', 'ew-kpi-approved', 'ew-kpi-paid', 'ew-kpi-attended', 'ew-kpi-balance',
+      'ew-tab-panel', 'ew-loading', 'ew-modal-root', 'ew-toast'
+    ]
+  }
+};
+
+const REQUIRED_FORM_NAMES = {
+  accounting: {
+    'src/400_accounting/410_ledger/Accounting_Ledger_View.html': [
+      'transaction_date', 'department_name', 'amount', 'counterparty', 'event_name', 'description', 'note'
+    ]
+  },
+  event: {
+    'src/600_event/610_form/Event_Form_View.html': [
+      'name', 'category', 'description', 'applicationStartAt', 'applicationEndAt', 'eventStartAt',
+      'capacity', 'managerId', 'payerFee', 'nonPayerFee', 'status'
+    ]
+  }
+};
+
+const REQUIRED_DATA_ACTIONS = {
+  event: {
+    'src/600_event/600_home/Event_Home_View.html': ['go-create', 'reset-event-filters'],
+    'src/600_event/610_form/Event_Form_View.html': ['go-list'],
+    'src/600_event/620_detail/Event_Detail_View.html': ['go-list', 'edit-event', 'detail-tab']
+  }
+};
+
+const FORBIDDEN_GLOBAL_SELECTORS = [
+  '.settings-list', '.settings-row', '.role-panel', '.perm-table', '.perm-group', '.perm-child',
+  '.dashboard-section', '.status-grid', '.status-card', '.quick-grid', '.quick-action',
+  '.accounting-page', '.accounting-tabs', '.ew-app', '.ew-btn', '.ew-card', '.ew-field',
+  '.ew-table', '.ew-toast', '.ew-loading'
+];
+
 function read(rel) {
   const file = path.join(ROOT, rel);
   if (!fs.existsSync(file)) {
@@ -149,23 +121,6 @@ function requireClasses(rel, classes) {
   });
 }
 
-function assertLiteralSelectorAbsent(css, selector) {
-  const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  if (new RegExp(`(^|[},\\n]\\s*)${escaped}(?=[\\s:{,.>#\\[])`, 'm').test(css)) {
-    failures.push(`App_Styles.html owns domain selector ${selector}`);
-  }
-}
-
-function verifySharedPrimitives() {
-  const css = read('src/100_common/App_Styles.html');
-  REQUIRED_SHARED_PRIMITIVES.forEach((name) => {
-    if (!new RegExp(`\\.${name}(?:[\\s:{,.>#\\[])`).test(css)) {
-      failures.push(`App_Styles.html missing shared primitive .${name}`);
-    }
-  });
-  FORBIDDEN_GLOBAL_SELECTORS.forEach((selector) => assertLiteralSelectorAbsent(css, selector));
-}
-
 function verifyLiteralMap(map, attribute) {
   Object.entries(map || {}).forEach(([rel, values]) => {
     const source = read(rel);
@@ -177,21 +132,22 @@ function verifyLiteralMap(map, attribute) {
   });
 }
 
-function verifyBehaviorHooksFor(domain) {
-  verifyLiteralMap(REQUIRED_IDS[domain], 'id');
-  verifyLiteralMap(REQUIRED_FORM_NAMES[domain], 'name');
-  verifyLiteralMap(REQUIRED_DATA_ACTIONS[domain], 'data-action');
-  if (domain === 'event') {
-    const detail = read('src/600_event/620_detail/Event_Detail_View.html');
-    REQUIRED_DETAIL_TABS.forEach((tab) => {
-      if (!new RegExp(`data-tab=[\"']${tab}[\"']`).test(detail)) {
-        failures.push(`Event_Detail_View.html: missing data-tab ${tab}`);
-      }
-    });
-  }
+function verifySharedSystem() {
+  const css = read('src/100_common/App_Styles.html');
+  REQUIRED_SHARED_PRIMITIVES.forEach((name) => {
+    if (!new RegExp(`\\.${name}(?:[\\s:{,.>#\\[])`).test(css)) {
+      failures.push(`App_Styles.html missing shared primitive .${name}`);
+    }
+  });
+  FORBIDDEN_GLOBAL_SELECTORS.forEach((selector) => {
+    const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    if (new RegExp(`(^|[},\\n]\\s*)${escaped}(?=[\\s:{,.>#\\[])`, 'm').test(css)) {
+      failures.push(`App_Styles.html owns domain selector ${selector}`);
+    }
+  });
 }
 
-function verifyShellIncludesFor(domain) {
+function verifyShells(domain) {
   (DOMAIN_SHELLS[domain] || []).forEach((rel) => {
     const source = read(rel);
     if (!source.includes("include('100_common/App_Styles')")) failures.push(`${rel}: missing App_Styles include`);
@@ -201,34 +157,66 @@ function verifyShellIncludesFor(domain) {
   });
 }
 
-function verifyDomainAdoptionFor(domain) {
-  if (domain === 'settings') {
-    DOMAIN_TARGETS.settings.forEach((rel) => requireClasses(rel, ['ui-page-head']));
-    requireClasses('src/300_settings/310_users/Settings_Users_View.html', ['ui-btn', 'ui-toolbar', 'ui-field', 'ui-table-wrap', 'ui-table', 'ui-loading']);
-    requireClasses('src/300_settings/320_roles/Settings_Roles_View.html', ['ui-btn', 'ui-toolbar', 'ui-field', 'ui-table-wrap', 'ui-table', 'ui-loading']);
-    requireClasses('src/300_settings/330_permissions/Settings_Permissions_View.html', ['ui-btn', 'ui-field', 'ui-table-wrap', 'ui-table', 'ui-loading']);
-  }
-  if (domain === 'main') {
-    requireClasses('src/250_main/Main_View.html', ['ui-page-head', 'ui-stat-card', 'ui-card']);
-  }
-  if (domain === 'accounting') {
-    requireClasses('src/400_accounting/400_home/Accounting_Home_View.html', ['ui-page-head', 'ui-tabs', 'ui-tab', 'ui-card']);
-    requireClasses('src/400_accounting/410_ledger/Accounting_Ledger_View.html', ['ui-page-head', 'ui-page-actions', 'ui-card', 'ui-toolbar', 'ui-field', 'ui-table-wrap', 'ui-table', 'ui-modal-overlay', 'ui-modal', 'ui-badge', 'ui-toast']);
-    requireClasses('src/400_accounting/420_reconciliation/Accounting_Reconciliation_View.html', ['ui-page-head', 'ui-tabs', 'ui-tab']);
-    requireClasses('src/400_accounting/430_settlement/Accounting_Settlement_View.html', ['ui-page-head', 'ui-tabs', 'ui-tab']);
-  }
+function verifyHooks(domain) {
+  verifyLiteralMap(REQUIRED_IDS[domain], 'id');
+  verifyLiteralMap(REQUIRED_FORM_NAMES[domain], 'name');
+  verifyLiteralMap(REQUIRED_DATA_ACTIONS[domain], 'data-action');
   if (domain === 'event') {
-    requireClasses('src/600_event/600_home/Event_Home_View.html', ['ui-page-head', 'ui-page-actions', 'ui-card', 'ui-btn', 'ui-field', 'ui-loading', 'ui-toast']);
-    requireClasses('src/600_event/610_form/Event_Form_View.html', ['ui-page-head', 'ui-page-actions', 'ui-card', 'ui-btn', 'ui-field', 'ui-loading', 'ui-toast']);
-    requireClasses('src/600_event/620_detail/Event_Detail_View.html', ['ui-page-head', 'ui-page-actions', 'ui-card', 'ui-stat-card', 'ui-btn', 'ui-badge', 'ui-tabs', 'ui-tab', 'ui-loading', 'ui-toast']);
+    const detail = read('src/600_event/620_detail/Event_Detail_View.html');
+    ['basic', 'applicants', 'attendance', 'ledger', 'refund'].forEach((tab) => {
+      if (!new RegExp(`data-tab=[\"']${tab}[\"']`).test(detail)) failures.push(`Event_Detail_View.html: missing data-tab ${tab}`);
+    });
   }
 }
 
-verifySharedPrimitives();
+function verifySettings() {
+  [
+    'src/300_settings/300_home/Settings_Home_View.html',
+    'src/300_settings/310_users/Settings_Users_View.html',
+    'src/300_settings/320_roles/Settings_Roles_View.html',
+    'src/300_settings/330_permissions/Settings_Permissions_View.html'
+  ].forEach((rel) => requireClasses(rel, ['ui-page-head']));
+  requireClasses('src/300_settings/310_users/Settings_Users_View.html', ['ui-btn', 'ui-toolbar', 'ui-field', 'ui-table-wrap', 'ui-table', 'ui-loading']);
+  requireClasses('src/300_settings/320_roles/Settings_Roles_View.html', ['ui-btn', 'ui-toolbar', 'ui-field', 'ui-table-wrap', 'ui-table', 'ui-loading']);
+  requireClasses('src/300_settings/330_permissions/Settings_Permissions_View.html', ['ui-btn', 'ui-field', 'ui-table-wrap', 'ui-table', 'ui-loading']);
+  if (!read('src/300_settings/common/Settings_Styles.html').includes('.perm-table')) failures.push('Settings_Styles.html missing permission-matrix layout ownership');
+}
+
+function verifyMain() {
+  requireClasses('src/250_main/Main_View.html', ['ui-page-head', 'ui-stat-card', 'ui-card']);
+}
+
+function verifyAccounting() {
+  requireClasses('src/400_accounting/400_home/Accounting_Home_View.html', ['ui-page-head', 'ui-tabs', 'ui-tab', 'ui-card']);
+  requireClasses('src/400_accounting/410_ledger/Accounting_Ledger_View.html', [
+    'ui-page-head', 'ui-page-actions', 'ui-stat-card', 'ui-toolbar', 'ui-field',
+    'ui-table-wrap', 'ui-table', 'ui-modal-overlay', 'ui-modal', 'ui-badge', 'ui-toast'
+  ]);
+  requireClasses('src/400_accounting/420_reconciliation/Accounting_Reconciliation_View.html', ['ui-page-head', 'ui-tabs', 'ui-tab', 'ui-card', 'ui-toolbar', 'ui-table-wrap', 'ui-table', 'ui-toast']);
+  requireClasses('src/400_accounting/430_settlement/Accounting_Settlement_View.html', ['ui-page-head', 'ui-tabs', 'ui-tab', 'ui-stat-card', 'ui-card', 'ui-field', 'ui-btn', 'ui-toast']);
+}
+
+function verifyEvent() {
+  requireClasses('src/600_event/600_home/Event_Home_View.html', ['ui-page-head', 'ui-page-actions', 'ui-card', 'ui-btn', 'ui-field', 'ui-loading', 'ui-toast']);
+  requireClasses('src/600_event/610_form/Event_Form_View.html', ['ui-page-head', 'ui-page-actions', 'ui-card', 'ui-btn', 'ui-field', 'ui-badge', 'ui-loading', 'ui-toast']);
+  requireClasses('src/600_event/620_detail/Event_Detail_View.html', ['ui-page-head', 'ui-page-actions', 'ui-card', 'ui-stat-card', 'ui-btn', 'ui-badge', 'ui-tabs', 'ui-tab', 'ui-loading', 'ui-toast']);
+  requireClasses('src/600_event/600_home/event_home_js.html', ['ui-table', 'ui-btn', 'ui-empty']);
+  requireClasses('src/600_event/common/event_common_js.html', ['ui-badge', 'ui-pagination', 'ui-page-btn']);
+  requireClasses('src/600_event/620_detail/event_detail_js.html', ['ui-card', 'ui-table', 'ui-modal-overlay', 'ui-modal', 'ui-btn', 'ui-badge']);
+}
+
+verifySharedSystem();
 MIGRATED_DOMAINS.forEach((domain) => {
-  verifyShellIncludesFor(domain);
-  verifyBehaviorHooksFor(domain);
-  verifyDomainAdoptionFor(domain);
+  if (!ALL_DOMAINS.includes(domain)) {
+    failures.push(`Unknown migrated domain: ${domain}`);
+    return;
+  }
+  verifyShells(domain);
+  verifyHooks(domain);
+  if (domain === 'settings') verifySettings();
+  if (domain === 'main') verifyMain();
+  if (domain === 'accounting') verifyAccounting();
+  if (domain === 'event') verifyEvent();
 });
 
 if (failures.length) {
