@@ -40,18 +40,3 @@ function toUserDto_(row, roleIds, roles) {
     updatedBy: normalizeTextValue_(row[fields.updatedBy])
   };
 }
-
-// 4. 설정 화면에서 사용할 사용자 목록 생성
-function listUsersForSettings_() {
-  var fields = getUserDbFields_('users');
-  var roleMap = getRolesById_();
-  var userRoleMap = getActiveRoleIdsByEmail_();
-  return listUserRows_().map(function (row) {
-    var email = normalizeEmail_(row[fields.email]);
-    var roleIds = userRoleMap[email] || [];
-    var roles = roleIds.map(function (roleId) {
-      return summarizeRoleForUser_(roleMap[roleId], roleId);
-    });
-    return toUserDto_(row, roleIds, roles);
-  });
-}
