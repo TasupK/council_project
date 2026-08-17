@@ -3,7 +3,11 @@ function findAllFeeRateRows_() {
   return readOperationTableClientRows_('feeRates');
 }
 
-// 2. 학기 기준 단건 조회
+// 2. 학기 기준 전체/단건 조회
+function findAllStudentFeeSemesterRows_() {
+  return readOperationTableClientRows_('semesters');
+}
+
 function findStudentFeeSemesterById_(semesterId) {
   return findOperationTableRowById_('semesters', semesterId);
 }
@@ -24,7 +28,27 @@ function formatStudentFeeDateKey_(value) {
   return String(value).trim().slice(0, 10);
 }
 
-// 4. 지정일에 적용되는 회비 금액 기준 조회
+// 4. 학생회비 화면용 학기 기준 조회
+function getStudentFeeReferenceData_() {
+  var semesters = findAllStudentFeeSemesterRows_().map(function (row) {
+    return {
+      id: row.id,
+      year: Number(row.year) || row.year,
+      type: row.type,
+      startDate: formatStudentFeeDateKey_(row.startDate),
+      endDate: formatStudentFeeDateKey_(row.endDate),
+      active: typeof isTruthyValue_ === 'function' ? isTruthyValue_(row.active) : !!row.active,
+      label: String(row.year || '') + '학년도 ' + String(row.type || '')
+    };
+  });
+  semesters.sort(function (a, b) {
+    if (Number(a.year) !== Number(b.year)) return Number(b.year) - Number(a.year);
+    return String(b.type || '').localeCompare(String(a.type || ''), 'ko');
+  });
+  return { semesters: semesters };
+}
+
+// 5. 지정일에 적용되는 회비 금액 기준 조회
 function resolveStudentFeeRate_(targetDate) {
   var dateKey = formatStudentFeeDateKey_(targetDate);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) {
