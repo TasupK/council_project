@@ -6,7 +6,6 @@ var SERVER_ROOT = path.join(ROOT, 'src', '000_server');
 var AUTH_ROOT = path.join(SERVER_ROOT, '030_auth');
 var IAM_ROOT = path.join(SERVER_ROOT, '040_iam');
 var LOGIN_ROOT = path.join(SERVER_ROOT, '040_login');
-var SETTINGS_ROOT = path.join(SERVER_ROOT, '070_settings');
 var failures = [];
 
 function normalize_(value) {
@@ -38,8 +37,13 @@ function collectFunctions_(files) {
 }
 
 function requireFile_(base, relativePath, label) {
-  if (!fs.existsSync(path.join(base, relativePath))) {
+  var target = path.join(base, relativePath);
+  if (!fs.existsSync(target)) {
     failures.push('Missing ' + label + ' architecture file: ' + relativePath);
+    return;
+  }
+  if (!fs.readFileSync(target, 'utf8').trim()) {
+    failures.push('Empty ' + label + ' architecture file: ' + relativePath);
   }
 }
 
