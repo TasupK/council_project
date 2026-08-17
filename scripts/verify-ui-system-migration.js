@@ -14,7 +14,10 @@ const REQUIRED_SHARED_PRIMITIVES = [
   'ui-loading', 'ui-empty', 'ui-toast'
 ];
 
-const MIGRATED_DOMAINS = [];
+const DEFAULT_MIGRATED_DOMAINS = [];
+const MIGRATED_DOMAINS = process.env.UI_MIGRATED_DOMAINS
+  ? process.env.UI_MIGRATED_DOMAINS.split(',').map((value) => value.trim()).filter(Boolean)
+  : DEFAULT_MIGRATED_DOMAINS;
 
 const DOMAIN_TARGETS = {
   settings: [
