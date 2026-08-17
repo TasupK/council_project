@@ -1,0 +1,56 @@
+name: Accounting port full regression
+
+on:
+  push:
+    branches:
+      - verify/accounting-port-20260818
+
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Static syntax checks
+        run: |
+          node --check scripts/*.js
+          find src -name '*.js' -print0 | while IFS= read -r -d '' file; do node --check "$file"; done
+          find src -name '*.gs' -print0 | while IFS= read -r -d '' file; do cp "$file" /tmp/__gas_check.js; node --check /tmp/__gas_check.js; done
+          python3 - <<'PY'
+          from pathlib import Path
+          import re, subprocess
+          for p in Path('src').rglob('*_js.html'):
+              text=p.read_text(encoding='utf-8')
+              m=re.search(r'<script>(.*)</script>', text, re.S)
+              if not m: continue
+              out=Path('/tmp/__inline_check.js')
+              out.write_text(m.group(1), encoding='utf-8')
+              subprocess.run(['node','--check',str(out)],check=True)
+          PY
+      - name: Core Auth IAM Settings tests
+        run: |
+          node scripts/test-core.js
+          node scripts/test-auth-iam.js
+          node scripts/test-settings.js
+      - name: Accounting Event tests
+        run: |
+          node scripts/test-accounting.js
+          node scripts/test-event.js
+      - name: Student Fee tests
+        run: |
+          node scripts/test-student-fee.js
+          node scripts/test-student-fee-frontend.js
+      - name: Architecture verifiers
+        run: |
+          node scripts/verify-server-architecture.js
+          node scripts/verify-auth-iam-architecture.js
+          node scripts/verify-settings-architecture.js
+          node scripts/verify-accounting-architecture.js
+          node scripts/verify-event-architecture.js
+          node scripts/verify-student-fee-architecture.js
+          node scripts/verify-student-fee-frontend.js
+          node scripts/verify-ui-system-migration.js
+      - name: Regression result
+        run: echo 'Accounting port full repository regression passed.'
