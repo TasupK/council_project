@@ -55,6 +55,27 @@ function requireFunctionIn_(functions, name, relativePath) {
   }
 }
 
+function readSource_(relativePath) {
+  return fs.readFileSync(path.join(ACCOUNTING_ROOT, relativePath), 'utf8');
+}
+
+function requireTableAccessIn_(tableName, allowedPath) {
+  var pattern = new RegExp("(?:readOperationTableRows_|appendOperationTableRow_|updateOperationTableRow_)\\(\\s*['\\\"]" + tableName + "['\\\"]", 'g');
+  listSourceFiles_(ACCOUNTING_ROOT).forEach(function (file) {
+    var relativePath = normalize_(path.relative(ACCOUNTING_ROOT, file));
+    var source = fs.readFileSync(file, 'utf8');
+    if (pattern.test(source) && relativePath !== allowedPath) {
+      failures.push('Table access ownership mismatch: ' + tableName + ' accessed from ' + relativePath + ', expected ' + allowedPath);
+    }
+    pattern.lastIndex = 0;
+  });
+}
+
+function forbidPatternIn_(relativePath, pattern, message) {
+  if (!exists_(relativePath)) return;
+  if (pattern.test(readSource_(relativePath))) failures.push(message + ': ' + relativePath);
+}
+
 requireFile_('060_common/accounting_common.gs');
 requireFile_('060_common/accounting_query_service.gs');
 requireFile_('060_common/accounting_event_read_dao.gs');
@@ -112,6 +133,45 @@ var ownership = {
 
 Object.keys(ownership).forEach(function (name) {
   requireFunctionIn_(functions, name, ownership[name]);
+});
+
+Object.keys(functions).forEach(function (name) {
+  if (functions[name].length > 1) {
+    failures.push('Duplicate Accounting function: ' + name + ' in ' + functions[name].join(', '));
+  }
+});
+
+requireTableAccessIn_('ledger', '061_ledger/ledger_sheet_dao.gs');
+requireTableAccessIn_('evidence', '062_evidence/evidence_sheet_dao.gs');
+requireTableAccessIn_('events', '060_common/accounting_event_read_dao.gs');
+
+forbidPatternIn_(
+  '060_common/accounting_event_read_dao.gs',
+  /appendOperationTableRow_|updateOperationTableRow_|deleteOperation|DriveApp|withOperationWriteLock_/,
+  'Accounting Event adapter must be read-only'
+);
+forbidPatternIn_(
+  '060_common/accounting_query_service.gs',
+  /appendOperationTableRow_|updateOperationTableRow_|withOperationWriteLock_|DriveApp|createFile\s*\(/,
+  'Accounting Query Service must be read-only'
+);
+
+var evidenceKeyLocations = [];
+listSourceFiles_(ACCOUNTING_ROOT).forEach(function (file) {
+  var source = fs.readFileSync(file, 'utf8');
+  if (source.indexOf('LEDGER_EVIDENCE_FOLDER_PROPERTY_KEY') >= 0) {
+    evidenceKeyLocations.push(normalize_(path.relative(ACCOUNTING_ROOT, file)));
+  }
+});
+if (evidenceKeyLocations.length !== 1 || evidenceKeyLocations[0] !== '062_evidence/evidence_file_service.gs') {
+  failures.push('Evidence folder key ownership mismatch: ' + (evidenceKeyLocations.length ? evidenceKeyLocations.join(', ') : 'none'));
+}
+
+['063_reconciliation', '064_audit_export'].forEach(function (relativePath) {
+  var target = path.join(ACCOUNTING_ROOT, relativePath);
+  if (fs.existsSync(target) && fs.statSync(target).isDirectory() && listSourceFiles_(target).length === 0) {
+    failures.push('Empty Accounting feature scaffold exists: ' + relativePath);
+  }
 });
 
 if (failures.length) {
