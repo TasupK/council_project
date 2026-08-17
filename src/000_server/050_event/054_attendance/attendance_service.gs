@@ -33,9 +33,3 @@ function applyAttendanceChangesData_(request) {
     });
   });
 }
-
-function findEventAttendanceByApplicationId_(applicationId) {
-  return findAllEventAttendanceClientRows_().filter(function (item) {
-    return String(item.applicationId) === String(applicationId);
-  })[0] || null;
-}
