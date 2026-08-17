@@ -2,37 +2,35 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Migrate Main, Settings, Accounting, and Event to the Student Fee-derived shared `ui-*` visual system while preserving routes, information architecture, JavaScript behavior contracts, API calls, form semantics, and server behavior.
+**Goal:** Migrate Main, Settings, Accounting, and Event to the Student Fee-derived shared `ui-*` visual system without changing routes, information architecture, JavaScript behavior contracts, API calls, form semantics, or server behavior.
 
-**Architecture:** `src/100_common/App_Styles.html` owns domain-neutral visual primitives and tokens. Each domain keeps only layout/composition rules that are unique to that domain; visual-only legacy classes are replaced by semantic `ui-*` classes in static views and dynamically generated HTML. Migration order is `Settings -> Main -> Accounting -> Event`, with focused verification after each domain.
+**Architecture:** `src/100_common/App_Styles.html` owns domain-neutral tokens and visual primitives. Main/Settings/Accounting/Event retain only layout/composition rules that are unique to their screens. Static views and dynamically generated markup adopt semantic `ui-*` classes in the order `Settings -> Main -> Accounting -> Event`.
 
-**Tech Stack:** Google Apps Script HTML templates, vanilla JavaScript, CSS, Node.js static/regression scripts, Git/GitHub.
+**Tech Stack:** Google Apps Script HTML templates, vanilla JavaScript, CSS, Node.js regression/static verification, Git/GitHub.
 
 ## Global Constraints
 
 - Base branch: `refactor/student-fee-frontend`.
 - Working branch: `refactor/ui-system-migration`.
-- Do not change routes, server APIs, request/response shapes, schema, form field semantics, table column meaning/order, or business workflows.
+- Do not change `src/000_server/**`.
+- Do not change routes, API names, request/response properties, schema, business workflows, table column meaning/order, form field `name` values, or `data-action` values.
+- Preserve IDs and `data-*` attributes used by JavaScript.
 - Do not promote Student Fee JavaScript helpers into a global frontend framework.
-- Preserve JavaScript behavior hooks: element IDs, `data-*` attributes, form `name` attributes, and any class that is still used as a JavaScript selector.
-- `src/100_common/App_Styles.html` must remain domain-neutral; do not add Main/Settings/Accounting/Event-specific exception selectors there.
-- Domain styles may retain layout/composition rules that are unique to that domain.
-- The target migration order is `Settings -> Main -> Accounting -> Event`.
-- Each domain must pass its focused checks before work begins on the next domain.
-- CSS byte-count reduction is not an acceptance criterion; ownership of generic visual responsibility is.
+- `src/100_common/App_Styles.html` must remain domain-neutral.
+- Domain styles may retain layout/composition rules unique to that domain.
+- Do not modify `src/500_student_fee/**`; Student Fee is the reference consumer used for regression checks.
+- CSS byte-count reduction is not a goal; shared visual ownership is.
 
 ---
 
 ## File Map
 
-### Shared system
-
-- Modify: `src/100_common/App_Styles.html` — shared tokens and `ui-*` primitives.
-- Create: `scripts/verify-ui-system-migration.js` — static migration/contract verifier.
+### Shared
+- Modify: `src/100_common/App_Styles.html`
+- Create: `scripts/verify-ui-system-migration.js`
 
 ### Settings
-
-- Create: `src/300_settings/common/Settings_Styles.html` — Settings-only layout/composition currently living in global CSS.
+- Create: `src/300_settings/common/Settings_Styles.html`
 - Modify shells:
   - `src/300_settings/300_home/Settings_Home.html`
   - `src/300_settings/310_users/Settings_Users.html`
@@ -43,88 +41,71 @@
   - `src/300_settings/310_users/Settings_Users_View.html`
   - `src/300_settings/320_roles/Settings_Roles_View.html`
   - `src/300_settings/330_permissions/Settings_Permissions_View.html`
-- Modify only class strings needed for rendered markup:
-  - `src/300_settings/310_users/settings_users_js.html`
-  - `src/300_settings/320_roles/settings_roles_js.html`
-  - `src/300_settings/330_permissions/settings_permissions_js.html`
-- Keep behavior helper unchanged unless a class string is rendered there:
-  - `src/300_settings/common/settings_common_js.html`
+- Leave Settings JS behavior files unchanged. `settings_permissions_js.html` may continue to emit `perm-group`, `perm-child`, `meta-sub`, `na`, and `check`; these remain Settings-specific presentation/layout hooks owned by `Settings_Styles.html`.
 
 ### Main
-
 - Modify: `src/250_main/Main_View.html`
 - Modify: `src/250_main/Main_Styles.html`
-- Modify `src/250_main/Main.html` only if an include/class hook is required; do not change template globals or routing.
 
 ### Accounting
-
 - Modify: `src/400_accounting/common/Accounting_Styles.html`
 - Modify views:
   - `src/400_accounting/400_home/Accounting_Home_View.html`
   - `src/400_accounting/410_ledger/Accounting_Ledger_View.html`
   - `src/400_accounting/420_reconciliation/Accounting_Reconciliation_View.html`
   - `src/400_accounting/430_settlement/Accounting_Settlement_View.html`
-- Modify dynamic markup class strings only:
+- Modify only generated visual class strings when present:
   - `src/400_accounting/410_ledger/accounting_ledger_js.html`
   - `src/400_accounting/420_reconciliation/accounting_reconciliation_js.html`
   - `src/400_accounting/430_settlement/accounting_settlement_js.html`
-- Keep `src/400_accounting/common/accounting_common_js.html` behavior unchanged unless it emits visual class strings.
-- Do not change Accounting shell routes/templates or API calls.
+  - `src/400_accounting/common/accounting_common_js.html`
 
 ### Event
-
 - Modify: `src/600_event/common/Event_Styles.html`
 - Modify views:
   - `src/600_event/600_home/Event_Home_View.html`
   - `src/600_event/610_form/Event_Form_View.html`
   - `src/600_event/620_detail/Event_Detail_View.html`
-- Modify dynamic markup class strings only:
+- Modify only generated visual class strings:
   - `src/600_event/600_home/event_home_js.html`
   - `src/600_event/610_form/event_form_js.html`
   - `src/600_event/620_detail/event_detail_js.html`
-  - `src/600_event/common/event_common_js.html` only where it emits shared visual markup such as toast/modal/status UI.
-- Do not change Event shell routes/templates or API calls.
+  - `src/600_event/common/event_common_js.html`
 
 ---
 
-### Task 1: Establish the UI migration verifier in RED
+### Task 1: Add the UI migration verifier in RED
 
 **Files:**
 - Create: `scripts/verify-ui-system-migration.js`
 
 **Interfaces:**
-- Consumes: current repository files only.
-- Produces: one deterministic Node verifier with exit code `0` on complete migration and `1` with explicit messages otherwise.
+- Consumes: repository source files only.
+- Produces: deterministic exit code `0`/`1` plus explicit migration failures.
 
-- [ ] **Step 1: Create the verifier with exact migration targets**
+- [ ] **Step 1: Define required shared primitives**
 
-Use these target primitives:
+Create the verifier with:
 
 ```js
 var REQUIRED_SHARED_PRIMITIVES = [
-  'ui-page-head',
-  'ui-page-actions',
-  'ui-card',
-  'ui-stat-card',
-  'ui-btn',
-  'ui-field',
-  'ui-toolbar',
-  'ui-table-wrap',
-  'ui-table',
-  'ui-badge',
-  'ui-tabs',
-  'ui-tab',
-  'ui-modal-overlay',
-  'ui-modal',
-  'ui-loading',
-  'ui-empty',
-  'ui-toast'
+  'ui-page-head', 'ui-page-actions',
+  'ui-card', 'ui-stat-card',
+  'ui-btn', 'ui-field', 'ui-toolbar',
+  'ui-table-wrap', 'ui-table', 'ui-badge',
+  'ui-tabs', 'ui-tab',
+  'ui-modal-overlay', 'ui-modal',
+  'ui-loading', 'ui-empty', 'ui-toast'
 ];
+
+var MIGRATED_DOMAINS = [];
 ```
 
-The verifier must read files with `fs.readFileSync` and accumulate failures instead of throwing at the first failure.
+Read files with `fs.readFileSync`, accumulate failures in an array, print every failure, and set `process.exitCode = 1` when non-empty.
 
-Add domain adoption rules:
+- [ ] **Step 2: Define domain targets and shell requirements**
+
+Use:
 
 ```js
 var DOMAIN_TARGETS = {
@@ -149,9 +130,70 @@ var DOMAIN_TARGETS = {
 };
 ```
 
-Add shell include checks for `100_common/App_Styles`. Settings shells must additionally include `300_settings/common/Settings_Styles` after Task 3.
+All target page shells must continue to include `100_common/App_Styles`. After Settings migration, all four Settings shells must also include `300_settings/common/Settings_Styles` immediately after `App_Styles`.
 
-Add a global-style boundary check that rejects domain-specific selectors in `App_Styles.html` after migration:
+- [ ] **Step 3: Hard-code behavior-hook preservation contracts**
+
+Use the current literal contracts below.
+
+```js
+var REQUIRED_IDS = {
+  'src/300_settings/310_users/Settings_Users_View.html': [
+    'userQ', 'userRole', 'userStatus', 'userReset', 'userCountLabel',
+    'userTbody', 'userFooterTotal'
+  ],
+  'src/400_accounting/410_ledger/Accounting_Ledger_View.html': [
+    'ledgerDbLink', 'openRegister', 'sumIncome', 'sumExpense', 'sumPending', 'sumReview',
+    'keyword', 'type', 'department', 'event', 'status', 'rows',
+    'ledgerPagination', 'prevLedgerPage', 'ledgerPageInfo', 'nextLedgerPage',
+    'registerModal', 'entryForm', 'expenseBtn', 'incomeBtn', 'formDepartment', 'formEvent',
+    'eventBalance', 'entryEvidenceDropzone', 'entryEvidenceFile', 'entryEvidenceFileName',
+    'draft', 'create', 'detailModal', 'detailTitle', 'detailStatus', 'detailAlert',
+    'detailRows', 'detailEvidenceList', 'approve', 'toast'
+  ],
+  'src/600_event/600_home/Event_Home_View.html': [
+    'ew-event-search', 'ew-managerId-filter', 'ew-type-filter', 'ew-status-filter',
+    'ew-event-summary', 'ew-event-table', 'ew-loading', 'ew-modal-root', 'ew-toast'
+  ],
+  'src/600_event/610_form/Event_Form_View.html': [
+    'ew-app', 'ew-form-breadcrumb', 'ew-form-title', 'ew-event-form',
+    'ew-member-fee', 'ew-non-member-fee', 'ew-event-status-radios',
+    'ew-related-material-file', 'ew-related-material-name', 'ew-existing-material',
+    'ew-loading', 'ew-modal-root', 'ew-toast'
+  ],
+  'src/600_event/620_detail/Event_Detail_View.html': [
+    'ew-app', 'ew-edit-event', 'ew-detail-name', 'ew-detail-status', 'ew-detail-meta',
+    'ew-kpi-total', 'ew-kpi-approved', 'ew-kpi-paid', 'ew-kpi-attended', 'ew-kpi-balance',
+    'ew-tab-panel', 'ew-loading', 'ew-modal-root', 'ew-toast'
+  ]
+};
+```
+
+Also preserve these form/action contracts:
+
+```js
+var REQUIRED_FORM_NAMES = {
+  'src/400_accounting/410_ledger/Accounting_Ledger_View.html': [
+    'transaction_date', 'department_name', 'amount', 'counterparty', 'event_name', 'description', 'note'
+  ],
+  'src/600_event/610_form/Event_Form_View.html': [
+    'name', 'category', 'description', 'applicationStartAt', 'applicationEndAt',
+    'eventStartAt', 'capacity', 'managerId', 'payerFee', 'nonPayerFee', 'status'
+  ]
+};
+
+var REQUIRED_DATA_ACTIONS = {
+  'src/600_event/600_home/Event_Home_View.html': ['go-create', 'reset-event-filters'],
+  'src/600_event/610_form/Event_Form_View.html': ['go-list'],
+  'src/600_event/620_detail/Event_Detail_View.html': ['go-list', 'edit-event', 'detail-tab']
+};
+```
+
+For Event detail, also assert `data-tab` values `basic`, `applicants`, `attendance`, `ledger`, `refund` remain present.
+
+- [ ] **Step 4: Define global CSS boundary rules**
+
+Reject these literal selector definitions in `App_Styles.html` after migration:
 
 ```js
 var FORBIDDEN_GLOBAL_SELECTORS = [
@@ -162,40 +204,22 @@ var FORBIDDEN_GLOBAL_SELECTORS = [
 ];
 ```
 
-Only fail on literal CSS selector definitions in `App_Styles.html`, not text occurring elsewhere.
+Allow domain selectors in their own domain stylesheet.
 
-- [ ] **Step 2: Add behavior-hook preservation checks**
+- [ ] **Step 5: Add domain adoption checks**
 
-Use explicit critical hooks rather than heuristics. At minimum verify these current contracts remain present in the relevant view/JS source pairs:
-
-```js
-var REQUIRED_HOOKS = {
-  'src/300_settings/310_users/Settings_Users_View.html': ['userQ', 'userRole', 'userStatus', 'userReset', 'userTbody'],
-  'src/400_accounting/410_ledger/Accounting_Ledger_View.html': ['ledger'],
-  'src/600_event/600_home/Event_Home_View.html': ['ew-event-search', 'ew-event-summary', 'ew-event-table', 'ew-loading', 'ew-modal-root', 'ew-toast'],
-  'src/600_event/610_form/Event_Form_View.html': ['name=', 'data-action='],
-  'src/600_event/620_detail/Event_Detail_View.html': ['data-action=', 'ew-']
-};
-```
-
-For Accounting ledger, inspect the actual view before finalizing the literal IDs in the script and enumerate every ID referenced through `getElementById`/the domain helper in `accounting_ledger_js.html`. Do the same for Event form/detail. The verifier file committed in this task must contain the resolved literal lists, not comments instructing future work.
-
-- [ ] **Step 3: Add legacy visual-class migration checks**
-
-The verifier must reject these visual-only families after their owning task is complete:
+When a domain appears in `MIGRATED_DOMAINS`, require:
 
 ```text
-Event: ew-btn, ew-card, ew-field, ew-toast, ew-loading
-Main: status-card as sole visual class, quick-action as sole visual class
-Accounting: generic visual card/button/table/tab rules that remain owned only by Accounting_Styles
-Settings: legacy btn/field/select/table-wrap/table.data usage in migrated views when a ui-* equivalent exists
+Settings: ui-page-head, ui-btn, ui-toolbar, ui-field, ui-table-wrap, ui-table, ui-loading
+Main: ui-page-head, ui-stat-card, ui-card
+Accounting: ui-page-head plus ui-tabs/ui-tab on Accounting home, and shared card/field/table/modal primitives on applicable pages
+Event: ui-page-head, ui-page-actions, ui-card, ui-btn, ui-field, ui-loading, ui-toast; detail also ui-tabs/ui-tab
 ```
 
-Allow layout classes such as `ew-filter-grid`, `ew-date-range`, Accounting-specific grids, permission matrix classes, and Main grid classes.
+Legacy compatibility classes may remain only when paired with the corresponding `ui-*` class or when they express layout/behavior rather than generic visual appearance.
 
-Implement the verifier so each domain check is gated by a `MIGRATED_DOMAINS` array initially set to `[]`. Later tasks append the domain name when that domain is migrated. Shared primitive checks run immediately.
-
-- [ ] **Step 4: Run the verifier and prove RED**
+- [ ] **Step 6: Prove RED**
 
 Run:
 
@@ -203,9 +227,9 @@ Run:
 node scripts/verify-ui-system-migration.js
 ```
 
-Expected: exit `1`. The failure list must include at least missing `ui-tabs`/`ui-tab` or an equivalent missing shared primitive in the current `App_Styles.html`. Do not proceed if it exits `0` before any migration work.
+Expected: exit `1`; at minimum `ui-tabs` or `ui-tab` must be reported missing before Task 2.
 
-- [ ] **Step 5: Commit the RED verifier**
+- [ ] **Step 7: Commit**
 
 ```bash
 git add scripts/verify-ui-system-migration.js
@@ -218,14 +242,13 @@ git commit -m "test: define shared ui migration contract"
 
 **Files:**
 - Modify: `src/100_common/App_Styles.html`
-- Modify: `scripts/verify-ui-system-migration.js` only if the existing Student Fee primitive spelling differs from the exact design contract.
-- Test: `scripts/verify-student-fee-frontend.js`
+- Modify: `scripts/verify-ui-system-migration.js` only if an existing Student Fee primitive spelling requires the verifier to match the established public class contract.
 
 **Interfaces:**
-- Consumes: Student Fee `ui-*` tokens/primitives already present in `App_Styles.html`.
-- Produces: domain-neutral shared primitives usable by all four domains without CSS exception selectors.
+- Consumes: Student Fee `ui-*` primitives already in `App_Styles.html`.
+- Produces: complete domain-neutral shared primitives for all four domains.
 
-- [ ] **Step 1: Record the existing shared primitives before editing**
+- [ ] **Step 1: Inventory existing primitives**
 
 Run:
 
@@ -233,11 +256,11 @@ Run:
 grep -o "\.ui-[A-Za-z0-9_-]*" src/100_common/App_Styles.html | sort -u
 ```
 
-Confirm existing Student Fee primitives are preserved. This task extends them; it must not rename classes already consumed by `src/500_student_fee/**`.
+Do not rename/remove any class already used under `src/500_student_fee/**`.
 
-- [ ] **Step 2: Add missing spacing and shared component tokens**
+- [ ] **Step 2: Add missing spacing tokens**
 
-Keep existing tokens and add only missing values:
+Add only missing values:
 
 ```css
 --ui-space-1: 4px;
@@ -249,11 +272,9 @@ Keep existing tokens and add only missing values:
 --ui-space-8: 32px;
 ```
 
-Do not create domain-specific tokens such as `--event-*` or `--accounting-*` in `App_Styles.html`.
+- [ ] **Step 3: Add/normalize shared page head and tabs**
 
-- [ ] **Step 3: Add/normalize page head and tabs**
-
-Use domain-neutral rules equivalent to:
+Use:
 
 ```css
 .ui-page-head {
@@ -288,11 +309,11 @@ Use domain-neutral rules equivalent to:
 }
 ```
 
-Reuse existing Student Fee variables (`--ui-surface`, `--ui-border`, `--ui-muted`, `--ui-primary`) rather than inventing parallel values.
+Reuse existing `--ui-surface`, `--ui-border`, `--ui-muted`, `--ui-text`, and `--ui-primary`.
 
-- [ ] **Step 4: Normalize modifier contracts**
+- [ ] **Step 4: Normalize modifiers without duplicating rules**
 
-Ensure these modifiers exist and are compatible with Student Fee markup:
+Ensure these contracts exist:
 
 ```text
 ui-btn primary
@@ -305,9 +326,7 @@ ui-badge danger
 ui-badge neutral
 ```
 
-If the current Student Fee CSS uses these already, do not duplicate the selector; consolidate the existing rule.
-
-- [ ] **Step 5: Run shared-scope regression checks**
+- [ ] **Step 5: Run shared regression checks**
 
 Run:
 
@@ -317,9 +336,7 @@ node scripts/verify-student-fee-frontend.js
 node scripts/verify-ui-system-migration.js
 ```
 
-Expected:
-- Student Fee tests/verifier exit `0`.
-- UI migration verifier may still exit `1` only for not-yet-migrated domain/shared-boundary failures; missing shared primitive failures must be gone.
+Expected: Student Fee checks exit `0`; migration verifier may remain `1`, but no missing-shared-primitive failure may remain.
 
 - [ ] **Step 6: Commit**
 
@@ -334,57 +351,28 @@ git commit -m "feat: complete shared ui primitives"
 
 **Files:**
 - Create: `src/300_settings/common/Settings_Styles.html`
-- Modify:
-  - `src/100_common/App_Styles.html`
-  - `src/300_settings/300_home/Settings_Home.html`
-  - `src/300_settings/310_users/Settings_Users.html`
-  - `src/300_settings/320_roles/Settings_Roles.html`
-  - `src/300_settings/330_permissions/Settings_Permissions.html`
-  - `src/300_settings/300_home/Settings_Home_View.html`
-  - `src/300_settings/310_users/Settings_Users_View.html`
-  - `src/300_settings/320_roles/Settings_Roles_View.html`
-  - `src/300_settings/330_permissions/Settings_Permissions_View.html`
-  - `src/300_settings/310_users/settings_users_js.html` if generated rows contain visual-only class names
-  - `src/300_settings/320_roles/settings_roles_js.html` if generated rows contain visual-only class names
-  - `src/300_settings/330_permissions/settings_permissions_js.html` if generated rows contain visual-only class names
-  - `scripts/verify-ui-system-migration.js`
+- Modify: `src/100_common/App_Styles.html`
+- Modify all four Settings shells and views listed in the File Map.
+- Modify: `scripts/verify-ui-system-migration.js`
+- Do not modify Settings JS behavior files.
 
 **Interfaces:**
-- Consumes: shared `ui-*` primitives from Task 2.
-- Produces: Settings screens whose generic visuals are shared and whose permission/layout rules are isolated in `Settings_Styles.html`.
+- Consumes: Task 2 shared primitives.
+- Produces: Settings using shared generic visuals with Settings-only matrix/list composition isolated locally.
 
-- [ ] **Step 1: Add Settings to the verifier migration gate and verify RED**
+- [ ] **Step 1: Turn on Settings checks and prove RED**
 
-Change:
-
-```js
-var MIGRATED_DOMAINS = [];
-```
-
-to:
+Set:
 
 ```js
 var MIGRATED_DOMAINS = ['settings'];
 ```
 
-Add assertions that every Settings shell includes:
+Run `node scripts/verify-ui-system-migration.js` and confirm Settings adoption/include failures.
 
-```html
-<?!= include('100_common/App_Styles'); ?>
-<?!= include('300_settings/common/Settings_Styles'); ?>
-```
+- [ ] **Step 2: Extract Settings-specific CSS**
 
-Run:
-
-```bash
-node scripts/verify-ui-system-migration.js
-```
-
-Expected: exit `1` with Settings adoption failures.
-
-- [ ] **Step 2: Extract Settings-only selectors from global CSS**
-
-Move these current domain-specific rules from `App_Styles.html` into the new `Settings_Styles.html`:
+Move from `App_Styles.html` into new `Settings_Styles.html`:
 
 ```text
 .settings-list
@@ -393,47 +381,47 @@ Move these current domain-specific rules from `App_Styles.html` into the new `Se
 .perm-table
 .perm-group
 .perm-child
-.na when used only by permission matrix
-.check when used only by permission matrix
-.th-hint when used only by permission matrix
+.meta-sub if used only by Settings
+.na
+.check
+.th-hint
 ```
 
-`Settings_Styles.html` must contain a single `<style>...</style>` block and no JavaScript.
+`Settings_Styles.html` contains one `<style>` block and no JavaScript.
 
-Do not move generic `.loading`, `.toolbar`, `.field`, `.select`, `.search-field`, `.table-wrap`, `table.data`, or `.btn*` rules; their markup is migrated to `ui-*` instead.
+Do not move generic `.btn*`, `.toolbar`, `.field`, `.select`, `.search-field`, `.table-wrap`, `table.data`, or `.loading`; migrated markup will use `ui-*`.
 
 - [ ] **Step 3: Include Settings_Styles in all four Settings shells**
 
-Place the include immediately after `App_Styles`:
+Immediately after App_Styles:
 
 ```html
 <?!= include('100_common/App_Styles'); ?>
 <?!= include('300_settings/common/Settings_Styles'); ?>
 ```
 
-Preserve all existing template globals and script include order.
+Do not alter template globals or script include order.
 
-- [ ] **Step 4: Migrate Settings views to semantic shared classes**
+- [ ] **Step 4: Migrate Settings views**
 
-Apply these mappings while retaining IDs and unique layout classes:
+Use these mappings:
 
 ```text
-page-header        -> add ui-page-head
-btn                -> ui-btn
-btn-primary        -> primary
-btn-secondary      -> outline
-toolbar            -> add ui-toolbar
-field/select/search-field -> add ui-field or replace visual-only legacy class
-loading            -> add ui-loading
-table-wrap         -> add ui-table-wrap
-table.data         -> add ui-table
+page-header -> add ui-page-head
+btn -> ui-btn
+btn-primary -> primary
+btn-secondary -> outline
+toolbar -> add ui-toolbar
+field/select/search-field -> add ui-field
+loading -> add ui-loading
+table-wrap -> add ui-table-wrap
+table.data -> add ui-table
 ```
 
-For `Settings_Users_View.html`, the target shape is conceptually:
+`Settings_Users_View.html` target pattern:
 
 ```html
 <header class="page-header ui-page-head">...</header>
-...
 <div class="toolbar ui-toolbar">
   <input class="search-field ui-field" id="userQ" ...>
   <select class="select ui-field" id="userRole">...</select>
@@ -445,21 +433,9 @@ For `Settings_Users_View.html`, the target shape is conceptually:
 </div>
 ```
 
-Compatibility classes such as `page-header`, `toolbar`, `search-field`, `select`, `table-wrap`, and `data` may remain temporarily when existing CSS/JS still requires them; the shared `ui-*` class must own the visual treatment.
+Keep permission-matrix classes because they are Settings-specific and their JS emits them unchanged.
 
-- [ ] **Step 5: Update dynamic Settings markup only where visual classes are emitted**
-
-Do not rewrite filtering/data logic. If JS emits status cells or rows using generic visual classes, change only the emitted class string to shared equivalents, for example:
-
-```js
-'<span class="ui-badge ' + (row.active ? 'success' : 'neutral') + '">...</span>'
-```
-
-Preserve IDs, dataset keys, event handlers, and data fields.
-
-- [ ] **Step 6: Run focused Settings verification**
-
-Run:
+- [ ] **Step 5: Run Settings checks**
 
 ```bash
 node scripts/test-settings.js
@@ -468,9 +444,9 @@ node scripts/verify-ui-system-migration.js
 node scripts/test-student-fee-frontend.js
 ```
 
-Expected: Settings tests/verifier and Student Fee frontend test exit `0`. UI migration verifier may still fail only for domains not yet added to `MIGRATED_DOMAINS`; Settings failures must be zero.
+Expected: no Settings migration failure; Student Fee remains green.
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 6: Commit**
 
 ```bash
 git add src/100_common/App_Styles.html src/300_settings scripts/verify-ui-system-migration.js
@@ -479,7 +455,7 @@ git commit -m "refactor: migrate settings to shared ui system"
 
 ---
 
-### Task 4: Migrate Main dashboard visual components
+### Task 4: Migrate Main dashboard visuals
 
 **Files:**
 - Modify: `src/250_main/Main_View.html`
@@ -487,52 +463,32 @@ git commit -m "refactor: migrate settings to shared ui system"
 - Modify: `scripts/verify-ui-system-migration.js`
 
 **Interfaces:**
-- Consumes: shared cards/stat cards/buttons/status tokens from Task 2.
-- Produces: Main dashboard retaining its existing dashboard/quick-action grids while using shared surfaces and spacing.
+- Consumes: shared page/card/stat primitives.
+- Produces: unchanged Main information structure with shared surfaces and spacing.
 
-- [ ] **Step 1: Add Main to the migration gate and verify RED**
-
-Set:
+- [ ] **Step 1: Turn on Main checks and prove RED**
 
 ```js
 var MIGRATED_DOMAINS = ['settings', 'main'];
 ```
 
-Require `Main_View.html` to contain at least `ui-page-head`, `ui-stat-card`, and `ui-card` or `ui-btn` for quick actions.
+Run migration verifier; expect Main failures.
 
-Run:
+- [ ] **Step 2: Add semantic shared classes without reordering content**
 
-```bash
-node scripts/verify-ui-system-migration.js
-```
-
-Expected: exit `1` with Main adoption failures.
-
-- [ ] **Step 2: Migrate the static Main markup without changing content order**
-
-Use these mappings:
-
-```text
-page-header main-page-header -> keep layout hooks, add ui-page-head
-status-card                  -> add ui-stat-card
-quick-action                 -> add ui-card and/or ui-btn-compatible semantics
-metric color classes         -> use shared status/text token classes where available
-```
-
-Do not reorder the three status cards or six quick actions. Do not change their labels or metrics in this phase.
-
-Target pattern:
+Apply:
 
 ```html
+<header class="page-header main-page-header ui-page-head">...</header>
 <article class="status-card ui-stat-card">...</article>
 <button class="quick-action ui-card" type="button">...</button>
 ```
 
-The `status-card` and `quick-action` classes may remain only for grid/composition selectors in `Main_Styles.html`.
+Keep all three status cards, all six quick actions, existing text, and order unchanged.
 
-- [ ] **Step 3: Reduce Main_Styles to composition responsibility**
+- [ ] **Step 3: Reduce Main_Styles to composition**
 
-Retain selectors for:
+Retain:
 
 ```text
 .dashboard-workspace
@@ -542,29 +498,17 @@ Retain selectors for:
 .recent-transactions
 .quick-section
 .quick-grid
-.quick-action layout-only child alignment
+.quick-action child alignment/layout
 ```
 
-Remove duplicated generic surface, border, radius, shadow, hover surface, and base button/card typography when `ui-card`/`ui-stat-card` now owns those values.
+Remove generic surface, border, radius, shadow, and generic card/button hover definitions now owned by `ui-card`/`ui-stat-card`. Replace equivalent hard-coded spacing with `var(--ui-space-*)` without changing layout geometry.
 
-Replace hard-coded spacing that is equivalent to the shared scale with `var(--ui-space-*)` where doing so does not alter layout intent.
-
-- [ ] **Step 4: Run focused Main/shared checks**
-
-Run:
+- [ ] **Step 4: Run checks**
 
 ```bash
 node scripts/verify-ui-system-migration.js
 node scripts/test-student-fee-frontend.js
 ```
-
-Also syntax-check any Main inline script if `Main.html` contains one:
-
-```bash
-node --check /tmp/main-inline.js
-```
-
-Only create `/tmp/main-inline.js` if JavaScript was touched. Otherwise skip the syntax command.
 
 Expected: no Settings/Main migration failures.
 
@@ -577,53 +521,36 @@ git commit -m "refactor: migrate main dashboard to shared ui system"
 
 ---
 
-### Task 5: Migrate Accounting shared visuals while preserving accounting layouts
+### Task 5: Migrate Accounting generic visuals
 
 **Files:**
 - Modify: `src/400_accounting/common/Accounting_Styles.html`
-- Modify:
-  - `src/400_accounting/400_home/Accounting_Home_View.html`
-  - `src/400_accounting/410_ledger/Accounting_Ledger_View.html`
-  - `src/400_accounting/420_reconciliation/Accounting_Reconciliation_View.html`
-  - `src/400_accounting/430_settlement/Accounting_Settlement_View.html`
-- Modify class strings only where required:
-  - `src/400_accounting/410_ledger/accounting_ledger_js.html`
-  - `src/400_accounting/420_reconciliation/accounting_reconciliation_js.html`
-  - `src/400_accounting/430_settlement/accounting_settlement_js.html`
-  - `src/400_accounting/common/accounting_common_js.html`
+- Modify all four Accounting views listed in the File Map.
+- Modify Accounting `*_js.html` files only where they render visual class strings.
 - Modify: `scripts/verify-ui-system-migration.js`
 
 **Interfaces:**
-- Consumes: `ui-tabs`, `ui-tab`, `ui-card`, `ui-btn`, `ui-field`, `ui-toolbar`, `ui-table-wrap`, `ui-table`, `ui-badge`, modal/loading/toast primitives.
-- Produces: Accounting pages with current ledger/reconciliation/settlement structure and JavaScript behavior but shared generic visuals.
+- Consumes: shared tabs/card/button/field/table/badge/modal/loading/toast primitives.
+- Produces: unchanged ledger/reconciliation/settlement workflows with shared generic visuals.
 
-- [ ] **Step 1: Add Accounting to migration gate and verify RED**
-
-Set:
+- [ ] **Step 1: Turn on Accounting checks and prove RED**
 
 ```js
 var MIGRATED_DOMAINS = ['settings', 'main', 'accounting'];
 ```
 
-Require all four Accounting views to adopt shared classes appropriate to their roles. The home view must use `ui-page-head`, `ui-tabs`/`ui-tab`, and `ui-card`.
-
-Run:
-
-```bash
-node scripts/verify-ui-system-migration.js
-```
-
-Expected: Accounting adoption failures.
+Run migration verifier; expect Accounting failures.
 
 - [ ] **Step 2: Migrate Accounting home**
 
-Transform the existing structure without changing links or `data-accounting-page` values:
+Preserve every `data-accounting-page` value:
 
 ```html
 <section class="page-head ui-page-head">...</section>
 <nav class="accounting-tabs ui-tabs" aria-label="회계관리 화면">
-  <a class="active ui-tab" data-accounting-page="accounting_ledger">...</a>
-  ...
+  <a class="active ui-tab" data-accounting-page="accounting_ledger">수입·지출 관리</a>
+  <a class="ui-tab" data-accounting-page="accounting_reconciliation">계좌·장부 대조</a>
+  <a class="ui-tab" data-accounting-page="accounting_settlement">결산 보고서</a>
 </nav>
 <section class="cards">
   <a class="card ui-card" data-accounting-page="accounting_ledger">...</a>
@@ -631,67 +558,58 @@ Transform the existing structure without changing links or `data-accounting-page
 </section>
 ```
 
-Keep `accounting-tabs`, `cards`, and `card` only if Accounting_Styles still needs them for page-specific layout; shared classes own visual appearance.
+- [ ] **Step 3: Migrate Ledger static visuals without changing hooks**
 
-- [ ] **Step 3: Migrate ledger/reconciliation/settlement static views**
-
-Inspect each current view before editing and map only visual roles:
+Starting from the current Ledger view, add:
 
 ```text
-page head      -> ui-page-head
-page actions   -> ui-page-actions
-buttons        -> ui-btn + modifier
-tabs           -> ui-tabs / ui-tab
-filter/toolbars-> ui-toolbar
-inputs/selects -> ui-field
-cards/panels   -> ui-card
-status labels  -> ui-badge + status modifier
-table wrapper  -> ui-table-wrap
-table          -> ui-table
-modal shell    -> ui-modal-overlay / ui-modal
-loading/empty  -> ui-loading / ui-empty
+page-head -> ui-page-head
+accounting-page-actions -> ui-page-actions
+primary/secondary/approve action controls -> ui-btn + primary/outline/success-compatible modifier
+cards/card -> ui-stat-card or ui-card
+filters -> ui-toolbar
+filter inputs/selects and modal form inputs/selects/textarea -> ui-field
+table-wrap/table -> ui-table-wrap/ui-table
+backdrop/modal -> ui-modal-overlay/ui-modal
+badge -> ui-badge + status modifier
+toast -> ui-toast
+pagination -> ui-pagination where markup semantics match
 ```
 
-Preserve all current IDs, `data-accounting-page`, other `data-*` hooks, and form `name` attributes exactly.
+Preserve the exact Ledger ID/name list enforced by Task 1.
 
-- [ ] **Step 4: Migrate dynamically generated Accounting visual classes**
+- [ ] **Step 4: Migrate Reconciliation and Settlement static visuals**
 
-Search:
+Apply the same semantic mapping to their existing page heads, tabs, cards, filters, tables, status elements, and modal/loading/empty surfaces. Preserve all IDs, form names, route data attributes, column order, and text.
 
-```bash
-grep -R "class=.*\(btn\|card\|table\|badge\|modal\|loading\|toast\)" src/400_accounting --include='*_js.html'
-```
-
-For each generated element, add shared classes while preserving any class used by JS selectors. Do not change API calls, click actions, request objects, confirm text, calculation rules, or state transitions.
-
-Example pattern:
-
-```js
-'<button class="existing-action-hook ui-btn primary" data-action="...">...</button>'
-```
-
-- [ ] **Step 5: Reduce Accounting_Styles generic visual ownership**
-
-Remove/reduce rules whose only job is generic:
-
-```text
-button base appearance
-card surface/border/radius/shadow
-generic field border/background/radius
-generic table header/cell surface/border
-generic badge colors
-generic modal overlay/shell
-generic toast/loading surface
-generic tab active underline/color
-```
-
-Retain ledger widths, reconciliation columns, settlement/report grids, accounting page body structure, responsive sizing, and any selector that defines meaningful Accounting composition.
-
-Do not rename `Accounting_Styles.html` or split it into multiple CSS files in this phase.
-
-- [ ] **Step 6: Run Accounting behavior and architecture tests**
+- [ ] **Step 5: Update dynamically generated Accounting class strings only**
 
 Run:
+
+```bash
+grep -R "class=.*\(primary\|secondary\|card\|table\|badge\|modal\|toast\|loading\)" src/400_accounting --include='*_js.html'
+```
+
+For each result that emits generic visual markup, pair it with `ui-*`. Keep any legacy class used by `.querySelector`, `.closest`, `classList`, or domain layout CSS. Do not alter API calls, request objects, calculation rules, confirmation text, or state transitions.
+
+- [ ] **Step 6: Reduce Accounting_Styles generic ownership**
+
+Remove/reduce generic rules for:
+
+```text
+button appearance
+card surface/border/radius/shadow
+field control border/background/radius
+table surface/header/cell border
+badge colors
+modal overlay/shell
+toast/loading appearance
+tab active color/underline
+```
+
+Retain Accounting page layout, ledger column sizing, reconciliation composition, settlement/report grids, responsive sizing, and layout hooks.
+
+- [ ] **Step 7: Run Accounting checks and JS syntax compile**
 
 ```bash
 node scripts/test-accounting.js
@@ -700,11 +618,9 @@ node scripts/verify-ui-system-migration.js
 node scripts/test-student-fee-frontend.js
 ```
 
-Compile embedded changed Accounting JS by stripping outer `<script>` tags and passing the body to `new vm.Script(...)`. Expected: zero syntax errors.
+For every changed Accounting `*_js.html`, strip outer `<script>` tags and compile the body with `new vm.Script(source, { filename: file })`. Expected: zero syntax errors.
 
-Expected: no Settings/Main/Accounting migration failures.
-
-- [ ] **Step 7: Commit**
+- [ ] **Step 8: Commit**
 
 ```bash
 git add src/400_accounting scripts/verify-ui-system-migration.js
@@ -713,120 +629,108 @@ git commit -m "refactor: migrate accounting to shared ui system"
 
 ---
 
-### Task 6: Migrate Event shared visuals while preserving event layouts and action hooks
+### Task 6: Migrate Event generic visuals
 
 **Files:**
 - Modify: `src/600_event/common/Event_Styles.html`
-- Modify:
-  - `src/600_event/600_home/Event_Home_View.html`
-  - `src/600_event/610_form/Event_Form_View.html`
-  - `src/600_event/620_detail/Event_Detail_View.html`
-- Modify class strings only:
-  - `src/600_event/600_home/event_home_js.html`
-  - `src/600_event/610_form/event_form_js.html`
-  - `src/600_event/620_detail/event_detail_js.html`
-  - `src/600_event/common/event_common_js.html`
+- Modify all three Event views listed in the File Map.
+- Modify Event `*_js.html` files only for generated visual class strings.
 - Modify: `scripts/verify-ui-system-migration.js`
 
 **Interfaces:**
-- Consumes: all shared UI primitives from Task 2.
-- Produces: Event list/form/detail pages using shared visual primitives while retaining all event-specific grids, action hooks, APIs, and dynamic workflows.
+- Consumes: all Task 2 shared primitives.
+- Produces: unchanged Event list/form/detail workflows with Event-specific layout retained.
 
-- [ ] **Step 1: Add Event to the migration gate and verify RED**
-
-Set:
+- [ ] **Step 1: Turn on Event checks and prove RED**
 
 ```js
 var MIGRATED_DOMAINS = ['settings', 'main', 'accounting', 'event'];
 ```
 
-The verifier must reject remaining visual-only `ew-btn`, `ew-card`, `ew-field`, `ew-toast`, and `ew-loading` ownership unless those legacy classes are retained solely as JS compatibility hooks and have a paired `ui-*` class.
+Run migration verifier; expect Event failures.
 
-Run:
+- [ ] **Step 2: Migrate Event Home**
 
-```bash
-node scripts/verify-ui-system-migration.js
-```
-
-Expected: Event migration failures.
-
-- [ ] **Step 2: Migrate Event Home static markup**
-
-Starting from the current view, retain `ew-*` layout/behavior hooks but pair visual roles with shared classes:
+Use:
 
 ```html
 <section class="ew-page-head ui-page-head">...</section>
 <div class="ew-page-actions ui-page-actions">
-  <button type="button" class="ew-btn ew-btn-primary ew-btn-icon ui-btn primary" data-action="go-create">＋ 행사 생성</button>
+  <button class="ew-btn ew-btn-primary ew-btn-icon ui-btn primary" data-action="go-create" type="button">＋ 행사 생성</button>
 </div>
 <form id="ew-event-search" class="ew-card ew-filter-card ui-card">...</form>
-...
 <div id="ew-event-summary" class="ew-card ew-summary ui-card"></div>
 <div id="ew-event-table" class="ew-card ew-table-card ui-card"></div>
 <div id="ew-loading" class="ew-loading ui-loading" hidden>...</div>
 <div id="ew-toast" class="ew-toast ui-toast" role="status" hidden></div>
 ```
 
-For fields, add `ui-field` to the actual input/select or to the field wrapper only if the current shared primitive is defined for wrappers. Use one convention consistently across all Event pages.
+Add `ui-field` to actual inputs/selects; retain `ew-field` wrappers only for Event-specific field-grid layout.
 
-Do not alter `id="ew-event-search"`, `data-action` values, field names, or filter option values.
+- [ ] **Step 3: Migrate Event Form**
 
-- [ ] **Step 3: Migrate Event Form and Detail static markup**
-
-Use shared primitives for common roles while retaining layout classes such as:
+Preserve the exact IDs, form names, and `go-list` action from Task 1. Add shared classes to:
 
 ```text
-ew-filter-grid
-ew-filter-grid-secondary
-ew-date-range
-ew-form-grid
-ew-detail-*
-ew-application-*
-ew-attendance-*
+ew-page-head -> ui-page-head
+ew-page-actions -> ui-page-actions
+ew-form-card -> ui-card
+all actual input/select/textarea controls -> ui-field
+ew-btn visual buttons -> ui-btn (+ primary where applicable)
+ew-status generic state pill -> ui-badge where semantics match
+ew-loading -> ui-loading
+ew-toast -> ui-toast
 ```
 
-Do not rename form controls or action attributes. The form submit/request shape must be byte-for-byte equivalent except for markup class attributes.
+Keep `ew-form-row`, `ew-form-label`, `ew-form-control`, `ew-date-range`, `ew-fee-*`, `ew-radio-*`, file-upload layout classes, and pending-field composition.
 
-- [ ] **Step 4: Migrate dynamically generated Event markup**
+- [ ] **Step 4: Migrate Event Detail**
 
-Search all Event JS:
-
-```bash
-grep -R "ew-\(btn\|card\|field\|table\|badge\|modal\|toast\|loading\)" src/600_event --include='*_js.html'
-```
-
-For generated buttons/cards/tables/badges/modals, add the corresponding `ui-*` class. If a legacy `ew-*` class is referenced through `.querySelector`, `.closest`, `classList`, or a CSS layout selector, keep it as a compatibility/layout hook; otherwise remove it after its visual rule is removed from Event_Styles.
-
-Examples:
-
-```js
-'<button class="ui-btn primary" data-action="process-applicant">...</button>'
-'<span class="ui-badge success">승인</span>'
-'<div class="ui-modal-overlay"><section class="ui-modal">...</section></div>'
-```
-
-Never change `data-action` strings or API function names during this step.
-
-- [ ] **Step 5: Reduce Event_Styles to Event composition**
-
-Remove/reduce generic visual definitions for:
+Preserve the exact detail IDs/actions/tab values from Task 1. Add:
 
 ```text
-ew-btn / ew-btn-primary visual appearance
-ew-card surface/border/radius/shadow
-ew-field generic control appearance
-ew-table generic table appearance
-ew-badge generic status colors
-ew-modal generic overlay/shell
-ew-toast generic toast appearance
-ew-loading generic loading appearance
+ew-page-head -> ui-page-head
+ew-page-actions -> ui-page-actions
+ew-event-hero -> ui-card
+ew-kpi cards -> ui-stat-card
+ew-tabs -> ui-tabs
+ew-tab -> ui-tab
+ew-btn -> ui-btn
+ew-status -> ui-badge
+ew-loading -> ui-loading
+ew-toast -> ui-toast
 ```
 
-Keep event-specific grid, date-range, toggle/switch layout, contract-note layout, form/detail section geometry, attendance/application composition, responsive rules, and any behavior-hook styling not expressible as a domain-neutral primitive.
+Keep Event-specific hero/meta/KPI grid/detail-body layout classes.
 
-- [ ] **Step 6: Run Event behavior and architecture tests**
+- [ ] **Step 5: Migrate generated Event markup**
 
 Run:
+
+```bash
+grep -R "ew-\(btn\|card\|field\|table\|status\|modal\|toast\|loading\)" src/600_event --include='*_js.html'
+```
+
+Pair generated generic visuals with the corresponding `ui-*`. Keep `ew-*` only when it remains a JS selector or Event layout hook. Never change `data-action` values or API function names.
+
+- [ ] **Step 6: Reduce Event_Styles to Event composition**
+
+Remove/reduce generic visual responsibility from:
+
+```text
+ew-btn / ew-btn-primary
+ew-card
+ew-field control appearance
+ew-table generic appearance
+ew-status generic color system
+ew-modal generic shell
+ew-toast
+ew-loading
+```
+
+Retain filter grids, form rows, date ranges, switches, fee controls, file-upload layout, detail/KPI layout, attendance/application composition, and responsive geometry.
+
+- [ ] **Step 7: Run Event checks and JS syntax compile**
 
 ```bash
 node scripts/test-event.js
@@ -836,11 +740,9 @@ node scripts/test-student-fee-frontend.js
 node scripts/verify-student-fee-frontend.js
 ```
 
-Compile all changed Event `*_js.html` bodies with `new vm.Script(...)` after removing outer `<script>` tags. Expected: zero syntax errors.
+Compile each changed Event `*_js.html` body with `new vm.Script(...)`. Expected: zero syntax errors and migration verifier exit `0`.
 
-Expected: UI migration verifier exits `0` for all four migrated domains.
-
-- [ ] **Step 7: Commit**
+- [ ] **Step 8: Commit**
 
 ```bash
 git add src/600_event scripts/verify-ui-system-migration.js
@@ -849,59 +751,51 @@ git commit -m "refactor: migrate event to shared ui system"
 
 ---
 
-### Task 7: Finalize shared-style ownership and migration assertions
+### Task 7: Enforce final style ownership
 
 **Files:**
-- Modify: `src/100_common/App_Styles.html` only if cleanup is required.
-- Modify: `src/300_settings/common/Settings_Styles.html` only if Settings-specific rules were accidentally left global.
-- Modify: `src/250_main/Main_Styles.html` only if generic visual rules remain.
-- Modify: `src/400_accounting/common/Accounting_Styles.html` only if generic visual rules remain.
-- Modify: `src/600_event/common/Event_Styles.html` only if generic visual rules remain.
-- Modify: `scripts/verify-ui-system-migration.js`
+- Modify only as required:
+  - `src/100_common/App_Styles.html`
+  - `src/300_settings/common/Settings_Styles.html`
+  - `src/250_main/Main_Styles.html`
+  - `src/400_accounting/common/Accounting_Styles.html`
+  - `src/600_event/common/Event_Styles.html`
+  - `scripts/verify-ui-system-migration.js`
 
 **Interfaces:**
-- Consumes: migrated four-domain tree.
-- Produces: a final enforceable ownership boundary between shared visual CSS and domain layout CSS.
+- Produces: final enforceable shared-vs-domain CSS boundary.
 
-- [ ] **Step 1: Scan style ownership**
-
-Run:
+- [ ] **Step 1: Verify no domain content selector remains global**
 
 ```bash
 grep -n "\.settings-\|\.role-panel\|\.perm-\|\.dashboard-\|\.status-card\|\.quick-action\|\.accounting-\|\.ew-" src/100_common/App_Styles.html
 ```
 
-Expected: no domain-specific selectors remain in `App_Styles.html` except a selector that predates this phase and is demonstrably part of the global app shell. If any result is domain-content styling, move it to the appropriate domain stylesheet.
+Expected: no domain-content selectors. App shell selectors such as `.sidebar` are unrelated and remain allowed.
 
-- [ ] **Step 2: Scan parallel visual systems in Accounting/Event**
-
-Run:
+- [ ] **Step 2: Inspect parallel visual-system remnants**
 
 ```bash
-grep -n "background:.*#\|border-radius:\|box-shadow:\|button\|table\|modal\|toast" src/400_accounting/common/Accounting_Styles.html src/600_event/common/Event_Styles.html
+grep -n "background:.*#\|border-radius:\|box-shadow:\|modal\|toast" src/400_accounting/common/Accounting_Styles.html src/600_event/common/Event_Styles.html
 ```
 
-Review each hit. Keep hard-coded values only when they express domain-specific composition/state that has no shared semantic equivalent. Generic surface/radius/shadow/button/table/modal/toast rules must use or defer to shared tokens/primitives.
+Keep a hit only when it expresses domain-specific composition/state with no shared semantic equivalent; otherwise defer to shared primitive/tokens.
 
-- [ ] **Step 3: Strengthen verifier against regression**
+- [ ] **Step 3: Remove temporary verifier allowances**
 
-Remove any temporary migration gates/allowances that were needed during Tasks 3-6. Final verifier state must use:
+Final verifier must use:
 
 ```js
 var MIGRATED_DOMAINS = ['settings', 'main', 'accounting', 'event'];
 ```
 
-and exit `0` only when all four domains satisfy the shared-system contract.
-
-The verifier must print exactly one success summary on green:
+and print on success:
 
 ```text
 Shared UI system migration verification passed.
 ```
 
-- [ ] **Step 4: Run final focused UI checks**
-
-Run:
+- [ ] **Step 4: Run focused shared checks**
 
 ```bash
 node scripts/verify-ui-system-migration.js
@@ -909,47 +803,44 @@ node scripts/test-student-fee-frontend.js
 node scripts/verify-student-fee-frontend.js
 ```
 
-Expected: every command exits `0`.
+Expected: all exit `0`.
 
-- [ ] **Step 5: Commit cleanup only if files changed**
+- [ ] **Step 5: Commit only when cleanup changed files**
 
 ```bash
 git status --short
 ```
 
-If this task produced changes:
+If changed:
 
 ```bash
 git add src/100_common/App_Styles.html src/300_settings/common/Settings_Styles.html src/250_main/Main_Styles.html src/400_accounting/common/Accounting_Styles.html src/600_event/common/Event_Styles.html scripts/verify-ui-system-migration.js
+git diff --cached --name-only
 git commit -m "refactor: enforce shared ui style ownership"
 ```
 
-If there are no changes, do not create an empty commit.
+If unchanged, do not create a commit.
 
 ---
 
-### Task 8: Full regression, scope, and phase-boundary verification
+### Task 8: Full regression and phase-boundary verification
 
 **Files:**
-- Modify only when a fresh verification command exposes a real migration defect.
+- Modify only if a fresh verification command reveals a real migration defect.
 
 **Interfaces:**
-- Produces: completion evidence for the UI migration branch.
+- Produces: completion evidence for the branch.
 
-- [ ] **Step 1: Capture the execution base**
-
-Run:
+- [ ] **Step 1: Capture base SHA**
 
 ```bash
 BASE_SHA=$(git merge-base HEAD refactor/student-fee-frontend)
 printf '%s\n' "$BASE_SHA"
 ```
 
-Expected base: the commit from which `refactor/ui-system-migration` was created. Keep `BASE_SHA` for later diff checks.
+Keep the value for all later diff commands.
 
 - [ ] **Step 2: Run all behavior tests**
-
-Run:
 
 ```bash
 node scripts/test-core.js
@@ -961,13 +852,9 @@ node scripts/test-student-fee.js
 node scripts/test-student-fee-frontend.js
 ```
 
-Expected: every command exits `0`.
-
-If the environment cannot run the full repository suite, do not infer success from focused tests. Record exactly which commands could not be executed and why.
+Expected: every executable command exits `0`. If the environment cannot run the complete suite, report the exact commands not executed; do not infer them green.
 
 - [ ] **Step 3: Run all architecture/migration verifiers**
-
-Run:
 
 ```bash
 node scripts/verify-auth-iam-architecture.js
@@ -980,30 +867,40 @@ node scripts/verify-server-architecture.js
 node scripts/verify-ui-system-migration.js
 ```
 
-Expected: every command exits `0`.
+Expected: every executable command exits `0`.
 
-- [ ] **Step 4: Syntax-check every changed embedded JS file**
+- [ ] **Step 4: Syntax-check every changed embedded JS**
 
-Use a Node one-liner/script that obtains changed `*_js.html` files from:
+Obtain files with:
 
 ```bash
 git diff --name-only "$BASE_SHA"...HEAD -- '*_js.html'
 ```
 
-For each file, strip the outer `<script>`/`</script>` tags and compile with `new vm.Script(source, { filename: file })`. Expected: zero syntax errors.
+For every listed file, strip the first `<script...>` and final `</script>`, then compile with:
 
-- [ ] **Step 5: Verify no server/schema/route changes were introduced**
+```js
+new vm.Script(source, { filename: file });
+```
 
-Run:
+Expected: zero syntax errors.
+
+- [ ] **Step 5: Prove server and Student Fee source immutability**
 
 ```bash
 git diff --exit-code "$BASE_SHA" -- src/000_server
+git diff --exit-code "$BASE_SHA" -- src/500_student_fee
+```
+
+Expected: both exit `0`.
+
+- [ ] **Step 6: Verify allowed changed paths**
+
+```bash
 git diff --name-only "$BASE_SHA"...HEAD
 ```
 
-Expected: the first command exits `0`.
-
-Allowed production paths are limited to:
+Allowed production paths:
 
 ```text
 src/100_common/App_Styles.html
@@ -1013,23 +910,25 @@ src/400_accounting/**
 src/600_event/**
 ```
 
-plus `scripts/verify-ui-system-migration.js` and the design/plan docs for this phase. `src/500_student_fee/**` must remain unchanged; it is the visual reference and regression consumer of the shared system.
+Allowed support files:
 
-- [ ] **Step 6: Verify behavior-contract-sensitive source did not drift semantically**
+```text
+scripts/verify-ui-system-migration.js
+docs/superpowers/specs/2026-08-17-ui-system-migration-design.md
+docs/superpowers/plans/2026-08-17-ui-system-migration.md
+```
 
-Inspect diffs of every changed `*_js.html` file:
+No other path is allowed.
+
+- [ ] **Step 7: Scan behavior-contract diffs**
 
 ```bash
 git diff "$BASE_SHA"...HEAD -- src/300_settings src/400_accounting src/600_event | grep -E "^[+-].*(api_|data-action|name=|getElementById|querySelector|request|payload)"
 ```
 
-Expected: no API name, request/payload property, `data-action` value, form `name`, or behavior selector change. Class-string changes on the same lines are allowed.
+Expected: no API name, request/payload property, `data-action` value, form `name`, or selector literal changes. A line may differ because its `class` attribute/string changed; in that case compare before/after and confirm the contract literal on the line is identical.
 
-If a behavior-contract line changed for formatting reasons, manually compare before/after and prove the literal contract value is identical.
-
-- [ ] **Step 7: Inspect diff quality**
-
-Run:
+- [ ] **Step 8: Inspect final diff quality**
 
 ```bash
 git diff --check
@@ -1037,27 +936,28 @@ git status --short
 git diff --stat "$BASE_SHA"...HEAD
 ```
 
-Expected: no whitespace errors, no uncommitted implementation changes, and scope limited to Step 5.
+Expected: no whitespace errors and no uncommitted implementation changes.
 
-- [ ] **Step 8: Re-run any command affected by a correction**
+- [ ] **Step 9: Correct and re-verify only if a check fails**
 
-If Steps 2-7 expose a defect, make the smallest correction, rerun the exact failed command, then rerun:
+After the smallest correction, rerun the failed command and then:
 
 ```bash
 node scripts/verify-ui-system-migration.js
 ```
 
-Commit only the correction files:
+Stage only allowed implementation/support areas and review the staged list:
 
 ```bash
-git add <exact-corrected-files>
+git add src/100_common/App_Styles.html src/250_main src/300_settings src/400_accounting src/600_event scripts/verify-ui-system-migration.js
+git diff --cached --name-only
 git commit -m "fix: correct shared ui migration regression"
 ```
 
-Do not create a final commit if no correction was required.
+Do not create this correction commit when no correction was required.
 
 ---
 
 ## Completion Boundary
 
-This plan is complete when the four existing domains consume the shared visual system, their domain CSS primarily expresses layout/composition, Student Fee remains green as the reference consumer, no server/schema/API/route/business-flow changes exist in the diff, and the migration verifier plus all executable regression/architecture checks are green.
+The phase is complete when Main, Settings, Accounting, and Event consume the shared visual system; domain CSS primarily expresses domain layout/composition; Student Fee remains green as the unchanged reference consumer; no server/schema/API/route/business-flow change exists; and every verification command executable in the environment is freshly green with any unexecuted cross-domain checks explicitly reported.
