@@ -70,6 +70,7 @@ forbidFile_('ledger.gs');
 forbidFile_('evidence.gs');
 forbidFile_('accounting_service.gs');
 forbidFile_('accounting_sheet_dao.gs');
+forbidFile_('settlement.gs');
 
 var functions = collectFunctions_();
 var ownership = {
@@ -104,7 +105,9 @@ var ownership = {
   getEvidenceFileContent_: '062_evidence/evidence_file_service.gs',
   sanitizeFileName_: '062_evidence/evidence_file_service.gs',
   createEvidenceDriveFile_: '062_evidence/evidence_file_service.gs',
-  getEvidenceFolder_: '062_evidence/evidence_file_service.gs'
+  getEvidenceFolder_: '062_evidence/evidence_file_service.gs',
+  api_getSettlementSummary: '060_common/accounting_query_service.gs',
+  getAccountingSummary_: '060_common/accounting_query_service.gs'
 };
 
 Object.keys(ownership).forEach(function (name) {
