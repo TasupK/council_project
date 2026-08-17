@@ -2,32 +2,32 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Refactor `src/000_server/060_accounting` into Ledger, Evidence, Reconciliation, and Audit Export boundaries while preserving the existing public Accounting API behavior and aligning persisted responsibilities with `학생회_DB명세서_2026`.
+**Goal:** Refactor `src/000_server/060_accounting` into explicit Ledger, Evidence, Reconciliation, and Audit Export boundaries while preserving existing Accounting API behavior and aligning persistence with `학생회_DB명세서_2026`.
 
-**Architecture:** Persisted features map directly to `FIN_01_LEDGER`, `FIN_02_EVIDENCE`, and `FIN_03_RECONCILIATION`. The first implementation phase is structural only: split the existing Ledger/Evidence/query code into explicit feature-owned files, keep `api_getSettlementSummary()` compatible as an Accounting-wide read endpoint, and do not invent Reconciliation or Audit Export behavior that does not exist yet. Accounting reads Event reference data through its own read-only adapter instead of depending on Event internal DAOs.
+**Architecture:** Persisted responsibilities map to `FIN_01_LEDGER`, `FIN_02_EVIDENCE`, and `FIN_03_RECONCILIATION`. This phase is structural only: split current Ledger/Evidence/read code into feature-owned files, preserve `api_getSettlementSummary()` as a compatibility endpoint backed by Accounting-wide read composition, and do not invent Reconciliation or Audit Export behavior that does not yet exist. Accounting reads Event reference data through its own read-only adapter rather than Event internal DAOs.
 
 **Tech Stack:** Google Apps Script `.gs`, Node.js `assert`/`vm`/`fs` regression tests, existing operation-table helpers, Google Drive APIs used by Evidence.
 
 ## Global Constraints
 
 - `학생회_DB명세서_2026` is the source of truth for persisted Accounting data structures.
-- Preserve all existing public `api_*` names, input shapes, output shapes, default values, TODO behavior, Drive behavior, and error behavior during the structural refactor.
+- Preserve existing public `api_*` names, input/output shapes, operation names, default values, deferred-behavior comments, Drive behavior, ID generation, and error behavior during the structural refactor.
 - Do not add a separate bank transaction table.
-- Do not implement missing Reconciliation or Audit Export features during this structural refactor.
-- Do not create empty files merely for architectural symmetry.
+- Do not add Reconciliation or Audit Export behavior during this structural refactor.
+- Do not create empty files for architectural symmetry.
 - `FIN_01_LEDGER` belongs to `061_ledger`.
 - `FIN_02_EVIDENCE` belongs to `062_evidence`.
-- `FIN_03_RECONCILIATION` belongs to `063_reconciliation` when concrete persistence behavior is implemented.
-- Audit Export is stateless and has no DAO unless an export-history requirement is introduced later.
+- `FIN_03_RECONCILIATION` belongs to `063_reconciliation` when concrete persistence behavior exists.
+- Audit Export is stateless and has no DAO until an export-history requirement exists.
 - Accounting must not call `050_event` internal DAOs; Event reference reads go through `accounting_event_read_dao.gs`.
-- Query/Export code is read-only: no locks, insert/update/delete, Drive uploads, or hidden mutations.
+- Query/Export code is read-only: no locks, writes, Drive uploads, or hidden mutation side effects.
 - Avoid classes, dependency-injection containers, generic repositories, ORM abstractions, and framework-like indirection.
 
 ---
 
 ## File Structure Locked for This Refactor Phase
 
-Only files justified by existing behavior are created now.
+Only files justified by current behavior are created now.
 
 ```text
 src/000_server/060_accounting/
@@ -48,9 +48,9 @@ src/000_server/060_accounting/
    └─ evidence_file_service.gs
 ```
 
-`063_reconciliation/` and `064_audit_export/` remain conceptual target features until real functions exist. No empty Validator files are created in this phase because current validation is trivial and embedded in existing behavior.
+`063_reconciliation/` and `064_audit_export/` remain conceptual target features until real functions exist. No empty Validator files are created because current validation is trivial.
 
-Legacy root files removed after migration:
+Legacy root files removed by the end of this phase:
 
 ```text
 src/000_server/060_accounting/accounting_common.gs
@@ -78,32 +78,21 @@ src/000_server/060_accounting/settlement.gs
 | new `getLedgerDatabaseInfo_` extracted from API body | `060_common/accounting_query_service.gs` |
 | new `getLedgerEventOptions_` extracted from API body | `060_common/accounting_query_service.gs` |
 | new `getAccountingSummary_` extracted from `api_getSettlementSummary` | `060_common/accounting_query_service.gs` |
-| `api_getSettlementSummary` | `060_common/accounting_query_service.gs` as thin compatibility API |
+| `api_getSettlementSummary` | `060_common/accounting_query_service.gs` as a thin compatibility wrapper |
 | `findAllAccountingEventRows_` | `060_common/accounting_event_read_dao.gs` |
-| `api_getLedgerDatabaseInfo` | `061_ledger/ledger_api.gs` |
-| `api_getLedgerList` | `061_ledger/ledger_api.gs` |
-| `api_getLedgerDetail` | `061_ledger/ledger_api.gs` |
-| `api_getLedgerEventOptions` | `061_ledger/ledger_api.gs` |
-| `api_createLedgerEntry` | `061_ledger/ledger_api.gs` |
-| `api_saveLedgerDraft` | `061_ledger/ledger_api.gs` |
-| `api_processLedgerEntry` | `061_ledger/ledger_api.gs` |
+| all seven existing Ledger `api_*` functions | `061_ledger/ledger_api.gs` |
 | `saveLedgerEntry_` | `061_ledger/ledger_service.gs` |
 | new `processLedgerEntry_` extracted from API body | `061_ledger/ledger_service.gs` |
-| `findAllLedgerRows_` | `061_ledger/ledger_sheet_dao.gs` |
-| `insertLedgerRow_` | `061_ledger/ledger_sheet_dao.gs` |
-| `updateLedgerRowById_` | `061_ledger/ledger_sheet_dao.gs` |
+| `findAllLedgerRows_`, `insertLedgerRow_`, `updateLedgerRowById_` | `061_ledger/ledger_sheet_dao.gs` |
 | `api_getEvidenceFileContent` | `062_evidence/evidence_api.gs` |
 | `saveEvidenceFiles_` | `062_evidence/evidence_service.gs` |
-| `findAllLedgerEvidenceRows_` | `062_evidence/evidence_sheet_dao.gs` |
-| `insertLedgerEvidenceRow_` | `062_evidence/evidence_sheet_dao.gs` |
+| `findAllLedgerEvidenceRows_`, `insertLedgerEvidenceRow_` | `062_evidence/evidence_sheet_dao.gs` |
 | new `getEvidenceFileContent_` extracted from API body | `062_evidence/evidence_file_service.gs` |
-| `sanitizeFileName_` | `062_evidence/evidence_file_service.gs` |
-| `createEvidenceDriveFile_` | `062_evidence/evidence_file_service.gs` |
-| `getEvidenceFolder_` | `062_evidence/evidence_file_service.gs` |
+| `sanitizeFileName_`, `createEvidenceDriveFile_`, `getEvidenceFolder_` | `062_evidence/evidence_file_service.gs` |
 
 ---
 
-### Task 1: Add Accounting Characterization Tests and Start Architecture Verification
+### Task 1: Add Accounting Characterization Tests and Initial Architecture Gate
 
 **Files:**
 - Create: `scripts/test-accounting.js`
@@ -112,48 +101,11 @@ src/000_server/060_accounting/settlement.gs
 
 **Interfaces:**
 - Consumes: current global Apps Script functions under `060_accounting`.
-- Produces: executable regression tests that remain valid after files move, plus the architecture verifier used incrementally in later tasks.
+- Produces: regression coverage that survives file moves and an architecture verifier extended incrementally in later tasks.
 
 - [ ] **Step 1: Write the Accounting behavior characterization test**
 
-Create `scripts/test-accounting.js` so it recursively loads every `.gs` file under `src/000_server/060_accounting` instead of hard-coding current file paths. Stub external Apps Script dependencies after loading where needed.
-
-The test must cover these existing behaviors:
-
-```javascript
-// 1. Ledger DTO mapping
-assert.strictEqual(context.getLedgerEntryDto_({ expense: true }).transaction_type, '지출');
-assert.strictEqual(context.getLedgerEntryDto_({ expense: false }).transaction_type, '수입');
-
-// 2. Cross-feature Ledger composition
-// eventId -> event_name
-// transactionId -> evidence[]
-// has_evidence derived from evidence length
-// descending transaction_date sort
-
-// 3. Ledger filtering
-// keyword, transaction_type, event_name, status
-
-// 4. Ledger save defaults
-// transaction_id generation, source='수기등록', business_type='일반',
-// match_status='미확인', manager from context.user.email,
-// evidence_files forwarded to saveEvidenceFiles_
-
-// 5. Evidence metadata mapping
-// evidence_category default '추가증빙', evidence_type default '기타',
-// file_id fallback when no base64 upload, timestamp preserved
-
-// 6. Existing settlement-summary compatibility
-assert.deepStrictEqual(summary, {
-  totalIncome: 3000,
-  totalExpense: 1200,
-  balance: 1800,
-  eventCount: 2,
-  evidenceCount: 3
-});
-```
-
-The loader should use this shape:
+Create `scripts/test-accounting.js` and recursively load all Accounting `.gs` files so the test is path-independent across the refactor:
 
 ```javascript
 function listGsFiles_(directory) {
@@ -166,9 +118,33 @@ function listGsFiles_(directory) {
 }
 ```
 
-- [ ] **Step 2: Run the characterization test against the pre-refactor code**
+Cover these current contracts:
 
-Run:
+```javascript
+assert.strictEqual(context.getLedgerEntryDto_({ expense: true }).transaction_type, '지출');
+assert.strictEqual(context.getLedgerEntryDto_({ expense: false }).transaction_type, '수입');
+```
+
+Also assert:
+- Ledger composition adds `event_name`, `evidence`, and `has_evidence`, then sorts descending by `transaction_date`.
+- `filterLedgerEntries_()` preserves keyword/type/event/status behavior.
+- `saveLedgerEntry_()` preserves ID generation, `source='수기등록'`, `businessType='일반'`, `matchStatus='미확인'`, manager selection, and Evidence forwarding.
+- `saveEvidenceFiles_()` preserves category/type defaults, supplied file ID fallback, timestamp, and partial file-write error behavior.
+- `api_getSettlementSummary()` still returns the same income/expense/balance/event/evidence summary.
+
+Use a concrete summary fixture:
+
+```javascript
+assert.deepStrictEqual(summary, {
+  totalIncome: 3000,
+  totalExpense: 1200,
+  balance: 1800,
+  eventCount: 2,
+  evidenceCount: 3
+});
+```
+
+- [ ] **Step 2: Run characterization tests on the pre-refactor code**
 
 ```bash
 node scripts/test-accounting.js
@@ -180,23 +156,20 @@ Expected:
 Accounting behavior regression tests passed.
 ```
 
-If a characterization assertion does not match current behavior, adjust the test to the actual current contract rather than changing production code in this task.
+If a characterization assertion disagrees with the current implementation, correct the fixture to represent the current contract; do not change production behavior in this task.
 
 - [ ] **Step 3: Write the first failing architecture assertions**
 
-Create `scripts/verify-accounting-architecture.js` with recursive function ownership detection equivalent to the Event architecture verifier. Start by requiring the new common layer and forbidding the legacy root common/service files:
+Create `scripts/verify-accounting-architecture.js` using the Event verifier's recursive function-ownership pattern. Require only the first migration slice:
 
 ```javascript
 requireFile_('060_common/accounting_common.gs');
 requireFile_('060_common/accounting_query_service.gs');
 requireFile_('060_common/accounting_event_read_dao.gs');
-
 forbidFile_('accounting_common.gs');
-forbidFile_('accounting_service.gs');
-forbidFile_('accounting_sheet_dao.gs');
 ```
 
-Require these ownerships in the first stage:
+Initial ownership:
 
 ```javascript
 var ownership = {
@@ -213,17 +186,15 @@ var ownership = {
 };
 ```
 
-- [ ] **Step 4: Run the architecture verifier and confirm RED**
-
-Run:
+- [ ] **Step 4: Run architecture verification and confirm RED**
 
 ```bash
 node scripts/verify-accounting-architecture.js
 ```
 
-Expected: FAIL because the `060_common/` target files do not yet exist and the root legacy files still exist.
+Expected: FAIL because the `060_common/` target files do not yet exist and root `accounting_common.gs` still exists.
 
-- [ ] **Step 5: Commit the test harness**
+- [ ] **Step 5: Commit tests**
 
 ```bash
 git add scripts/test-accounting.js scripts/verify-accounting-architecture.js
@@ -232,25 +203,25 @@ git commit -m "test: add accounting refactor coverage"
 
 ---
 
-### Task 2: Split Accounting Common Query and Read-Only Event Adapter
+### Task 2: Split Common Read Composition and Event Read Adapter
 
 **Files:**
 - Create: `src/000_server/060_accounting/060_common/accounting_common.gs`
 - Create: `src/000_server/060_accounting/060_common/accounting_query_service.gs`
 - Create: `src/000_server/060_accounting/060_common/accounting_event_read_dao.gs`
-- Modify later/delete after migration: `src/000_server/060_accounting/accounting_service.gs`
-- Modify later/delete after migration: `src/000_server/060_accounting/accounting_sheet_dao.gs`
+- Modify: `src/000_server/060_accounting/accounting_service.gs`
+- Modify: `src/000_server/060_accounting/accounting_sheet_dao.gs`
 - Delete: `src/000_server/060_accounting/accounting_common.gs`
 - Test: `scripts/test-accounting.js`
 - Test: `scripts/verify-accounting-architecture.js`
 
 **Interfaces:**
-- Consumes: `findAllLedgerRows_()`, `findAllLedgerEvidenceRows_()`, operation-table formatting helpers.
-- Produces: `makeId_`, `getCurrentUserName_`, query/DTO/filter functions, and read-only `findAllAccountingEventRows_`.
+- Consumes: Ledger/Evidence DAO functions that still live in the mixed DAO until later tasks.
+- Produces: shared ID/user helpers, read-only DTO/filter/composition functions, and Accounting-owned Event reference reads.
 
-- [ ] **Step 1: Move only genuinely shared helpers into `accounting_common.gs`**
+- [ ] **Step 1: Move only genuinely shared helpers**
 
-Move without behavior changes:
+`060_common/accounting_common.gs`:
 
 ```javascript
 function makeId_(prefix) {
@@ -267,11 +238,11 @@ function getCurrentUserName_() {
 }
 ```
 
-Do not move `LEDGER_EVIDENCE_FOLDER_PROPERTY_KEY`; it is Evidence-specific and moves in Task 4.
+Do not move `LEDGER_EVIDENCE_FOLDER_PROPERTY_KEY`; it is Evidence-specific.
 
-- [ ] **Step 2: Move read-only composition into `accounting_query_service.gs`**
+- [ ] **Step 2: Move read-only composition unchanged**
 
-Move these existing functions with unchanged bodies:
+Move from `accounting_service.gs` into `060_common/accounting_query_service.gs`:
 
 ```text
 getLedgerEntries_
@@ -280,14 +251,13 @@ getEvidenceDto_
 filterLedgerEntries_
 normalizeFilter_
 groupBy_
-findLedgerEntryDtoById_
 ```
 
-No writes, locks, or Drive uploads are allowed in this file.
+Move `findLedgerEntryDtoById_()` from `ledger.gs` into this Query Service.
 
-- [ ] **Step 3: Move Event reference access into `accounting_event_read_dao.gs`**
+- [ ] **Step 3: Move Event reference access**
 
-Use exactly:
+`060_common/accounting_event_read_dao.gs`:
 
 ```javascript
 function findAllAccountingEventRows_() {
@@ -295,38 +265,25 @@ function findAllAccountingEventRows_() {
 }
 ```
 
-This file must contain no append/update/delete calls.
+Remove the old definition from `accounting_sheet_dao.gs`. The new file must contain no append/update/delete calls.
 
-- [ ] **Step 4: Delete the legacy root `accounting_common.gs` after its responsibilities are relocated**
+- [ ] **Step 4: Delete root `accounting_common.gs`**
 
-Do not delete `accounting_service.gs` or `accounting_sheet_dao.gs` yet; Ledger/Evidence functions still live there until Tasks 3-4.
+Its Evidence constant remains temporarily in the old Evidence file until Task 4 so there is exactly one definition.
 
-- [ ] **Step 5: Run common architecture verification**
-
-Run:
+- [ ] **Step 5: Run architecture and behavior tests**
 
 ```bash
 node scripts/verify-accounting-architecture.js
-```
-
-Expected: the common ownership assertions PASS. If the verifier still reports legacy `accounting_service.gs` / `accounting_sheet_dao.gs`, temporarily narrow those two `forbidFile_` assertions until their final deletion in Task 4; do not weaken ownership assertions.
-
-- [ ] **Step 6: Run behavior regression tests**
-
-```bash
 node scripts/test-accounting.js
 ```
 
-Expected:
+Expected: both PASS for the common slice.
 
-```text
-Accounting behavior regression tests passed.
-```
-
-- [ ] **Step 7: Commit**
+- [ ] **Step 6: Commit**
 
 ```bash
-git add src/000_server/060_accounting/060_common src/000_server/060_accounting/accounting_common.gs scripts/verify-accounting-architecture.js
+git add src/000_server/060_accounting scripts/verify-accounting-architecture.js scripts/test-accounting.js
 git commit -m "refactor: split accounting common reads"
 ```
 
@@ -339,17 +296,17 @@ git commit -m "refactor: split accounting common reads"
 - Create: `src/000_server/060_accounting/061_ledger/ledger_service.gs`
 - Create: `src/000_server/060_accounting/061_ledger/ledger_sheet_dao.gs`
 - Modify: `src/000_server/060_accounting/060_common/accounting_query_service.gs`
-- Delete after migration: `src/000_server/060_accounting/ledger.gs`
-- Modify later/delete after migration: `src/000_server/060_accounting/accounting_service.gs`
-- Modify later/delete after migration: `src/000_server/060_accounting/accounting_sheet_dao.gs`
+- Modify: `src/000_server/060_accounting/accounting_service.gs`
+- Modify: `src/000_server/060_accounting/accounting_sheet_dao.gs`
+- Delete: `src/000_server/060_accounting/ledger.gs`
 - Test: `scripts/verify-accounting-architecture.js`
 - Test: `scripts/test-accounting.js`
 
 **Interfaces:**
-- Consumes: `getLedgerEntries_()`, `filterLedgerEntries_()`, `findLedgerEntryDtoById_()`, operation-table DAO helpers.
-- Produces: existing Ledger public API functions, `saveLedgerEntry_`, `processLedgerEntry_`, Ledger table DAO functions.
+- Consumes: Accounting Query Service and operation-table persistence helpers.
+- Produces: all existing Ledger public APIs, `saveLedgerEntry_`, `processLedgerEntry_`, and Ledger DAO functions.
 
-- [ ] **Step 1: Extend architecture verifier with Ledger ownership and confirm RED**
+- [ ] **Step 1: Extend architecture verifier for Ledger and confirm RED**
 
 Add:
 
@@ -360,7 +317,7 @@ requireFile_('061_ledger/ledger_sheet_dao.gs');
 forbidFile_('ledger.gs');
 ```
 
-Require:
+Add ownership:
 
 ```javascript
 api_getLedgerDatabaseInfo: '061_ledger/ledger_api.gs',
@@ -374,18 +331,14 @@ saveLedgerEntry_: '061_ledger/ledger_service.gs',
 processLedgerEntry_: '061_ledger/ledger_service.gs',
 findAllLedgerRows_: '061_ledger/ledger_sheet_dao.gs',
 insertLedgerRow_: '061_ledger/ledger_sheet_dao.gs',
-updateLedgerRowById_: '061_ledger/ledger_sheet_dao.gs'
+updateLedgerRowById_: '061_ledger/ledger_sheet_dao.gs',
+getLedgerDatabaseInfo_: '060_common/accounting_query_service.gs',
+getLedgerEventOptions_: '060_common/accounting_query_service.gs'
 ```
 
-Run:
+Run and confirm FAIL before moving code.
 
-```bash
-node scripts/verify-accounting-architecture.js
-```
-
-Expected: FAIL on missing Ledger target files/functions.
-
-- [ ] **Step 2: Move Ledger persistence functions without changing bodies**
+- [ ] **Step 2: Move Ledger persistence unchanged**
 
 `ledger_sheet_dao.gs`:
 
@@ -403,11 +356,13 @@ function updateLedgerRowById_(transactionId, changes) {
 }
 ```
 
-- [ ] **Step 3: Move Ledger mutation logic into Service**
+Remove these definitions from `accounting_sheet_dao.gs`.
 
-Move `saveLedgerEntry_()` unchanged.
+- [ ] **Step 3: Move Ledger mutation behavior**
 
-Extract the mutation body from `api_processLedgerEntry()` into:
+Move `saveLedgerEntry_()` unchanged from `accounting_service.gs` to `ledger_service.gs`.
+
+Extract the body of `api_processLedgerEntry()` into:
 
 ```javascript
 function processLedgerEntry_(input) {
@@ -430,7 +385,7 @@ function processLedgerEntry_(input) {
 
 - [ ] **Step 4: Extract Ledger read orchestration from API bodies**
 
-Add these read-only functions to `accounting_query_service.gs`.
+Add to `accounting_query_service.gs`:
 
 ```javascript
 function getLedgerDatabaseInfo_() {
@@ -459,27 +414,24 @@ function getLedgerEventOptions_() {
 }
 ```
 
-- [ ] **Step 5: Make `ledger_api.gs` thin while preserving public contracts**
+- [ ] **Step 5: Make Ledger API thin**
 
-Keep the existing `apiHandler_` operation names, login requirement, and response shapes. The service callbacks delegate only:
+Keep existing `apiHandler_` operation names and login requirements. Delegate to:
 
 ```javascript
-service: function () { return getLedgerDatabaseInfo_(); }
-service: function (request) {
-  var items = filterLedgerEntries_(getLedgerEntries_(), request || {});
-  return { items: items, page: { pageNo: 1, pageSize: items.length, totalCount: items.length } };
-}
-service: function (id) { return findLedgerEntryDtoById_(id); }
-service: function () { return getLedgerEventOptions_(); }
-service: function (input, context) { return saveLedgerEntry_(input || {}, context); }
-service: function (input) { return processLedgerEntry_(input); }
+getLedgerDatabaseInfo_();
+filterLedgerEntries_(getLedgerEntries_(), request || {});
+findLedgerEntryDtoById_(id);
+getLedgerEventOptions_();
+saveLedgerEntry_(input || {}, context);
+processLedgerEntry_(input);
 ```
 
-`api_saveLedgerDraft()` continues delegating to `saveLedgerEntry_()` exactly as today; do not invent draft-state persistence.
+`api_saveLedgerDraft()` continues calling `saveLedgerEntry_()` exactly as today; do not add a new persisted draft state.
 
-- [ ] **Step 6: Delete root `ledger.gs` and remove migrated Ledger functions from old mixed files**
+- [ ] **Step 6: Delete root `ledger.gs` and remove migrated Ledger definitions from mixed files**
 
-At this point no duplicate definitions may remain.
+There must be no duplicate function definitions.
 
 - [ ] **Step 7: Run verification**
 
@@ -489,12 +441,12 @@ node scripts/test-accounting.js
 node scripts/verify-server-architecture.js
 ```
 
-Expected: Ledger ownership passes; Accounting behavior remains unchanged; server-wide duplicate/syntax checks pass.
+Expected: all PASS.
 
 - [ ] **Step 8: Commit**
 
 ```bash
-git add src/000_server/060_accounting scripts/verify-accounting-architecture.js
+git add src/000_server/060_accounting scripts/verify-accounting-architecture.js scripts/test-accounting.js
 git commit -m "refactor: split accounting ledger domain"
 ```
 
@@ -507,17 +459,17 @@ git commit -m "refactor: split accounting ledger domain"
 - Create: `src/000_server/060_accounting/062_evidence/evidence_service.gs`
 - Create: `src/000_server/060_accounting/062_evidence/evidence_sheet_dao.gs`
 - Create: `src/000_server/060_accounting/062_evidence/evidence_file_service.gs`
-- Delete after migration: `src/000_server/060_accounting/evidence.gs`
-- Delete after migration: `src/000_server/060_accounting/accounting_service.gs`
-- Delete after migration: `src/000_server/060_accounting/accounting_sheet_dao.gs`
+- Delete: `src/000_server/060_accounting/evidence.gs`
+- Delete after all migrated definitions are removed: `src/000_server/060_accounting/accounting_service.gs`
+- Delete after all migrated definitions are removed: `src/000_server/060_accounting/accounting_sheet_dao.gs`
 - Test: `scripts/verify-accounting-architecture.js`
 - Test: `scripts/test-accounting.js`
 
 **Interfaces:**
-- Consumes: Ledger transaction IDs, operation-table Evidence access, Google Drive/Properties/Utilities services.
-- Produces: existing Evidence public API, Evidence metadata persistence, Evidence Drive I/O, `FIN_02_EVIDENCE` DAO functions.
+- Consumes: Ledger transaction IDs, Evidence operation-table persistence, Google Drive/Properties/Utilities services.
+- Produces: existing Evidence public API, Evidence metadata persistence, and Evidence Drive I/O.
 
-- [ ] **Step 1: Extend architecture verifier with Evidence ownership and confirm RED**
+- [ ] **Step 1: Extend architecture verifier for Evidence and final mixed-file removal; confirm RED**
 
 Add:
 
@@ -527,6 +479,8 @@ requireFile_('062_evidence/evidence_service.gs');
 requireFile_('062_evidence/evidence_sheet_dao.gs');
 requireFile_('062_evidence/evidence_file_service.gs');
 forbidFile_('evidence.gs');
+forbidFile_('accounting_service.gs');
+forbidFile_('accounting_sheet_dao.gs');
 ```
 
 Ownership:
@@ -542,11 +496,9 @@ createEvidenceDriveFile_: '062_evidence/evidence_file_service.gs',
 getEvidenceFolder_: '062_evidence/evidence_file_service.gs'
 ```
 
-Run and confirm FAIL before implementation.
+Run and confirm FAIL before moving code.
 
-- [ ] **Step 2: Move Evidence persistence functions**
-
-`evidence_sheet_dao.gs`:
+- [ ] **Step 2: Move Evidence persistence**
 
 ```javascript
 function findAllLedgerEvidenceRows_() {
@@ -558,20 +510,20 @@ function insertLedgerEvidenceRow_(evidence) {
 }
 ```
 
-- [ ] **Step 3: Move Evidence metadata orchestration into Service**
+- [ ] **Step 3: Move Evidence metadata orchestration unchanged**
 
-Move `saveEvidenceFiles_()` unchanged. It continues to:
-- accept a Ledger `transactionId`
-- create one Evidence row per supplied file descriptor
-- default `evidence_category` to `추가증빙`
-- default `evidence_type` to `기타`
-- preserve current partial-error behavior for failed base64 file writes
+Move `saveEvidenceFiles_()` to `evidence_service.gs`. Preserve:
+- one Evidence row per supplied descriptor
+- default category `추가증빙`
+- default type `기타`
+- current partial-error behavior for failed base64 file writes
+- current manager/timestamp behavior
 
-Do not add new representative-evidence validation in this structural task.
+Do not add new representative-evidence validation in this phase.
 
-- [ ] **Step 4: Move Evidence-specific Drive behavior into File Service**
+- [ ] **Step 4: Move Evidence Drive behavior**
 
-Move the constant and file helpers together:
+Move the Evidence-only constant and helpers into `evidence_file_service.gs`:
 
 ```javascript
 var LEDGER_EVIDENCE_FOLDER_PROPERTY_KEY = 'COUNCIL_LEDGER_EVIDENCE_FOLDER_ID';
@@ -585,7 +537,7 @@ createEvidenceDriveFile_
 getEvidenceFolder_
 ```
 
-Extract the file-reading body from `api_getEvidenceFileContent()` into:
+Extract the public API body into:
 
 ```javascript
 function getEvidenceFileContent_(input) {
@@ -615,8 +567,6 @@ function getEvidenceFileContent_(input) {
 
 - [ ] **Step 5: Make Evidence API thin**
 
-`evidence_api.gs` keeps `api_getEvidenceFileContent(request)` and delegates:
-
 ```javascript
 function api_getEvidenceFileContent(request) {
   return apiHandler_({
@@ -630,17 +580,9 @@ function api_getEvidenceFileContent(request) {
 }
 ```
 
-- [ ] **Step 6: Remove the now-empty mixed root files**
+- [ ] **Step 6: Delete migrated mixed root files**
 
-After all functions have migrated, delete:
-
-```text
-accounting_service.gs
-accounting_sheet_dao.gs
-evidence.gs
-```
-
-No function may be duplicated between old and new locations.
+Delete `evidence.gs`, `accounting_service.gs`, and `accounting_sheet_dao.gs` only after every function they contained has exactly one new owner.
 
 - [ ] **Step 7: Run verification**
 
@@ -650,18 +592,18 @@ node scripts/test-accounting.js
 node scripts/verify-server-architecture.js
 ```
 
-Expected: all pass.
+Expected: all PASS.
 
 - [ ] **Step 8: Commit**
 
 ```bash
-git add src/000_server/060_accounting scripts/verify-accounting-architecture.js
+git add src/000_server/060_accounting scripts/verify-accounting-architecture.js scripts/test-accounting.js
 git commit -m "refactor: split accounting evidence domain"
 ```
 
 ---
 
-### Task 5: Remove Settlement as an Internal Domain While Preserving API Compatibility
+### Task 5: Remove Settlement as an Internal Domain While Preserving Compatibility
 
 **Files:**
 - Modify: `src/000_server/060_accounting/060_common/accounting_query_service.gs`
@@ -670,35 +612,25 @@ git commit -m "refactor: split accounting evidence domain"
 - Test: `scripts/test-accounting.js`
 
 **Interfaces:**
-- Consumes: Ledger query results, Accounting Event reference rows, Evidence rows.
-- Produces: unchanged public `api_getSettlementSummary(filter)` contract backed by `getAccountingSummary_()`.
+- Consumes: Ledger query results, Event reference rows, Evidence rows.
+- Produces: unchanged `api_getSettlementSummary(filter)` behavior backed by `getAccountingSummary_()`.
 
 - [ ] **Step 1: Extend architecture verifier and confirm RED**
-
-Add:
 
 ```javascript
 forbidFile_('settlement.gs');
 ```
 
-Require:
+Ownership:
 
 ```javascript
 api_getSettlementSummary: '060_common/accounting_query_service.gs',
 getAccountingSummary_: '060_common/accounting_query_service.gs'
 ```
 
-Run:
+Run and confirm FAIL before moving the endpoint.
 
-```bash
-node scripts/verify-accounting-architecture.js
-```
-
-Expected: FAIL because `settlement.gs` still exists and `getAccountingSummary_` does not yet exist.
-
-- [ ] **Step 2: Extract the existing summary calculation unchanged**
-
-Add:
+- [ ] **Step 2: Extract summary calculation unchanged**
 
 ```javascript
 function getAccountingSummary_(request) {
@@ -719,9 +651,7 @@ function getAccountingSummary_(request) {
 }
 ```
 
-- [ ] **Step 3: Preserve the old public API as a thin compatibility wrapper**
-
-Place in the same `accounting_query_service.gs` file because the agreed common structure does not introduce a separate common API file:
+- [ ] **Step 3: Keep the public compatibility wrapper thin**
 
 ```javascript
 function api_getSettlementSummary(filter) {
@@ -736,13 +666,13 @@ function api_getSettlementSummary(filter) {
 }
 ```
 
-Do not rename the public API in this phase.
+The public name and response remain unchanged.
 
 - [ ] **Step 4: Delete root `settlement.gs`**
 
-No internal Settlement feature remains after this step.
+No internal Settlement feature remains.
 
-- [ ] **Step 5: Run all Accounting regression and architecture tests**
+- [ ] **Step 5: Run full regression set**
 
 ```bash
 node scripts/verify-accounting-architecture.js
@@ -753,7 +683,7 @@ node scripts/verify-event-architecture.js
 node scripts/test-event.js
 ```
 
-Expected outputs include:
+Expected outputs:
 
 ```text
 Accounting architecture verification passed.
@@ -773,7 +703,7 @@ git commit -m "refactor: remove accounting settlement domain"
 
 ---
 
-### Task 6: Final Source-of-Truth and Dependency Verification
+### Task 6: Final Dependency and Source-of-Truth Verification
 
 **Files:**
 - Verify: `src/000_server/060_accounting/**`
@@ -782,12 +712,10 @@ git commit -m "refactor: remove accounting settlement domain"
 - Verify: `scripts/test-accounting.js`
 
 **Interfaces:**
-- Consumes: all previous refactor tasks.
-- Produces: a verified structural baseline for future Reconciliation and Audit Export implementation.
+- Consumes: final output of Tasks 1-5.
+- Produces: a verified structural baseline for future Reconciliation and Audit Export work.
 
 - [ ] **Step 1: Verify final Accounting tree**
-
-Expected persisted implementation tree for this phase:
 
 ```text
 060_accounting/
@@ -806,21 +734,21 @@ Expected persisted implementation tree for this phase:
    └─ evidence_file_service.gs
 ```
 
-There must be no root `accounting_service.gs`, `accounting_sheet_dao.gs`, `ledger.gs`, `evidence.gs`, or `settlement.gs`.
+There must be no root `accounting_common.gs`, `accounting_service.gs`, `accounting_sheet_dao.gs`, `ledger.gs`, `evidence.gs`, or `settlement.gs`.
 
-- [ ] **Step 2: Verify database ownership by source inspection**
+- [ ] **Step 2: Verify DB ownership by source inspection**
 
-Required write ownership:
+Required ownership:
 
 ```text
-append/update 'ledger'   -> only 061_ledger/ledger_sheet_dao.gs
-append 'evidence'        -> only 062_evidence/evidence_sheet_dao.gs
-read 'events'            -> 060_common/accounting_event_read_dao.gs
+read/append/update 'ledger' -> 061_ledger/ledger_sheet_dao.gs
+read/append 'evidence'      -> 062_evidence/evidence_sheet_dao.gs
+read 'events'               -> 060_common/accounting_event_read_dao.gs
 ```
 
 No Accounting file may write to `events`.
 
-- [ ] **Step 3: Verify no premature feature scaffolding**
+- [ ] **Step 3: Verify no premature scaffolding**
 
 Confirm there are no empty placeholder files under `063_reconciliation` or `064_audit_export` and no empty `*_validator.gs` files.
 
@@ -837,19 +765,19 @@ node scripts/test-accounting.js
 
 Do not claim completion unless all commands were run against the final branch state and their fresh output is available.
 
-- [ ] **Step 5: Review the final diff against the compatibility constraints**
+- [ ] **Step 5: Review the final diff against compatibility constraints**
 
-Confirm the diff contains structural movement/extraction only and no intentional change to:
+Confirm there is no intentional change to:
 - public API names
-- operation names passed to `apiHandler_`
+- `apiHandler_` operation names
 - response field names
-- Ledger defaults
-- Evidence defaults
-- status mapping
+- Ledger default values
+- Evidence default values
+- Ledger status mapping
 - Drive folder property key
-- summary calculation
+- Accounting summary calculation
 
-- [ ] **Step 6: Commit any verification-script corrections only if required**
+- [ ] **Step 6: Commit verification-script corrections only if the final verification required them**
 
 ```bash
 git add scripts/verify-accounting-architecture.js scripts/test-accounting.js
