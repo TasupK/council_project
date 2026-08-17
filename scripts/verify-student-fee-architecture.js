@@ -8,6 +8,7 @@ var DOMAIN_ROOT = path.join(ROOT, 'src', '000_server', '080_student_fee');
 var REQUIRED_FILES = [
   '080_common/student_fee_request.gs',
   '080_common/student_fee_reference_query_service.gs',
+  '080_common/student_fee_reference_api.gs',
   '080_common/student_fee_audit_sheet_dao.gs',
   '081_payers/fee_payers_api.gs',
   '081_payers/fee_payers_service.gs',
@@ -25,7 +26,10 @@ var REQUIRED_FILES = [
   '083_refunds/fee_refunds_sheet_dao.gs'
 ];
 
-var API_OWNERS = {
+var FUNCTION_OWNERS = {
+  api_getStudentFeeReferenceData: '080_common/student_fee_reference_api.gs',
+  findAllStudentFeeSemesterRows_: '080_common/student_fee_reference_query_service.gs',
+  getStudentFeeReferenceData_: '080_common/student_fee_reference_query_service.gs',
   api_getFeePayerList: '081_payers/fee_payers_api.gs',
   api_getFeePayerDetail: '081_payers/fee_payers_api.gs',
   api_createFeePayer: '081_payers/fee_payers_api.gs',
@@ -42,6 +46,11 @@ var API_OWNERS = {
   api_calculateFeeRefund: '083_refunds/fee_refunds_api.gs',
   api_confirmFeeRefund: '083_refunds/fee_refunds_api.gs'
 };
+
+var API_OWNERS = {};
+Object.keys(FUNCTION_OWNERS).forEach(function (name) {
+  if (name.indexOf('api_') === 0) API_OWNERS[name] = FUNCTION_OWNERS[name];
+});
 
 var DAO_TABLES = {
   '080_common/student_fee_audit_sheet_dao.gs': 'businessAuditLogs',
@@ -115,10 +124,10 @@ function verifySyntaxAndDuplicates_(files, failures) {
   Object.keys(functions).forEach(function (name) {
     if (functions[name].length > 1) failures.push('Duplicate function: ' + name + ' in ' + functions[name].join(', '));
   });
-  Object.keys(API_OWNERS).forEach(function (name) {
+  Object.keys(FUNCTION_OWNERS).forEach(function (name) {
     var owners = functions[name] || [];
-    if (owners.length !== 1 || owners[0] !== API_OWNERS[name]) {
-      failures.push('API owner mismatch: ' + name + ' expected ' + API_OWNERS[name] + ' got ' + (owners.join(', ') || 'missing'));
+    if (owners.length !== 1 || owners[0] !== FUNCTION_OWNERS[name]) {
+      failures.push('Function owner mismatch: ' + name + ' expected ' + FUNCTION_OWNERS[name] + ' got ' + (owners.join(', ') || 'missing'));
     }
   });
 }
