@@ -17,10 +17,20 @@ function scriptBody_(relativePath) {
 
 function createFrontendContext_() {
   var calls = [];
+  var proxy;
   var runner = {
-    withSuccessHandler: function (handler) { runner.success = handler; return runner; },
-    withFailureHandler: function (handler) { runner.failure = handler; return runner; }
+    withSuccessHandler: function (handler) { runner.success = handler; return proxy; },
+    withFailureHandler: function (handler) { runner.failure = handler; return proxy; }
   };
+  proxy = new Proxy(runner, {
+    get: function (target, key) {
+      if (key in target) return target[key];
+      return function (payload) {
+        calls.push({ name: key, payload: payload });
+        if (target.success) target.success({ ok: true });
+      };
+    }
+  });
   return {
     context: vm.createContext({
       console: console,
@@ -47,15 +57,7 @@ function createFrontendContext_() {
         getElementById: function () { return null; },
         querySelectorAll: function () { return []; }
       },
-      google: { script: { run: new Proxy(runner, {
-        get: function (target, key) {
-          if (key in target) return target[key];
-          return function (payload) {
-            calls.push({ name: key, payload: payload });
-            if (target.success) target.success({ ok: true });
-          };
-        }
-      }) } }
+      google: { script: { run: proxy } }
     }),
     calls: calls
   };
