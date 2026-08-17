@@ -1,4 +1,4 @@
-<header class="page-header">
+<header class="page-header ui-page-head">
   <div>
     <p class="crumb">설정 / 사용자·권한 / 업무 권한 설정</p>
     <h1 class="page-title">업무 권한 설정</h1>
@@ -6,14 +6,14 @@
 </header>
 <div class="workspace">
   <div class="page-panel active" id="panel-loading">
-    <div class="loading">권한 불러오는 중…</div>
+    <div class="loading ui-loading">권한 불러오는 중…</div>
   </div>
   <div class="page-panel" id="panel-content">
-    <div class="role-panel">
-      <div>
-        <label for="permissionRole">역할</label
-        ><select
-          class="select"
+    <div class="role-panel ui-card">
+      <div class="ui-field">
+        <label for="permissionRole">역할</label>
+        <select
+          class="select ui-control"
           id="permissionRole"
           style="width: 100%"
         ></select>
@@ -35,13 +35,13 @@
         <div class="value" id="permissionSaved">-</div>
       </div>
       <div>
-        <button class="btn btn-primary" type="button" disabled>
+        <button class="ui-btn primary" type="button" disabled>
           저장 준비 중
         </button>
       </div>
     </div>
-    <div class="table-wrap">
-      <table class="data perm-table">
+    <div class="table-wrap ui-table-wrap">
+      <table class="data perm-table ui-table">
         <thead>
           <tr>
             <th>화면·업무</th>

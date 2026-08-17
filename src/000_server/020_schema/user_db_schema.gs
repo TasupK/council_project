@@ -13,7 +13,6 @@ function getUserDbSchema_() {
         updatedAt: '최종수정일시',
         updatedBy: '등록자이메일'
       },
-      rows: listUserRows_,
       primaryKey: ['email'],
       foreignKeys: []
     },
@@ -30,7 +29,6 @@ function getUserDbSchema_() {
         updatedAt: '수정일시',
         updatedBy: '등록자이메일'
       },
-      rows: listRoleRows_,
       primaryKey: ['id'],
       foreignKeys: []
     },
@@ -45,7 +43,6 @@ function getUserDbSchema_() {
         description: '권한설명',
         active: '활성여부'
       },
-      rows: listPermissionRows_,
       primaryKey: ['id'],
       foreignKeys: []
     },
@@ -57,7 +54,6 @@ function getUserDbSchema_() {
         roleId: '역할ID',
         assignedStatus: '배정상태'
       },
-      rows: listUserRoleRows_,
       primaryKey: ['email', 'roleId'],
       foreignKeys: [
         { field: 'email', refTable: 'users', refField: 'email' },
@@ -71,7 +67,6 @@ function getUserDbSchema_() {
         roleId: '역할ID',
         permissionId: '권한ID'
       },
-      rows: listRolePermissionRows_,
       primaryKey: ['roleId', 'permissionId'],
       foreignKeys: [
         { field: 'roleId', refTable: 'roles', refField: 'id' },

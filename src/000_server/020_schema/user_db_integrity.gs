@@ -110,12 +110,22 @@ function validateLoginRolePermissionReferences_(schema, tables, roleIds) {
 function readUserDbIntegrityTables_(schema) {
   var tables = {};
   Object.keys(schema).forEach(function (tableKey) {
-    tables[tableKey] = schema[tableKey].rows();
+    tables[tableKey] = readUserDbIntegrityTableRows_(tableKey);
   });
   return tables;
 }
 
-// 7. PK 검증
+// 7. UserDB 검증 대상 행 조회
+function readUserDbIntegrityTableRows_(tableKey) {
+  if (tableKey === 'users') return listUserRows_();
+  if (tableKey === 'roles') return listRoleRows_();
+  if (tableKey === 'permissions') return listPermissionRows_();
+  if (tableKey === 'userRoles') return listUserRoleRows_();
+  if (tableKey === 'rolePermissions') return listRolePermissionRows_();
+  throw new Error('UserDB 검증 대상 테이블을 찾을 수 없습니다: ' + tableKey);
+}
+
+// 8. PK 검증
 function validateUserDbPrimaryKeys_(schema, tables) {
   var issues = [];
 
@@ -129,7 +139,7 @@ function validateUserDbPrimaryKeys_(schema, tables) {
   return issues;
 }
 
-// 8. PK-FK 참조 검증
+// 9. PK-FK 참조 검증
 function validateUserDbForeignKeys_(schema, tables) {
   var issues = [];
 
@@ -153,7 +163,7 @@ function validateUserDbForeignKeys_(schema, tables) {
   return issues;
 }
 
-// 9. 스키마 필드키를 시트 컬럼명으로 변환
+// 10. 스키마 필드키를 시트 컬럼명으로 변환
 function resolveUserDbFieldColumns_(table, fieldKeys) {
   return fieldKeys.map(function (fieldKey) {
     return resolveUserDbFieldColumn_(table, fieldKey);
@@ -164,7 +174,7 @@ function resolveUserDbFieldColumn_(table, fieldKey) {
   return table.fields[fieldKey] || fieldKey;
 }
 
-// 10. 필수값 누락 검증
+// 11. 필수값 누락 검증
 function validateRequiredValues_(tableName, rows, columns) {
   var issues = [];
   rows.forEach(function (row) {
@@ -177,7 +187,7 @@ function validateRequiredValues_(tableName, rows, columns) {
   return issues;
 }
 
-// 11. PK 중복 검증
+// 12. PK 중복 검증
 function validateDuplicateKeys_(tableName, rows, columns) {
   var issues = [];
   var seen = {};
@@ -195,7 +205,7 @@ function validateDuplicateKeys_(tableName, rows, columns) {
   return issues;
 }
 
-// 12. FK 참조 검증
+// 13. FK 참조 검증
 function validateForeignKeys_(tableName, rows, column, refTableName, refRows, refColumn) {
   var issues = [];
   var refIndex = buildIntegrityIndex_(refRows, refColumn);
@@ -215,7 +225,7 @@ function validateForeignKeys_(tableName, rows, column, refTableName, refRows, re
   return issues;
 }
 
-// 13. 검증용 인덱스 생성
+// 14. 검증용 인덱스 생성
 function buildIntegrityIndex_(rows, column) {
   var index = {};
   rows.forEach(function (row) {
@@ -237,7 +247,7 @@ function normalizeIntegrityValue_(value) {
   return normalizeTextValue_(value).toLowerCase();
 }
 
-// 14. 검증 결과 항목 생성
+// 15. 검증 결과 항목 생성
 function createIntegrityIssue_(code, tableName, row, column, message, extra) {
   return Object.assign({
     code: code,

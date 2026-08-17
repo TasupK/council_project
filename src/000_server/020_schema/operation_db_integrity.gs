@@ -116,7 +116,9 @@ function getOperationDbReference_(foreignKey, schema, tables, userSchema, userTa
 
   if (foreignKey.refDatabase === 'user') {
     table = userSchema[foreignKey.refTable];
-    if (!userTables[foreignKey.refTable]) userTables[foreignKey.refTable] = table.rows();
+    if (!userTables[foreignKey.refTable]) {
+      userTables[foreignKey.refTable] = readUserDbIntegrityTableRows_(foreignKey.refTable);
+    }
     return {
       table: table,
       rows: userTables[foreignKey.refTable],

@@ -8,6 +8,10 @@ function doGet(e) {
     accounting_ledger: '400_accounting/410_ledger/Accounting_Ledger',
     accounting_reconciliation: '400_accounting/420_reconciliation/Accounting_Reconciliation',
     accounting_settlement: '400_accounting/430_settlement/Accounting_Settlement',
+    student_fee: '500_student_fee/500_home/Student_Fee_Home',
+    student_fee_payers: '500_student_fee/510_payers/Student_Fee_Payers',
+    student_fee_payments: '500_student_fee/520_payments/Student_Fee_Payments',
+    student_fee_refunds: '500_student_fee/530_refunds/Student_Fee_Refunds',
     event: '600_event/600_home/Event_Home',
     event_form: '600_event/610_form/Event_Form',
     event_detail: '600_event/620_detail/Event_Detail',
@@ -26,8 +30,8 @@ function doGet(e) {
     resourceId: e && e.parameter && e.parameter.id ? String(e.parameter.id) : ''
   };
 
-  // 로그인 성공 사용자만 메인, 장부, 행사 및 설정 페이지에 접근
-  if (page === 'main' || page.indexOf('accounting') === 0 || page.indexOf('event') === 0 || page.indexOf('settings') === 0) {
+  // 로그인 성공 사용자만 메인, 장부, 학생회비, 행사 및 설정 페이지에 접근
+  if (page === 'main' || page.indexOf('accounting') === 0 || page.indexOf('student_fee') === 0 || page.indexOf('event') === 0 || page.indexOf('settings') === 0) {
     var login = api_checkLogin();
     if (!login.ok) {
       file = routes.login;

@@ -35,29 +35,12 @@ function readTableRows_(spreadsheet, sheetName) {
 
 // 4. 운영 DB 시트와 헤더 검증
 function requireOperationTableSheet_(tableKey) {
-  var table = getOperationDbTableSchema_(tableKey);
-  var sheet = openOperationSpreadsheet_().getSheetByName(table.sheetName);
-  var expectedHeaders = Object.keys(table.fields).map(function (fieldKey) {
-    return table.fields[fieldKey];
-  });
-  if (!sheet) throw new Error(table.sheetName + ' 시트를 운영 DB에서 찾을 수 없습니다.');
-  var actualHeaders = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getDisplayValues()[0];
-  if (actualHeaders.join('|') !== expectedHeaders.join('|')) {
-    throw new Error(table.sheetName + ' 시트의 헤더가 운영 DB 스키마와 다릅니다.');
-  }
-  return sheet;
+  return requireSheetCrudTableSheet_('operation', tableKey);
 }
 
 // 5. 운영 DB 행을 스키마 필드키 객체로 조회
 function readOperationTableRows_(tableKey) {
-  var table = getOperationDbTableSchema_(tableKey);
-  return readTableRows_(openOperationSpreadsheet_(), table.sheetName).map(function (row) {
-    var item = { _rowNumber: row._rowNumber };
-    Object.keys(table.fields).forEach(function (fieldKey) {
-      item[fieldKey] = row[table.fields[fieldKey]];
-    });
-    return item;
-  });
+  return sheetFindAll_('operation', tableKey);
 }
 
 // 6. 운영 DB 행을 클라이언트 전달 가능한 값으로 조회
@@ -73,11 +56,13 @@ function readOperationTableClientRows_(tableKey) {
 
 // 7. 운영 DB PK 기준 행 조회
 function findOperationTableRowById_(tableKey, id) {
-  var table = getOperationDbTableSchema_(tableKey);
-  var idField = table.primaryKey[0];
-  return readOperationTableClientRows_(tableKey).filter(function (item) {
-    return String(item[idField]) === String(id);
-  })[0] || null;
+  var row = sheetFindById_('operation', tableKey, id);
+  if (!row) return null;
+  var item = {};
+  Object.keys(row).forEach(function (fieldKey) {
+    item[fieldKey] = toClientCellValue_(row[fieldKey]);
+  });
+  return item;
 }
 
 // 8. 내부 행 번호 제거
@@ -92,34 +77,12 @@ function withoutInternalRowNumber_(item) {
 
 // 9. 운영 DB 행 추가
 function appendOperationTableRow_(tableKey, item) {
-  var table = getOperationDbTableSchema_(tableKey);
-  var sheet = requireOperationTableSheet_(tableKey);
-  var row = Object.keys(table.fields).map(function (fieldKey) {
-    return Object.prototype.hasOwnProperty.call(item, fieldKey) ? item[fieldKey] : '';
-  });
-  sheet.appendRow(row);
-  SpreadsheetApp.flush();
-  return item;
+  return sheetInsert_('operation', tableKey, item);
 }
 
 // 10. 운영 DB PK 기준 행 수정
 function updateOperationTableRow_(tableKey, id, changes) {
-  var table = getOperationDbTableSchema_(tableKey);
-  var idField = table.primaryKey[0];
-  var sheet = requireOperationTableSheet_(tableKey);
-  var values = sheet.getDataRange().getValues();
-  var headers = values[0] || [];
-  var idColumn = headers.indexOf(table.fields[idField]);
-
-  for (var rowIndex = 1; rowIndex < values.length; rowIndex += 1) {
-    if (String(values[rowIndex][idColumn]) !== String(id)) continue;
-    Object.keys(changes).forEach(function (fieldKey) {
-      var column = headers.indexOf(table.fields[fieldKey]);
-      if (column > -1) sheet.getRange(rowIndex + 1, column + 1).setValue(changes[fieldKey]);
-    });
-    return true;
-  }
-  throw new Error(table.name + ' 행을 찾을 수 없습니다: ' + id);
+  return sheetUpdateById_('operation', tableKey, id, changes);
 }
 
 // 11. 운영 DB 행번호 기준 수정
