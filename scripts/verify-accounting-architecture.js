@@ -58,7 +58,11 @@ function requireFunctionIn_(functions, name, relativePath) {
 requireFile_('060_common/accounting_common.gs');
 requireFile_('060_common/accounting_query_service.gs');
 requireFile_('060_common/accounting_event_read_dao.gs');
+requireFile_('061_ledger/ledger_api.gs');
+requireFile_('061_ledger/ledger_service.gs');
+requireFile_('061_ledger/ledger_sheet_dao.gs');
 forbidFile_('accounting_common.gs');
+forbidFile_('ledger.gs');
 
 var functions = collectFunctions_();
 var ownership = {
@@ -71,7 +75,21 @@ var ownership = {
   filterLedgerEntries_: '060_common/accounting_query_service.gs',
   normalizeFilter_: '060_common/accounting_query_service.gs',
   findLedgerEntryDtoById_: '060_common/accounting_query_service.gs',
-  findAllAccountingEventRows_: '060_common/accounting_event_read_dao.gs'
+  findAllAccountingEventRows_: '060_common/accounting_event_read_dao.gs',
+  api_getLedgerDatabaseInfo: '061_ledger/ledger_api.gs',
+  api_getLedgerList: '061_ledger/ledger_api.gs',
+  api_getLedgerDetail: '061_ledger/ledger_api.gs',
+  api_getLedgerEventOptions: '061_ledger/ledger_api.gs',
+  api_createLedgerEntry: '061_ledger/ledger_api.gs',
+  api_saveLedgerDraft: '061_ledger/ledger_api.gs',
+  api_processLedgerEntry: '061_ledger/ledger_api.gs',
+  saveLedgerEntry_: '061_ledger/ledger_service.gs',
+  processLedgerEntry_: '061_ledger/ledger_service.gs',
+  findAllLedgerRows_: '061_ledger/ledger_sheet_dao.gs',
+  insertLedgerRow_: '061_ledger/ledger_sheet_dao.gs',
+  updateLedgerRowById_: '061_ledger/ledger_sheet_dao.gs',
+  getLedgerDatabaseInfo_: '060_common/accounting_query_service.gs',
+  getLedgerEventOptions_: '060_common/accounting_query_service.gs'
 };
 
 Object.keys(ownership).forEach(function (name) {
