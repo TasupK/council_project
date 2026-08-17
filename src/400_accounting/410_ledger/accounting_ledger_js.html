@@ -1,383 +1,231 @@
 <script>
 function optionHtml(values) {
-    return values.map(function (value) {
-        return `<option value="${value}">${value}</option>`;
-    }).join('');
+  return values.map(function (item) {
+    if (typeof item === 'string') return '<option value="' + escapeHtml(item) + '">' + escapeHtml(item) + '</option>';
+    return '<option value="' + escapeHtml(item.value) + '">' + escapeHtml(item.label) + '</option>';
+  }).join('');
 }
 
-function filter() {
-    return {
-        keyword: document.getElementById('keyword').value.trim().toLowerCase(),
-        type: document.getElementById('type').value,
-        department: document.getElementById('department').value,
-        event: document.getElementById('event').value,
-        status: document.getElementById('status').value
-    };
-}
-
-function resetLedgerFilters() {
-    document.getElementById('keyword').value = '';
-    document.getElementById('type').value = '전체';
-    document.getElementById('department').value = '전체';
-    document.getElementById('event').value = '전체';
-    document.getElementById('status').value = '전체';
-    state.ledgerPage = 1;
+function ledgerFilter() {
+  return {
+    keyword: document.getElementById('keyword').value.trim(),
+    transaction_type: document.getElementById('type').value,
+    event_name: document.getElementById('event').value,
+    status: document.getElementById('status').value
+  };
 }
 
 function filteredItems() {
-    const f = filter();
-    return state.items.filter(function (item) {
-        const haystack = [item.counterparty, item.description, item.event_name, item.department_name].join(' ').toLowerCase();
-        return (!f.keyword || haystack.includes(f.keyword)) &&
-            (f.type === '전체' || item.transaction_type === f.type) &&
-            (f.department === '전체' || item.department_name === f.department) &&
-            (f.event === '전체' || item.event_name === f.event) &&
-            (f.status === '전체' || item.status === f.status);
-    });
+  const f = ledgerFilter();
+  const keyword = f.keyword.toLowerCase();
+  return state.items.filter(function (item) {
+    const haystack = [item.counterparty, item.description, item.event_name, item.manager].join(' ').toLowerCase();
+    return (!keyword || haystack.includes(keyword)) &&
+      (f.transaction_type === '전체' || item.transaction_type === f.transaction_type) &&
+      (f.event_name === '전체' || item.event_name === f.event_name) &&
+      (f.status === '전체' || item.status === f.status);
+  });
 }
 
 function badgeClass(status) {
-    if (status === '승인')
-        return 'approved';
-    if (status === '확인요청')
-        return 'review';
-    return 'pending';
+  if (status === '정상') return 'approved';
+  if (status === '확인필요') return 'review';
+  return 'pending';
+}
+
+function renderLedgerSummary(summary) {
+  summary = summary || {};
+  document.getElementById('sumIncome').textContent = currency(summary.totalIncome || 0);
+  document.getElementById('sumExpense').textContent = currency(summary.totalExpense || 0);
+  document.getElementById('sumPending').textContent = (summary.pendingCount || 0) + '건';
+  document.getElementById('sumReview').textContent = (summary.reviewCount || 0) + '건';
 }
 
 function renderPagination(totalItems, totalPages) {
-    const pageInfo = document.getElementById('ledgerPageInfo');
-    const prev = document.getElementById('prevLedgerPage');
-    const next = document.getElementById('nextLedgerPage');
-    pageInfo.textContent = state.ledgerPage + ' / ' + totalPages;
-    pageInfo.title = totalItems + '건 중 현재 페이지';
-    prev.disabled = state.ledgerPage <= 1;
-    next.disabled = state.ledgerPage >= totalPages;
+  document.getElementById('ledgerPageInfo').textContent = state.ledgerPage + ' / ' + totalPages;
+  document.getElementById('prevLedgerPage').disabled = state.ledgerPage <= 1;
+  document.getElementById('nextLedgerPage').disabled = state.ledgerPage >= totalPages;
 }
 
 function render() {
-    const items = filteredItems();
-    const totalPages = Math.max(1, Math.ceil(items.length / state.ledgerPageSize));
-    state.ledgerPage = Math.min(Math.max(1, state.ledgerPage), totalPages);
-    const pageStart = (state.ledgerPage - 1) * state.ledgerPageSize;
-    const pageItems = items.slice(pageStart, pageStart + state.ledgerPageSize);
-    document.getElementById('sumIncome').textContent = currency(items.filter(function (i) {
-        return i.transaction_type === '수입';
-    }).reduce(function (s, i) {
-        return s + i.amount;
-    }, 0));
-    document.getElementById('sumExpense').textContent = currency(items.filter(function (i) {
-        return i.transaction_type === '지출';
-    }).reduce(function (s, i) {
-        return s + i.amount;
-    }, 0));
-    document.getElementById('sumPending').textContent = `${items.filter(function (i) {
-        return i.status === '대기';
-    }).length}건`;
-    document.getElementById('sumReview').textContent = `${items.filter(function (i) {
-        return i.status === '확인요청';
-    }).length}건`;
-    document.getElementById('rows').innerHTML = pageItems.length ? pageItems.map(function (item) {
-        const income = item.transaction_type === '수입';
-        const evidence = item.has_evidence === true ? 'O' : item.has_evidence === false ? 'X' : '-';
-        const rowClass = [item.status === '확인요청' ? 'review' : '', item.transaction_id === state.lastSavedId ? 'just-created' : ''].filter(Boolean).join(' ');
-        return `<tr class="${rowClass}">
-            <td>${item.transaction_date}</td><td class="${income ? 'income' : 'expense'}">${item.transaction_type}</td><td>${item.department_name}</td><td>${item.counterparty}</td>
-            <td class="${income ? 'income' : 'muted'}">${income ? won.format(item.amount) : '-'}</td><td class="${income ? 'muted' : 'expense'}">${income ? '-' : won.format(item.amount)}</td>
-            <td>${item.event_name}</td><td><strong>${evidence}</strong></td><td><span class="badge ${badgeClass(item.status)}">${item.status}</span></td><td>${item.manager}</td>
-            <td><button class="small" type="button" data-id="${item.transaction_id}">상세보기</button></td></tr>`;
-    }).join('') : '<tr><td colspan="11" class="muted">표시할 수입·지출 내역이 없습니다.</td></tr>';
-    renderPagination(items.length, totalPages);
+  const items = filteredItems();
+  const totalPages = Math.max(1, Math.ceil(items.length / state.ledgerPageSize));
+  state.ledgerPage = Math.min(Math.max(1, state.ledgerPage), totalPages);
+  const start = (state.ledgerPage - 1) * state.ledgerPageSize;
+  const pageItems = items.slice(start, start + state.ledgerPageSize);
+  document.getElementById('rows').innerHTML = pageItems.length ? pageItems.map(function (item) {
+    const income = item.transaction_type === '수입';
+    return '<tr><td>' + escapeHtml(String(item.transaction_date || '').slice(0, 10)) + '</td>' +
+      '<td class="' + (income ? 'income' : 'expense') + '">' + escapeHtml(item.transaction_type) + '</td>' +
+      '<td>-</td><td>' + escapeHtml(item.counterparty || '') + '</td>' +
+      '<td class="' + (income ? 'income' : 'muted') + '">' + (income ? won.format(item.amount || 0) : '-') + '</td>' +
+      '<td class="' + (income ? 'muted' : 'expense') + '">' + (income ? '-' : won.format(item.amount || 0)) + '</td>' +
+      '<td>' + escapeHtml(item.event_name || '해당없음') + '</td><td><strong>' + (item.has_evidence ? 'O' : 'X') + '</strong></td>' +
+      '<td><span class="badge ' + badgeClass(item.status) + '">' + escapeHtml(item.status || '') + '</span></td>' +
+      '<td>' + escapeHtml(item.manager || '') + '</td><td><button class="small" type="button" data-id="' + escapeHtml(item.transaction_id) + '">상세보기</button></td></tr>';
+  }).join('') : '<tr><td colspan="11" class="muted">표시할 수입·지출 내역이 없습니다.</td></tr>';
+  renderPagination(items.length, totalPages);
 }
 
-function goLedgerPage(page) {
-    const totalPages = Math.max(1, Math.ceil(filteredItems().length / state.ledgerPageSize));
-    state.ledgerPage = Math.min(Math.max(1, page), totalPages);
-    render();
+function goLedgerPage(page) { state.ledgerPage = page; render(); }
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function setType(type) {
+  state.selectedType = type;
+  document.getElementById('expenseBtn').className = type === '지출' ? 'segment expense-on' : 'segment';
+  document.getElementById('incomeBtn').className = type === '수입' ? 'segment income-on' : 'segment';
 }
 
 function fillControls() {
-    const departments = [...new Set(state.items.map(function (i) {
-            return i.department_name;
-        }))];
-    const events = [...new Set(state.items.map(function (i) {
-            return i.event_name;
-        }))];
-    document.getElementById('department').innerHTML = optionHtml(['전체', ...departments]);
-    document.getElementById('event').innerHTML = optionHtml(['전체', ...events]);
-    document.getElementById('formDepartment').innerHTML = optionHtml(departments);
-    document.getElementById('formEvent').innerHTML = optionHtml(state.events.map(function (e) {
-        return e.event_name;
-    }));
-    updateBalance();
-}
-
-function openModal(id) { document.getElementById(id).classList.add('open'); }
-
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-
-function setType(type) {
-    state.selectedType = type;
-    document.getElementById('expenseBtn').className = type === '지출' ? 'segment expense-on' : 'segment';
-    document.getElementById('incomeBtn').className = type === '수입' ? 'segment income-on' : 'segment';
+  const eventOptions = [{ value: '', label: '해당없음' }].concat(state.events.map(function (e) { return { value: e.event_id, label: e.event_name }; }));
+  document.getElementById('event').innerHTML = optionHtml(['전체'].concat(state.events.map(function (e) { return e.event_name; })));
+  document.getElementById('formEvent').innerHTML = optionHtml(eventOptions);
+  document.getElementById('department').innerHTML = '<option value="전체">부서 미사용</option>';
+  document.getElementById('formDepartment').innerHTML = '<option value="">미사용</option>';
+  updateBalance();
 }
 
 function updateBalance() {
-    const selected = document.getElementById('formEvent').value;
-    const found = state.events.find(function (e) {
-        return e.event_name === selected;
-    }) || state.events[0];
-    document.getElementById('eventBalance').textContent = `선택한 행사 잔액: ${currency(found ? found.balance : 0)}`;
+  const eventId = document.getElementById('formEvent').value;
+  const found = state.events.find(function (e) { return String(e.event_id) === String(eventId); });
+  document.getElementById('eventBalance').textContent = '선택한 행사 잔액: ' + currency(found ? found.balance : 0);
 }
 
 function readForm() {
-    const data = new FormData(document.getElementById('entryForm'));
-    return {
-        transaction_type: state.selectedType,
-        transaction_date: data.get('transaction_date'),
-        department_name: data.get('department_name'),
-        amount: Number(data.get('amount') || 0),
-        counterparty: data.get('counterparty'),
-        event_name: data.get('event_name'),
-        description: data.get('description') || '',
-        note: data.get('note') || '',
-        has_evidence: state.uploadFiles.ledgerEntry.length > 0
-    };
-}
-
-function setEntrySaving(saving) {
-    document.getElementById('draft').disabled = saving;
-    document.getElementById('create').disabled = saving;
-    document.getElementById('create').textContent = saving ? '등록 중...' : '등록하기';
-}
-
-async function refreshLedgerList(fallbackItemsValue) {
-    const list = await callServer('api_getLedgerList', {}, { items: fallbackItemsValue || state.items });
-    state.items = (list.items || fallbackItemsValue || state.items).map(mergeLocalEvidence);
-    fillControls();
-    render();
-}
-
-async function saveEntry(draft) {
-    const item = readForm();
-    if (!draft && (!item.transaction_date || !item.department_name || !item.amount || !item.counterparty))
-        return toast('필수 항목을 입력해 주세요.');
-    setEntrySaving(true);
-    try {
-        const evidenceFiles = await readFilePayloads(state.uploadFiles.ledgerEntry);
-        item.evidence_files = evidenceFiles;
-        item.evidence = evidenceFiles.map(function (file) {
-            return ({ file_name: file.file_name, file_path: '' });
-        });
-        const result = await callServer(draft ? 'api_saveLedgerDraft' : 'api_createLedgerEntry', item, null, { strict: true });
-        if (!result || !result.ok || !result.item)
-            throw new Error('저장 결과가 올바르지 않습니다.');
-        const savedItem = Object.assign({ transaction_id: `LOCAL-${Date.now()}`, manager: '운영자', status: draft ? '임시저장' : '대기' }, result.item || item);
-        const localFiles = buildLocalEvidenceFiles(state.uploadFiles.ledgerEntry);
-        if (localFiles.length) {
-            state.localEvidence[savedItem.transaction_id] = localFiles;
-            savedItem.evidence = localFiles;
-            savedItem.has_evidence = true;
-        }
-        const fallback = [savedItem, ...state.items.filter(function (entry) {
-                return entry.transaction_id !== savedItem.transaction_id;
-            })];
-        state.lastSavedId = savedItem.transaction_id;
-        closeModal('registerModal');
-        resetLedgerFilters();
-        document.getElementById('entryForm').reset();
-        document.getElementById('entryEvidenceFile').value = '';
-        document.getElementById('entryEvidenceFileName').textContent = '선택된 파일 없음';
-        state.uploadFiles.ledgerEntry = [];
-        setType('지출');
-        await refreshLedgerList(fallback);
-        await updateDatabaseLink();
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        toast((draft ? '임시저장되었습니다.' : '등록되었습니다.') + ((result.evidence && result.evidence.errors && result.evidence.errors.length) ? ' 증빙 파일은 권한 확인이 필요합니다.' : ''));
-    }
-    catch (error) {
-        toast((error && error.message) ? error.message : '등록 중 문제가 발생했습니다. 다시 시도해 주세요.');
-    }
-    finally {
-        setEntrySaving(false);
-    }
-}
-
-function openDetail(id) {
-    const item = state.items.find(function (entry) {
-        return entry.transaction_id === id;
-    }) || state.items[0];
-    state.selectedId = item.transaction_id;
-    document.getElementById('detailTitle').textContent = `${item.transaction_type} 상세`;
-    document.getElementById('detailStatus').className = `badge ${badgeClass(item.status)}`;
-    document.getElementById('detailStatus').textContent = item.status;
-    document.getElementById('detailAlert').style.display = item.alert ? 'block' : 'none';
-    document.getElementById('detailAlert').textContent = item.alert || '';
-    document.getElementById('detailRows').innerHTML = [
-        ['거래일자', item.transaction_date], ['부서명', item.department_name], ['금액', currency(item.amount), 'expense'],
-        ['거래처/입금자명', item.counterparty], ['행사 연결', item.event_name], ['적요', item.description || '-'], ['담당자', item.manager]
-    ].map(function ([label, value, cls]) {
-        return `<div class="detail-row"><span class="detail-label">${label}</span><span class="detail-value ${cls || ''}">${value}</span></div>`;
-    }).join('');
-    renderDetailEvidence(item);
-    openModal('detailModal');
-}
-
-async function approve() {
-    const item = state.items.find(function (entry) {
-        return entry.transaction_id === state.selectedId;
-    });
-    if (!item)
-        return;
-    await callServer('api_processLedgerEntry', { transaction_id: item.transaction_id, action: 'approve' }, { ok: true });
-    item.status = '승인';
-    item.alert = '';
-    closeModal('detailModal');
-    render();
-    toast('승인 처리되었습니다.');
-}
-
-async function updateDatabaseLink() {
-    const info = await callServer('api_getLedgerDatabaseInfo', {}, null);
-    const link = document.getElementById('ledgerDbLink');
-    if (!info || !info.spreadsheetUrl) {
-        link.textContent = 'DB 시트 확인 불가';
-        link.removeAttribute('href');
-        return;
-    }
-    link.href = info.spreadsheetUrl;
-    link.textContent = 'DB 시트 확인 (' + info.transactionRowCount + '건)';
+  const data = new FormData(document.getElementById('entryForm'));
+  return {
+    transaction_id: state.editingLedgerId || '',
+    transaction_type: state.selectedType,
+    transaction_date: data.get('transaction_date'),
+    amount: Number(data.get('amount') || 0),
+    counterparty: data.get('counterparty'),
+    event_id: data.get('event_name') || '',
+    description: data.get('description') || ''
+  };
 }
 
 function readFilePayloads(files) {
-    return Promise.all(files.map(function (file) {
-        return new Promise(function (resolve, reject) {
-            const reader = new FileReader();
-            reader.onload = function () {
-                const result = String(reader.result || '');
-                resolve({
-                    file_name: file.name,
-                    file_type: file.type || 'application/octet-stream',
-                    file_size: file.size,
-                    content_base64: result.includes(',') ? result.split(',')[1] : result
-                });
-            };
-            reader.onerror = function () {
-                return reject(new Error(file.name + ' 파일을 읽을 수 없습니다.'));
-            };
-            reader.readAsDataURL(file);
-        });
-    }));
-}
-
-function buildLocalEvidenceFiles(files) {
-    return files.map(function (file) {
-        const url = URL.createObjectURL(file);
-        return {
-            file_name: file.name,
-            mime_type: file.type || 'application/octet-stream',
-            file_size: file.size,
-            local_preview_url: (String(file.type || '').indexOf('image/') === 0 || /\.(png|jpe?g|gif|webp|bmp)$/i.test(file.name)) ? url : '',
-            local_download_url: url
-        };
+  return Promise.all((files || []).map(function (file) {
+    return new Promise(function (resolve, reject) {
+      const reader = new FileReader();
+      reader.onload = function () {
+        const result = String(reader.result || '');
+        resolve({ file_name: file.name, file_type: file.type || 'application/octet-stream', file_size: file.size, content_base64: result.includes(',') ? result.split(',')[1] : result });
+      };
+      reader.onerror = function () { reject(new Error(file.name + ' 파일을 읽을 수 없습니다.')); };
+      reader.readAsDataURL(file);
     });
+  }));
 }
 
-function mergeLocalEvidence(item) {
-    const local = state.localEvidence[item.transaction_id] || [];
-    if (!local.length)
-        return item;
-    return Object.assign({}, item, { evidence: local.length ? local : (item.evidence || []), has_evidence: true });
+async function refreshLedger() {
+  const results = await Promise.all([
+    callServer('api_getLedgerList', {}, { items: state.items }),
+    callServer('api_getLedgerSummary', {}, {}),
+    callServer('api_getLedgerEventOptions', {}, state.events)
+  ]);
+  state.items = (results[0] && results[0].items) || [];
+  state.events = results[2] || [];
+  fillControls();
+  renderLedgerSummary(results[1] || {});
+  render();
+}
+
+async function saveEntry(draft) {
+  const item = readForm();
+  if (!draft && (!item.transaction_date || !item.amount || !item.counterparty)) return toast('필수 항목을 입력해 주세요.');
+  try {
+    if (!state.editingLedgerId) item.evidence_files = await readFilePayloads(state.uploadFiles.ledgerEntry);
+    const api = state.editingLedgerId ? 'api_updateLedgerEntry' : (draft ? 'api_saveLedgerDraft' : 'api_createLedgerEntry');
+    const result = await callServer(api, item, null, { strict: true });
+    if (!result || !result.ok) throw new Error('저장 결과가 올바르지 않습니다.');
+    state.editingLedgerId = null;
+    document.getElementById('create').textContent = '등록하기';
+    document.getElementById('entryForm').reset();
+    state.uploadFiles.ledgerEntry = [];
+    closeModal('registerModal');
+    await refreshLedger();
+    toast(draft ? '임시저장되었습니다.' : '저장되었습니다.');
+  } catch (error) { toast(error && error.message ? error.message : '저장 중 오류가 발생했습니다.'); }
+}
+
+function openDetail(id) {
+  const item = state.items.find(function (entry) { return String(entry.transaction_id) === String(id); });
+  if (!item) return;
+  state.selectedId = item.transaction_id;
+  document.getElementById('detailTitle').textContent = item.transaction_type + ' 상세';
+  document.getElementById('detailStatus').className = 'badge ' + badgeClass(item.status);
+  document.getElementById('detailStatus').textContent = item.status;
+  document.getElementById('detailAlert').style.display = 'none';
+  document.getElementById('detailRows').innerHTML = [
+    ['거래일자', String(item.transaction_date || '').slice(0, 10)], ['금액', currency(item.amount)], ['거래처/입금자명', item.counterparty || '-'],
+    ['행사 연결', item.event_name || '해당없음'], ['적요', item.description || '-'], ['담당자', item.manager || '-']
+  ].map(function (row) { return '<div class="detail-row"><span class="detail-label">' + escapeHtml(row[0]) + '</span><span class="detail-value">' + escapeHtml(row[1]) + '</span></div>'; }).join('');
+  renderDetailEvidence(item);
+  openModal('detailModal');
 }
 
 function renderDetailEvidence(item) {
-    const files = item.evidence || [];
-    const target = document.getElementById('detailEvidenceList');
-    if (!files.length) {
-        target.innerHTML = '<div class="evidence-empty">첨부된 증빙자료가 없습니다.</div>';
-        return;
-    }
-    target.innerHTML = files.map(function (file, index) {
-        const rawName = file.file_name || '증빙자료';
-        const name = escapeHtml(rawName);
-        const downloadUrl = file.local_download_url || file.download_url || file.file_path || file.file_url || '#';
-        const mimeType = file.mime_type || file.file_type || '';
-        const imageByType = mimeType.indexOf('image/') === 0;
-        const imageByName = /\.(png|jpe?g|gif|webp|bmp)$/i.test(rawName);
-        const previewUrl = file.local_preview_url || file.preview_url || '';
-        const canLoadFromDrive = Boolean(file.file_id && (imageByType || imageByName));
-        if (previewUrl) {
-            return '<div class="evidence-preview"><img src="' + escapeHtml(previewUrl) + '" alt="' + name + '"><div class="evidence-preview-meta"><span class="evidence-name">' + name + '</span><a class="evidence-download" href="' + escapeHtml(downloadUrl) + '" download="' + name + '">다운로드</a></div></div>';
-        }
-        if (canLoadFromDrive) {
-            return '<div class="evidence-preview"><div id="evidencePreview' + index + '" class="evidence-preview-loading">미리보기 불러오는 중...</div><div class="evidence-preview-meta"><span class="evidence-name">' + name + '</span><a id="evidenceDownload' + index + '" class="evidence-download" href="#" download="' + name + '">준비 중</a></div></div>';
-        }
-        return '<div class="evidence-file"><span class="evidence-name">' + name + '</span><a class="evidence-download" href="' + escapeHtml(downloadUrl) + '" target="_blank" rel="noopener" download="' + name + '">다운로드</a></div>';
-    }).join('');
-    files.forEach(function (file, index) {
-        return loadDriveEvidencePreview(file, index);
-    });
+  const files = item.evidence || [];
+  document.getElementById('detailEvidenceList').innerHTML = files.length ? files.map(function (file) {
+    return '<div class="evidence-file"><span class="evidence-name">' + escapeHtml(file.file_name || '증빙자료') + '</span>' +
+      (file.file_id ? '<button class="small" type="button" data-evidence-id="' + escapeHtml(file.evidence_id || '') + '" data-file-id="' + escapeHtml(file.file_id) + '">파일 열기</button>' : '') + '</div>';
+  }).join('') : '<div class="evidence-empty">첨부된 증빙자료가 없습니다.</div>';
 }
 
-async function loadDriveEvidencePreview(file, index) {
-    if (!file.file_id || file.local_preview_url || file.preview_url)
-        return;
-    const rawName = file.file_name || '증빙자료';
-    const mimeType = file.mime_type || file.file_type || '';
-    const isImage = mimeType.indexOf('image/') === 0 || /\.(png|jpe?g|gif|webp|bmp)$/i.test(rawName);
-    if (!isImage)
-        return;
-    const previewTarget = document.getElementById('evidencePreview' + index);
-    const downloadTarget = document.getElementById('evidenceDownload' + index);
-    if (!previewTarget)
-        return;
-    try {
-        const result = await callServer('api_getEvidenceFileContent', { file_id: file.file_id, evidence_id: file.evidence_id }, null, { strict: true });
-        if (!result || !result.content_base64)
-            throw new Error('증빙 파일을 불러오지 못했습니다.');
-        const dataUrl = 'data:' + (result.mime_type || mimeType || 'application/octet-stream') + ';base64,' + result.content_base64;
-        const img = document.createElement('img');
-        img.src = dataUrl;
-        img.alt = rawName;
-        previewTarget.replaceChildren(img);
-        if (downloadTarget) {
-            downloadTarget.href = dataUrl;
-            downloadTarget.download = rawName;
-            downloadTarget.textContent = '다운로드';
-        }
-    }
-    catch (error) {
-        previewTarget.textContent = (error && error.message) ? error.message : '미리보기를 불러오지 못했습니다.';
-        if (downloadTarget)
-            downloadTarget.textContent = '다운로드 불가';
-    }
+async function approve() {
+  if (!state.selectedId) return;
+  await callServer('api_processLedgerEntry', { transaction_id: state.selectedId, action: 'approve' }, null, { strict: true });
+  closeModal('detailModal');
+  await refreshLedger();
+  toast('정상 처리되었습니다.');
 }
 
-// 장부 페이지 이벤트 연결
+function editSelectedLedger() {
+  const item = state.items.find(function (entry) { return String(entry.transaction_id) === String(state.selectedId); });
+  if (!item) return;
+  state.editingLedgerId = item.transaction_id;
+  setType(item.transaction_type);
+  const form = document.getElementById('entryForm');
+  form.elements.transaction_date.value = String(item.transaction_date || '').slice(0, 10);
+  form.elements.amount.value = item.amount || 0;
+  form.elements.counterparty.value = item.counterparty || '';
+  form.elements.event_name.value = item.event_id || '';
+  form.elements.description.value = item.description || '';
+  document.getElementById('create').textContent = '수정 저장';
+  closeModal('detailModal'); openModal('registerModal');
+}
+
+async function deleteSelectedLedger() {
+  if (!state.selectedId || !window.confirm('이 거래를 삭제 상태로 변경할까요?')) return;
+  await callServer('api_deleteLedgerEntry', { transaction_id: state.selectedId }, null, { strict: true });
+  closeModal('detailModal'); await refreshLedger(); toast('삭제 처리되었습니다.');
+}
+
+async function updateDatabaseLink() {
+  const info = await callServer('api_getLedgerDatabaseInfo', {}, null);
+  const link = document.getElementById('ledgerDbLink');
+  if (!info || !info.spreadsheetUrl) { link.removeAttribute('href'); link.textContent = 'DB 시트 확인 불가'; return; }
+  link.href = info.spreadsheetUrl; link.textContent = 'DB 시트 확인 (' + info.transactionRowCount + '건)';
+}
+
 setupAccountingPageLinks();
 setupFileUpload({ key: 'ledgerEntry', zoneId: 'entryEvidenceDropzone', inputId: 'entryEvidenceFile', nameId: 'entryEvidenceFileName', multiple: true });
-document.getElementById('openRegister').addEventListener('click', function () { openModal('registerModal'); });
+document.getElementById('openRegister').addEventListener('click', function () { state.editingLedgerId = null; document.getElementById('create').textContent = '등록하기'; setType('지출'); openModal('registerModal'); });
 document.getElementById('expenseBtn').addEventListener('click', function () { setType('지출'); });
 document.getElementById('incomeBtn').addEventListener('click', function () { setType('수입'); });
 document.getElementById('formEvent').addEventListener('change', updateBalance);
 document.getElementById('draft').addEventListener('click', function () { saveEntry(true); });
 document.getElementById('create').addEventListener('click', function () { saveEntry(false); });
 document.getElementById('approve').addEventListener('click', approve);
+document.getElementById('editLedger').addEventListener('click', editSelectedLedger);
+document.getElementById('deleteLedger').addEventListener('click', deleteSelectedLedger);
 document.querySelectorAll('[data-close]').forEach(function (button) { button.addEventListener('click', function () { closeModal(button.dataset.close); }); });
 document.querySelectorAll('.filters input, .filters select').forEach(function (element) { element.addEventListener('input', function () { state.ledgerPage = 1; render(); }); });
 document.getElementById('prevLedgerPage').addEventListener('click', function () { goLedgerPage(state.ledgerPage - 1); });
 document.getElementById('nextLedgerPage').addEventListener('click', function () { goLedgerPage(state.ledgerPage + 1); });
-document.getElementById('rows').addEventListener('click', function (event) { var button = event.target.closest('[data-id]'); if (button) openDetail(button.dataset.id); });
+document.getElementById('rows').addEventListener('click', function (event) { const button = event.target.closest('[data-id]'); if (button) openDetail(button.dataset.id); });
 
-async function initializeLedgerPage() {
-  var results = await Promise.all([
-    callServer('api_getLedgerList', {}, { items: fallbackItems }),
-    callServer('api_getLedgerEventOptions', {}, fallbackEvents)
-  ]);
-  state.items = results[0].items || fallbackItems;
-  state.events = results[1] || fallbackEvents;
-  fillControls();
-  render();
-  updateDatabaseLink();
-}
+async function initializeLedgerPage() { await refreshLedger(); await updateDatabaseLink(); }
 initializeLedgerPage();
 </script>

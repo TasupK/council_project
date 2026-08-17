@@ -1,36 +1,44 @@
 <script>
-function renderSettlement() {
-    const data = state.settlement || { totalIncome: 0, totalExpense: 0, balance: 0, eventCount: 0 };
-    const totalIncome = data.totalIncome || data.total_income || 0;
-    const totalExpense = data.totalExpense || data.total_expense || 0;
-    document.getElementById('settlementIncome').textContent = currency(totalIncome);
-    document.getElementById('settlementExpense').textContent = currency(totalExpense);
-    document.getElementById('settlementBalance').textContent = currency(data.balance || 0);
-    const incomeCount = state.items.filter(function (item) {
-        return item.transaction_type === '수입';
-    }).length;
-    const expenseCount = state.items.filter(function (item) {
-        return item.transaction_type === '지출';
-    }).length;
-    document.getElementById('settlementIncomeCount').textContent = '건수 ' + incomeCount + '건';
-    document.getElementById('settlementExpenseCount').textContent = '건수 ' + expenseCount + '건';
-    document.getElementById('settlementEventCount').textContent = (data.eventCount || data.event_count || state.events.length || 0) + '건';
+function settlementPeriod() { return { startDate: document.getElementById('settlementStartDate').value, endDate: document.getElementById('settlementEndDate').value }; }
+function renderSettlement(summary) {
+  summary = summary || {};
+  document.getElementById('settlementIncome').textContent = currency(summary.totalIncome || 0);
+  document.getElementById('settlementExpense').textContent = currency(summary.totalExpense || 0);
+  document.getElementById('settlementBalance').textContent = currency(summary.balance || 0);
+  document.getElementById('settlementIncomeCount').textContent = '건수 ' + (summary.incomeCount || 0) + '건';
+  document.getElementById('settlementExpenseCount').textContent = '건수 ' + (summary.expenseCount || 0) + '건';
+  document.getElementById('settlementEvidenceCount').textContent = (summary.evidenceCount || 0) + '건';
 }
-
+async function refreshSettlementSummary() {
+  const period = settlementPeriod();
+  if (!period.startDate || !period.endDate) return;
+  renderSettlement(await callServer('api_getSettlementSummary', period, {}, { strict: true }));
+}
+async function refreshSettlementHistory(selectId) {
+  const list = await callServer('api_getSettlementReportList', {}, { items: [] });
+  const items = (list && list.items) || [];
+  state.settlementReports = items;
+  const select = document.getElementById('settlementHistory');
+  select.innerHTML = items.length ? items.map(function (row) { return '<option value="' + escapeHtml(row.id) + '">' + escapeHtml(row.startDate + ' ~ ' + row.endDate + ' · ' + row.status) + '</option>'; }).join('') : '<option value="">결산 이력 없음</option>';
+  if (selectId) select.value = selectId;
+  if (select.value) { const report = await callServer('api_getSettlementReport', select.value, null, { strict: true }); if (report) renderSettlement(report); }
+}
+async function generateSettlement() {
+  const period = settlementPeriod();
+  if (!period.startDate || !period.endDate) return toast('결산 기간을 입력해 주세요.');
+  try { const report = await callServer('api_generateSettlementReport', period, null, { strict: true }); renderSettlement(report); await refreshSettlementHistory(report.id); toast('결산 스냅샷이 생성되었습니다.'); }
+  catch (error) { toast(error && error.message ? error.message : '결산 생성에 실패했습니다.'); }
+}
+async function exportSettlement() {
+  const id = document.getElementById('settlementHistory').value;
+  if (!id) return toast('내보낼 결산 이력을 선택해 주세요.');
+  try { const data = await callServer('api_exportSettlementReport', { reportId: id }, null, { strict: true }); document.getElementById('settlementExportPreview').textContent = JSON.stringify(data, null, 2); toast('Export용 데이터를 불러왔습니다.'); }
+  catch (error) { toast(error && error.message ? error.message : 'Export 데이터를 불러오지 못했습니다.'); }
+}
 setupAccountingPageLinks();
-// TODO(결산 보고서): 저장 대상과 출력 형식 확정 후 생성 이벤트를 연결한다.
-document.getElementById('generateSettlement').disabled = true;
-
-async function initializeSettlementPage() {
-  var results = await Promise.all([
-    callServer('api_getLedgerList', {}, { items: fallbackItems }),
-    callServer('api_getLedgerEventOptions', {}, fallbackEvents),
-    callServer('api_getSettlementSummary', {}, { totalIncome: 0, totalExpense: 0, balance: 0 })
-  ]);
-  state.items = results[0].items || fallbackItems;
-  state.events = results[1] || fallbackEvents;
-  state.settlement = results[2] || {};
-  renderSettlement();
-}
-initializeSettlementPage();
+document.getElementById('refreshSettlement').addEventListener('click', refreshSettlementSummary);
+document.getElementById('generateSettlement').addEventListener('click', generateSettlement);
+document.getElementById('settlementHistory').addEventListener('change', async function (event) { if (!event.target.value) return; const report = await callServer('api_getSettlementReport', event.target.value, null, { strict: true }); if (report) renderSettlement(report); });
+document.getElementById('exportSettlement').addEventListener('click', exportSettlement);
+refreshSettlementHistory();
 </script>

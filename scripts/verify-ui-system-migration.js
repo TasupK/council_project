@@ -196,6 +196,26 @@ function verifyAccounting() {
   requireClasses('src/400_accounting/430_settlement/Accounting_Settlement_View.html', ['ui-page-head', 'ui-tabs', 'ui-tab', 'ui-stat-card', 'ui-card', 'ui-field', 'ui-btn', 'ui-toast']);
 }
 
+
+function verifyAccountingServerContracts() {
+  const ledger = read('src/400_accounting/410_ledger/accounting_ledger_js.html');
+  ['api_getLedgerSummary','api_getLedgerList','api_saveLedgerDraft','api_updateLedgerEntry','api_deleteLedgerEntry'].forEach((name) => {
+    if (!ledger.includes(name)) failures.push(`Accounting ledger client missing ${name}`);
+  });
+  const reconciliation = read('src/400_accounting/420_reconciliation/accounting_reconciliation_js.html');
+  ['api_uploadBankTransactions','api_runReconciliation','api_getReconciliationList','api_getReconciliationDetail','api_getReconciliationCandidates','api_linkReconciliation','api_createLedgerFromReconciliation'].forEach((name) => {
+    if (!reconciliation.includes(name)) failures.push(`Accounting reconciliation client missing ${name}`);
+  });
+  const settlement = read('src/400_accounting/430_settlement/accounting_settlement_js.html');
+  ['api_getSettlementSummary','api_generateSettlementReport','api_getSettlementReportList','api_getSettlementReport','api_exportSettlementReport'].forEach((name) => {
+    if (!settlement.includes(name)) failures.push(`Accounting settlement client missing ${name}`);
+  });
+  [ledger, reconciliation, settlement].forEach((source) => {
+    if (source.includes('apiV1_')) failures.push('Accounting client still references legacy apiV1_ contract');
+  });
+  if (/generateSettlement['"]\)\.disabled\s*=\s*true/.test(settlement)) failures.push('Settlement generation remains forcibly disabled');
+}
+
 function verifyEvent() {
   requireClasses('src/600_event/600_home/Event_Home_View.html', ['ui-page-head', 'ui-page-actions', 'ui-card', 'ui-btn', 'ui-field', 'ui-loading', 'ui-toast']);
   requireClasses('src/600_event/610_form/Event_Form_View.html', ['ui-page-head', 'ui-page-actions', 'ui-card', 'ui-btn', 'ui-field', 'ui-badge', 'ui-loading', 'ui-toast']);
@@ -215,7 +235,7 @@ MIGRATED_DOMAINS.forEach((domain) => {
   verifyHooks(domain);
   if (domain === 'settings') verifySettings();
   if (domain === 'main') verifyMain();
-  if (domain === 'accounting') verifyAccounting();
+  if (domain === 'accounting') { verifyAccounting(); verifyAccountingServerContracts(); }
   if (domain === 'event') verifyEvent();
 });
 
