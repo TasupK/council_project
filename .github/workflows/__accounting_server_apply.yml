@@ -6,6 +6,7 @@ on:
       - refactor/accounting-standalone-port
     paths:
       - scripts/__apply_accounting_server.py
+      - scripts/__fix_accounting_server.py
       - .github/workflows/__accounting_server_apply.yml
 
 permissions:
@@ -23,7 +24,9 @@ jobs:
         with:
           node-version: '22'
       - name: Apply server patch
-        run: python3 scripts/__apply_accounting_server.py
+        run: |
+          python3 scripts/__apply_accounting_server.py
+          python3 scripts/__fix_accounting_server.py
       - name: Static syntax checks
         run: |
           node --check scripts/test-accounting.js
@@ -35,7 +38,7 @@ jobs:
         run: node scripts/verify-accounting-architecture.js
       - name: Commit verified server port
         run: |
-          rm -f scripts/__apply_accounting_server.py .github/workflows/__accounting_server_apply.yml
+          rm -f scripts/__apply_accounting_server.py scripts/__fix_accounting_server.py .github/workflows/__accounting_server_apply.yml
           git config user.name "Codex"
           git config user.email "codex@openai.com"
           git add -A
