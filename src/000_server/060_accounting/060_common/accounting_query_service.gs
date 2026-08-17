@@ -113,3 +113,31 @@ function getLedgerEventOptions_() {
     return { event_id: event.id, event_name: event.name, balance: balance };
   });
 }
+
+function getAccountingSummary_(request) {
+  var items = filterLedgerEntries_(getLedgerEntries_(), request || {});
+  var income = items.reduce(function (sum, item) {
+    return sum + (item.transaction_type === '수입' ? Number(item.amount) : 0);
+  }, 0);
+  var expense = items.reduce(function (sum, item) {
+    return sum + (item.transaction_type === '지출' ? Number(item.amount) : 0);
+  }, 0);
+  return {
+    totalIncome: income,
+    totalExpense: expense,
+    balance: income - expense,
+    eventCount: findAllAccountingEventRows_().length,
+    evidenceCount: findAllLedgerEvidenceRows_().length
+  };
+}
+
+function api_getSettlementSummary(filter) {
+  return apiHandler_({
+    operation: 'getSettlementSummary',
+    input: filter,
+    requireLogin: true,
+    service: function (request) {
+      return getAccountingSummary_(request);
+    }
+  });
+}
