@@ -1,16 +1,4 @@
-// 1. 관리자 역할 여부 판단
-function isAdminRoleSet_(roleIds, roleMap) {
-  for (var i = 0; i < roleIds.length; i += 1) {
-    var roleId = roleIds[i];
-    var role = roleMap[roleId];
-    if (roleId === ADMIN_ROLE_ID) return true;
-    if (role && role.protected) return true;
-    if (role && role.name && role.name.indexOf('관리자') !== -1) return true;
-  }
-  return false;
-}
-
-// 2. 역할별 권한을 사용자 권한으로 병합
+// 1. 역할별 권한을 사용자 권한으로 병합
 function buildUserPermissionsFromDb_(roleIds) {
   var permissionsByRole = buildPermissionsByRoleFromDb_();
   var merged = {};
@@ -33,7 +21,7 @@ function buildUserPermissionsFromDb_(roleIds) {
   };
 }
 
-// 3. 권한이 있는 메뉴 목록 생성
+// 2. 권한이 있는 메뉴 목록 생성
 function buildMenusFromPermissions_(permissionsByScreen) {
   var tree = buildPermissionTreeFromDb_();
   var menus = [];
