@@ -61,9 +61,13 @@ function createFrontendContext_() {
   };
 }
 
+function loadCommon_(fixture) {
+  vm.runInContext(scriptBody_('src/500_student_fee/common/student_fee_common_js.html'), fixture.context);
+}
+
 function testStudentFeeApiWrapper_() {
   var fixture = createFrontendContext_();
-  vm.runInContext(scriptBody_('src/500_student_fee/common/student_fee_common_js.html'), fixture.context);
+  loadCommon_(fixture);
   return fixture.context.studentFeeApi('api_getStudentFeeSummary', { page: 1 }).then(function () {
     assert.strictEqual(fixture.calls.length, 1);
     assert.strictEqual(fixture.calls[0].name, 'api_getStudentFeeSummary');
@@ -72,9 +76,16 @@ function testStudentFeeApiWrapper_() {
 }
 
 function testBusyGuardPreventsDoubleSubmit_() {
-  var source = read_('src/500_student_fee/common/student_fee_common_js.html');
-  assert.match(source, /studentFeeSetBusy|studentFeeWithBusy/);
-  assert.match(source, /disabled/);
+  var fixture = createFrontendContext_();
+  loadCommon_(fixture);
+  var button = { disabled: false, dataset: {} };
+  assert.strictEqual(fixture.context.studentFeeSetBusy(button, true), true);
+  assert.strictEqual(button.disabled, true);
+  assert.strictEqual(button.dataset.busy, 'true');
+  assert.strictEqual(fixture.context.studentFeeSetBusy(button, true), false);
+  assert.strictEqual(fixture.context.studentFeeSetBusy(button, false), true);
+  assert.strictEqual(button.disabled, false);
+  assert.strictEqual(button.dataset.busy, undefined);
 }
 
 function testStudentFeeRouteHelpers_() {
@@ -82,6 +93,7 @@ function testStudentFeeRouteHelpers_() {
   ['student_fee', 'student_fee_payers', 'student_fee_payments', 'student_fee_refunds'].forEach(function (route) {
     assert.match(code, new RegExp('\\b' + route + '\\s*:'));
   });
+  assert.match(code, /page\.indexOf\(['"]student_fee['"]\)\s*===\s*0/);
   var shell = read_('src/100_common/app_shell_js.html');
   assert.match(shell, /appNavStudentFee/);
   assert.match(shell, /student_fee_payers/);
@@ -112,8 +124,13 @@ function testRefundApprovalCalculatesBeforeMutation_() {
 
 function testBulkRefundApprovalOmitsSharedApprovedAmount_() {
   var source = read_('src/500_student_fee/530_refunds/student_fee_refunds_js.html');
-  assert.match(source, /bulkApprove/);
-  assert.doesNotMatch(source, /bulkApprove[\s\S]{0,800}approvedAmount\s*:/);
+  assert.match(source, /bulkApproveSfRefunds_/);
+  var start = source.indexOf('function bulkApproveSfRefunds_');
+  var end = source.indexOf('function bulkRejectSfRefunds_', start);
+  var block = source.slice(start, end);
+  assert.ok(start >= 0 && end > start);
+  assert.doesNotMatch(block, /approvedAmount\s*:/);
+  assert.match(block, /api_processFeeRefundRequests/);
 }
 
 function testModalFailureKeepsDialogOpen_() {
