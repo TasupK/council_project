@@ -1,30 +1,63 @@
 <style>
   .main-page-header { min-height: 112px; align-items: center; }
-  .main-page-header .crumb { margin-bottom: 8px; }
-  .page-description { margin: 8px 0 0; color: var(--text-3); font-size: 14px; }
-  .dashboard-workspace { padding-top: 24px; }
+  .main-page-header .crumb { margin-bottom: var(--ui-space-2); }
+  .page-description { margin: var(--ui-space-2) 0 0; color: var(--ui-muted); font-size: 14px; }
+  .dashboard-workspace { padding-top: var(--ui-space-6); }
   .dashboard-section h2 { margin: 0; font-size: 20px; }
-  .dashboard-section > p { margin: 6px 0 16px; color: var(--text-3); font-size: 13px; }
-  .status-grid, .quick-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
-  .status-card { min-height: 236px; padding: 20px; background: var(--surface); border: 1px solid var(--border); border-radius: 4px; }
-  .status-card h3 { margin: 0 0 16px; font-size: 16px; }
-  .metric { min-height: 52px; margin-top: 14px; padding: 10px 12px; display: flex; align-items: center; justify-content: space-between; gap: 16px; background: var(--bg); }
-  .metric span { color: var(--text-4); font-size: 13px; font-weight: 500; }
+  .dashboard-section > p { margin: 6px 0 var(--ui-space-4); color: var(--ui-muted); font-size: 13px; }
+  .status-grid, .quick-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--ui-space-6);
+  }
+  .status-card { min-height: 236px; }
+  .status-card h3 { margin: 0 0 var(--ui-space-4); font-size: 16px; color: var(--ui-text); }
+  .metric {
+    min-height: 52px;
+    margin-top: 14px;
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--ui-space-4);
+    border-radius: var(--ui-radius-md);
+    background: rgba(255, 255, 255, .68);
+  }
+  .metric span { color: var(--ui-muted); font-size: 13px; font-weight: 500; }
   .metric strong { font-size: 24px; white-space: nowrap; }
-  .metric-blue { color: var(--primary); }
-  .metric-yellow { color: #a66f00; }
-  .metric-green { color: var(--green); }
-  .metric-red { color: var(--danger); }
+  .metric-blue { color: var(--ui-info-fg); }
+  .metric-yellow { color: var(--ui-warning-fg); }
+  .metric-green { color: var(--ui-success-fg); }
+  .metric-red { color: var(--ui-danger-fg); }
   .recent-transactions { margin-top: 14px; padding: 10px; display: grid; gap: 7px; font-size: 12px; }
-  .recent-transactions > strong { color: var(--text-3); }
-  .recent-transactions span { display: flex; justify-content: space-between; gap: 12px; color: var(--text-2); }
+  .recent-transactions > strong { color: var(--ui-muted); }
+  .recent-transactions span { display: flex; justify-content: space-between; gap: var(--ui-space-3); color: var(--ui-text); }
   .recent-transactions b { font-weight: 500; white-space: nowrap; }
-  .quick-section { margin-top: 32px; }
-  .quick-action { min-height: 88px; padding: 20px; display: grid; grid-template-columns: 40px 1fr auto; align-items: center; gap: 14px; border: 1px solid var(--border); border-radius: 4px; background: var(--surface); color: var(--text-2); text-align: left; }
-  .quick-action:hover { border-color: var(--border-strong); background: #fafbfc; }
-  .quick-icon { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 4px; background: var(--active-bg); color: var(--primary); font-size: 20px; font-weight: 600; }
+  .quick-section { margin-top: var(--ui-space-8); }
+  .quick-action {
+    min-height: 88px;
+    padding: var(--ui-space-5);
+    display: grid;
+    grid-template-columns: 40px 1fr auto;
+    align-items: center;
+    gap: 14px;
+    color: var(--ui-text);
+    text-align: left;
+  }
+  .quick-action:hover { border-color: var(--ui-border-strong); transform: translateY(-1px); }
+  .quick-icon {
+    width: 40px;
+    height: 40px;
+    display: grid;
+    place-items: center;
+    border-radius: var(--ui-radius-md);
+    background: var(--ui-info-bg);
+    color: var(--ui-info-fg);
+    font-size: 20px;
+    font-weight: 600;
+  }
   .quick-action strong { font-size: 15px; font-weight: 600; }
-  .quick-action > span:last-child { color: var(--text-3); font-size: 24px; }
+  .quick-action > span:last-child { color: var(--ui-muted); font-size: 24px; }
 
   @media (max-width: 1100px) {
     .main-dashboard .header { grid-template-columns: 48px 1fr auto auto auto; }
