@@ -188,7 +188,7 @@ document.addEventListener('click', function (event) {
   }
 });
 
-Promise.all([loadSfPayerReferences_(), loadSfPayerList_()]).catch(function (error) {
-  studentFeeHandleError(error);
-});
+loadSfPayerReferences_()
+  .then(function () { return loadSfPayerList_(); })
+  .catch(function (error) { studentFeeHandleError(error); });
 </script>
