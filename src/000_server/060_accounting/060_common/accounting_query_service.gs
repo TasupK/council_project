@@ -88,3 +88,28 @@ function findLedgerEntryDtoById_(transactionId) {
     return String(item.transaction_id) === String(transactionId);
   })[0] || null;
 }
+
+function getLedgerDatabaseInfo_() {
+  var spreadsheet = openOperationSpreadsheet_();
+  var table = getOperationDbTableSchema_('ledger');
+  requireOperationTableSheet_('ledger');
+  var sheet = spreadsheet.getSheetByName(table.sheetName);
+  return {
+    ok: true,
+    spreadsheetId: spreadsheet.getId(),
+    spreadsheetName: spreadsheet.getName(),
+    spreadsheetUrl: spreadsheet.getUrl(),
+    transactionRowCount: sheet ? Math.max(0, sheet.getLastRow() - 1) : 0
+  };
+}
+
+function getLedgerEventOptions_() {
+  var items = getLedgerEntries_();
+  return findAllAccountingEventRows_().map(function (event) {
+    var balance = items.reduce(function (sum, item) {
+      if (String(item.event_id) !== String(event.id)) return sum;
+      return sum + (item.transaction_type === '수입' ? Number(item.amount) : -Number(item.amount));
+    }, 0);
+    return { event_id: event.id, event_name: event.name, balance: balance };
+  });
+}
