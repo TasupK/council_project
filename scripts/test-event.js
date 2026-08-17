@@ -4,6 +4,12 @@ var path = require('path');
 var vm = require('vm');
 
 var ROOT = path.resolve(__dirname, '..');
+var QUERY_SERVICE_FILES = [
+  'src/000_server/050_event/051_events/events_query_service.gs',
+  'src/000_server/050_event/052_applicants/applicants_query_service.gs',
+  'src/000_server/050_event/054_attendance/attendance_query_service.gs',
+  'src/000_server/050_event/055_refunds/refunds_query_service.gs'
+];
 
 function load_(context, relativePath) {
   var file = path.join(ROOT, relativePath);
@@ -53,6 +59,13 @@ function installCommonStubs_(context) {
   };
 }
 
+function createQueryContext_() {
+  var context = createContext_();
+  installCommonStubs_(context);
+  QUERY_SERVICE_FILES.forEach(function (file) { load_(context, file); });
+  return context;
+}
+
 function testPaymentTotals_() {
   var context = createContext_();
   context.findAllEventPaymentClientRows_ = function () {
@@ -71,11 +84,26 @@ function testPaymentTotals_() {
   );
 }
 
-function createQueryContext_() {
-  var context = createContext_();
-  installCommonStubs_(context);
-  load_(context, 'src/000_server/050_event/050_common/event_query_service.gs');
-  return context;
+function testEventData_() {
+  var context = createQueryContext_();
+  context.findEventRowById_ = function (id) {
+    return id === 'event-1' ? { id: 'event-1', name: '행사', __rowNumber: 2 } : null;
+  };
+  context.throwEventError_ = function (code, message) {
+    var error = new Error(message);
+    error.code = code;
+    throw error;
+  };
+
+  assert.deepStrictEqual(
+    JSON.parse(JSON.stringify(context.getEventData_({ id: 'event-1' }))),
+    { id: 'event-1', name: '행사' }
+  );
+  assert.throws(function () {
+    context.getEventData_({ id: 'missing' });
+  }, function (error) {
+    return error.code === 'NOT_FOUND';
+  });
 }
 
 function testEventList_() {
@@ -229,6 +257,7 @@ function testRefundList_() {
 }
 
 testPaymentTotals_();
+testEventData_();
 testEventList_();
 testEventDetail_();
 testApplicantListAndDetail_();
