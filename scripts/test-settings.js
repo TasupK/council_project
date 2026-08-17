@@ -87,6 +87,7 @@ function testUsersSettingsComposition_() {
   installValueStubs_(context);
   context.getUserDbFields_ = function () { return { email: 'Google이메일', name: '성명', studentId: '학번', phone: '연락처', status: '계정상태', updatedAt: '최종수정일시', updatedBy: '등록자이메일' }; };
   load_(context, 'src/000_server/030_auth/users.gs');
+  load_(context, 'src/000_server/070_settings/071_users/settings_users_query_service.gs');
   context.listUserRows_ = function () { return [{ 'Google이메일': 'Student@Example.com ', '성명': '김학생', '학번': '6001', '연락처': '010-1111-2222', '계정상태': '활성', '최종수정일시': '2026-08-17T12:00:00', '등록자이메일': 'admin@example.com' }]; };
   context.getRolesById_ = function () { return { ROLE_ADMIN: { id: 'ROLE_ADMIN', name: '관리자' } }; };
   context.getActiveRoleIdsByEmail_ = function () { return { 'student@example.com': ['ROLE_ADMIN'] }; };
@@ -101,6 +102,7 @@ function testRolesSettingsComposition_() {
   installValueStubs_(context);
   context.getUserDbFields_ = function () { return { roleId: '역할ID', assignedStatus: '배정상태' }; };
   load_(context, 'src/000_server/030_auth/roles.gs');
+  load_(context, 'src/000_server/070_settings/072_roles/settings_roles_query_service.gs');
   context.getRolesById_ = function () { return { ROLE_ADMIN: { id: 'ROLE_ADMIN', assignedCount: 0 }, ROLE_STAFF: { id: 'ROLE_STAFF', assignedCount: 0 } }; };
   context.listUserRoleRows_ = function () { return [{ '역할ID': 'ROLE_ADMIN', '배정상태': '활성' }, { '역할ID': 'ROLE_ADMIN', '배정상태': '활성' }, { '역할ID': 'ROLE_ADMIN', '배정상태': '비활성' }, { '역할ID': 'ROLE_STAFF', '배정상태': '활성' }]; };
   assert.deepStrictEqual(plain_(context.listRolesForSettings_()).map(function (role) { return { id: role.id, assignedCount: role.assignedCount }; }), [
@@ -113,6 +115,7 @@ function testPermissionsSettingsComposition_() {
   installValueStubs_(context);
   context.getUserDbFields_ = function () { return { id: '권한ID', area: '업무영역', action: '행위', name: '권한명', description: '권한설명', active: '활성여부' }; };
   load_(context, 'src/000_server/030_auth/permissions.gs');
+  load_(context, 'src/000_server/070_settings/073_permissions/settings_permissions_query_service.gs');
   var rows = [
     { '권한ID': 'EVENT_VIEW', '업무영역': '행사', '행위': '조회', '권한명': '행사 조회', '권한설명': '', '활성여부': true },
     { '권한ID': 'EVENT_EDIT', '업무영역': '행사', '행위': '수정', '권한명': '행사 수정', '권한설명': '', '활성여부': true },
