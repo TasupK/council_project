@@ -147,7 +147,76 @@ The new public server APIs are:
 
 All APIs follow the current project `apiHandler_` pattern instead of the source branch `{ success, data, error }` wrapper and `callApi_` registry.
 
-## 7. Payer behavior
+## 7. Status contract
+
+The current schema stores status as text but does not enumerate allowed values. This phase preserves the feature branch's existing business status semantics without changing the schema.
+
+### Application status
+
+```text
+접수 → 승인
+접수 → 반려
+```
+
+Allowed values used by this phase:
+
+- `접수`
+- `승인`
+- `반려`
+
+### Payment money status
+
+A payment created from an approved application starts as `대기`.
+
+Confirmation transitions:
+
+```text
+대기 → 완료
+대기 → 불일치
+```
+
+Allowed values used by this phase:
+
+- `대기`
+- `완료`
+- `불일치`
+
+### Refund money status
+
+A refund created from an approved refund request starts as `대기`.
+
+Confirmation transitions:
+
+```text
+대기 → 완료
+대기 → 실패
+```
+
+Allowed values used by this phase:
+
+- `대기`
+- `완료`
+- `실패`
+
+Mutation Services reject unsupported state transitions instead of coercing unknown values.
+
+## 8. ID generation
+
+The current operation schema defines primary keys but not a sequential ID-generation contract.
+
+For new Student Fee-generated records in this phase, mutation Services use collision-resistant UUID values via `Utilities.getUuid()`, consistent with the current Event implementation approach.
+
+UUID generation applies to records created by this phase such as:
+
+- `feePayments.id`
+- `feeRefunds.id`
+- `businessAuditLogs.id`
+
+`feePayers.studentId` remains a caller-supplied natural key and is never generated.
+
+This phase does not create `feeApplications` or `feeRefundRequests`; those request-ingestion paths belong to the later frontend/Form integration phases.
+
+## 9. Payer behavior
 
 ### List and detail
 
@@ -177,7 +246,7 @@ Required business data:
 
 The authenticated email is written to `managerId` and the current time to `updatedAt`.
 
-The service rejects duplicate student IDs and invalid semester references.
+The service rejects duplicate student IDs and semester IDs that do not exist in `semesters`.
 
 ### Update payer
 
@@ -185,7 +254,7 @@ The service rejects duplicate student IDs and invalid semester references.
 
 Every mutation writes a business audit log.
 
-## 8. Fee rate resolution
+## 10. Fee rate resolution
 
 The source feature used a semester-fee fallback hierarchy. The port instead follows the current schema.
 
@@ -194,14 +263,15 @@ The source feature used a semester-fee fallback hierarchy. The port instead foll
 For a target date:
 
 1. use active rows only,
-2. choose a row whose effective date range contains the target date,
-3. reject the operation if no valid fee rate exists.
+2. find rows whose effective date range contains the target date,
+3. require exactly one matching row,
+4. reject the operation when there is no match or more than one match.
 
 No hard-coded default amount is introduced.
 
-This is fail-closed because charging an invented fallback amount would create incorrect financial records.
+This is fail-closed because charging an invented or ambiguous amount would create incorrect financial records.
 
-## 9. Payment behavior
+## 11. Payment behavior
 
 ### Application list/detail
 
@@ -211,7 +281,7 @@ Query Services may join these tables in memory for DTO composition, but each DAO
 
 ### Fee calculation
 
-`api_calculateFeeAmount` resolves one valid `feeRates.amountPerSemester` based on the request/payment date.
+`api_calculateFeeAmount` resolves one valid `feeRates.amountPerSemester` based on the supplied payment/request date.
 
 `feeApplications.semesterNumber` is treated as the current schema's application semester sequence/reference value, not as a quantity multiplier copied from the source feature.
 
@@ -221,18 +291,20 @@ Therefore this phase does not implement:
 applySemesters × amountPerSemester
 ```
 
-The calculated payable amount for one payment record is the resolved fee rate amount.
+The calculated payable amount for one payment record is the single resolved fee-rate amount.
 
 ### Application processing
 
-`api_processFeeApplications` accepts application IDs and an action equivalent to approve/reject.
+`api_processFeeApplications` accepts application IDs and `action: 'APPROVE' | 'REJECT'`.
 
 Rules:
 
-- only applications in the accepted pending state may be processed
-- reject changes only the application state/processing metadata
-- approve changes the application state/processing metadata and creates exactly one `feePayments` row if one does not already exist
-- the payment amount comes from the fee rate resolved for the application's `paymentDate`
+- only applications with `status === '접수'` may be processed
+- `REJECT` changes status to `반려` and writes processing metadata
+- `APPROVE` changes status to `승인`, writes processing metadata, and creates exactly one `feePayments` row if one does not already exist
+- a created payment starts with `moneyStatus === '대기'`
+- the payment amount comes from the single fee rate resolved for the application's `paymentDate`
+- missing/invalid `paymentDate` is a validation failure; current date is not silently substituted
 - the authenticated email becomes the application/payment manager
 - all mutations create audit log entries
 
@@ -240,7 +312,16 @@ The service must prevent duplicate payment creation for the same application.
 
 ### Payment confirmation
 
-`api_confirmFeePayment` confirms an existing `feePayments` row as the supported terminal money status such as completed or mismatch, using the status values already present in the operational data contract.
+`api_confirmFeePayment` accepts an existing payment ID and `result: 'DONE' | 'MISMATCH'`.
+
+Mappings:
+
+```text
+DONE     → 완료
+MISMATCH → 불일치
+```
+
+Only a payment currently in `대기` may be confirmed.
 
 It records:
 
@@ -249,7 +330,7 @@ It records:
 - confirmation timestamp
 - audit log
 
-## 10. Refund behavior
+## 12. Refund behavior
 
 ### Refund request list/detail
 
@@ -272,7 +353,7 @@ For the target `feePayments` row:
 ```text
 maximum refundable amount
 = feePayments.amount
-- sum(existing related refund amounts that are pending or completed)
+- sum(existing related refund amounts whose moneyStatus is 대기 or 완료)
 ```
 
 The result is never below zero.
@@ -281,21 +362,32 @@ The result is never below zero.
 
 ### Refund request processing
 
-`api_processFeeRefundRequests` accepts request IDs and approve/reject action.
+`api_processFeeRefundRequests` accepts request IDs, `action: 'APPROVE' | 'REJECT'`, and an approved amount when approving.
 
 Rules:
 
-- only pending requests may be processed
-- rejected requests do not create a `feeRefunds` row
-- approval validates the requested/approved amount against the calculated maximum refundable amount
+- only requests with `status === '접수'` may be processed
+- `REJECT` changes status to `반려` and does not create a `feeRefunds` row
+- `APPROVE` changes status to `승인`
+- approval requires a positive approved amount not greater than the calculated maximum refundable amount
 - approval creates exactly one `feeRefunds` row for the request
+- a created refund starts with `moneyStatus === '대기'`
 - duplicate refund-row creation is prevented
 - actor email and timestamps come from Auth context/current time
 - all state transitions are audited
 
 ### Refund confirmation
 
-`api_confirmFeeRefund` confirms an existing `feeRefunds` row as completed or failed.
+`api_confirmFeeRefund` accepts an existing refund ID and `result: 'DONE' | 'FAILED'`.
+
+Mappings:
+
+```text
+DONE   → 완료
+FAILED → 실패
+```
+
+Only a refund currently in `대기` may be confirmed.
 
 It records current-schema fields only:
 
@@ -305,27 +397,29 @@ It records current-schema fields only:
 - optional transfer evidence ID when supplied
 - audit log
 
-## 11. Summary behavior
+## 13. Summary behavior
 
 `api_getStudentFeeSummary` is a read-only composed view over the current tables.
 
 It may include counts/totals that can be derived without adding fields, for example:
 
 - payer count
-- payment application counts by status
-- payment counts/amount totals by money status
-- refund request counts by status
-- refund counts/amount totals by money status
+- payment application counts by `접수/승인/반려`
+- payment counts/amount totals by `대기/완료/불일치`
+- refund request counts by `접수/승인/반려`
+- refund counts/amount totals by `대기/완료/실패`
 
 It does not expose source-feature statistics that require missing fields such as `정식/임시` payer type.
 
-## 12. Audit logging
+## 14. Audit logging
 
 Student Fee mutations write to the existing `businessAuditLogs` table.
 
-The Student Fee audit DAO owns only that table access for this domain. It records:
+The Student Fee audit DAO owns only physical access to that table. Mutation Services construct the audit item, including its UUID, and call the DAO to insert it.
 
-- generated log ID using the project's existing ID style
+Audit records contain current-schema fields only:
+
+- UUID log ID
 - occurred time
 - actor email from Auth context
 - action type
@@ -337,7 +431,7 @@ The Student Fee audit DAO owns only that table access for this domain. It record
 
 Business data tables are not expanded to duplicate audit-only information.
 
-## 13. Request parsing and validation
+## 15. Request parsing and validation
 
 `student_fee_request.gs` centralizes only Student Fee request normalization that is genuinely shared.
 
@@ -349,11 +443,11 @@ Examples:
 - duplicate payer: payer service
 - invalid state transition: payment/refund service
 - refund amount exceeds maximum: refund service
-- missing active fee rate: reference query/business failure
+- missing/ambiguous active fee rate: reference query/business failure
 
 No generic validation framework is introduced.
 
-## 14. Error handling
+## 16. Error handling
 
 The port follows the current server exception model.
 
@@ -365,12 +459,13 @@ The port follows the current server exception model.
 Examples of fail-closed cases:
 
 - no matching active fee rate
+- multiple matching active fee rates
 - invalid semester reference
 - duplicate payment/refund creation attempt
 - invalid current state for approval/rejection/confirmation
 - refund exceeds refundable balance
 
-## 15. Architecture boundaries
+## 17. Architecture boundaries
 
 Allowed dependencies:
 
@@ -387,6 +482,7 @@ Forbidden patterns:
 ```text
 Student Fee → feature branch Db.gs/Schema.gs
 Student Fee → Session.getActiveUser() directly
+Student Fee → 050_event / 060_accounting / 070_settings internals
 Student Fee DAO → another Student Fee table
 Student Fee Query Service → Sheet write primitive
 Student Fee API → direct Sheet access
@@ -395,7 +491,7 @@ Student Fee → frontend files
 
 Cross-table composition belongs in Query Services or mutation Services, not multi-table DAOs.
 
-## 16. Testing strategy
+## 18. Testing strategy
 
 Add two server-side verification assets:
 
@@ -403,7 +499,7 @@ Add two server-side verification assets:
 
 Behavior regression/characterization tests for:
 
-- fee rate resolution
+- fee rate resolution, including no-match and ambiguous-match failures
 - payer create/update rules
 - payment approve/reject flow
 - duplicate payment prevention
@@ -412,6 +508,7 @@ Behavior regression/characterization tests for:
 - refund approve/reject flow
 - duplicate refund prevention
 - refund confirmation
+- UUID generation for created records
 - audit attribution from Auth context
 - masking behavior for sensitive list data
 - summary composition
@@ -426,12 +523,13 @@ Architecture checks for:
 - Query Services perform no writes
 - API files do not call Sheet primitives directly
 - no `Session.getActiveUser()` inside `080_student_fee`
+- no dependency on Event/Accounting/Settings internals
 - no `apiV1_*`, `SCHEMA`, `readAll_`, `insertRow_`, `updateRow_`, or source-feature generic DB layer is reintroduced
 - no Google Form or frontend implementation in this phase
 
 Update `scripts/verify-server-architecture.js` to require the new Student Fee public APIs while preserving all existing public contracts.
 
-## 17. Acceptance criteria
+## 19. Acceptance criteria
 
 This phase is complete when:
 
@@ -440,9 +538,10 @@ This phase is complete when:
 3. All Student Fee public APIs use current project naming and `apiHandler_`.
 4. All public APIs require login.
 5. Mutation actor identity comes from Auth context, never direct Session access.
-6. Fee charging uses active/effective `feeRates` with no hard-coded fallback.
-7. Payment approval creates one payment record and prevents duplicates.
-8. Refund approval enforces current-schema refundable balance and prevents duplicates.
-9. All mutations write existing business audit logs.
-10. No FormSync, frontend, export, archive, legacy API wrapper, or feature generic DB layer is introduced.
-11. Student Fee behavior tests and architecture verification pass alongside existing architecture checks.
+6. Fee charging uses exactly one active/effective `feeRates` row with no hard-coded fallback.
+7. Payment approval creates one payment record in `대기` and prevents duplicates.
+8. Refund approval enforces current-schema refundable balance, creates one refund record in `대기`, and prevents duplicates.
+9. Payment/refund confirmation follows the explicit status transition contract.
+10. All mutations write existing business audit logs with UUID IDs.
+11. No FormSync, frontend, export, archive, legacy API wrapper, or feature generic DB layer is introduced.
+12. Student Fee behavior tests and architecture verification pass alongside existing architecture checks.
