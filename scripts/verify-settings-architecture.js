@@ -5,6 +5,7 @@ var ROOT = path.resolve(__dirname, '..');
 var SERVER_ROOT = path.join(ROOT, 'src', '000_server');
 var SETTINGS_ROOT = path.join(SERVER_ROOT, '070_settings');
 var AUTH_ROOT = path.join(SERVER_ROOT, '030_auth');
+var LOGIN_ROOT = path.join(SERVER_ROOT, '040_login');
 var failures = [];
 
 function normalize_(value) {
@@ -86,13 +87,14 @@ var ownership = {
   loadSettingsRolesData: '070_settings/072_roles/settings_roles_api.gs',
   listRolesForSettings_: '070_settings/072_roles/settings_roles_query_service.gs',
   loadSettingsPermissionsData: '070_settings/073_permissions/settings_permissions_api.gs',
-  actionToPermissionKey_: '070_settings/073_permissions/settings_permissions_query_service.gs',
-  buildPermissionTreeFromDb_: '070_settings/073_permissions/settings_permissions_query_service.gs',
-  buildPermissionsByRoleFromDb_: '070_settings/073_permissions/settings_permissions_query_service.gs'
+  getSettingsPermissionsData_: '070_settings/073_permissions/settings_permissions_query_service.gs'
 };
 
 var authOwnership = {
+  actionToPermissionKey_: '030_auth/permissions.gs',
   permissionScreenId_: '030_auth/permissions.gs',
+  buildPermissionTreeFromDb_: '030_auth/permissions.gs',
+  buildPermissionsByRoleFromDb_: '030_auth/permissions.gs',
   requirePermission_: '030_auth/permissions.gs',
   resolveRequiredPermissionScreenId_: '030_auth/permissions.gs',
   throwPermissionError_: '030_auth/permissions.gs',
@@ -120,6 +122,14 @@ listGsFiles_(SETTINGS_ROOT).forEach(function (file) {
   }
   if (/readTableRows_|openUserSpreadsheet_|append[A-Za-z_$]*Row_|update[A-Za-z_$]*Row_/.test(source)) {
     failures.push('Settings must not access UserDB Sheet primitives directly: ' + relative);
+  }
+});
+
+listGsFiles_(AUTH_ROOT).concat(listGsFiles_(LOGIN_ROOT)).forEach(function (file) {
+  var source = fs.readFileSync(file, 'utf8');
+  var relative = normalize_(path.relative(SERVER_ROOT, file));
+  if (/\bgetSettingsPermissionsData_\b|\blistUsersForSettings_\b|\blistRolesForSettings_\b/.test(source)) {
+    failures.push('Auth/Login must not depend on Settings application functions: ' + relative);
   }
 });
 
