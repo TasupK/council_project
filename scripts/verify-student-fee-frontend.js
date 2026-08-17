@@ -74,12 +74,12 @@ if (!/page\.indexOf\(['\"]student_fee['\"]\)\s*===\s*0/.test(code)) {
 }
 
 var sidebar = readRoot_('src/100_common/App_Sidebar.html');
-['appNavStudentFee', 'appNavStudentFeeHome', 'appNavStudentFeePayers', 'appNavStudentFeePayments', 'appNavStudentFeeRefunds'].forEach(function (id) {
+['appNavStudentFee', 'appStudentFeeSubmenu', 'appNavStudentFeeHome', 'appNavStudentFeePayers', 'appNavStudentFeePayments', 'appNavStudentFeeRefunds'].forEach(function (id) {
   if (sidebar.indexOf('id="' + id + '"') < 0) failures.push('Missing sidebar navigation element: ' + id);
 });
 
 var shellJs = readRoot_('src/100_common/app_shell_js.html');
-if (shellJs.indexOf('student_fee') < 0 || shellJs.indexOf('appNavStudentFee') < 0) {
+if (shellJs.indexOf('student_fee') < 0 || shellJs.indexOf('appNavStudentFee') < 0 || shellJs.indexOf('setStudentFeeSubmenuExpanded_') < 0) {
   failures.push('Student Fee navigation active/expand logic missing from shell JS.');
 }
 
@@ -113,6 +113,9 @@ if (existsFrontend_('common/student_fee_common_js.html')) {
   if (/api_get|api_create|api_update|api_process|api_calculate|api_confirm/.test(commonJs)) {
     failures.push('Student Fee common JS must remain generic and not hard-code domain API names.');
   }
+  if (commonJs.indexOf('studentFeeRunBusy') < 0 || commonJs.indexOf('studentFeeSetBusy') < 0) {
+    failures.push('Student Fee common JS must provide busy helpers.');
+  }
 }
 
 if (fs.existsSync(FRONTEND_ROOT)) {
@@ -144,7 +147,7 @@ if (fs.existsSync(FRONTEND_ROOT)) {
 ['510_payers/student_fee_payers_js.html', '520_payments/student_fee_payments_js.html', '530_refunds/student_fee_refunds_js.html'].forEach(function (file) {
   if (!existsFrontend_(file)) return;
   var source = readFrontend_(file);
-  if (!/studentFeeSetBusy|studentFeeWithBusy/.test(source)) failures.push(file + ' missing busy/double-submit protection');
+  if (!/studentFeeRunBusy\s*\(/.test(source)) failures.push(file + ' missing busy/double-submit protection');
 });
 
 if (failures.length) {
