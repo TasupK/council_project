@@ -12,3 +12,14 @@ function getCurrentUserName_() {
     return '운영자';
   }
 }
+
+function getAccountingActorEmail_(context) {
+  return context && context.user && context.user.email ? context.user.email : getCurrentUserName_();
+}
+
+function inAccountingDateRange_(value, startDate, endDate) {
+  var date = String(formatDateTimeValue_(value) || '').slice(0, 10);
+  if (startDate && date < String(startDate)) return false;
+  if (endDate && date > String(endDate)) return false;
+  return true;
+}

@@ -1,13 +1,17 @@
-/** 수입지출원장 persistence */
+/** 수입지출원장 Sheet DAO */
 
 function findAllLedgerRows_() {
   return readOperationTableRows_('ledger');
 }
 
-function insertLedgerRow_(ledger) {
-  return appendOperationTableRow_('ledger', ledger);
+function findLedgerRowById_(id) {
+  return findOperationTableRowById_('ledger', id);
 }
 
-function updateLedgerRowById_(transactionId, changes) {
-  return updateOperationTableRow_('ledger', transactionId, changes);
+function insertLedgerRow_(row) {
+  return appendOperationTableRow_('ledger', row);
+}
+
+function updateLedgerRowById_(id, changes) {
+  return updateOperationTableRow_('ledger', id, changes);
 }

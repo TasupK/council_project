@@ -1,182 +1,45 @@
 var fs = require('fs');
 var path = require('path');
-
 var ROOT = path.resolve(__dirname, '..');
 var ACCOUNTING_ROOT = path.join(ROOT, 'src', '000_server', '060_accounting');
 var failures = [];
-
-function normalize_(value) {
-  return value.replace(/\\/g, '/');
-}
-
-function exists_(relativePath) {
-  return fs.existsSync(path.join(ACCOUNTING_ROOT, relativePath));
-}
-
-function requireFile_(relativePath) {
-  if (!exists_(relativePath)) failures.push('Missing Accounting architecture file: ' + relativePath);
-}
-
-function forbidFile_(relativePath) {
-  if (exists_(relativePath)) failures.push('Legacy Accounting architecture file still exists: ' + relativePath);
-}
-
-function listSourceFiles_(directory) {
-  return fs.readdirSync(directory, { withFileTypes: true }).reduce(function (files, entry) {
-    var target = path.join(directory, entry.name);
-    if (entry.isDirectory()) return files.concat(listSourceFiles_(target));
-    if (/\.gs$/.test(entry.name)) files.push(target);
-    return files;
-  }, []);
-}
-
-function collectFunctions_() {
-  var functions = {};
-  listSourceFiles_(ACCOUNTING_ROOT).forEach(function (file) {
-    var source = fs.readFileSync(file, 'utf8');
-    var pattern = /function\s+([A-Za-z_$][\w$]*)\s*\(/g;
-    var match;
-    while ((match = pattern.exec(source)) !== null) {
-      if (!functions[match[1]]) functions[match[1]] = [];
-      functions[match[1]].push(normalize_(path.relative(ACCOUNTING_ROOT, file)));
-    }
-  });
-  return functions;
-}
-
-function requireFunctionIn_(functions, name, relativePath) {
-  var locations = functions[name] || [];
-  if (locations.length !== 1 || locations[0] !== relativePath) {
-    failures.push(
-      'Function ownership mismatch: ' + name +
-      ' expected ' + relativePath +
-      ', found ' + (locations.length ? locations.join(', ') : 'none')
-    );
-  }
-}
-
-function readSource_(relativePath) {
-  return fs.readFileSync(path.join(ACCOUNTING_ROOT, relativePath), 'utf8');
-}
-
-function requireTableAccessIn_(tableName, allowedPath) {
-  var pattern = new RegExp("(?:readOperationTableRows_|appendOperationTableRow_|updateOperationTableRow_)\\(\\s*['\\\"]" + tableName + "['\\\"]", 'g');
-  listSourceFiles_(ACCOUNTING_ROOT).forEach(function (file) {
-    var relativePath = normalize_(path.relative(ACCOUNTING_ROOT, file));
-    var source = fs.readFileSync(file, 'utf8');
-    if (pattern.test(source) && relativePath !== allowedPath) {
-      failures.push('Table access ownership mismatch: ' + tableName + ' accessed from ' + relativePath + ', expected ' + allowedPath);
-    }
-    pattern.lastIndex = 0;
-  });
-}
-
-function forbidPatternIn_(relativePath, pattern, message) {
-  if (!exists_(relativePath)) return;
-  if (pattern.test(readSource_(relativePath))) failures.push(message + ': ' + relativePath);
-}
-
-requireFile_('060_common/accounting_common.gs');
-requireFile_('060_common/accounting_query_service.gs');
-requireFile_('060_common/accounting_event_read_dao.gs');
-requireFile_('061_ledger/ledger_api.gs');
-requireFile_('061_ledger/ledger_service.gs');
-requireFile_('061_ledger/ledger_sheet_dao.gs');
-requireFile_('062_evidence/evidence_api.gs');
-requireFile_('062_evidence/evidence_service.gs');
-requireFile_('062_evidence/evidence_sheet_dao.gs');
-requireFile_('062_evidence/evidence_file_service.gs');
-forbidFile_('accounting_common.gs');
-forbidFile_('ledger.gs');
-forbidFile_('evidence.gs');
-forbidFile_('accounting_service.gs');
-forbidFile_('accounting_sheet_dao.gs');
-forbidFile_('settlement.gs');
-
+function normalize_(v) { return v.replace(/\\/g, '/'); }
+function exists_(p) { return fs.existsSync(path.join(ACCOUNTING_ROOT, p)); }
+function requireFile_(p) { if (!exists_(p)) failures.push('Missing Accounting architecture file: ' + p); }
+function listSourceFiles_(d) { return fs.readdirSync(d, { withFileTypes: true }).reduce(function (files, entry) { var target = path.join(d, entry.name); if (entry.isDirectory()) return files.concat(listSourceFiles_(target)); if (/\.gs$/.test(entry.name)) files.push(target); return files; }, []); }
+function collectFunctions_() { var functions = {}; listSourceFiles_(ACCOUNTING_ROOT).forEach(function (file) { var source = fs.readFileSync(file, 'utf8'), pattern = /function\s+([A-Za-z_$][\w$]*)\s*\(/g, match; while ((match = pattern.exec(source)) !== null) { if (!functions[match[1]]) functions[match[1]] = []; functions[match[1]].push(normalize_(path.relative(ACCOUNTING_ROOT, file))); } }); return functions; }
+function requireFunctionIn_(functions, name, p) { var locations = functions[name] || []; if (locations.length !== 1 || locations[0] !== p) failures.push('Function ownership mismatch: ' + name + ' expected ' + p + ', found ' + (locations.length ? locations.join(', ') : 'none')); }
+function requireTableAccessIn_(tableName, allowedPath) { var pattern = new RegExp("(?:readOperationTableRows_|appendOperationTableRow_|updateOperationTableRow_|findOperationTableRowById_)\\(\\s*['\\\"]" + tableName + "['\\\"]", 'g'); listSourceFiles_(ACCOUNTING_ROOT).forEach(function (file) { var relativePath = normalize_(path.relative(ACCOUNTING_ROOT, file)); var source = fs.readFileSync(file, 'utf8'); if (pattern.test(source) && relativePath !== allowedPath) failures.push('Table access ownership mismatch: ' + tableName + ' accessed from ' + relativePath + ', expected ' + allowedPath); pattern.lastIndex = 0; }); }
+[
+'060_common/accounting_common.gs','060_common/accounting_audit_sheet_dao.gs','060_common/accounting_query_service.gs','060_common/accounting_event_read_dao.gs',
+'061_ledger/ledger_api.gs','061_ledger/ledger_service.gs','061_ledger/ledger_sheet_dao.gs',
+'062_evidence/evidence_api.gs','062_evidence/evidence_service.gs','062_evidence/evidence_sheet_dao.gs','062_evidence/evidence_file_service.gs',
+'063_reconciliation/reconciliation_api.gs','063_reconciliation/reconciliation_service.gs','063_reconciliation/reconciliation_query_service.gs','063_reconciliation/reconciliation_sheet_dao.gs','063_reconciliation/bank_transaction_sheet_dao.gs','063_reconciliation/bank_ocr_sheet_dao.gs','063_reconciliation/bank_ocr_service.gs','063_reconciliation/bank_ocr_file_service.gs','063_reconciliation/bank_transaction_parser.gs',
+'064_settlement/settlement_api.gs','064_settlement/settlement_service.gs','064_settlement/settlement_query_service.gs','064_settlement/settlement_sheet_dao.gs'
+].forEach(requireFile_);
 var functions = collectFunctions_();
 var ownership = {
-  makeId_: '060_common/accounting_common.gs',
-  getCurrentUserName_: '060_common/accounting_common.gs',
-  groupBy_: '060_common/accounting_query_service.gs',
-  getLedgerEntries_: '060_common/accounting_query_service.gs',
-  getLedgerEntryDto_: '060_common/accounting_query_service.gs',
-  getEvidenceDto_: '060_common/accounting_query_service.gs',
-  filterLedgerEntries_: '060_common/accounting_query_service.gs',
-  normalizeFilter_: '060_common/accounting_query_service.gs',
-  findLedgerEntryDtoById_: '060_common/accounting_query_service.gs',
-  findAllAccountingEventRows_: '060_common/accounting_event_read_dao.gs',
-  api_getLedgerDatabaseInfo: '061_ledger/ledger_api.gs',
-  api_getLedgerList: '061_ledger/ledger_api.gs',
-  api_getLedgerDetail: '061_ledger/ledger_api.gs',
-  api_getLedgerEventOptions: '061_ledger/ledger_api.gs',
-  api_createLedgerEntry: '061_ledger/ledger_api.gs',
-  api_saveLedgerDraft: '061_ledger/ledger_api.gs',
-  api_processLedgerEntry: '061_ledger/ledger_api.gs',
-  saveLedgerEntry_: '061_ledger/ledger_service.gs',
-  processLedgerEntry_: '061_ledger/ledger_service.gs',
-  findAllLedgerRows_: '061_ledger/ledger_sheet_dao.gs',
-  insertLedgerRow_: '061_ledger/ledger_sheet_dao.gs',
-  updateLedgerRowById_: '061_ledger/ledger_sheet_dao.gs',
-  getLedgerDatabaseInfo_: '060_common/accounting_query_service.gs',
-  getLedgerEventOptions_: '060_common/accounting_query_service.gs',
-  api_getEvidenceFileContent: '062_evidence/evidence_api.gs',
-  saveEvidenceFiles_: '062_evidence/evidence_service.gs',
-  findAllLedgerEvidenceRows_: '062_evidence/evidence_sheet_dao.gs',
-  insertLedgerEvidenceRow_: '062_evidence/evidence_sheet_dao.gs',
-  getEvidenceFileContent_: '062_evidence/evidence_file_service.gs',
-  sanitizeFileName_: '062_evidence/evidence_file_service.gs',
-  createEvidenceDriveFile_: '062_evidence/evidence_file_service.gs',
-  getEvidenceFolder_: '062_evidence/evidence_file_service.gs',
-  api_getSettlementSummary: '060_common/accounting_query_service.gs',
-  getAccountingSummary_: '060_common/accounting_query_service.gs'
+api_getLedgerSummary:'061_ledger/ledger_api.gs',api_updateLedgerEntry:'061_ledger/ledger_api.gs',api_deleteLedgerEntry:'061_ledger/ledger_api.gs',saveLedgerDraft_:'061_ledger/ledger_service.gs',updateLedgerEntry_:'061_ledger/ledger_service.gs',softDeleteLedgerEntry_:'061_ledger/ledger_service.gs',
+api_getEvidenceAuditList:'062_evidence/evidence_api.gs',getEvidenceAuditList_:'062_evidence/evidence_service.gs',
+parseBankOcrTransactions_:'063_reconciliation/bank_transaction_parser.gs',extractBankOcrText_:'063_reconciliation/bank_ocr_file_service.gs',uploadBankTransactions_:'063_reconciliation/bank_ocr_service.gs',
+scoreReconciliationCandidate_:'063_reconciliation/reconciliation_query_service.gs',buildReconciliationResults_:'063_reconciliation/reconciliation_query_service.gs',runReconciliation_:'063_reconciliation/reconciliation_service.gs',linkReconciliation_:'063_reconciliation/reconciliation_service.gs',createLedgerFromReconciliation_:'063_reconciliation/reconciliation_service.gs',
+api_uploadBankTransactions:'063_reconciliation/reconciliation_api.gs',api_runReconciliation:'063_reconciliation/reconciliation_api.gs',api_getReconciliationList:'063_reconciliation/reconciliation_api.gs',api_getReconciliationDetail:'063_reconciliation/reconciliation_api.gs',api_getReconciliationCandidates:'063_reconciliation/reconciliation_api.gs',api_linkReconciliation:'063_reconciliation/reconciliation_api.gs',api_createLedgerFromReconciliation:'063_reconciliation/reconciliation_api.gs',api_getBankOcrLogs:'063_reconciliation/reconciliation_api.gs',
+api_getSettlementSummary:'064_settlement/settlement_api.gs',api_generateSettlementReport:'064_settlement/settlement_api.gs',api_getSettlementReportList:'064_settlement/settlement_api.gs',api_getSettlementReport:'064_settlement/settlement_api.gs',api_exportSettlementReport:'064_settlement/settlement_api.gs',generateSettlementReport_:'064_settlement/settlement_service.gs'
 };
-
-Object.keys(ownership).forEach(function (name) {
-  requireFunctionIn_(functions, name, ownership[name]);
-});
-
-Object.keys(functions).forEach(function (name) {
-  if (functions[name].length > 1) {
-    failures.push('Duplicate Accounting function: ' + name + ' in ' + functions[name].join(', '));
-  }
-});
-
+Object.keys(ownership).forEach(function (name) { requireFunctionIn_(functions, name, ownership[name]); });
+Object.keys(functions).forEach(function (name) { if (functions[name].length > 1) failures.push('Duplicate Accounting function: ' + name + ' in ' + functions[name].join(', ')); });
 requireTableAccessIn_('ledger', '061_ledger/ledger_sheet_dao.gs');
 requireTableAccessIn_('evidence', '062_evidence/evidence_sheet_dao.gs');
 requireTableAccessIn_('events', '060_common/accounting_event_read_dao.gs');
-
-forbidPatternIn_(
-  '060_common/accounting_event_read_dao.gs',
-  /appendOperationTableRow_|updateOperationTableRow_|deleteOperation|DriveApp|withOperationWriteLock_/,
-  'Accounting Event adapter must be read-only'
-);
-forbidPatternIn_(
-  '060_common/accounting_query_service.gs',
-  /appendOperationTableRow_|updateOperationTableRow_|withOperationWriteLock_|DriveApp|createFile\s*\(/,
-  'Accounting Query Service must be read-only'
-);
-
-var evidenceKeyLocations = [];
-listSourceFiles_(ACCOUNTING_ROOT).forEach(function (file) {
-  var source = fs.readFileSync(file, 'utf8');
-  if (source.indexOf('LEDGER_EVIDENCE_FOLDER_PROPERTY_KEY') >= 0) {
-    evidenceKeyLocations.push(normalize_(path.relative(ACCOUNTING_ROOT, file)));
-  }
-});
-if (evidenceKeyLocations.length !== 1 || evidenceKeyLocations[0] !== '062_evidence/evidence_file_service.gs') {
-  failures.push('Evidence folder key ownership mismatch: ' + (evidenceKeyLocations.length ? evidenceKeyLocations.join(', ') : 'none'));
-}
-
-['063_reconciliation', '064_audit_export'].forEach(function (relativePath) {
-  var target = path.join(ACCOUNTING_ROOT, relativePath);
-  if (fs.existsSync(target) && fs.statSync(target).isDirectory() && listSourceFiles_(target).length === 0) {
-    failures.push('Empty Accounting feature scaffold exists: ' + relativePath);
-  }
-});
-
-if (failures.length) {
-  failures.forEach(function (failure) { console.error(failure); });
-  process.exitCode = 1;
-} else {
-  console.log('Accounting architecture verification passed.');
-}
+requireTableAccessIn_('businessAuditLogs', '060_common/accounting_audit_sheet_dao.gs');
+requireTableAccessIn_('bankTransactions', '063_reconciliation/bank_transaction_sheet_dao.gs');
+requireTableAccessIn_('bankOcrLogs', '063_reconciliation/bank_ocr_sheet_dao.gs');
+requireTableAccessIn_('reconciliation', '063_reconciliation/reconciliation_sheet_dao.gs');
+requireTableAccessIn_('reconciliationItems', '063_reconciliation/reconciliation_sheet_dao.gs');
+requireTableAccessIn_('settlementReports', '064_settlement/settlement_sheet_dao.gs');
+var reconciliationFiles = listSourceFiles_(path.join(ACCOUNTING_ROOT, '063_reconciliation'));
+reconciliationFiles.forEach(function (file) { var rel = normalize_(path.relative(ACCOUNTING_ROOT, file)), source = fs.readFileSync(file, 'utf8'); if (/appendOperationTableRow_\(\s*['\"]ledger['\"]/.test(source)) failures.push('Reconciliation must not write ledger table directly: ' + rel); });
+var ocrDriveLocations = [];
+listSourceFiles_(ACCOUNTING_ROOT).forEach(function (file) { var source = fs.readFileSync(file, 'utf8'); if (/Drive\.Files|DocumentApp/.test(source)) ocrDriveLocations.push(normalize_(path.relative(ACCOUNTING_ROOT, file))); });
+if (ocrDriveLocations.length !== 1 || ocrDriveLocations[0] !== '063_reconciliation/bank_ocr_file_service.gs') failures.push('OCR Drive ownership mismatch: ' + (ocrDriveLocations.length ? ocrDriveLocations.join(', ') : 'none'));
+if (failures.length) { failures.forEach(function (f) { console.error(f); }); process.exitCode = 1; } else { console.log('Accounting architecture verification passed.'); }

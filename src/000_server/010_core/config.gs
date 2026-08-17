@@ -29,7 +29,11 @@ var OPERATION_TABLES = {
   eventRefunds: '행사환불',
   ledger: '수입지출원장',
   evidence: '거래증빙',
-  reconciliation: '감사대사'
+  reconciliation: '감사대사',
+  bankTransactions: '계좌거래',
+  bankOcrLogs: '계좌OCR로그',
+  reconciliationItems: '감사대사상세',
+  settlementReports: '결산보고서'
 };
 
 // 4. 설정 화면 권한 컬럼 정의

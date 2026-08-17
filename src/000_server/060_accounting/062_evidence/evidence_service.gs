@@ -37,3 +37,35 @@ function saveEvidenceFiles_(transactionId, files, timestamp) {
   });
   return result;
 }
+
+function getEvidenceAuditList_(filter) {
+  filter = filter || {};
+  var ledgerById = getLedgerEntries_().reduce(function (index, item) {
+    index[item.transaction_id] = item;
+    return index;
+  }, {});
+  var keyword = String(filter.keyword || '').trim().toLowerCase();
+  var items = findAllLedgerEvidenceRows_().map(function (evidence) {
+    var ledger = ledgerById[evidence.transactionId];
+    if (!ledger) return null;
+    return {
+      evidence_id: evidence.id,
+      transaction_id: evidence.transactionId,
+      transaction_date: String(ledger.transaction_date || '').slice(0, 10),
+      transaction_type: ledger.transaction_type,
+      amount: Number(ledger.amount || 0),
+      file_name: evidence.fileName || '',
+      file_id: evidence.driveFileId || '',
+      category: evidence.category || '',
+      type: evidence.type || '',
+      created_at: formatDateTimeValue_(evidence.createdAt)
+    };
+  }).filter(Boolean).filter(function (item) {
+    if (filter.startDate && item.transaction_date < filter.startDate) return false;
+    if (filter.endDate && item.transaction_date > filter.endDate) return false;
+    if (filter.transaction_type && filter.transaction_type !== '전체' && item.transaction_type !== filter.transaction_type) return false;
+    if (keyword && [item.file_name, item.transaction_id, item.category, item.type].join(' ').toLowerCase().indexOf(keyword) < 0) return false;
+    return true;
+  });
+  return { items: items, totalCount: items.length };
+}

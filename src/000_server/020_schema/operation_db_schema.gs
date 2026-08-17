@@ -355,6 +355,7 @@ function getOperationDbSchema_() {
         businessType: '업무구분',
         businessId: '업무ID',
         matchStatus: '일치상태',
+        recordStatus: '레코드상태',
         managerId: '담당자ID',
         createdAt: '등록일시',
         updatedAt: '수정일시'
@@ -384,6 +385,80 @@ function getOperationDbSchema_() {
       primaryKey: ['id'],
       foreignKeys: [
         { field: 'transactionId', refDatabase: 'operation', refTable: 'ledger', refField: 'id' },
+        { field: 'managerId', refDatabase: 'user', refTable: 'users', refField: 'email' }
+      ]
+    },
+    bankTransactions: {
+      name: '계좌거래',
+      sheetName: OPERATION_TABLES.bankTransactions,
+      fields: {
+        id: '계좌거래ID',
+        transactionAt: '거래일시',
+        expense: '거래구분',
+        counterparty: '거래상대명',
+        description: '거래내용',
+        amount: '거래금액',
+        sourceFileName: '원본파일명',
+        createdAt: '등록일시'
+      },
+      primaryKey: ['id'],
+      foreignKeys: []
+    },
+    bankOcrLogs: {
+      name: '계좌OCR로그',
+      sheetName: OPERATION_TABLES.bankOcrLogs,
+      fields: {
+        id: 'OCR로그ID',
+        fileName: '파일명',
+        status: '처리상태',
+        extractedCount: '추출거래건수',
+        errorMessage: '오류메시지',
+        createdAt: '처리일시'
+      },
+      primaryKey: ['id'],
+      foreignKeys: []
+    },
+    reconciliationItems: {
+      name: '감사대사상세',
+      sheetName: OPERATION_TABLES.reconciliationItems,
+      fields: {
+        id: '대사상세ID',
+        reconciliationId: '대사ID',
+        bankTransactionId: '계좌거래ID',
+        ledgerId: '거래ID',
+        status: '대사상태',
+        differenceAmount: '차이금액',
+        matchMethod: '연결방식',
+        note: '비고',
+        createdAt: '등록일시',
+        updatedAt: '수정일시'
+      },
+      primaryKey: ['id'],
+      foreignKeys: [
+        { field: 'reconciliationId', refDatabase: 'operation', refTable: 'reconciliation', refField: 'id' },
+        { field: 'bankTransactionId', refDatabase: 'operation', refTable: 'bankTransactions', refField: 'id' },
+        { field: 'ledgerId', refDatabase: 'operation', refTable: 'ledger', refField: 'id', optional: true }
+      ]
+    },
+    settlementReports: {
+      name: '결산보고서',
+      sheetName: OPERATION_TABLES.settlementReports,
+      fields: {
+        id: '결산ID',
+        startDate: '결산시작일',
+        endDate: '결산종료일',
+        totalIncome: '총수입',
+        totalExpense: '총지출',
+        balance: '잔액',
+        incomeCount: '수입건수',
+        expenseCount: '지출건수',
+        evidenceCount: '증빙건수',
+        status: '결산상태',
+        managerId: '담당자ID',
+        createdAt: '등록일시'
+      },
+      primaryKey: ['id'],
+      foreignKeys: [
         { field: 'managerId', refDatabase: 'user', refTable: 'users', refField: 'email' }
       ]
     },
