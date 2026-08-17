@@ -224,9 +224,23 @@ OCR 업로드와 공식 감사대사 실행은 분리한다. OCR 업로드만으
   -> businessAuditLogs 기록
 ```
 
-기존 `reconciliation`은 감사기간, 기초/기말잔액, 계좌/원장 거래건수, 누락/초과/불일치/증빙미비 건수, 대사상태, 담당자/확인정보를 저장하는 실행 헤더로 유지한다.
+기존 `reconciliation`은 실행 헤더로 유지한다. 건별 결과는 `reconciliationItems`에서만 관리한다.
 
-건별 결과는 `reconciliationItems`에서만 관리한다.
+### 헤더 집계 규칙
+
+- `accountTransactionCount`: 기간 내 계좌거래 수
+- `ledgerTransactionCount`: 기간 내 ACTIVE 원장 수
+- `missingCount`: `원장누락의심` 상세 수
+- `mismatchCount`: `확인필요` 상세 수
+- `excessCount`: 해당 대사에서 어떤 계좌거래에도 확정 연결되지 않은 ACTIVE 원장 수
+- `missingEvidenceCount`: 확정 연결된 원장 중 증빙이 없는 원장 수
+- `status`: 모든 상세가 정상이고 초과/증빙미비가 없으면 완료 상태, 그렇지 않으면 확인이 필요한 상태
+
+현재 OCR 계좌거래에는 계좌 잔액 원천값이 없으므로 `accountOpeningBalance`와 `accountClosingBalance`는 추측하지 않는다. 원천 데이터가 제공되지 않는 한 빈 값으로 저장한다.
+
+`ledgerOpeningBalance`와 `ledgerClosingBalance`는 현재 원장에 신뢰 가능한 `balanceAfter`가 있는 경우에만 계산한다. 해당 기간의 경계 잔액을 확정할 수 없으면 빈 값으로 둔다. 잔액 미확정 자체를 가짜 0원으로 기록하지 않는다.
+
+수동 연결 또는 원장 생성 후 연결로 상세 상태가 바뀌면 해당 `reconciliation` 헤더의 집계 건수와 상태를 다시 계산해 갱신한다.
 
 ## 8. 수동 대조
 
@@ -244,6 +258,7 @@ OCR 업로드와 공식 감사대사 실행은 분리한다. OCR 업로드만으
 - `matchMethod = manual`
 - `updatedAt` 갱신
 - 감사로그 기록
+- 감사대사 헤더 요약 재계산
 
 ### 원장누락에서 신규 원장 생성
 
@@ -254,6 +269,7 @@ OCR 업로드와 공식 감사대사 실행은 분리한다. OCR 업로드만으
 - `status = 정상`
 - `matchMethod = created`
 - 감사로그 기록
+- 감사대사 헤더 요약 재계산
 
 ## 9. 원장 기능 보완
 
@@ -411,6 +427,8 @@ standalone의 UI를 가져오지 않는다. 현재 `src/400_accounting` 및 공�
 - 원장 중복 점유 방지
 - 원장누락의심
 - 공식 대사 헤더/상세 저장
+- 대사 헤더 집계/재계산
+- 잔액 원천값 부재 시 빈 값 유지
 - 수동 연결 성공/충돌
 - 원장 생성 후 연결
 - OCR 원문 미저장
@@ -451,7 +469,8 @@ Accounting 테스트 후 repository-wide regression suite를 다시 실행한다
 7. 원장누락의심 건은 신규 원장 생성 후 연결할 수 있다.
 8. OCR 원문은 저장되지 않는다.
 9. 원장은 `recordStatus`로 ACTIVE/DRAFT/DELETED를 구분하며 물리 삭제하지 않는다.
-10. 전체 결산은 ACTIVE + `matchStatus=정상` 원장만 포함하고 불변 스냅샷을 남긴다.
-11. 부서별/행사별 결산, CSV/Excel 파싱, 실제 XLSX/PDF 생성은 구현하지 않는다.
-12. 기존 Accounting UI와 공통 UI 시스템을 유지한다.
-13. Accounting 테스트 및 전체 회귀검증이 통과한다.
+10. 계좌 잔액 원천값이 없을 때 감사대사 잔액을 임의의 0으로 만들지 않는다.
+11. 전체 결산은 ACTIVE + `matchStatus=정상` 원장만 포함하고 불변 스냅샷을 남긴다.
+12. 부서별/행사별 결산, CSV/Excel 파싱, 실제 XLSX/PDF 생성은 구현하지 않는다.
+13. 기존 Accounting UI와 공통 UI 시스템을 유지한다.
+14. Accounting 테스트 및 전체 회귀검증이 통과한다.
