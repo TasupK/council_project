@@ -1,0 +1,75 @@
+<style>
+  .settings-list {
+    overflow: hidden;
+    padding: 0;
+  }
+  .settings-row {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--ui-space-3);
+    min-height: 52px;
+    padding: 0 var(--ui-space-5);
+    border: 0;
+    border-bottom: 1px solid var(--ui-border);
+    background: transparent;
+    text-align: left;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ui-text);
+  }
+  .settings-row:last-child { border-bottom: 0; }
+  .settings-row:hover { background: #fafbfc; }
+  .settings-row .chevron { color: var(--ui-muted); }
+
+  .role-panel {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr 1fr 1fr 1.2fr auto;
+    gap: var(--ui-space-3);
+    align-items: end;
+    margin-bottom: var(--ui-space-3);
+  }
+  .role-panel label {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--ui-muted);
+    font-size: 12px;
+  }
+  .role-panel .value {
+    color: var(--ui-text);
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .role-panel a.link { color: var(--ui-info-fg); font-weight: 600; }
+
+  .perm-table th,
+  .perm-table td { text-align: center; }
+  .perm-table th:first-child,
+  .perm-table td:first-child { text-align: left; }
+  .perm-group {
+    font-weight: 700;
+    background: #fafbfc;
+    cursor: pointer;
+    user-select: none;
+  }
+  .perm-child td:first-child { padding-left: 36px; color: var(--ui-text); }
+  .meta-sub { display: block; margin-top: 2px; color: var(--ui-muted); font-size: 11px; }
+  .na { color: var(--ui-muted); font-size: 11px; }
+  .check {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--ui-primary);
+  }
+  .check:disabled { opacity: .55; }
+  .th-hint {
+    display: block;
+    color: var(--ui-muted);
+    font-size: 10.5px;
+    font-weight: 400;
+  }
+
+  @media (max-width: 1100px) {
+    .role-panel { grid-template-columns: 1fr 1fr; }
+  }
+</style>
