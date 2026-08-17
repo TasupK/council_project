@@ -103,10 +103,3 @@ function api_processLedgerEntry(request) {
     }
   });
 }
-
-// 3. 장부 DTO 단일 조회
-function findLedgerEntryDtoById_(transactionId) {
-  return getLedgerEntries_().filter(function (item) {
-    return String(item.transaction_id) === String(transactionId);
-  })[0] || null;
-}
