@@ -31,6 +31,7 @@ function getFeePayerListData_(request) {
   var items = rows.slice(start, start + pageSize).map(function (row) {
     return {
       studentId: maskStudentFeeStudentId_(row.studentId),
+      studentIdKey: String(row.studentId || ''),
       name: row.name,
       affiliation: row.affiliation,
       startSemesterId: row.startSemesterId,
