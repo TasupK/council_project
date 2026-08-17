@@ -1,3 +1,5 @@
+var LEDGER_EVIDENCE_FOLDER_PROPERTY_KEY = 'COUNCIL_LEDGER_EVIDENCE_FOLDER_ID';
+
 /** 장부 증빙자료 Google Drive 처리 */
 
 // 1. 증빙 파일 조회
