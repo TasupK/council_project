@@ -1,0 +1,96 @@
+name: Full Regression Verification
+
+on:
+  push:
+    branches:
+      - verify/full-regression-20260817
+
+permissions:
+  contents: read
+
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Runtime
+        run: node --version
+
+      - name: Static syntax checks
+        id: syntax
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in scripts/*.js; do
+            node --check "$file"
+          done
+          while IFS= read -r -d '' file; do
+            node --check "$file"
+          done < <(find src -type f -name '*.js' -print0)
+          while IFS= read -r -d '' file; do
+            cp "$file" /tmp/__gas_check.js
+            node --check /tmp/__gas_check.js
+          done < <(find src/000_server -type f -name '*.gs' -print0)
+
+      - name: Core Auth IAM Settings tests
+        id: base_tests
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/test-core.js
+          node scripts/test-auth-iam.js
+          node scripts/test-settings.js
+
+      - name: Accounting Event tests
+        id: domain_tests
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/test-accounting.js
+          node scripts/test-event.js
+
+      - name: Student Fee tests
+        id: fee_tests
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/test-student-fee.js
+          node scripts/test-student-fee-frontend.js
+
+      - name: Architecture verifiers
+        id: architecture
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/verify-server-architecture.js
+          node scripts/verify-auth-iam-architecture.js
+          node scripts/verify-settings-architecture.js
+          node scripts/verify-accounting-architecture.js
+          node scripts/verify-event-architecture.js
+          node scripts/verify-student-fee-architecture.js
+          node scripts/verify-student-fee-frontend.js
+          node scripts/verify-ui-system-migration.js
+
+      - name: Regression result
+        if: always()
+        shell: bash
+        run: |
+          echo "syntax=${{ steps.syntax.outcome }}"
+          echo "base_tests=${{ steps.base_tests.outcome }}"
+          echo "domain_tests=${{ steps.domain_tests.outcome }}"
+          echo "fee_tests=${{ steps.fee_tests.outcome }}"
+          echo "architecture=${{ steps.architecture.outcome }}"
+          if [[ "${{ steps.syntax.outcome }}" != "success" || \
+                "${{ steps.base_tests.outcome }}" != "success" || \
+                "${{ steps.domain_tests.outcome }}" != "success" || \
+                "${{ steps.fee_tests.outcome }}" != "success" || \
+                "${{ steps.architecture.outcome }}" != "success" ]]; then
+            exit 1
+          fi
