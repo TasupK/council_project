@@ -67,11 +67,11 @@ function renderEventTable(data) {
       return '<tr><td><strong>' + escapeHtml(event.name) + '</strong><small>' + escapeHtml(event.id) + '</small></td>' +
         '<td>' + escapeHtml(event.managerId) + '</td><td>' + displayDate(event.eventStartAt) + '</td>' +
         '<td>' + escapeHtml(event.category) + '</td>' +
-        '<td><select data-role="event-status" data-id="' + escapeHtml(event.id) + '">' + statusOptions + '</select></td>' +
-        '<td><div class="ew-row-actions"><button type="button" class="ew-btn ew-btn-outline ew-btn-small" data-action="go-detail" data-id="' + escapeHtml(event.id) + '">상세</button>' +
-        '<button type="button" class="ew-btn ew-btn-small" data-action="close-event" data-id="' + escapeHtml(event.id) + '" ' + (event.status === '종료' ? 'disabled' : '') + '>종료</button></div></td></tr>';
-    }).join('') : '<tr><td colspan="6" class="ew-table-empty">조건에 맞는 행사가 없습니다.</td></tr>';
-    target.innerHTML = '<table class="ew-table"><thead><tr><th>행사명</th><th>담당자</th><th>진행 일자 ↓</th><th>유형</th><th>행사 상태</th><th>관리</th></tr></thead><tbody>' +
+        '<td><select class="ui-control" data-role="event-status" data-id="' + escapeHtml(event.id) + '">' + statusOptions + '</select></td>' +
+        '<td><div class="ew-row-actions"><button type="button" class="ew-btn ew-btn-outline ew-btn-small ui-btn outline small" data-action="go-detail" data-id="' + escapeHtml(event.id) + '">상세</button>' +
+        '<button type="button" class="ew-btn ew-btn-small ui-btn outline small" data-action="close-event" data-id="' + escapeHtml(event.id) + '" ' + (event.status === '종료' ? 'disabled' : '') + '>종료</button></div></td></tr>';
+    }).join('') : '<tr><td colspan="6" class="ew-table-empty ui-empty">조건에 맞는 행사가 없습니다.</td></tr>';
+    target.innerHTML = '<table class="ew-table ui-table"><thead><tr><th>행사명</th><th>담당자</th><th>진행 일자 ↓</th><th>유형</th><th>행사 상태</th><th>관리</th></tr></thead><tbody>' +
       body + '</tbody></table>' + paginationHtml(data, 'event-page');
   }
 
