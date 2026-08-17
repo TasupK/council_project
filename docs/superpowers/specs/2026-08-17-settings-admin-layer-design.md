@@ -49,10 +49,13 @@ listPermissionRows_
 listRolePermissionRows_
 getPermissionsById_
 getPermissionIdsByRoleId_
+permissionScreenId_
 requirePermission_
 resolveRequiredPermissionScreenId_
 throwPermissionError_
 ```
+
+`permissionScreenId_`는 런타임 `resolveRequiredPermissionScreenId_()`가 직접 사용하므로 Auth/IAM이 계속 소유한다.
 
 DTO/primitive helper 중 로그인 컨텍스트나 Auth 내부에서도 실제로 사용하는 함수는 Auth/IAM에 유지한다.
 
@@ -285,9 +288,12 @@ loadSettingsPermissionsData
 현재 `030_auth/permissions.gs`의 관리자 화면 전용 조회 모델을 이동한다.
 
 ```text
+actionToPermissionKey_
 buildPermissionTreeFromDb_
 buildPermissionsByRoleFromDb_
 ```
+
+`actionToPermissionKey_`는 현재 관리자 화면의 트리/매트릭스 생성에서만 사용하므로 Settings Permissions Query Service가 소유한다.
 
 이 Query Service는 권한 정의와 역할-권한 관계를 읽어 화면용 트리 및 매트릭스를 만든다.
 
@@ -298,12 +304,13 @@ buildPermissionsByRoleFromDb_
 다음 함수들은 반드시 Auth에 남는다.
 
 ```text
+permissionScreenId_
 requirePermission_
 resolveRequiredPermissionScreenId_
 throwPermissionError_
 ```
 
-`actionToPermissionKey_`, `permissionScreenId_`처럼 Settings 화면 모델과 Auth 권한 컨텍스트 모두에 영향을 줄 수 있는 helper는 구현 계획 단계에서 실제 참조 위치를 확인한 뒤 단일 소유 위치를 결정한다. 동일 함수를 Settings와 Auth에 복제하지 않는다.
+Settings Permissions Query Service는 화면 node ID가 필요할 때 Auth/IAM의 `permissionScreenId_()`를 읽기 전용 helper로 사용한다. 동일 helper를 복제하지 않는다.
 
 ## 9. 의존 방향
 
@@ -367,12 +374,13 @@ src/000_server/030_auth/roles.gs
     -> 070_settings/072_roles/settings_roles_query_service.gs
 
 src/000_server/030_auth/permissions.gs
+  actionToPermissionKey_
   buildPermissionTreeFromDb_
   buildPermissionsByRoleFromDb_
     -> 070_settings/073_permissions/settings_permissions_query_service.gs
 ```
 
-나머지 Auth/IAM 원본 조회와 런타임 인증/인가 함수는 `030_auth`에 유지한다.
+나머지 Auth/IAM 원본 조회와 런타임 인증/인가 함수는 `030_auth`에 유지한다. 특히 `permissionScreenId_()`는 Auth 런타임 함수의 의존성이므로 이동하지 않는다.
 
 ## 11. 외부 동작 보존
 
