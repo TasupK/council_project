@@ -1,36 +1,45 @@
-<header class="page-header">
+<header class="page-header ui-page-head">
   <div>
     <p class="crumb">설정 / 사용자·권한 / 사용자 관리</p>
     <h1 class="page-title">사용자 관리</h1>
   </div>
-  <button class="btn btn-primary" type="button" disabled>
+  <button class="ui-btn primary" type="button" disabled>
     사용자 추가 준비 중
   </button>
 </header>
 <div class="workspace">
   <div class="page-panel active" id="panel-loading">
-    <div class="loading">사용자 불러오는 중…</div>
+    <div class="loading ui-loading">사용자 불러오는 중…</div>
   </div>
   <div class="page-panel" id="panel-content">
-    <div class="toolbar">
-      <input
-        class="search-field"
-        id="userQ"
-        type="search"
-        placeholder="이름 또는 이메일 검색"
-      /><select class="select" id="userRole">
-        <option value="">역할 전체</option></select
-      ><select class="select" id="userStatus">
-        <option value="">상태 전체</option>
-        <option value="active">활성</option>
-        <option value="inactive">비활성</option></select
-      ><button class="btn btn-secondary" type="button" id="userReset">
+    <div class="toolbar ui-toolbar">
+      <div class="ui-field grow">
+        <input
+          class="search-field ui-control"
+          id="userQ"
+          type="search"
+          placeholder="이름 또는 이메일 검색"
+        />
+      </div>
+      <div class="ui-field">
+        <select class="select ui-control" id="userRole">
+          <option value="">역할 전체</option>
+        </select>
+      </div>
+      <div class="ui-field">
+        <select class="select ui-control" id="userStatus">
+          <option value="">상태 전체</option>
+          <option value="active">활성</option>
+          <option value="inactive">비활성</option>
+        </select>
+      </div>
+      <button class="ui-btn outline" type="button" id="userReset">
         초기화
       </button>
-      <div class="count-label" id="userCountLabel">사용자 0명</div>
+      <div class="count-label ui-count" id="userCountLabel">사용자 0명</div>
     </div>
-    <div class="table-wrap">
-      <table class="data">
+    <div class="table-wrap ui-table-wrap">
+      <table class="data ui-table">
         <thead>
           <tr>
             <th>이름</th>
