@@ -1,4 +1,4 @@
-// 행사 생성, 수정, 상태 변경, 단일 조회
+// 행사 생성, 수정, 상태 변경
 function createEventData_(request) {
   var source = request.payload && typeof request.payload === 'object' ? request.payload : {};
   var payload = buildEventPayload_(source, true);
@@ -60,10 +60,4 @@ function closeEventData_(request) {
     updateEventRowById_(id, { status: '종료' });
     return withoutInternalRowNumber_(findEventRowById_(id));
   });
-}
-
-function getEventData_(request) {
-  var event = findEventRowById_(requireEventRequestId_(request));
-  if (!event) throwEventError_('NOT_FOUND', '행사를 찾을 수 없습니다.');
-  return withoutInternalRowNumber_(event);
 }
