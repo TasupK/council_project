@@ -5,9 +5,17 @@
   <a class="nav-item" id="appNavAccounting" target="_top">
     <span class="label">장부관리</span><span class="nav-chevron">›</span>
   </a>
-  <button class="nav-item" type="button">
-    <span class="label">학생회비관리</span><span class="nav-chevron">▼</span>
-  </button>
+  <div class="nav-group" id="appNavStudentFeeGroup">
+    <button class="nav-item nav-group-toggle" id="appNavStudentFee" type="button" aria-expanded="false" aria-controls="appStudentFeeSubmenu">
+      <span class="label">학생회비관리</span><span class="nav-chevron">▼</span>
+    </button>
+    <div class="nav-submenu" id="appStudentFeeSubmenu" hidden>
+      <a class="nav-subitem" id="appNavStudentFeeHome" target="_top">전체 현황</a>
+      <a class="nav-subitem" id="appNavStudentFeePayers" target="_top">가입자 조회</a>
+      <a class="nav-subitem" id="appNavStudentFeePayments" target="_top">납부 관리</a>
+      <a class="nav-subitem" id="appNavStudentFeeRefunds" target="_top">환불 관리</a>
+    </div>
+  </div>
   <a class="nav-item" id="appNavEvent" target="_top">
     <span class="label">행사복지관리</span><span class="nav-chevron">›</span>
   </a>
