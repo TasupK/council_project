@@ -110,12 +110,11 @@ function testRolesSettingsComposition_() {
   ]);
 }
 
-function testPermissionsSettingsComposition_() {
+function testPermissionsIamAndSettingsComposition_() {
   var context = createContext_();
   installValueStubs_(context);
   context.getUserDbFields_ = function () { return { id: '권한ID', area: '업무영역', action: '행위', name: '권한명', description: '권한설명', active: '활성여부' }; };
   load_(context, 'src/000_server/030_auth/permissions.gs');
-  load_(context, 'src/000_server/070_settings/073_permissions/settings_permissions_query_service.gs');
   var rows = [
     { '권한ID': 'EVENT_VIEW', '업무영역': '행사', '행위': '조회', '권한명': '행사 조회', '권한설명': '', '활성여부': true },
     { '권한ID': 'EVENT_EDIT', '업무영역': '행사', '행위': '수정', '권한명': '행사 수정', '권한설명': '', '활성여부': true },
@@ -124,6 +123,7 @@ function testPermissionsSettingsComposition_() {
   context.listPermissionRows_ = function () { return rows; };
   context.getPermissionsById_ = function () { return { EVENT_VIEW: context.toPermissionDto_(rows[0]), EVENT_EDIT: context.toPermissionDto_(rows[1]) }; };
   context.getPermissionIdsByRoleId_ = function () { return { ROLE_ADMIN: ['EVENT_VIEW', 'EVENT_EDIT', 'MISSING'] }; };
+
   var tree = context.buildPermissionTreeFromDb_();
   assert.strictEqual(tree.length, 1);
   assert.strictEqual(tree[0].id, 'area_행사');
@@ -131,6 +131,7 @@ function testPermissionsSettingsComposition_() {
   assert.strictEqual(tree[0].children[0].id, 'perm_EVENT_VIEW');
   assert.strictEqual(tree[0].children[0].applicable.view, true);
   assert.strictEqual(tree[0].children[1].applicable.edit, true);
+
   var matrix = context.buildPermissionsByRoleFromDb_();
   assert.strictEqual(matrix.ROLE_ADMIN.perm_EVENT_VIEW.view, true);
   assert.strictEqual(matrix.ROLE_ADMIN.perm_EVENT_EDIT.edit, true);
@@ -139,11 +140,31 @@ function testPermissionsSettingsComposition_() {
   assert.strictEqual(context.actionToPermissionKey_('승인'), 'approve');
   assert.strictEqual(context.actionToPermissionKey_('다운로드'), 'export');
   assert.strictEqual(context.actionToPermissionKey_('메뉴 접근'), 'menu');
+
+  context.okResponse_ = function (payload) { return Object.assign({ ok: true }, payload); };
+  context.buildSettingsBaseData_ = function (current) { return { currentUser: current.user, shell: true }; };
+  context.listRolesForSettings_ = function () { return [{ id: 'ROLE_ADMIN', name: '관리자' }]; };
+  load_(context, 'src/000_server/070_settings/073_permissions/settings_permissions_query_service.gs');
+
+  var settingsData = context.getSettingsPermissionsData_({ user: { email: 'admin@example.com' } });
+  assert.strictEqual(settingsData.ok, true);
+  assert.strictEqual(settingsData.shell, true);
+  assert.strictEqual(settingsData.roles[0].id, 'ROLE_ADMIN');
+  assert.strictEqual(settingsData.permissionTree[0].id, 'area_행사');
+  assert.strictEqual(settingsData.permissionsByRole.ROLE_ADMIN.perm_EVENT_VIEW.view, true);
+  assert.deepStrictEqual(plain_(settingsData.columns), plain_(context.SETTINGS_PERMISSION_COLUMNS));
+
+  context.getAdminSettingsCurrent_ = function () { return { ok: true, user: { email: 'admin@example.com' } }; };
+  load_(context, 'src/000_server/070_settings/073_permissions/settings_permissions_api.gs');
+  assert.strictEqual(context.loadSettingsPermissionsData().ok, true);
+
+  context.getAdminSettingsCurrent_ = function () { return { ok: false, code: 'FORBIDDEN' }; };
+  assert.deepStrictEqual(plain_(context.loadSettingsPermissionsData()), { ok: false, code: 'FORBIDDEN' });
 }
 
 testAdminSettingsAccess_();
 testSettingsHomeData_();
 testUsersSettingsComposition_();
 testRolesSettingsComposition_();
-testPermissionsSettingsComposition_();
+testPermissionsIamAndSettingsComposition_();
 console.log('Settings behavior regression tests passed.');
