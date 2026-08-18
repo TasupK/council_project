@@ -1,3 +1,3 @@
-verified_sha=6d56df50a74736d574546ba324f26e587af7e0df
+verified_sha=a6ac748371a4db1f2667137a19ca664fec4c5e87
 api_access=success
-domain_access=failure
+domain_access=success
