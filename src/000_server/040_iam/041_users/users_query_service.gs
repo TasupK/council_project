@@ -16,16 +16,16 @@ function findUserRowByEmail_(email) {
 // 2. 사용자 시트 행을 화면/API 응답용 객체로 변환
 function toUserDto_(row, roleIds, roles, departmentMap) {
   var fields = getUserDbFields_('users');
-  var departmentId = fields.departmentId ? normalizeTextValue_(row[fields.departmentId]) : '';
+  var hasDepartmentField = !!fields.departmentId;
+  var departmentId = hasDepartmentField ? normalizeTextValue_(row[fields.departmentId]) : '';
   var departments = departmentMap || (typeof getDepartmentsById_ === 'function' ? getDepartmentsById_() : {});
   var department = departmentId && departments[departmentId] ? departments[departmentId].name : '';
-  return {
+  var result = {
     id: normalizeEmail_(row[fields.email]),
     name: normalizeTextValue_(row[fields.name]) || normalizeEmail_(row[fields.email]),
     email: normalizeEmail_(row[fields.email]),
     studentId: normalizeTextValue_(row[fields.studentId]),
     phone: normalizeTextValue_(row[fields.phone]),
-    departmentId: departmentId,
     department: department,
     roleIds: roleIds || [],
     roles: roles || [],
@@ -33,4 +33,6 @@ function toUserDto_(row, roleIds, roles, departmentMap) {
     updatedAt: formatDateValue_(row[fields.updatedAt]),
     updatedBy: normalizeTextValue_(row[fields.updatedBy])
   };
+  if (hasDepartmentField) Object.assign(result, { departmentId: departmentId });
+  return result;
 }
