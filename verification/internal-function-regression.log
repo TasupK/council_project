@@ -62,6 +62,5 @@ Event architecture verification passed.
 == scripts/verify-event-form-sync-architecture.js ==
 Event Form sync architecture verification passed.
 == scripts/verify-internal-function-naming.js ==
-Legacy internal symbol remains: updateEventStatusData_ in src/000_server/050_event/051_events/events_service.gs
 Query-service view/result must not masquerade as DAO list*: listFeeRateRows_ in src/000_server/080_student_fee/080_common/student_fee_reference_query_service.gs
 Query-service view/result must not masquerade as DAO list*: listStudentFeeSemesterRows_ in src/000_server/080_student_fee/080_common/student_fee_reference_query_service.gs
