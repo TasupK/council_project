@@ -6,6 +6,7 @@ function loadSettingsHomeData() {
 }
 
 function buildSettingsBaseData_(current) {
+  var canManageInfrastructure = !!current.isAdmin;
   return {
     app: {
       name: APP_TITLE,
@@ -18,9 +19,9 @@ function buildSettingsBaseData_(current) {
       connected: true,
       mode: 'connected',
       type: 'Google Sheets',
-      spreadsheetId: DB_CONFIG.userSpreadsheetId,
-      spreadsheetUrl: 'https://docs.google.com/spreadsheets/d/' + DB_CONFIG.userSpreadsheetId + '/edit',
-      folderId: DB_CONFIG.rootFolderId,
+      spreadsheetId: canManageInfrastructure ? DB_CONFIG.userSpreadsheetId : '',
+      spreadsheetUrl: canManageInfrastructure ? 'https://docs.google.com/spreadsheets/d/' + DB_CONFIG.userSpreadsheetId + '/edit' : '',
+      folderId: canManageInfrastructure ? DB_CONFIG.rootFolderId : '',
       error: ''
     },
     session: {
