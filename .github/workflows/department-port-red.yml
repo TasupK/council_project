@@ -1,9 +1,9 @@
-name: Department port RED
+name: Settings Department RED
 on:
   push:
     branches: [refactor/settings-department-access-port]
     paths:
-      - scripts/test-department-iam.js
+      - scripts/test-settings-departments.js
       - .github/workflows/department-port-red.yml
 permissions:
   contents: write
@@ -17,14 +17,14 @@ jobs:
           node-version: '22'
       - name: Verify expected failure
         run: |
-          if node scripts/test-department-iam.js; then
+          if node scripts/test-settings-departments.js; then
             echo 'Expected RED failure but test passed'
             exit 1
           fi
           mkdir -p verification
-          printf 'red_verified_sha=%s\n' "$GITHUB_SHA" > verification/department-red.txt
+          printf 'red_verified_sha=%s\n' "$GITHUB_SHA" > verification/settings-department-red.txt
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add verification/department-red.txt
-          git commit -m 'ci: record department red verification'
+          git add verification/settings-department-red.txt
+          git commit -m 'ci: record settings department red verification'
           git push
