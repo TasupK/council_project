@@ -104,6 +104,8 @@ No Department mutation API is added in this phase.
 
 Department assignment is edited only in existing Settings > User Management.
 
+The current user-management page is read-only and explicitly leaves user saving as a TODO, so this phase adds one narrow mutation only: updating a user's `departmentId`. It does not introduce general user CRUD.
+
 ### Server
 
 Extend the user DTO with:
@@ -117,23 +119,24 @@ Extend the user DTO with:
 
 `loadSettingsUsersData()` should add the active Department option list needed by the UI while preserving existing response fields.
 
-The existing Settings user mutation path, if present, owns the assignment operation. If the current code has no usable user mutation path, add the smallest Settings user mutation service/API needed specifically to update `departmentId`; do not add Department CRUD.
+Add the smallest Settings user mutation service/API needed specifically to update `departmentId`. The API must delegate persistence to the existing User IAM/DAO ownership pattern rather than writing the sheet directly from Settings.
 
 Mutation rules:
 
-- admin/settings authorization required using existing Settings authorization pattern
+- admin/settings authorization required using the existing Settings authorization pattern
 - blank `departmentId` means unassigned
 - nonblank `departmentId` must resolve to an active Department
-- update only the targeted user row and existing metadata fields expected by the current user-update convention
-- invalidate login context cache for the affected user because the current-user DTO can expose department information
+- update only the targeted user's Department field and the existing user-update metadata fields required by current persistence conventions
+- invalidate login context cache for the affected user because current-user presentation can expose department information
+- do not expose name/email/status/role editing through this mutation
 
 ### Frontend
 
 Existing Settings Users already displays a `소속부서` column. Connect it to real data.
 
-Add a department selector to the existing user edit flow rather than creating a second user-management screen.
+Add a small row-level Department assignment interaction to the existing user table, using the Department option list returned by `loadSettingsUsersData()`.
 
-If the current user page is still read-only at implementation time, add only the smallest row/edit interaction required for department assignment; do not expand this phase into general user CRUD redesign.
+The interaction should edit only Department membership. Do not turn this task into a general-purpose user edit modal or user CRUD redesign.
 
 ---
 
@@ -158,7 +161,7 @@ Responsibilities:
 
 Organization-chart response should be a presentation-oriented DTO, not raw sheet rows.
 
-Recommended shape:
+Required shape:
 
 ```text
 {
@@ -168,7 +171,6 @@ Recommended shape:
     departmentCount,
     roleCount
   },
-  executives: [...],
   departments: [
     {
       id,
@@ -193,20 +195,16 @@ Member minimum shape:
 }
 ```
 
-### Hierarchy and ordering
-
-The old branch's visual idea is retained: executives at the top, then department groups and their members.
-
-However, role-name text matching such as `name.includes('국장')` must not become a durable IAM business rule.
+### Ordering
 
 For this first phase:
 
-- use existing role metadata for display
-- use stable Department `sortOrder` for department ordering
-- use a deterministic presentation-only member sort fallback such as role name then user name
-- do not add `hierarchyLevel`, `positionOrder`, or a new position domain yet
+- Department order uses stable Department `sortOrder`, then Department name as fallback.
+- Member order is presentation-only and deterministic: primary role name, then user name.
+- No special `회장/부회장/국장/차장` hierarchy is inferred from role-name strings.
+- Do not add `hierarchyLevel`, `positionOrder`, or a new position domain yet.
 
-If exact chair/director/deputy hierarchy becomes a confirmed business requirement later, model it explicitly in a follow-up spec.
+If exact executive/position hierarchy becomes a confirmed business requirement later, model it explicitly in a follow-up spec instead of parsing role labels.
 
 ### Frontend
 
@@ -225,7 +223,6 @@ The screen is read-only.
 Show:
 
 - summary cards
-- executive block when identifiable from current data
 - department cards/groups
 - member name, roles, account status, allowed business areas
 - unassigned users group
@@ -257,7 +254,7 @@ settings*            -> settings
 mypage               -> authenticated-user exception
 ```
 
-The implementation must map each route family to the existing IAM permission catalog/screen nodes actually used in `permissions.byScreen`; do not invent a parallel authorization store.
+The implementation must resolve those route families against the existing IAM permission catalog and effective `permissions.byScreen`; do not create a second role/permission store or duplicate hard-coded role mappings.
 
 Add a helper conceptually equivalent to:
 
@@ -270,10 +267,11 @@ Rules:
 1. `login` is public.
 2. `mypage` requires successful authentication but no business-domain permission.
 3. `isAdmin` bypasses domain checks.
-4. Other protected pages require effective `menu` or `view` access for the mapped business area.
-5. Unknown/unauthorized protected routes must not render the requested business page.
+4. Other protected pages require at least one effective `menu` or `view` grant in the route's mapped business area.
+5. Child routes inherit their business-area requirement from the route family.
+6. Unknown/unauthorized protected routes must not render the requested business page.
 
-Unauthorized UX should be explicit. Prefer a small shared `403 / 권한 없음` page or an equivalent protected error view over redirecting to login, because authentication succeeded and authorization failed.
+Unauthorized UX is an explicit shared `403 / 권한 없음` protected view. Do not redirect an authenticated-but-unauthorized user back to login.
 
 ### Security boundary
 
@@ -285,7 +283,7 @@ Client-side hiding does not replace server checks.
 
 ## 5. Sidebar Visibility
 
-The shared shell should receive or fetch the current user's effective menu/area access from existing Auth/IAM APIs.
+The shared shell should receive or fetch the current user's effective access through existing Auth/IAM APIs.
 
 Use that data to hide/show:
 
@@ -295,9 +293,9 @@ Use that data to hide/show:
 - Event
 - Settings
 
-Settings must no longer rely solely on `APP_IS_ADMIN` for visibility. Admin remains an allow-all case, but a non-admin with explicit Settings access should see Settings.
+Settings must no longer rely solely on `APP_IS_ADMIN` for visibility. Admin remains allow-all, but a non-admin with explicit Settings access should see Settings.
 
-For grouped pages, visibility is based on the domain-level access resolved from effective IAM permissions. Subpages do not each require independent sidebar entries unless they already exist.
+For grouped pages, visibility is based on the same domain-level access resolver used by server routing. The client must not maintain a separate permission interpretation table with different semantics.
 
 The sidebar only mirrors server authorization. A stale or manipulated client cannot bypass the server route guard.
 
@@ -309,7 +307,7 @@ Do not port the source branch's global `loadAllData()` browser cache.
 
 Continue using the current session/login-context cache model.
 
-Department assignment changes may affect current-user presentation, so the affected user's login context cache must be invalidated on assignment mutation.
+Department assignment changes affect current-user presentation, so the affected user's login context cache must be invalidated after a successful assignment mutation.
 
 Department list changes are out of scope because Department CRUD is out of scope.
 
@@ -321,7 +319,7 @@ Department reads:
 
 - missing Department sheet/schema should fail through existing DB/schema error conventions, not silently fabricate production departments
 - unassigned user is valid and appears under `미배정`
-- stale/missing department reference should be surfaced safely as unassigned/unresolved in read models while integrity verification reports the mismatch
+- stale/missing department reference should be surfaced safely as unresolved/unassigned in read models while integrity verification reports the mismatch
 
 Department assignment:
 
@@ -332,7 +330,7 @@ Department assignment:
 Page access:
 
 - unauthenticated -> existing login flow
-- authenticated but unauthorized -> explicit permission-denied view
+- authenticated but unauthorized -> shared permission-denied view
 
 ---
 
@@ -359,19 +357,21 @@ Add focused regression tests for:
 - schema exposes `departments`
 - `users.departmentId` exists and is nullable
 - Department DAO/query ownership
-- user DTO resolves `departmentId` and name
-- unresolved department does not crash read models
+- user DTO resolves `departmentId` and Department name
+- unresolved Department does not crash read models
 
 ### Settings user assignment
 - department options are returned additively
-- valid assignment updates one user
+- valid assignment updates one user Department only
 - blank assignment clears Department
 - inactive/unknown Department is rejected
 - affected login cache is invalidated
+- mutation cannot be used to edit unrelated user fields
 
 ### Organization chart
 - departments sorted by `sortOrder`
-- active/unassigned users represented correctly
+- users grouped by Department and unassigned state correctly
+- member ordering is deterministic without role-name hierarchy inference
 - role and effective permission-area summaries come from IAM data, not hard-coded maps
 - screen has no Department mutation controls
 
@@ -380,12 +380,13 @@ Add focused regression tests for:
 - `mypage` works for any authenticated registered user
 - admin can access all mapped domains
 - permitted non-admin can access mapped domain
-- non-permitted direct URL is denied
+- non-permitted direct URL is denied with permission-denied view
+- child routes inherit domain authorization
 
 ### Sidebar
-- visible domains match effective server permission areas
+- visible domains match the same effective access resolver as server routing
 - Settings visibility is permission-based, not admin-only
-- client hiding does not alter server tests
+- client hiding does not alter server authorization tests
 
 Run the existing full repository regression suite after focused tests.
 
@@ -394,12 +395,13 @@ Run the existing full repository regression suite after focused tests.
 ## 10. Explicitly Out of Scope
 
 - Department CRUD UI/API
-- precise executive/position hierarchy domain modeling
+- executive/position hierarchy domain modeling
 - academic year, semester, operation period
 - notifications
 - Drive/file integration
 - global browser data cache
 - replacing existing Auth/IAM APIs
+- general user CRUD
 - rewriting existing User/Role/Permission Settings modules
 - importing source-branch deployment configuration
 
@@ -415,12 +417,12 @@ src/
 │  ├─ 030_auth/
 │  │  └─ existing session context/cache reused
 │  ├─ 040_iam/
-│  │  ├─ 041_users/
+│  │  ├─ 041_users/             user Department field persistence/query extension
 │  │  ├─ 042_roles/
 │  │  ├─ 043_permissions/
 │  │  └─ 044_departments/       NEW
 │  ├─ 070_settings/
-│  │  ├─ 071_users/             department assignment extension
+│  │  ├─ 071_users/             Department assignment-only extension
 │  │  └─ 074_departments/       NEW read-only composition
 │  └─ Code.js                   route authorization integration
 │
@@ -434,14 +436,16 @@ src/
    └─ 340_departments/          NEW
 ```
 
+A small shared permission-denied page/view may be added under the existing common/frontend structure rather than under a business domain.
+
 ## Success Criteria
 
 The port is successful when:
 
 1. No legacy monolithic source-branch architecture is imported.
 2. Department is a first-class IAM concept backed by UserDB schema.
-3. Admins can assign a user's Department from existing user management.
-4. Settings provides a read-only organization chart using current IAM data.
+3. Admins can assign only a user's Department from existing user management without opening general user CRUD.
+4. Settings provides a read-only Department organization view using current IAM data.
 5. Sidebar visibility reflects effective IAM access.
 6. Direct protected URLs enforce the same access server-side.
 7. Existing Auth/IAM/Settings behavior remains compatible outside these additive changes.
