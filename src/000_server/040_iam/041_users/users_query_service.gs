@@ -16,8 +16,8 @@ function findUserRowByEmail_(email) {
 // 2. 사용자 시트 행을 화면/API 응답용 객체로 변환
 function toUserDto_(row, roleIds, roles, departmentMap) {
   var fields = getUserDbFields_('users');
-  var departmentId = normalizeTextValue_(row[fields.departmentId]);
-  var departments = departmentMap || getDepartmentsById_();
+  var departmentId = fields.departmentId ? normalizeTextValue_(row[fields.departmentId]) : '';
+  var departments = departmentMap || (typeof getDepartmentsById_ === 'function' ? getDepartmentsById_() : {});
   var department = departmentId && departments[departmentId] ? departments[departmentId].name : '';
   return {
     id: normalizeEmail_(row[fields.email]),
