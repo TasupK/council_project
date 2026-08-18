@@ -15,6 +15,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -79,7 +81,6 @@ jobs:
             Path('scripts/verify-internal-function-naming.js'),
             Path('scripts/audit-function-naming.js'),
           }
-          changed = []
           for root in roots:
             for p in root.rglob('*'):
               if not p.is_file() or p in skip or p.suffix not in {'.gs', '.js'}:
@@ -90,16 +91,27 @@ jobs:
                 new = new.replace(old, replacement)
               if new != text:
                 p.write_text(new)
-                changed.append(str(p))
-          print('\n'.join(changed))
           PY
+
+      - name: Post-migration naming audit
+        run: |
+          mkdir -p verification
+          node scripts/audit-function-naming.js > verification/internal-function-inventory-final.tsv
+          node scripts/audit-function-naming.js --candidates > verification/internal-function-candidates-final.tsv
 
       - name: Naming verifier GREEN
         id: naming
         continue-on-error: true
+        run: node scripts/verify-internal-function-naming.js > verification/internal-function-naming.log 2>&1
+
+      - name: Public API declaration stability
+        id: public_api
+        continue-on-error: true
         run: |
-          mkdir -p verification
-          node scripts/verify-internal-function-naming.js > verification/internal-function-naming.log 2>&1
+          git fetch origin main --depth=1
+          git grep -h -o -E 'function[[:space:]]+api_[A-Za-z0-9_]+' origin/main -- src/000_server | sed -E 's/function[[:space:]]+//' | sort -u > /tmp/api-main.txt
+          grep -RhoE 'function[[:space:]]+api_[A-Za-z0-9_]+' src/000_server | sed -E 's/function[[:space:]]+//' | sort -u > /tmp/api-head.txt
+          diff -u /tmp/api-main.txt /tmp/api-head.txt > verification/public-api-diff.log
 
       - name: Full regression
         id: regression
@@ -122,15 +134,16 @@ jobs:
         run: |
           echo "verified_sha=${GITHUB_SHA}" > verification/internal-function-naming-result.txt
           echo "naming=${{ steps.naming.outcome }}" >> verification/internal-function-naming-result.txt
+          echo "public_api=${{ steps.public_api.outcome }}" >> verification/internal-function-naming-result.txt
           echo "regression=${{ steps.regression.outcome }}" >> verification/internal-function-naming-result.txt
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          if [ "${{ steps.naming.outcome }}" = "success" ] && [ "${{ steps.regression.outcome }}" = "success" ]; then
-            git add src/000_server scripts verification/internal-function-naming.log verification/internal-function-regression.log verification/internal-function-naming-result.txt
-            git commit -m "refactor: standardize internal function names [skip ci]" || true
+          if [ "${{ steps.naming.outcome }}" = "success" ] && [ "${{ steps.public_api.outcome }}" = "success" ] && [ "${{ steps.regression.outcome }}" = "success" ]; then
+            git add src/000_server scripts verification/internal-function-inventory-final.tsv verification/internal-function-candidates-final.tsv verification/internal-function-naming.log verification/public-api-diff.log verification/internal-function-regression.log verification/internal-function-naming-result.txt
+            git commit -m "refactor: verify internal function naming migration [skip ci]" || true
           else
             git restore src/000_server scripts || true
-            git add verification/internal-function-naming.log verification/internal-function-regression.log verification/internal-function-naming-result.txt
-            git commit -m "chore: record internal naming migration failure [skip ci]" || true
+            git add verification/internal-function-inventory-final.tsv verification/internal-function-candidates-final.tsv verification/internal-function-naming.log verification/public-api-diff.log verification/internal-function-regression.log verification/internal-function-naming-result.txt
+            git commit -m "chore: record final internal naming verification failure [skip ci]" || true
           fi
           git push
