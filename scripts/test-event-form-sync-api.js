@@ -4,6 +4,7 @@ var path = require('path');
 var vm = require('vm');
 
 var ROOT = path.resolve(__dirname, '..');
+var iamAccessPath = path.join(ROOT, 'src/000_server/040_iam/043_permissions/permissions_access_service.gs');
 var accessPath = path.join(ROOT, 'src/000_server/050_event/050_common/event_access.gs');
 var apiPath = path.join(ROOT, 'src/000_server/050_event/052_applicants/applicants_api.gs');
 var queryPath = path.join(ROOT, 'src/000_server/050_event/051_events/events_query_service.gs');
@@ -17,13 +18,14 @@ assert.ok(/syncApplicantsFromFormsData_\s*\(/.test(apiSource), 'sync API must de
 
 var accessContext = vm.createContext({
   console: console,
+  Error: Error,
   String: String,
   Object: Object,
   Array: Array,
   getPermissionsById_: function () {
     return {
-      EV: { id: 'EV', area: '행사복지관리', action: '조회', name: '행사 조회', status: 'active' },
-      EE: { id: 'EE', area: '행사복지관리', action: '수정', name: '행사 수정', status: 'active' }
+      EV: { id: 'EV', area: '행사복지관리', action: '조회', name: '행사 조회', description: '', status: 'active' },
+      EE: { id: 'EE', area: '행사복지관리', action: '수정', name: '행사 수정', description: '', status: 'active' }
     };
   },
   permissionScreenId_: function (permission) { return 'perm_' + permission.id; },
@@ -31,9 +33,9 @@ var accessContext = vm.createContext({
     if (String(action).indexOf('조회') >= 0) return 'view';
     if (String(action).indexOf('수정') >= 0 || String(action).indexOf('등록') >= 0) return 'edit';
     return 'view';
-  },
-  throwPermissionError_: function (message) { var error = new Error(message); error.code = 'FORBIDDEN'; throw error; }
+  }
 });
+vm.runInContext(fs.readFileSync(iamAccessPath, 'utf8'), accessContext, { filename: iamAccessPath });
 vm.runInContext(fs.readFileSync(accessPath, 'utf8'), accessContext, { filename: accessPath });
 assert.deepStrictEqual(JSON.parse(JSON.stringify(accessContext.resolveEventAccess_({ domain: 'event', action: 'edit' }))), {
   screenId: 'perm_EE',
