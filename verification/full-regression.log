@@ -28,72 +28,42 @@ Event behavior regression tests passed.
 == scripts/test-iam-menu-semantics.js ==
 IAM menu semantics contract passed.
 == scripts/test-mypage-auth.js ==
-node:assert:150
-  throw new AssertionError(obj);
+MyPage Auth/IAM contract tests passed.
+== scripts/test-mypage-frontend.js ==
+MyPage frontend contract tests passed.
+== scripts/test-mypage-routing.js ==
+MyPage routing and entry-point tests passed.
+== scripts/test-operation-business-key-integrity.js ==
+OperationDB business-key integrity contract passed.
+== scripts/test-route-access.js ==
+IAM route access contract passed.
+== scripts/test-settings-department-chart.js ==
+Settings department chart contract passed.
+== scripts/test-settings-departments.js ==
+Settings department assignment contract passed.
+== scripts/test-settings.js ==
+Settings behavior regression tests passed.
+== scripts/test-sidebar-access.js ==
+Sidebar access contract passed.
+== scripts/test-student-fee-frontend.js ==
+Student Fee frontend regression tests passed.
+== scripts/test-student-fee-mutation-consistency.js ==
+Student Fee mutation consistency contract passed.
+== scripts/test-student-fee.js ==
+/home/runner/work/council_project/council_project/src/000_server/080_student_fee/082_payments/fee_payments_service.gs:23
+  return withOperationWriteLock_(function () {
   ^
 
-AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
-+ actual - expected
-... Skipped lines
-
-  {
-    action: '조회',
-    area: '행사',
-    description: '행사 목록을 조회합니다.',
-    grants: {
-...
-      export: false,
-+     menu: false,
--     menu: true,
-      view: true
-    },
-    id: 'EVENT_VIEW',
-    name: '행사 조회',
-    screenId: 'perm_EVENT_VIEW'
-
-    at testEffectivePermissionDetails_ (/home/runner/work/council_project/council_project/scripts/test-mypage-auth.js:60:10)
-    at Object.<anonymous> (/home/runner/work/council_project/council_project/scripts/test-mypage-auth.js:94:1)
+ReferenceError: withOperationWriteLock_ is not defined
+    at Object.processFeeApplicationsData_ (/home/runner/work/council_project/council_project/src/000_server/080_student_fee/082_payments/fee_payments_service.gs:23:3)
+    at testPaymentBehavior_ (/home/runner/work/council_project/council_project/scripts/test-student-fee.js:177:26)
+    at Object.<anonymous> (/home/runner/work/council_project/council_project/scripts/test-student-fee.js:317:1)
     at Module._compile (node:internal/modules/cjs/loader:1781:14)
     at Object..js (node:internal/modules/cjs/loader:1913:10)
     at Module.load (node:internal/modules/cjs/loader:1505:32)
     at Function._load (node:internal/modules/cjs/loader:1309:12)
     at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
     at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
-    at node:internal/main/run_main_module:36:49 {
-  generatedMessage: true,
-  code: 'ERR_ASSERTION',
-  actual: {
-    id: 'EVENT_VIEW',
-    screenId: 'perm_EVENT_VIEW',
-    area: '행사',
-    action: '조회',
-    name: '행사 조회',
-    description: '행사 목록을 조회합니다.',
-    grants: {
-      menu: false,
-      view: true,
-      edit: false,
-      approve: false,
-      export: false
-    }
-  },
-  expected: {
-    id: 'EVENT_VIEW',
-    screenId: 'perm_EVENT_VIEW',
-    area: '행사',
-    action: '조회',
-    name: '행사 조회',
-    description: '행사 목록을 조회합니다.',
-    grants: {
-      menu: true,
-      view: true,
-      edit: false,
-      approve: false,
-      export: false
-    }
-  },
-  operator: 'deepStrictEqual',
-  diff: 'simple'
-}
+    at node:internal/main/run_main_module:36:49
 
 Node.js v22.23.2
