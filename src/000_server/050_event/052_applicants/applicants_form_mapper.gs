@@ -71,17 +71,22 @@ function calculateEventFormAppliedFee_(event, applicantType) {
   throwEventError_('VALIDATION_FAILED', '참가비가 있는 행사는 학생회비 납부 여부가 필요합니다.');
 }
 
-function stableEventFormResponseId_(source, row) {
-  var payload = [
-    String(source.responseSheetId || ''),
-    String(source.sheetId || ''),
-    (row || []).map(function (value) { return String(value == null ? '' : value).trim(); }).join('\u241f')
-  ].join('\u241e');
+function hashEventFormResponseIdentity_(payload) {
   var digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, payload);
   return 'form_' + digest.map(function (value) {
     var byte = value < 0 ? value + 256 : value;
     return ('0' + byte.toString(16)).slice(-2);
   }).join('').slice(0, 32);
+}
+
+function stableEventFormResponseId_(source, row, sourceResponseAt, studentId) {
+  var parts = [String(source.responseSheetId || ''), String(source.sheetId || '')];
+  if (sourceResponseAt && studentId) {
+    parts.push(String(sourceResponseAt).trim(), String(studentId).trim());
+  } else {
+    parts.push((row || []).map(function (value) { return String(value == null ? '' : value).trim(); }).join('\u241f'));
+  }
+  return hashEventFormResponseIdentity_(parts.join('\u241e'));
 }
 
 function eventFormQuestionId_(header, index) {
@@ -125,11 +130,12 @@ function buildEventFormCandidates_(source, event) {
 
     var applicationId = Utilities.getUuid();
     var explicitResponseId = eventFormCell_(row, mapping.byField.sourceResponseId);
+    var sourceResponseAt = eventFormCell_(row, mapping.byField.sourceResponseAt);
     var applicant = {
       id: applicationId,
       eventId: event.id,
-      sourceResponseId: explicitResponseId || stableEventFormResponseId_(source, row),
-      sourceResponseAt: eventFormCell_(row, mapping.byField.sourceResponseAt),
+      sourceResponseId: explicitResponseId || stableEventFormResponseId_(source, row, sourceResponseAt, studentId),
+      sourceResponseAt: sourceResponseAt,
       studentId: studentId,
       name: name,
       department: eventFormCell_(row, mapping.byField.department),
