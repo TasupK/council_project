@@ -33,7 +33,14 @@ function doGet(e) {
     resourceId: e && e.parameter && e.parameter.id ? String(e.parameter.id) : ''
   };
 
-  var isKnownProtectedPage = page !== 'login' && !!routes[page];
+  var isKnownProtectedPage = !!routes[page] && (
+    page === 'main' ||
+    page === 'mypage' ||
+    page.indexOf('accounting') === 0 ||
+    page.indexOf('student_fee') === 0 ||
+    page.indexOf('event') === 0 ||
+    page.indexOf('settings') === 0
+  );
   if (isKnownProtectedPage) {
     var login = api_checkLogin();
     if (!login.ok) {
