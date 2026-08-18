@@ -1,10 +1,14 @@
 // Event 도메인의 API access 선언을 IAM screen/action으로 변환한다.
 
-function resolveEventAccess_(access) {
-  return resolvePermissionByAliases_(access || {}, ['event', '행사', '복지']);
+function eventApiAccess_(action, screenId) {
+  return {
+    domain: 'event',
+    action: action,
+    screenId: screenId || '',
+    resolve: resolveEventAccess_
+  };
 }
 
-// 기존 Forms 동기화 호출부 호환용. API migration 후 제거 가능하다.
-function requireEventEditContext_(context) {
-  return requirePermission_(context, resolveEventAccess_({ domain: 'event', action: 'edit' }));
+function resolveEventAccess_(access) {
+  return resolvePermissionByAliases_(access || {}, ['event', '행사', '복지']);
 }
