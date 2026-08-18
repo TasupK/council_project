@@ -16,7 +16,7 @@ function processApplicantData_(request) {
       patch.processedAt = getCurrentIsoDateTime_();
     } else {
       patch.status = '반려';
-      patch.processedAt = '';
+      patch.processedAt = getCurrentIsoDateTime_();
     }
     updateEventApplicationRowById_(id, patch);
     return withoutInternalRowNumber_(findEventApplicationRowById_(id));
