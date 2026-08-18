@@ -136,122 +136,16 @@ Student Fee behavior regression tests passed.
 exit=0
 
 ===== node scripts/test-student-fee-frontend.js =====
-AssertionError [ERR_ASSERTION]: The input did not match the regular expression /page\.indexOf\(['"]student_fee['"]\)\s*===\s*0/. Input:
-
-'/** Apps Script 웹앱 페이지 라우팅 */\n' +
-  'function doGet(e) {\n' +
-  "  var page = e && e.parameter && e.parameter.page ? String(e.parameter.page) : 'login';\n" +
-  '  var routes = {\n' +
-  "    login: '200_login/Login',\n" +
-  "    main: '250_main/Main',\n" +
-  "    mypage: '270_mypage/MyPage',\n" +
-  "    accounting: '400_accounting/400_home/Accounting_Home',\n" +
-  "    accounting_ledger: '400_accounting/410_ledger/Accounting_Ledger',\n" +
-  "    accounting_reconciliation: '400_accounting/420_reconciliation/Accounting_Reconciliation',\n" +
-  "    accounting_settlement: '400_accounting/430_settlement/Accounting_Settlement',\n" +
-  "    student_fee: '500_student_fee/500_home/Student_Fee_Home',\n" +
-  "    student_fee_payers: '500_student_fee/510_payers/Student_Fee_Payers',\n" +
-  "    student_fee_payments: '500_student_fee/520_payments/Student_Fee_Payments',\n" +
-  "    student_fee_refunds: '500_student_fee/530_refunds/Student_Fee_Refunds',\n" +
-  "    event: '600_event/600_home/Event_Home',\n" +
-  "    event_form: '600_event/610_form/Event_Form',\n" +
-  "    event_detail: '600_event/620_detail/Event_Detail',\n" +
-  "    settings: '300_settings/300_home/Settings_Home',\n" +
-  "    settings_departments: '300_settings/340_departments/Settings_Departments',\n" +
-  "    settings_users: '300_settings/310_users/Settings_Users',\n" +
-  "    settings_roles: '300_settings/320_roles/Settings_Roles',\n" +
-  "    settings_permissions: '300_settings/330_permissions/Settings_Permissions'\n" +
-  '  };\n' +
-  '  var file = routes[page] || routes.login;\n' +
-  '  var templateData = {\n' +
-  "    loginError: '',\n" +
-  "    accessError: '',\n" +
-  "    mainUserName: '',\n" +
-  "    mainUserTitle: '',\n" +
-  '    isAdmin: false,\n' +
-  '    currentPage: page,\n' +
-  "    resourceId: e && e.parameter && e.parameter.id ? String(e.parameter.id) : ''\n" +
-  '  };\n' +
-  '\n' +
-  "  var isKnownProtectedPage = page !== 'login' && !!routes[page];\n" +
-  '  if (isKnownProtectedPage) {\n' +
-  '    var login = api_checkLogin();\n' +
-  '    if (!login.ok) {\n' +
-  '      file = routes.login;\n' +
-  "      templateData.loginError = login.message || '로그인 정보를 확인할 수 없습니다.';\n" +
-  '    } else if (!canAccessPage_(page, login)) {\n' +
-  "      file = '100_common/Access_Denied';\n" +
-  "      templateData.accessError = '이 페이지에 접근할 권한이 없습니다.';\n" +
-  "      templateData.mainUserName = login.user && login.user.name ? login.user.name : '사용자';\n" +
-  "      templateData.mainUserTitle = login.user && login.user.roles && login.user.roles.length ? login.user.roles[0].name : '사용자';\n" +
-  '      templateData.isAdmin = !!login.isAdmin;\n' +
-  '    } else {\n' +
-  "      templateData.mainUserName = login.user && login.user.name ? login.user.name : '운영자';\n" +
-  '      templateData.mainUserTitle = login.user && login.user.roles && login.user.roles.length\n' +
-  '        ? login.user.roles[0].name\n' +
-  "        : '사용자';\n" +
-  '      templateData.isAdmin = !!login.isAdmin;\n' +
-  '    }\n' +
-  '  }\n' +
-  '\n' +
-  '  return renderPage_(file, templateData)\n' +
-  '    .setTitle(APP_TITLE)\n' +
-  '    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)\n' +
-  "    .addMetaTag('viewport', 'width=device-width, initial-scale=1');\n" +
-  '}\n' +
-  '\n' +
-  '/** HTML 템플릿에 페이지 데이터를 주입하여 반환 */\n' +
-  'function renderPage_(filename, data) {\n' +
-  '  var template = HtmlService.createTemplateFromFile(filename);\n' +
-  '  var values = data || {};\n' +
-  '  Object.keys(values).forEach(function (key) {\n' +
-  '    template[key] = values[key];\n' +
-  '  });\n' +
-  '  return template.evaluate();\n' +
-  '}\n' +
-  '\n' +
-  '/** HTML 조각 파일 포함 */\n' +
-  'function include(filename) {\n' +
-  '  return HtmlService.createHtmlOutputFromFile(filename).getContent();\n' +
-  '}\n' +
-  '\n' +
-  '/** 현재 웹앱 URL 반환 */\n' +
-  'function getWebAppUrl() {\n' +
-  '  return ScriptApp.getService().getUrl();\n' +
-  '}\n'
-
-    at testStudentFeeRouteHelpers_ (/home/runner/work/council_project/council_project/scripts/test-student-fee-frontend.js:98:10)
-    at /home/runner/work/council_project/council_project/scripts/test-student-fee-frontend.js:151:23
-exit=1
+Student Fee frontend regression tests passed.
+exit=0
 
 ===== node scripts/test-mypage-auth.js =====
 MyPage Auth/IAM contract tests passed.
 exit=0
 
 ===== node scripts/test-mypage-routing.js =====
-node:internal/assert/utils:77
-    throw err;
-    ^
-
-AssertionError [ERR_ASSERTION]: mypage must be protected by login guard
-    at Object.<anonymous> (/home/runner/work/council_project/council_project/scripts/test-mypage-routing.js:15:8)
-    at Module._compile (node:internal/modules/cjs/loader:1781:14)
-    at Object..js (node:internal/modules/cjs/loader:1913:10)
-    at Module.load (node:internal/modules/cjs/loader:1505:32)
-    at Function._load (node:internal/modules/cjs/loader:1309:12)
-    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
-    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
-    at node:internal/main/run_main_module:36:49 {
-  generatedMessage: false,
-  code: 'ERR_ASSERTION',
-  actual: false,
-  expected: true,
-  operator: '==',
-  diff: 'simple'
-}
-
-Node.js v22.23.2
-exit=1
+MyPage routing and entry-point tests passed.
+exit=0
 
 ===== node scripts/test-mypage-frontend.js =====
 MyPage frontend contract tests passed.
@@ -282,16 +176,16 @@ Student Fee architecture verification passed.
 exit=0
 
 ===== node scripts/verify-student-fee-frontend.js =====
-Student Fee route prefix is not login protected.
-exit=1
+Student Fee frontend architecture verification passed.
+exit=0
 
 ===== node scripts/verify-ui-system-migration.js =====
 Shared UI system migration verification passed.
 exit=0
 
 ===== node scripts/verify-mypage-architecture.js =====
-MyPage route is not protected by the login guard.
-exit=1
+MyPage architecture verification passed.
+exit=0
 
 FINAL=FAIL
-verified_sha=00f044753708a797f67c864f97f6f66c41082385
+verified_sha=58155e4f4017e5ca956acf3acc432957833cad2d
