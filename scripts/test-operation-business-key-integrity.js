@@ -7,19 +7,7 @@ var ROOT = path.resolve(__dirname, '..');
 var file = path.join(ROOT, 'src/000_server/020_schema/operation_db_integrity.gs');
 var context = vm.createContext({
   console: console,
-  String: String, Object: Object, Array: Array,
-  validateDuplicateKeys_: function (tableName, rows, columns) {
-    var seen = {};
-    var issues = [];
-    rows.forEach(function (row) {
-      var values = columns.map(function (column) { return String(row[column] || '').trim().toLowerCase(); });
-      if (values.some(function (value) { return !value; })) return;
-      var key = values.join('|');
-      if (seen[key]) issues.push({ code: 'DUPLICATE_KEY', table: tableName, column: columns.join('+'), key: key });
-      else seen[key] = true;
-    });
-    return issues;
-  }
+  String: String, Object: Object, Array: Array
 });
 vm.runInContext(fs.readFileSync(file, 'utf8'), context, { filename: file });
 
@@ -36,7 +24,7 @@ var tables = {
   feeRefunds: [{ 환불신청ID: 'R1' }, { 환불신청ID: 'R1' }],
   eventApplications: [{ 원본응답ID: '' }, { 원본응답ID: '' }, { 원본응답ID: 'S1' }, { 원본응답ID: 'S1' }]
 };
-var issues = context.validateOperationDbBusinessKeys_(schema, tables);
+var issues = JSON.parse(JSON.stringify(context.validateOperationDbBusinessKeys_(schema, tables)));
 assert.strictEqual(issues.length, 4);
 assert.ok(issues.every(function (issue) { return issue.code === 'DUPLICATE_BUSINESS_KEY'; }));
 assert.deepStrictEqual(issues.map(function (issue) { return issue.table; }).sort(), ['납부내역', '행사신청', '행사폼', '환불내역'].sort());
