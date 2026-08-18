@@ -13,7 +13,48 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Auth MyPage contract
-        run: node scripts/test-mypage-auth.js
+      - name: Static syntax
+        run: |
+          node --check scripts/test-mypage-auth.js
+          node --check scripts/test-mypage-routing.js
+          node --check scripts/test-mypage-frontend.js
+          node --check scripts/verify-mypage-architecture.js
+          cp src/000_server/030_auth/auth_api.gs /tmp/auth_api.js && node --check /tmp/auth_api.js
+          cp src/000_server/040_iam/043_permissions/permissions_query_service.gs /tmp/permissions_query.js && node --check /tmp/permissions_query.js
+          python3 - <<'PY'
+          from pathlib import Path
+          import re, subprocess
+          for name in ['src/100_common/app_shell_js.html', 'src/270_mypage/mypage_js.html']:
+              text = Path(name).read_text(encoding='utf-8')
+              match = re.search(r'<script>(.*)</script>', text, re.S)
+              if not match:
+                  raise SystemExit('missing script block: ' + name)
+              out = Path('/tmp/' + Path(name).stem + '.js')
+              out.write_text(match.group(1), encoding='utf-8')
+              subprocess.run(['node', '--check', str(out)], check=True)
+          PY
+      - name: MyPage focused tests
+        run: |
+          node scripts/test-mypage-auth.js
+          node scripts/test-mypage-routing.js
+          node scripts/test-mypage-frontend.js
+          node scripts/verify-mypage-architecture.js
       - name: Existing Auth IAM regression
-        run: node scripts/test-auth-iam.js
+        run: |
+          node scripts/test-auth-iam.js
+          node scripts/verify-auth-iam-architecture.js
+      - name: Repository regression
+        run: |
+          node scripts/test-core.js
+          node scripts/test-settings.js
+          node scripts/test-accounting.js
+          node scripts/test-event.js
+          node scripts/test-student-fee.js
+          node scripts/test-student-fee-frontend.js
+          node scripts/verify-server-architecture.js
+          node scripts/verify-settings-architecture.js
+          node scripts/verify-accounting-architecture.js
+          node scripts/verify-event-architecture.js
+          node scripts/verify-student-fee-architecture.js
+          node scripts/verify-student-fee-frontend.js
+          node scripts/verify-ui-system-migration.js
