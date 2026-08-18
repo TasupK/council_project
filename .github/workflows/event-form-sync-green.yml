@@ -3,10 +3,12 @@ on:
   push:
     branches: [refactor/event-form-sync-port]
     paths:
-      - 'src/000_server/050_event/052_applicants/applicants_form_*.gs'
-      - 'src/000_server/050_event/052_applicants/applicants_sheet_dao.gs'
+      - 'src/000_server/050_event/050_common/event_access.gs'
+      - 'src/000_server/050_event/051_events/events_query_service.gs'
+      - 'src/000_server/050_event/052_applicants/applicants_*.gs'
       - scripts/test-event-form-sync-mapper.js
       - scripts/test-event-form-sync-service.js
+      - scripts/test-event-form-sync-api.js
       - .github/workflows/event-form-sync-green.yml
 permissions:
   contents: write
@@ -18,10 +20,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Verify mapper and service green
+      - name: Verify event form sync green
         run: |
           node scripts/test-event-form-sync-mapper.js
           node scripts/test-event-form-sync-service.js
+          node scripts/test-event-form-sync-api.js
           mkdir -p verification
           printf 'green_verified_sha=%s\n' "$GITHUB_SHA" > verification/event-form-sync-green.txt
           git config user.name 'github-actions[bot]'
