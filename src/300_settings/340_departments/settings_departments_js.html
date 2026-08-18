@@ -1,0 +1,56 @@
+<script>
+  function renderDepartmentMember(member) {
+    var roles = (member.roles || []).map(function (role) { return '<span class="department-tag">' + escapeSettingsHtml(role.name) + '</span>'; }).join('');
+    var areas = (member.permissionAreas || []).map(function (area) { return '<span class="department-tag">' + escapeSettingsHtml(area) + '</span>'; }).join('');
+    return '<article class="department-member">' +
+      '<div class="department-member-head"><strong>' + escapeSettingsHtml(member.name) + '</strong><span class="department-tag">' + escapeSettingsHtml(member.status === 'active' ? '활성' : '비활성') + '</span></div>' +
+      '<div class="department-member-meta">' + (roles || '<span class="department-tag">역할 없음</span>') + '</div>' +
+      '<div class="department-member-tags">' + (areas || '<span class="department-tag">업무 권한 없음</span>') + '</div>' +
+      '</article>';
+  }
+
+  function renderDepartmentSummary(summary) {
+    var rows = [
+      ['전체 계정', summary.totalUsers || 0],
+      ['활성 부원', summary.activeUsers || 0],
+      ['부서 수', summary.departmentCount || 0],
+      ['역할 수', summary.roleCount || 0]
+    ];
+    getSettingsElement('departmentSummary').innerHTML = rows.map(function (row) {
+      return '<div class="ui-card department-stat"><span>' + escapeSettingsHtml(row[0]) + '</span><strong>' + escapeSettingsHtml(row[1]) + '</strong></div>';
+    }).join('');
+  }
+
+  function renderDepartmentGroups(departments, unassigned) {
+    getSettingsElement('departmentGroups').innerHTML = (departments || []).map(function (department) {
+      var members = (department.members || []).map(renderDepartmentMember).join('') || '<div class="department-empty">배정된 사용자가 없습니다.</div>';
+      return '<section class="ui-card department-group">' +
+        '<div class="department-group-head"><div><strong>' + escapeSettingsHtml(department.name) + '</strong><span>' + escapeSettingsHtml(department.type || '') + '</span></div><span>' + (department.members || []).length + '명</span></div>' +
+        '<div class="department-members">' + members + '</div></section>';
+    }).join('');
+
+    var unassignedGroup = getSettingsElement('unassignedGroup');
+    if (unassigned && unassigned.length) {
+      unassignedGroup.classList.remove('hidden');
+      getSettingsElement('unassignedCount').textContent = unassigned.length + '명';
+      getSettingsElement('unassignedMembers').innerHTML = unassigned.map(renderDepartmentMember).join('');
+    } else {
+      unassignedGroup.classList.add('hidden');
+    }
+  }
+
+  async function loadSettingsDepartments() {
+    try {
+      var data = await callSettingsApi('loadSettingsDepartmentsData');
+      if (!data || !data.ok) throw new Error(data && data.message ? data.message : '부서 정보를 불러오지 못했습니다.');
+      applySettingsShell(data);
+      renderDepartmentSummary(data.summary || {});
+      renderDepartmentGroups(data.departments || [], data.unassigned || []);
+      showSettingsContent();
+    } catch (error) {
+      showSettingsError(error);
+    }
+  }
+
+  loadSettingsDepartments();
+</script>
