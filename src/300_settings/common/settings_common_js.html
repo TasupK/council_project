@@ -1,4 +1,6 @@
 <script>
+  var SETTINGS_CAN_ADMIN = false;
+
   // 1. 설정 서버 API 호출
   function callSettingsApi(functionName) {
     var args = Array.prototype.slice.call(arguments, 1);
@@ -8,37 +10,29 @@
           resolve(parseSettingsApiResult(result));
         })
         .withFailureHandler(function (error) {
-          reject(
-            new Error(error && error.message ? error.message : String(error)),
-          );
-        })
-        [functionName].apply(google.script.run, args);
+          reject(new Error(error && error.message ? error.message : String(error)));
+        })[functionName].apply(google.script.run, args);
     });
   }
 
   function parseSettingsApiResult(result) {
     if (typeof result !== "string") return result;
-    try {
-      return JSON.parse(result);
-    } catch (error) {
-      return result;
-    }
+    try { return JSON.parse(result); } catch (error) { return result; }
   }
 
   // 2. 공통 사용자 및 상태 표시
   function applySettingsShell(data) {
-    if (!data.session || !data.session.isAdmin) {
-      throw new Error("설정 화면은 시스템 관리자만 이용할 수 있습니다.");
+    if (!data.session || !data.session.canAccessSettings) {
+      throw new Error("설정 화면에 접근할 권한이 없습니다.");
     }
+    SETTINGS_CAN_ADMIN = !!data.session.isAdmin;
     var user = data.currentUser || {};
     var app = data.app || {};
     var database = data.database || {};
     getAppElement("appUserName").textContent = user.name || "운영자";
-    getAppElement("appUserTitle").textContent = user.title || "관리자";
-    getAppElement("appTerm").innerHTML =
-      "<option>" + escapeSettingsHtml(app.term || "2026학년도") + "</option>";
-    getSettingsElement("statusBar").textContent =
-      "시스템 " + (app.version || "") + " · Google Sheets DB 연결됨";
+    getAppElement("appUserTitle").textContent = user.title || "사용자";
+    getAppElement("appTerm").innerHTML = "<option>" + escapeSettingsHtml(app.term || "2026학년도") + "</option>";
+    getSettingsElement("statusBar").textContent = "시스템 " + (app.version || "") + " · Google Sheets DB 연결됨";
     return database;
   }
 
@@ -52,10 +46,7 @@
   function showSettingsError(error) {
     var loading = getSettingsElement("panel-loading");
     if (!loading) return;
-    loading.innerHTML =
-      '<div class="placeholder-page"><strong>초기화 실패</strong><p>' +
-      escapeSettingsHtml(error.message || error) +
-      "</p></div>";
+    loading.innerHTML = '<div class="placeholder-page"><strong>초기화 실패</strong><p>' + escapeSettingsHtml(error.message || error) + "</p></div>";
   }
 
   // 3. 설정 문자열 처리
