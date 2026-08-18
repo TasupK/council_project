@@ -1,0 +1,2 @@
+verified_sha=27fab411b3eba6ea2edea0a992c3532865375510
+naming=failure

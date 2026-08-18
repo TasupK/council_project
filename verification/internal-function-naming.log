@@ -1,0 +1,51 @@
+Legacy internal symbol remains: getActiveRoleIdsByEmail_ in src/000_server/040_iam/042_roles/roles_query_service.gs
+Legacy internal symbol remains: getPermissionIdsByRoleId_ in src/000_server/040_iam/043_permissions/permissions_query_service.gs
+Query-service view/result must not masquerade as DAO list*: listActiveDepartments_ in src/000_server/040_iam/044_departments/departments_query_service.gs
+Legacy internal symbol remains: listActiveDepartments_ in src/000_server/040_iam/044_departments/departments_query_service.gs
+Legacy internal symbol remains: getUniqueEventValues_ in src/000_server/050_event/051_events/events_query_service.gs
+Legacy internal symbol remains: processEventStatusData_ in src/000_server/050_event/051_events/events_service.gs
+Legacy internal symbol remains: processEventClosureData_ in src/000_server/050_event/051_events/events_service.gs
+Legacy internal symbol remains: findEventFormAliasField_ in src/000_server/050_event/052_applicants/applicants_form_mapper.gs
+Legacy internal symbol remains: getEventPaymentTotalsByApplicationId_ in src/000_server/050_event/053_payment/payment_service.gs
+Legacy internal symbol remains: findEventAttendanceByApplicationId_ in src/000_server/050_event/054_attendance/attendance_sheet_dao.gs
+Legacy internal symbol remains: makeId_ in src/000_server/060_accounting/060_common/accounting_common.gs
+Legacy internal symbol remains: getCurrentUserName_ in src/000_server/060_accounting/060_common/accounting_common.gs
+Legacy internal symbol remains: getAccountingActorEmail_ in src/000_server/060_accounting/060_common/accounting_common.gs
+Legacy internal symbol remains: inAccountingDateRange_ in src/000_server/060_accounting/060_common/accounting_common.gs
+Legacy internal symbol remains: findAllAccountingEventRows_ in src/000_server/060_accounting/060_common/accounting_event_read_dao.gs
+Legacy internal symbol remains: getLedgerEntries_ in src/000_server/060_accounting/060_common/accounting_query_service.gs
+Legacy internal symbol remains: getLedgerEntryDto_ in src/000_server/060_accounting/060_common/accounting_query_service.gs
+Legacy internal symbol remains: getEvidenceDto_ in src/000_server/060_accounting/060_common/accounting_query_service.gs
+Legacy internal symbol remains: getLedgerDatabaseInfo_ in src/000_server/060_accounting/060_common/accounting_query_service.gs
+Legacy internal symbol remains: getLedgerEventOptions_ in src/000_server/060_accounting/060_common/accounting_query_service.gs
+Legacy internal symbol remains: getLedgerSummary_ in src/000_server/060_accounting/060_common/accounting_query_service.gs
+Legacy internal symbol remains: saveLedgerEntry_ in src/000_server/060_accounting/061_ledger/ledger_service.gs
+Legacy internal symbol remains: saveLedgerDraft_ in src/000_server/060_accounting/061_ledger/ledger_service.gs
+Legacy internal symbol remains: updateLedgerEntry_ in src/000_server/060_accounting/061_ledger/ledger_service.gs
+Legacy internal symbol remains: softDeleteLedgerEntry_ in src/000_server/060_accounting/061_ledger/ledger_service.gs
+Legacy internal symbol remains: processLedgerEntry_ in src/000_server/060_accounting/061_ledger/ledger_service.gs
+Legacy internal symbol remains: saveEvidenceFiles_ in src/000_server/060_accounting/062_evidence/evidence_service.gs
+Legacy internal symbol remains: getEvidenceAuditList_ in src/000_server/060_accounting/062_evidence/evidence_service.gs
+Legacy internal symbol remains: bankTransactionDuplicateKey_ in src/000_server/060_accounting/063_reconciliation/bank_ocr_service.gs
+Legacy internal symbol remains: saveParsedBankTransactions_ in src/000_server/060_accounting/063_reconciliation/bank_ocr_service.gs
+Legacy internal symbol remains: uploadBankTransactions_ in src/000_server/060_accounting/063_reconciliation/bank_ocr_service.gs
+Legacy internal symbol remains: getBankOcrLogs_ in src/000_server/060_accounting/063_reconciliation/bank_ocr_service.gs
+Legacy internal symbol remains: getReconciliationList_ in src/000_server/060_accounting/063_reconciliation/reconciliation_query_service.gs
+Legacy internal symbol remains: getReconciliationDetail_ in src/000_server/060_accounting/063_reconciliation/reconciliation_query_service.gs
+Legacy internal symbol remains: getReconciliationCandidates_ in src/000_server/060_accounting/063_reconciliation/reconciliation_query_service.gs
+Legacy internal symbol remains: runReconciliation_ in src/000_server/060_accounting/063_reconciliation/reconciliation_service.gs
+Legacy internal symbol remains: linkReconciliation_ in src/000_server/060_accounting/063_reconciliation/reconciliation_service.gs
+Legacy internal symbol remains: createLedgerFromReconciliation_ in src/000_server/060_accounting/063_reconciliation/reconciliation_service.gs
+Legacy internal symbol remains: getSettlementSummary_ in src/000_server/060_accounting/064_settlement/settlement_query_service.gs
+Legacy internal symbol remains: getSettlementReportList_ in src/000_server/060_accounting/064_settlement/settlement_query_service.gs
+Legacy internal symbol remains: getSettlementReport_ in src/000_server/060_accounting/064_settlement/settlement_query_service.gs
+Legacy internal symbol remains: generateSettlementReport_ in src/000_server/060_accounting/064_settlement/settlement_service.gs
+Pure builder must not use Data_ suffix: buildSettingsBaseData_ in src/000_server/070_settings/070_common/settings_shell_query_service.gs
+Legacy internal symbol remains: buildSettingsBaseData_ in src/000_server/070_settings/070_common/settings_shell_query_service.gs
+Query-service view/result must not masquerade as DAO list*: listUsersForSettings_ in src/000_server/070_settings/071_users/settings_users_query_service.gs
+Legacy internal symbol remains: listUsersForSettings_ in src/000_server/070_settings/071_users/settings_users_query_service.gs
+Query-service view/result must not masquerade as DAO list*: listRolesForSettings_ in src/000_server/070_settings/072_roles/settings_roles_query_service.gs
+Legacy internal symbol remains: listRolesForSettings_ in src/000_server/070_settings/072_roles/settings_roles_query_service.gs
+Legacy internal symbol remains: memberSort_ in src/000_server/070_settings/074_departments/settings_departments_query_service.gs
+Legacy internal symbol remains: findAllFeeRateRows_ in src/000_server/080_student_fee/080_common/student_fee_reference_query_service.gs
+Legacy internal symbol remains: findAllStudentFeeSemesterRows_ in src/000_server/080_student_fee/080_common/student_fee_reference_query_service.gs
