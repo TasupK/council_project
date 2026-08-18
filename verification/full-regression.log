@@ -16,25 +16,19 @@ Domain access resolver contract passed.
 == scripts/test-event-consistency-hardening.js ==
 Event consistency hardening contract passed.
 == scripts/test-event-form-sync-api.js ==
-node:internal/assert/utils:77
-    throw err;
-    ^
+/home/runner/work/council_project/council_project/src/000_server/050_event/050_common/event_access.gs:4
+  return resolvePermissionByAliases_(access || {}, ['event', '행사', '복지']);
+  ^
 
-AssertionError [ERR_ASSERTION]: sync API must enforce Event edit context
-    at Object.<anonymous> (/home/runner/work/council_project/council_project/scripts/test-event-form-sync-api.js:14:8)
+ReferenceError: resolvePermissionByAliases_ is not defined
+    at Object.resolveEventAccess_ (/home/runner/work/council_project/council_project/src/000_server/050_event/050_common/event_access.gs:4:3)
+    at Object.<anonymous> (/home/runner/work/council_project/council_project/scripts/test-event-form-sync-api.js:38:64)
     at Module._compile (node:internal/modules/cjs/loader:1781:14)
     at Object..js (node:internal/modules/cjs/loader:1913:10)
     at Module.load (node:internal/modules/cjs/loader:1505:32)
     at Function._load (node:internal/modules/cjs/loader:1309:12)
     at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
     at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
-    at node:internal/main/run_main_module:36:49 {
-  generatedMessage: false,
-  code: 'ERR_ASSERTION',
-  actual: false,
-  expected: true,
-  operator: '==',
-  diff: 'simple'
-}
+    at node:internal/main/run_main_module:36:49
 
 Node.js v22.23.2
