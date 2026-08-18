@@ -49,8 +49,8 @@ This phase extends the first rename map using the fresh repository-wide inventor
 | Settings | `listUsersForSettings_` | `getSettingsUsersData_` | query-service view result |
 | Settings | `listRolesForSettings_` | `getSettingsRolesData_` | query-service view result |
 | Settings | `memberSort_` | `compareSettingsDepartmentMembers_` | explicit comparator name |
-| Student Fee | `findAllFeeRateRows_` | `listFeeRateRows_` | collection persistence read |
-| Student Fee | `findAllStudentFeeSemesterRows_` | `listStudentFeeSemesterRows_` | collection persistence read |
+| Student Fee | `findAllFeeRateRows_` | `readFeeRateRows_` | low-level OperationDB source read inside query service |
+| Student Fee | `findAllStudentFeeSemesterRows_` | `readStudentFeeSemesterRows_` | low-level OperationDB source read inside query service |
 
 ## Deliberate exceptions
 
