@@ -27,6 +27,12 @@
         </select>
       </div>
       <div class="ui-field">
+        <select class="select ui-control" id="userDepartment">
+          <option value="">부서 전체</option>
+          <option value="__unassigned__">미배정</option>
+        </select>
+      </div>
+      <div class="ui-field">
         <select class="select ui-control" id="userStatus">
           <option value="">상태 전체</option>
           <option value="active">활성</option>
@@ -37,6 +43,7 @@
         초기화
       </button>
       <div class="count-label ui-count" id="userCountLabel">사용자 0명</div>
+      <div class="count-label ui-count" id="userMutationStatus" aria-live="polite"></div>
     </div>
     <div class="table-wrap ui-table-wrap">
       <table class="data ui-table">
@@ -46,7 +53,7 @@
             <th>Google 계정 이메일</th>
             <th>학번</th>
             <th>연락처</th>
-            <th>소속부서</th>
+            <th data-user-department-column>소속부서</th>
             <th>역할</th>
             <th>상태</th>
             <th>최근변경</th>
