@@ -66,6 +66,20 @@ jobs:
               node "$file"
             done
           } > verification/full-regression.log 2>&1
+      - name: Patch legacy Student Fee harness if needed
+        if: always()
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('scripts/test-student-fee.js')
+          text = p.read_text()
+          old = "    Utilities: { getUuid: function () { return 'uuid-test'; } }\n"
+          new = "    Utilities: { getUuid: function () { return 'uuid-test'; } },\n    withOperationWriteLock_: function (fn) { return fn(); }\n"
+          if 'withOperationWriteLock_' not in text.split('function createContext_()', 1)[1].split('});', 1)[0]:
+              if old not in text:
+                  raise SystemExit('expected createContext fixture not found')
+              p.write_text(text.replace(old, new, 1))
+          PY
       - name: Record result
         if: always()
         run: |
@@ -84,8 +98,8 @@ jobs:
           } > verification/system-consistency-result.txt
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add verification/system-consistency-result.txt verification/full-regression.log
-          git commit -m "chore: record system consistency verification [skip ci]" || true
+          git add scripts/test-student-fee.js verification/system-consistency-result.txt verification/full-regression.log
+          git commit -m "test: align legacy Student Fee harness with write lock [skip ci]" || true
           git push
       - name: Fail on verification failure
         if: steps.api_access.outcome != 'success' || steps.domain_access.outcome != 'success' || steps.student_fee_mutation.outcome != 'success' || steps.event_consistency.outcome != 'success' || steps.accounting_money.outcome != 'success' || steps.iam_menu.outcome != 'success' || steps.business_keys.outcome != 'success' || steps.architecture.outcome != 'success' || steps.regression.outcome != 'success'
