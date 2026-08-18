@@ -1,5 +1,5 @@
 // 1. 환불내역 전체 조회
-function findAllFeeRefundRows_() {
+function listFeeRefundRows_() {
   return readOperationTableClientRows_('feeRefunds');
 }
 
@@ -10,7 +10,7 @@ function findFeeRefundRowById_(refundId) {
 
 // 3. 환불신청ID 기준 환불내역 조회
 function findFeeRefundRowByRequestId_(requestId) {
-  var rows = findAllFeeRefundRows_();
+  var rows = listFeeRefundRows_();
   for (var i = 0; i < rows.length; i += 1) {
     if (String(rows[i].requestId) === String(requestId)) return rows[i];
   }

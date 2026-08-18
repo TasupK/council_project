@@ -116,10 +116,10 @@ function createLoginContextHarness_() {
 
 function testBuildSessionUserContext_() {
   var context = createLoginContextHarness_();
-  context.getRolesById_ = function () { return { role_staff: { id: 'role_staff', name: '일반 사용자', protected: false } }; };
+  context.buildRolesById_ = function () { return { role_staff: { id: 'role_staff', name: '일반 사용자', protected: false } }; };
   context.getActiveRoleIdsByEmail_ = function () { return { 'student@example.com': ['role_staff'] }; };
   context.checkLoginUserDbIntegrity_ = function () { return { valid: true, issues: [] }; };
-  context.toUserDto_ = function (row, roleIds, roles) { return { id: row.email, email: row.email, status: 'active', roleIds: roleIds, roles: roles }; };
+  context.mapUserDto_ = function (row, roleIds, roles) { return { id: row.email, email: row.email, status: 'active', roleIds: roleIds, roles: roles }; };
   context.summarizeRoleForUser_ = function (role) { return { id: role.id, name: role.name }; };
   context.buildUserPermissionsFromDb_ = function () { return { byScreen: {}, menus: [] }; };
   context.isAdminRoleSet_ = function () { return false; };

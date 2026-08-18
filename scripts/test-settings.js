@@ -59,7 +59,7 @@ function testUsersSettingsComposition_() {
   load_(context, 'src/000_server/040_iam/041_users/users_query_service.gs');
   load_(context, 'src/000_server/070_settings/071_users/settings_users_query_service.gs');
   context.listUserRows_ = function () { return [{ 'Google이메일': 'Student@Example.com ', '성명': '김학생', '학번': '6001', '연락처': '010-1111-2222', '계정상태': '활성', '최종수정일시': '2026-08-17T12:00:00', '등록자이메일': 'admin@example.com' }]; };
-  context.getRolesById_ = function () { return { ROLE_ADMIN: { id: 'ROLE_ADMIN', name: '관리자' } }; };
+  context.buildRolesById_ = function () { return { ROLE_ADMIN: { id: 'ROLE_ADMIN', name: '관리자' } }; };
   context.getActiveRoleIdsByEmail_ = function () { return { 'student@example.com': ['ROLE_ADMIN'] }; };
   context.summarizeRoleForUser_ = function (role) { return { id: role.id, name: role.name }; };
   assert.deepStrictEqual(plain_(context.listUsersForSettings_()), [{
@@ -73,7 +73,7 @@ function testRolesSettingsComposition_() {
   installValueStubs_(context);
   context.getUserDbFields_ = function () { return { roleId: '역할ID', assignedStatus: '배정상태' }; };
   load_(context, 'src/000_server/070_settings/072_roles/settings_roles_query_service.gs');
-  context.getRolesById_ = function () { return { ROLE_ADMIN: { id: 'ROLE_ADMIN', assignedCount: 0 }, ROLE_STAFF: { id: 'ROLE_STAFF', assignedCount: 0 } }; };
+  context.buildRolesById_ = function () { return { ROLE_ADMIN: { id: 'ROLE_ADMIN', assignedCount: 0 }, ROLE_STAFF: { id: 'ROLE_STAFF', assignedCount: 0 } }; };
   context.listUserRoleRows_ = function () { return [
     { '역할ID': 'ROLE_ADMIN', '배정상태': '활성' }, { '역할ID': 'ROLE_ADMIN', '배정상태': '활성' },
     { '역할ID': 'ROLE_ADMIN', '배정상태': '비활성' }, { '역할ID': 'ROLE_STAFF', '배정상태': '활성' }
@@ -93,7 +93,7 @@ function testPermissionsIamAndSettingsComposition_() {
     { '권한ID': 'EVENT_EDIT', '업무영역': '행사', '행위': '수정', '권한명': '행사 수정', '권한설명': '', '활성여부': true }
   ];
   context.listPermissionRows_ = function () { return rows; };
-  context.getPermissionsById_ = function () { return { EVENT_VIEW: context.toPermissionDto_(rows[0]), EVENT_EDIT: context.toPermissionDto_(rows[1]) }; };
+  context.buildPermissionsById_ = function () { return { EVENT_VIEW: context.mapPermissionDto_(rows[0]), EVENT_EDIT: context.mapPermissionDto_(rows[1]) }; };
   context.getPermissionIdsByRoleId_ = function () { return { ROLE_ADMIN: ['EVENT_VIEW', 'EVENT_EDIT'] }; };
   assert.strictEqual(context.buildPermissionTreeFromDb_()[0].id, 'area_행사');
   assert.strictEqual(context.buildPermissionsByRoleFromDb_().ROLE_ADMIN.perm_EVENT_EDIT.edit, true);

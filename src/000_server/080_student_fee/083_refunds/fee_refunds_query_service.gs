@@ -26,13 +26,13 @@ function calculateRefundableAmount_(paymentId) {
   var payment = findFeePaymentRowById_(paymentId);
   if (!payment) throw new Error('납부내역을 찾을 수 없습니다: ' + paymentId);
 
-  var requestIds = findAllFeeRefundRequestRows_().filter(function (row) {
+  var requestIds = listFeeRefundRequestRows_().filter(function (row) {
     return String(row.paymentId) === String(paymentId);
   }).map(function (row) {
     return String(row.id);
   });
 
-  var usedAmount = findAllFeeRefundRows_().filter(function (row) {
+  var usedAmount = listFeeRefundRows_().filter(function (row) {
     return requestIds.indexOf(String(row.requestId)) >= 0 && ['대기', '완료'].indexOf(String(row.moneyStatus || '')) >= 0;
   }).reduce(function (sum, row) {
     return sum + (Number(row.approvedAmount) || 0);
@@ -62,11 +62,11 @@ function getFeeRefundRequestListData_(request) {
   var pageSize = Math.max(Number(source.pageSize) || 20, 1);
   var refundByRequestId = {};
 
-  findAllFeeRefundRows_().forEach(function (refund) {
+  listFeeRefundRows_().forEach(function (refund) {
     if (refund.requestId) refundByRequestId[String(refund.requestId)] = refund;
   });
 
-  var rows = findAllFeeRefundRequestRows_().filter(function (row) {
+  var rows = listFeeRefundRequestRows_().filter(function (row) {
     if (status && String(row.status || '') !== status) return false;
     if (!keyword) return true;
     return String(row.studentId || '').toLowerCase().indexOf(keyword) >= 0 ||

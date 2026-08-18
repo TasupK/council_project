@@ -44,7 +44,7 @@ function buildSettingsDepartmentChart_() {
   });
   unassigned.sort(memberSort_);
 
-  var roleMap = getRolesById_();
+  var roleMap = buildRolesById_();
   return {
     summary: {
       totalUsers: users.length,

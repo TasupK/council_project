@@ -45,7 +45,7 @@ function getEvidenceAuditList_(filter) {
     return index;
   }, {});
   var keyword = String(filter.keyword || '').trim().toLowerCase();
-  var items = findAllLedgerEvidenceRows_().map(function (evidence) {
+  var items = listLedgerEvidenceRows_().map(function (evidence) {
     var ledger = ledgerById[evidence.transactionId];
     if (!ledger) return null;
     return {

@@ -4,12 +4,12 @@ function runReconciliation_(request, context) {
   request = request || {};
   if (!request.startDate || !request.endDate) throw new Error('startDate와 endDate가 필요합니다.');
   if (request.startDate > request.endDate) throw new Error('감사 시작일이 종료일보다 늦을 수 없습니다.');
-  var banks = findAllBankTransactionRows_().filter(function (row) { return inAccountingDateRange_(row.transactionAt, request.startDate, request.endDate); });
+  var banks = listBankTransactionRows_().filter(function (row) { return inAccountingDateRange_(row.transactionAt, request.startDate, request.endDate); });
   var ledgers = getReconciliationLedgerCandidates_({ startDate: request.startDate, endDate: request.endDate });
   var results = buildReconciliationResults_(banks, ledgers);
   var claimed = {};
   results.forEach(function (item) { if (item.status === '정상' && item.ledgerId) claimed[item.ledgerId] = true; });
-  var evidenceByTransaction = groupBy_(findAllLedgerEvidenceRows_(), 'transactionId');
+  var evidenceByTransaction = groupBy_(listLedgerEvidenceRows_(), 'transactionId');
   var now = getCurrentIsoDateTime_();
   var id = makeId_('REC');
   var header = {
@@ -42,7 +42,7 @@ function linkReconciliation_(request, context) {
   if (!bank || !ledger) throw new Error('계좌 거래 또는 원장을 찾을 수 없습니다.');
   if (isTruthyValue_(bank.expense) !== (ledger.transaction_type === '지출')) throw new Error('수입/지출 방향이 일치하지 않습니다.');
   if (Math.abs(Number(bank.amount || 0)) !== Math.abs(Number(ledger.amount || 0))) throw new Error('거래금액이 일치하지 않습니다.');
-  var claimed = findAllReconciliationItemRows_().some(function (row) { return String(row.reconciliationId) === String(item.reconciliationId) && String(row.id) !== String(item.id) && row.status === '정상' && String(row.ledgerId || '') === String(request.ledgerId); });
+  var claimed = listReconciliationItemRows_().some(function (row) { return String(row.reconciliationId) === String(item.reconciliationId) && String(row.id) !== String(item.id) && row.status === '정상' && String(row.ledgerId || '') === String(request.ledgerId); });
   if (claimed) throw new Error('같은 대사에서 이미 연결된 원장입니다.');
   var changes = { ledgerId: request.ledgerId, status: '정상', differenceAmount: 0, matchMethod: 'manual', note: request.note || '수동 연결', updatedAt: getCurrentIsoDateTime_() };
   updateReconciliationItemRowById_(item.id, changes);

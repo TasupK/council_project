@@ -25,7 +25,7 @@ var context = vm.createContext({
   String: String,
   Object: Object,
   Array: Array,
-  getPermissionsById_: function () { return permissions; },
+  buildPermissionsById_: function () { return permissions; },
   permissionScreenId_: function (permission) { return 'perm_' + permission.id; },
   actionToPermissionKey_: function (action) {
     if (String(action).indexOf('조회') >= 0) return 'view';

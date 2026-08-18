@@ -56,7 +56,7 @@ function digestBytes(text) {
     resolveEventFormResponseSource_: function () { return { googleFormId: 'FORM', responseSheetId: 'SHEET', sheetName: 'responses' }; },
     buildEventFormCandidates_: function () { return { items: [], invalidRows: [] }; },
     withOperationWriteLock_: function (fn) { inLock = true; try { return fn(); } finally { inLock = false; } },
-    findAllEventApplicationSourceResponseIds_: function () { return []; },
+    listEventApplicationSourceResponseIds_: function () { return []; },
     insertEventApplicationRow_: function () {},
     insertEventExtraAnswerRow_: function () {},
     getCurrentIsoDateTime_: function () { return '2026-08-18T21:00:00+09:00'; },
@@ -66,7 +66,7 @@ function digestBytes(text) {
   });
   var file = path.join(ROOT, 'src/000_server/050_event/052_applicants/applicants_form_sync_service.gs');
   vm.runInContext(fs.readFileSync(file, 'utf8'), ctx, { filename: file });
-  ctx.syncApplicantsFromFormsData_({ id: 'EVT-1', payload: { googleFormId: 'FORM', responseSheetId: 'SHEET' } }, { email: 'staff@example.com' });
+  ctx.applyApplicantFormSyncData_({ id: 'EVT-1', payload: { googleFormId: 'FORM', responseSheetId: 'SHEET' } }, { email: 'staff@example.com' });
   assert.ok(findCalls >= 2, 'form row must be re-read after entering lock');
   assert.strictEqual(updated.length, 1, 'concurrent existing form must be updated');
   assert.strictEqual(updated[0][0], 'FORM-EXISTING');

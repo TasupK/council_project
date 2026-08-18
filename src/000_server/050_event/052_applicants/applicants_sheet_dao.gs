@@ -1,5 +1,5 @@
 // 1. 행사 신청 행 조회
-function findAllEventApplicationClientRows_() {
+function listEventApplicationClientRows_() {
   return readOperationTableClientRows_('eventApplications');
 }
 
@@ -7,8 +7,8 @@ function findEventApplicationRowById_(applicationId) {
   return findOperationTableRowById_('eventApplications', applicationId);
 }
 
-function findAllEventApplicationSourceResponseIds_() {
-  return findAllEventApplicationClientRows_().map(function (row) {
+function listEventApplicationSourceResponseIds_() {
+  return listEventApplicationClientRows_().map(function (row) {
     return String(row.sourceResponseId || '').trim();
   }).filter(function (value) { return !!value; });
 }

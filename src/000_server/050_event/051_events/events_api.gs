@@ -51,7 +51,7 @@ function api_updateEventStatus(input) {
     operation: 'updateEventStatus', input: input, requireLogin: true,
     access: eventApiAccess_('approve'),
     parse: parseEventRequest_,
-    service: function (parsed, context) { return updateEventStatusData_(parsed.request, context); }
+    service: function (parsed, context) { return processEventStatusData_(parsed.request, context); }
   });
 }
 
@@ -60,6 +60,6 @@ function api_closeEvent(input) {
     operation: 'closeEvent', input: input, requireLogin: true,
     access: eventApiAccess_('approve'),
     parse: parseEventRequest_,
-    service: function (parsed, context) { return closeEventData_(parsed.request, context); }
+    service: function (parsed, context) { return processEventClosureData_(parsed.request, context); }
   });
 }

@@ -36,7 +36,7 @@ if (!failures.length) {
   forbid_(portSource, /\bapiV1_|\bEventWelfare_/, 'Legacy EventWelfare/API stack must not be reintroduced');
   forbid_(apiSource, /requireEventEditContext_\s*\(context\)/, 'Sync API must not retain a second Event authorization path');
 
-  if (!/function\s+syncApplicantsFromFormsData_\s*\(/.test(serviceSource)) failures.push('Sync orchestration must live in applicants_form_sync_service.gs');
+  if (!/function\s+applyApplicantFormSyncData_\s*\(/.test(serviceSource)) failures.push('Sync orchestration must live in applicants_form_sync_service.gs');
   if (!/function\s+resolveEventFormResponseSource_\s*\(/.test(readerSource)) failures.push('External source resolution must live in reader');
   if (!/function\s+buildEventFormCandidates_\s*\(/.test(mapperSource)) failures.push('Response mapping must live in mapper');
   if (!/access\s*:\s*eventApiAccess_\s*\(\s*['"]edit['"]\s*\)/.test(apiSource)) failures.push('Sync API must use Event access override helper');

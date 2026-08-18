@@ -1,6 +1,6 @@
 // Google Forms 응답을 행사 신청/추가답변 테이블로 명시적으로 동기화한다.
 
-function syncApplicantsFromFormsData_(request, current) {
+function applyApplicantFormSyncData_(request, current) {
   var eventId = requireEventRequestId_(request);
   var event = findEventRowById_(eventId);
   if (!event) throwEventError_('NOT_FOUND', '행사를 찾을 수 없습니다.');
@@ -20,7 +20,7 @@ function syncApplicantsFromFormsData_(request, current) {
 
   return withOperationWriteLock_(function () {
     var existingIds = {};
-    findAllEventApplicationSourceResponseIds_().forEach(function (id) {
+    listEventApplicationSourceResponseIds_().forEach(function (id) {
       existingIds[String(id)] = true;
     });
     var seenBatch = {};

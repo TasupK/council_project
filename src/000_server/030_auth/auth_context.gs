@@ -35,7 +35,7 @@ function buildSessionUserContextFromDb_(email) {
     return failResponse_('INACTIVE', '비활성화된 계정입니다.', { email: email });
   }
 
-  var roleMap = getRolesById_();
+  var roleMap = buildRolesById_();
   var roleIdsByEmail = getActiveRoleIdsByEmail_();
   var roleIds = roleIdsByEmail[email] || [];
   if (roleIds.length === 0) {
@@ -53,7 +53,7 @@ function buildSessionUserContextFromDb_(email) {
   var roles = roleIds.map(function (roleId) {
     return summarizeRoleForUser_(roleMap[roleId], roleId);
   });
-  var user = toUserDto_(userRow, roleIds, roles);
+  var user = mapUserDto_(userRow, roleIds, roles);
   var permissions = buildUserPermissionsFromDb_(roleIds);
 
   return okResponse_({

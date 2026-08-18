@@ -1,5 +1,5 @@
 // 1. 납부내역 전체 조회
-function findAllFeePaymentRows_() {
+function listFeePaymentRows_() {
   return readOperationTableClientRows_('feePayments');
 }
 
@@ -10,7 +10,7 @@ function findFeePaymentRowById_(paymentId) {
 
 // 3. 납부신청ID 기준 납부내역 조회
 function findFeePaymentRowByApplicationId_(applicationId) {
-  var rows = findAllFeePaymentRows_();
+  var rows = listFeePaymentRows_();
   for (var i = 0; i < rows.length; i += 1) {
     if (String(rows[i].applicationId) === String(applicationId)) return rows[i];
   }

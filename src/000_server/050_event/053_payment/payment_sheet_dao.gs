@@ -1,4 +1,4 @@
 // 1. 행사 입금 행 조회
-function findAllEventPaymentClientRows_() {
+function listEventPaymentClientRows_() {
   return readOperationTableClientRows_('eventPayments');
 }

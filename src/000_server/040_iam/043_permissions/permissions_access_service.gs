@@ -31,7 +31,7 @@ function resolvePermissionByAliases_(access, aliases) {
   var explicitScreenId = String(access && access.screenId || '').trim();
   var normalizedAliases = (aliases || []).map(normalizePermissionAccessToken_);
   var candidates = [];
-  var permissionsById = getPermissionsById_();
+  var permissionsById = buildPermissionsById_();
 
   Object.keys(permissionsById).forEach(function (permissionId) {
     var permission = permissionsById[permissionId];

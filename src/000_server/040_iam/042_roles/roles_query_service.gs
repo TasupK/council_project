@@ -1,8 +1,8 @@
 // 1. 역할ID 기준 역할 목록 생성
-function getRolesById_() {
+function buildRolesById_() {
   var map = {};
   listRoleRows_().forEach(function (row) {
-    var role = toRoleDto_(row);
+    var role = mapRoleDto_(row);
     if (role.id) map[role.id] = role;
   });
   return map;
@@ -24,7 +24,7 @@ function getActiveRoleIdsByEmail_() {
 }
 
 // 3. 역할 시트 행을 화면/API 응답용 객체로 변환
-function toRoleDto_(row) {
+function mapRoleDto_(row) {
   var fields = getUserDbFields_('roles');
   var isSystem = isTruthyValue_(row[fields.isSystem]);
   return {

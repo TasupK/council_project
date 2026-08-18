@@ -19,7 +19,7 @@ var context = vm.createContext({
 });
 vm.runInContext(fs.readFileSync(file, 'utf8'), context, { filename: file });
 
-context.getPermissionsById_ = function () {
+context.buildPermissionsById_ = function () {
   return { P: { id: 'P', area: '행사', action: '수정', name: '행사 수정', status: 'active' } };
 };
 context.getPermissionIdsByRoleId_ = function () { return { ROLE: ['P'] }; };

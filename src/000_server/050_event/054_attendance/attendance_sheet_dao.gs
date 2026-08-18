@@ -1,5 +1,5 @@
 // 1. 행사 출석 행 조회
-function findAllEventAttendanceClientRows_() {
+function listEventAttendanceClientRows_() {
   return readOperationTableClientRows_('eventAttendance');
 }
 
@@ -8,7 +8,7 @@ function findEventAttendanceRowById_(attendanceId) {
 }
 
 function findEventAttendanceByApplicationId_(applicationId) {
-  return findAllEventAttendanceClientRows_().filter(function (item) {
+  return listEventAttendanceClientRows_().filter(function (item) {
     return String(item.applicationId) === String(applicationId);
   })[0] || null;
 }

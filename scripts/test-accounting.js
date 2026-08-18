@@ -67,7 +67,7 @@ function testLedgerDto_() {
 
 function testLedgerComposition_() {
   var context = createContext_();
-  context.findAllLedgerRows_ = function () {
+  context.listLedgerRows_ = function () {
     return [
       { id: 'trx-1', transactionAt: '2026-08-01T10:00:00', expense: false, amount: 3000, eventId: 'evt-1', createdAt: '2026-08-01', updatedAt: '2026-08-01' },
       { id: 'trx-2', transactionAt: '2026-08-02T10:00:00', expense: true, amount: 1200, eventId: '', createdAt: '2026-08-02', updatedAt: '2026-08-02' }
@@ -76,7 +76,7 @@ function testLedgerComposition_() {
   context.findAllAccountingEventRows_ = function () {
     return [{ id: 'evt-1', name: '개강 행사' }];
   };
-  context.findAllLedgerEvidenceRows_ = function () {
+  context.listLedgerEvidenceRows_ = function () {
     return [{ id: 'evd-1', transactionId: 'trx-1', driveFileId: 'file-1', fileName: '영수증.pdf', createdAt: '2026-08-01' }];
   };
 
@@ -177,7 +177,7 @@ function testSettlementSummaryCompatibility_() {
     ];
   };
   context.findAllAccountingEventRows_ = function () { return [{}, {}]; };
-  context.findAllLedgerEvidenceRows_ = function () { return [{}, {}, {}]; };
+  context.listLedgerEvidenceRows_ = function () { return [{}, {}, {}]; };
 
   var summary = context.api_getSettlementSummary({});
   assert.deepStrictEqual(plain_(summary), {
@@ -238,13 +238,13 @@ function testLedgerLifecycle_() {
 
 function testLedgerDeletedFiltering_() {
   var context = createContext_();
-  context.findAllLedgerRows_ = function () { return [
+  context.listLedgerRows_ = function () { return [
     { id: 'active', transactionAt: '2026-08-01', expense: false, amount: 1000, recordStatus: 'ACTIVE' },
     { id: 'draft', transactionAt: '2026-08-02', expense: true, amount: 500, recordStatus: 'DRAFT' },
     { id: 'deleted', transactionAt: '2026-08-03', expense: true, amount: 999, recordStatus: 'DELETED' }
   ]; };
   context.findAllAccountingEventRows_ = function () { return []; };
-  context.findAllLedgerEvidenceRows_ = function () { return []; };
+  context.listLedgerEvidenceRows_ = function () { return []; };
   var items = context.getLedgerEntries_();
   assert.deepStrictEqual(items.map(function (x) { return x.transaction_id; }).sort(), ['active', 'draft']);
   assert.strictEqual(items.filter(function (x) { return x.transaction_id === 'draft'; })[0].status, '임시저장');
@@ -253,7 +253,7 @@ function testLedgerDeletedFiltering_() {
 function testEvidenceAuditQuery_() {
   var context = createContext_();
   context.getLedgerEntries_ = function () { return [{ transaction_id: 'trx-1', transaction_date: '2026-08-01', transaction_type: '지출', amount: 12000 }]; };
-  context.findAllLedgerEvidenceRows_ = function () { return [{ id: 'evd-1', transactionId: 'trx-1', fileName: 'receipt.pdf', driveFileId: 'drive-1', createdAt: '2026-08-01' }]; };
+  context.listLedgerEvidenceRows_ = function () { return [{ id: 'evd-1', transactionId: 'trx-1', fileName: 'receipt.pdf', driveFileId: 'drive-1', createdAt: '2026-08-01' }]; };
   assert.deepStrictEqual(plain_(context.getEvidenceAuditList_({ startDate: '2026-08-01', endDate: '2026-08-31', transaction_type: '지출' }).items[0]), {
     evidence_id: 'evd-1', transaction_id: 'trx-1', transaction_date: '2026-08-01', transaction_type: '지출', amount: 12000, file_name: 'receipt.pdf', file_id: 'drive-1', category: '', type: '', created_at: '2026-08-01'
   });
@@ -295,7 +295,7 @@ function testSettlementEligibilityAndSnapshot_() {
     { transaction_id: 'x1', transaction_date: '2026-08-03', transaction_type: '지출', amount: 999, status: '확인필요', match_status: '확인필요', record_status: 'ACTIVE' },
     { transaction_id: 'd1', transaction_date: '2026-08-04', transaction_type: '수입', amount: 100, status: '임시저장', match_status: '정상', record_status: 'DRAFT' }
   ]; };
-  context.findAllLedgerEvidenceRows_ = function () { return [{ transactionId: 'i1' }, { transactionId: 'e1' }, { transactionId: 'x1' }]; };
+  context.listLedgerEvidenceRows_ = function () { return [{ transactionId: 'i1' }, { transactionId: 'e1' }, { transactionId: 'x1' }]; };
   var summary = context.getSettlementSummary_({ startDate: '2026-08-01', endDate: '2026-08-31' });
   assert.deepStrictEqual(plain_(summary), { totalIncome: 3000, totalExpense: 1200, balance: 1800, incomeCount: 1, expenseCount: 1, evidenceCount: 2 });
   var inserted = null;

@@ -3,7 +3,7 @@
 function getEventListData_(request) {
   var filter = request.filter && typeof request.filter === 'object' ? request.filter : {};
   var keyword = normalizeEventText_(filter.keyword).toLowerCase();
-  var rows = findAllEventClientRows_().filter(function (item) {
+  var rows = listEventClientRows_().filter(function (item) {
     if (keyword) {
       var haystack = [item.name, item.id, item.managerId]
         .join(' ').toLowerCase();
@@ -25,7 +25,7 @@ function getEventListData_(request) {
   });
 
   var result = paginateEventItems_(rows, request);
-  var allRows = findAllEventClientRows_();
+  var allRows = listEventClientRows_();
   // TODO(API 상세 계약): 행사복지 Response 상세 필드 확정 후 summary/options 이름을 대조한다.
   result.summary = {
     total: allRows.length,
@@ -71,11 +71,11 @@ function buildEventFormSyncView_(eventForm) {
 
 function getEventDetailData_(request) {
   var event = getEventData_(request);
-  var applicants = findAllEventApplicationClientRows_().filter(function (row) {
+  var applicants = listEventApplicationClientRows_().filter(function (row) {
     return String(row.eventId) === String(event.id);
   });
   var attendanceById = {};
-  findAllEventAttendanceClientRows_().forEach(function (row) {
+  listEventAttendanceClientRows_().forEach(function (row) {
     attendanceById[String(row.applicationId)] = row;
   });
   var approved = applicants.filter(function (row) { return row.status === '승인'; });

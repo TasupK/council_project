@@ -1,0 +1,79 @@
+== scripts/test-accounting-money-validation.js ==
+Accounting money/type validation contract passed.
+== scripts/test-accounting.js ==
+Accounting behavior regression tests passed.
+== scripts/test-api-access-contract.js ==
+Common API access contract passed.
+== scripts/test-auth-iam.js ==
+Login context validation failed. { code: 'NO_SESSION' }
+Auth/IAM behavior regression tests passed.
+== scripts/test-core.js ==
+Core behavior tests passed.
+== scripts/test-department-iam.js ==
+Department IAM contract passed.
+== scripts/test-domain-access-resolvers.js ==
+Domain access resolver contract passed.
+== scripts/test-event-consistency-hardening.js ==
+Event consistency hardening contract passed.
+== scripts/test-event-form-sync-api.js ==
+Event Form sync API/access contract passed.
+== scripts/test-event-form-sync-frontend.js ==
+Event Form sync frontend contract passed.
+== scripts/test-event-form-sync-mapper.js ==
+Event Form mapper/reader contract passed.
+== scripts/test-event-form-sync-service.js ==
+Event Form sync service contract passed.
+== scripts/test-event.js ==
+Event behavior regression tests passed.
+== scripts/test-iam-menu-semantics.js ==
+IAM menu semantics contract passed.
+== scripts/test-mypage-auth.js ==
+MyPage Auth/IAM contract tests passed.
+== scripts/test-mypage-frontend.js ==
+MyPage frontend contract tests passed.
+== scripts/test-mypage-routing.js ==
+MyPage routing and entry-point tests passed.
+== scripts/test-operation-business-key-integrity.js ==
+OperationDB business-key integrity contract passed.
+== scripts/test-route-access.js ==
+IAM route access contract passed.
+== scripts/test-settings-department-chart.js ==
+Settings department chart contract passed.
+== scripts/test-settings-departments.js ==
+Settings department assignment contract passed.
+== scripts/test-settings.js ==
+Settings behavior regression tests passed.
+== scripts/test-sidebar-access.js ==
+Sidebar access contract passed.
+== scripts/test-student-fee-frontend.js ==
+Student Fee frontend regression tests passed.
+== scripts/test-student-fee-mutation-consistency.js ==
+Student Fee mutation consistency contract passed.
+== scripts/test-student-fee.js ==
+Student Fee behavior regression tests passed.
+== scripts/verify-accounting-architecture.js ==
+Accounting architecture verification passed.
+== scripts/verify-auth-iam-architecture.js ==
+Auth/IAM architecture verification passed.
+== scripts/verify-department-access-architecture.js ==
+Department/access architecture verification passed.
+== scripts/verify-event-architecture.js ==
+Event architecture verification passed.
+== scripts/verify-event-form-sync-architecture.js ==
+Event Form sync architecture verification passed.
+== scripts/verify-internal-function-naming.js ==
+Internal function naming verification passed.
+== scripts/verify-mypage-architecture.js ==
+MyPage architecture verification passed.
+== scripts/verify-server-architecture.js ==
+Server architecture verification passed.
+== scripts/verify-settings-architecture.js ==
+Settings architecture verification passed.
+== scripts/verify-student-fee-architecture.js ==
+Student Fee architecture verification passed.
+== scripts/verify-student-fee-frontend.js ==
+Student Fee frontend architecture verification passed.
+== scripts/verify-system-consistency-architecture.js ==
+System consistency architecture guardrails passed.
+== scripts/verify-ui-system-migration.js ==
+Shared UI system migration verification passed.

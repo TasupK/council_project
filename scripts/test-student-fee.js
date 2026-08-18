@@ -134,7 +134,7 @@ function testPayerBehavior_() {
 
   var query = createContext_();
   loadRequest_(query);
-  query.findAllFeePayerRows_ = function () {
+  query.listFeePayerRows_ = function () {
     return [{ studentId: '60201234', name: '김학생', affiliation: '경영정보학과', startSemesterId: '2026-1', updatedAt: '2026-08-17' }];
   };
   query.findFeePayerRowById_ = function () { return { studentId: '60201234', name: '김학생' }; };
@@ -148,14 +148,14 @@ function testPayerBehavior_() {
 function testPaymentBehavior_() {
   var query = createContext_();
   loadRequest_(query);
-  query.findAllFeeApplicationRows_ = function () {
+  query.listFeeApplicationRows_ = function () {
     return [
       { id: 'app-1', studentId: '60201234', name: '김학생', paymentDate: '2026-08-10', semesterNumber: 9, appliedAt: '2026-08-11', status: '접수' },
       { id: 'app-2', studentId: '60205678', name: '이학생', paymentDate: '2026-08-09', appliedAt: '2026-08-12', status: '승인' }
     ];
   };
-  query.findAllFeePaymentRows_ = function () { return [{ id: 'pay-2', applicationId: 'app-2', amount: 20000, moneyStatus: '대기' }]; };
-  query.findFeeApplicationRowById_ = function () { return query.findAllFeeApplicationRows_()[0]; };
+  query.listFeePaymentRows_ = function () { return [{ id: 'pay-2', applicationId: 'app-2', amount: 20000, moneyStatus: '대기' }]; };
+  query.findFeeApplicationRowById_ = function () { return query.listFeeApplicationRows_()[0]; };
   query.findFeePaymentRowByApplicationId_ = function () { return null; };
   query.resolveStudentFeeRate_ = function () { return { id: 'rate-1', amountPerSemester: 20000 }; };
   load_(query, 'src/000_server/080_student_fee/082_payments/fee_payments_query_service.gs');
@@ -198,20 +198,20 @@ function testPaymentBehavior_() {
 function testRefundBehavior_() {
   var query = createContext_();
   query.findFeePaymentRowById_ = function () { return { id: 'pay-1', amount: 20000 }; };
-  query.findAllFeeRefundRequestRows_ = function () {
+  query.listFeeRefundRequestRows_ = function () {
     return [
       { id: 'req-1', paymentId: 'pay-1', studentId: '60201234', accountNumber: '1234567890', accountHolder: '김학생', bankName: '은행', appliedAt: '2026-08-17', status: '접수' },
       { id: 'req-2', paymentId: 'pay-1' }
     ];
   };
-  query.findAllFeeRefundRows_ = function () {
+  query.listFeeRefundRows_ = function () {
     return [
       { requestId: 'req-1', approvedAmount: 5000, moneyStatus: '대기' },
       { requestId: 'req-2', approvedAmount: 3000, moneyStatus: '완료' },
       { requestId: 'req-2', approvedAmount: 9999, moneyStatus: '실패' }
     ];
   };
-  query.findFeeRefundRequestRowById_ = function () { return query.findAllFeeRefundRequestRows_()[0]; };
+  query.findFeeRefundRequestRowById_ = function () { return query.listFeeRefundRequestRows_()[0]; };
   query.findFeeRefundRowByRequestId_ = function () { return null; };
   load_(query, 'src/000_server/080_student_fee/083_refunds/fee_refunds_query_service.gs');
   assert.strictEqual(query.calculateRefundableAmount_('pay-1'), 12000);
@@ -256,11 +256,11 @@ function testRefundBehavior_() {
 
 function testSummary_() {
   var context = createContext_();
-  context.findAllFeePayerRows_ = function () { return [{}, {}]; };
-  context.findAllFeeApplicationRows_ = function () { return [{ status: '접수' }, { status: '승인' }, { status: '반려' }]; };
-  context.findAllFeePaymentRows_ = function () { return [{ moneyStatus: '대기', amount: 20000 }, { moneyStatus: '완료', amount: 20000 }]; };
-  context.findAllFeeRefundRequestRows_ = function () { return [{ status: '접수' }, { status: '승인' }]; };
-  context.findAllFeeRefundRows_ = function () { return [{ moneyStatus: '대기', approvedAmount: 10000 }]; };
+  context.listFeePayerRows_ = function () { return [{}, {}]; };
+  context.listFeeApplicationRows_ = function () { return [{ status: '접수' }, { status: '승인' }, { status: '반려' }]; };
+  context.listFeePaymentRows_ = function () { return [{ moneyStatus: '대기', amount: 20000 }, { moneyStatus: '완료', amount: 20000 }]; };
+  context.listFeeRefundRequestRows_ = function () { return [{ status: '접수' }, { status: '승인' }]; };
+  context.listFeeRefundRows_ = function () { return [{ moneyStatus: '대기', approvedAmount: 10000 }]; };
   load_(context, 'src/000_server/080_student_fee/082_payments/fee_payments_query_service.gs');
   assert.deepStrictEqual(plain_(context.getStudentFeeSummaryData_()), {
     payers: { total: 2 },

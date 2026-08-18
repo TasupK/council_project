@@ -1,5 +1,5 @@
 // 1. 권한 시트 행을 화면/API 응답용 객체로 변환
-function toPermissionDto_(row) {
+function mapPermissionDto_(row) {
   var fields = getUserDbFields_('permissions');
   return {
     id: normalizeTextValue_(row[fields.id]),
@@ -12,10 +12,10 @@ function toPermissionDto_(row) {
 }
 
 // 2. 권한ID 기준 활성 권한 목록 생성
-function getPermissionsById_() {
+function buildPermissionsById_() {
   var map = {};
   listPermissionRows_().forEach(function (row) {
-    var permission = toPermissionDto_(row);
+    var permission = mapPermissionDto_(row);
     if (permission.id && permission.status === 'active') map[permission.id] = permission;
   });
   return map;
@@ -55,7 +55,7 @@ function buildPermissionTreeFromDb_() {
   var grouped = {};
   var permissions = [];
   listPermissionRows_().forEach(function (row) {
-    var permission = toPermissionDto_(row);
+    var permission = mapPermissionDto_(row);
     if (!permission.id || permission.status !== 'active') return;
     permissions.push(permission);
     if (!grouped[permission.area]) grouped[permission.area] = [];
@@ -86,7 +86,7 @@ function buildPermissionTreeFromDb_() {
 
 // 7. 역할별 런타임 권한 매트릭스 생성
 function buildPermissionsByRoleFromDb_() {
-  var permissionsById = getPermissionsById_();
+  var permissionsById = buildPermissionsById_();
   var permissionIdsByRole = getPermissionIdsByRoleId_();
   var result = {};
 
@@ -130,7 +130,7 @@ function buildUserPermissionsFromDb_(roleIds) {
 
 // 9. 현재 유효 권한을 사람이 읽을 수 있는 상세 목록으로 변환
 function buildEffectivePermissionDetails_(permissions) {
-  var permissionsById = getPermissionsById_();
+  var permissionsById = buildPermissionsById_();
   var byScreen = permissions && permissions.byScreen ? permissions.byScreen : {};
   var details = [];
 

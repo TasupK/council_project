@@ -2,7 +2,7 @@
 function listRolesForSettings_() {
   var fields = getUserDbFields_('userRoles');
   var assignedCounts = {};
-  var roleMap = getRolesById_();
+  var roleMap = buildRolesById_();
   listUserRoleRows_().forEach(function (row) {
     if (!isActiveStatus_(row[fields.assignedStatus])) return;
     var roleId = normalizeTextValue_(row[fields.roleId]);

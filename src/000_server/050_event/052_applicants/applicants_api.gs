@@ -33,6 +33,6 @@ function api_syncApplicantsFromForms(input) {
     operation: 'syncApplicantsFromForms', input: input, requireLogin: true,
     access: eventApiAccess_('edit'),
     parse: parseEventRequest_,
-    service: function (parsed, context) { return syncApplicantsFromFormsData_(parsed.request, context); }
+    service: function (parsed, context) { return applyApplicantFormSyncData_(parsed.request, context); }
   });
 }

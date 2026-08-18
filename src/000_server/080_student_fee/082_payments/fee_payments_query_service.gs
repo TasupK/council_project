@@ -14,11 +14,11 @@ function getFeeApplicationListData_(request) {
   var pageSize = Math.max(Number(source.pageSize) || 20, 1);
   var paymentByApplicationId = {};
 
-  findAllFeePaymentRows_().forEach(function (payment) {
+  listFeePaymentRows_().forEach(function (payment) {
     if (payment.applicationId) paymentByApplicationId[String(payment.applicationId)] = payment;
   });
 
-  var rows = findAllFeeApplicationRows_().filter(function (row) {
+  var rows = listFeeApplicationRows_().filter(function (row) {
     if (status && String(row.status || '') !== status) return false;
     if (!keyword) return true;
     return String(row.name || '').toLowerCase().indexOf(keyword) >= 0 ||
@@ -70,11 +70,11 @@ function calculateFeeAmountData_(request) {
 
 // 5. 학생회비 전체 현황 조회
 function getStudentFeeSummaryData_() {
-  var payers = findAllFeePayerRows_();
-  var applications = findAllFeeApplicationRows_();
-  var payments = findAllFeePaymentRows_();
-  var refundRequests = findAllFeeRefundRequestRows_();
-  var refunds = findAllFeeRefundRows_();
+  var payers = listFeePayerRows_();
+  var applications = listFeeApplicationRows_();
+  var payments = listFeePaymentRows_();
+  var refundRequests = listFeeRefundRequestRows_();
+  var refunds = listFeeRefundRows_();
   var countByStatus = function (rows, status) {
     return rows.filter(function (row) { return String(row.status || '') === status; }).length;
   };

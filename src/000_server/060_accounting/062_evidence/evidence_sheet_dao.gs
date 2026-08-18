@@ -1,6 +1,6 @@
 /** 거래증빙 persistence */
 
-function findAllLedgerEvidenceRows_() {
+function listLedgerEvidenceRows_() {
   return readOperationTableRows_('evidence');
 }
 

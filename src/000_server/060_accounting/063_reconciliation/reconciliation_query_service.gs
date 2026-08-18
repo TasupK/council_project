@@ -76,7 +76,7 @@ function buildReconciliationResults_(banks, ledgers) {
 
 function getReconciliationList_(filter) {
   filter = filter || {};
-  var items = findAllReconciliationRows_().filter(function (row) {
+  var items = listReconciliationRows_().filter(function (row) {
     if (filter.startDate && String(row.auditEndDate || '') < filter.startDate) return false;
     if (filter.endDate && String(row.auditStartDate || '') > filter.endDate) return false;
     return true;
@@ -87,9 +87,9 @@ function getReconciliationList_(filter) {
 function getReconciliationDetail_(reconciliationId) {
   var header = findReconciliationRowById_(reconciliationId);
   if (!header) return null;
-  var bankById = findAllBankTransactionRows_().reduce(function (index, row) { index[row.id] = row; return index; }, {});
+  var bankById = listBankTransactionRows_().reduce(function (index, row) { index[row.id] = row; return index; }, {});
   var ledgerById = getLedgerEntries_().reduce(function (index, row) { index[row.transaction_id] = row; return index; }, {});
-  var items = findAllReconciliationItemRows_().filter(function (row) { return String(row.reconciliationId) === String(reconciliationId); }).map(function (row) {
+  var items = listReconciliationItemRows_().filter(function (row) { return String(row.reconciliationId) === String(reconciliationId); }).map(function (row) {
     return { id: row.id, reconciliationId: row.reconciliationId, bankTransactionId: row.bankTransactionId, ledgerId: row.ledgerId || '', status: row.status, differenceAmount: Number(row.differenceAmount || 0), matchMethod: row.matchMethod || '', note: row.note || '', createdAt: formatDateTimeValue_(row.createdAt), updatedAt: formatDateTimeValue_(row.updatedAt), bank: bankById[row.bankTransactionId] || null, ledger: row.ledgerId ? (ledgerById[row.ledgerId] || null) : null };
   });
   return { header: header, items: items };

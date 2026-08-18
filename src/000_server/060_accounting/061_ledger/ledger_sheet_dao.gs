@@ -1,6 +1,6 @@
 /** 수입지출원장 Sheet DAO */
 
-function findAllLedgerRows_() {
+function listLedgerRows_() {
   return readOperationTableRows_('ledger');
 }
 

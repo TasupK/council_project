@@ -9,7 +9,7 @@ function getEvidenceFileContent_(input) {
   input = input || {};
   fileId = input.file_id || '';
   if (!fileId && input.evidence_id) {
-    var evidence = findAllLedgerEvidenceRows_().filter(function (item) {
+    var evidence = listLedgerEvidenceRows_().filter(function (item) {
       return String(item.id) === String(input.evidence_id);
     })[0];
     fileId = evidence ? evidence.driveFileId : '';

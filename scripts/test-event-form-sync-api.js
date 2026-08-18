@@ -14,7 +14,7 @@ var apiSource = fs.readFileSync(apiPath, 'utf8');
 assert.ok(/function\s+api_syncApplicantsFromForms\s*\(/.test(apiSource), 'sync API must exist');
 assert.ok(/access\s*:\s*eventApiAccess_\s*\(\s*['"]edit['"]\s*\)/.test(apiSource), 'sync API must use Event access override helper');
 assert.ok(!/requireEventEditContext_\s*\(context\)/.test(apiSource), 'sync API must not keep a second authorization path');
-assert.ok(/syncApplicantsFromFormsData_\s*\(/.test(apiSource), 'sync API must delegate to sync service');
+assert.ok(/applyApplicantFormSyncData_\s*\(/.test(apiSource), 'sync API must delegate to sync service');
 
 var accessContext = vm.createContext({
   console: console,
@@ -22,7 +22,7 @@ var accessContext = vm.createContext({
   String: String,
   Object: Object,
   Array: Array,
-  getPermissionsById_: function () {
+  buildPermissionsById_: function () {
     return {
       EV: { id: 'EV', area: '행사복지관리', action: '조회', name: '행사 조회', description: '', status: 'active' },
       EE: { id: 'EE', area: '행사복지관리', action: '수정', name: '행사 수정', description: '', status: 'active' }
@@ -55,12 +55,12 @@ var queryContext = vm.createContext({
   EVENT_STATUSES: [],
   normalizeEventText_: function (value) { return String(value || '').trim(); },
   paginateEventItems_: function (items) { return { items: items }; },
-  findAllEventClientRows_: function () { return []; },
+  listEventClientRows_: function () { return []; },
   requireEventRequestId_: function (request) { return String(request.id); },
   findEventRowById_: function () { return { id: 'EVT-1', name: '행사' }; },
   withoutInternalRowNumber_: function (row) { return row; },
-  findAllEventApplicationClientRows_: function () { return []; },
-  findAllEventAttendanceClientRows_: function () { return []; },
+  listEventApplicationClientRows_: function () { return []; },
+  listEventAttendanceClientRows_: function () { return []; },
   getEventPaymentTotalsByApplicationId_: function () { return {}; },
   findEventFormByEventId_: function () {
     return { id: 'FORM-1', eventId: 'EVT-1', googleFormId: 'FORM-ID', responseSheetId: 'SHEET-ID', status: '연동', lastSyncedAt: '2026-08-18T20:00:00+09:00' };

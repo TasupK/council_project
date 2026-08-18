@@ -12,7 +12,7 @@ function getFeePayerListData_(request) {
   var affiliation = String(source.affiliation || '').trim();
   var page = Math.max(Number(source.page) || 1, 1);
   var pageSize = Math.max(Number(source.pageSize) || 20, 1);
-  var rows = findAllFeePayerRows_().filter(function (row) {
+  var rows = listFeePayerRows_().filter(function (row) {
     if (affiliation && String(row.affiliation || '') !== affiliation) return false;
     if (!keyword) return true;
     return String(row.name || '').toLowerCase().indexOf(keyword) >= 0 ||

@@ -14,7 +14,7 @@ function saveParsedBankTransactions_(items) {
   var lock = LockService.getScriptLock();
   lock.waitLock(30000);
   try {
-    var existing = findAllBankTransactionRows_();
+    var existing = listBankTransactionRows_();
     var keys = existing.reduce(function (index, row) { index[bankTransactionDuplicateKey_(row)] = true; return index; }, {});
     var saved = [], duplicates = [];
     (items || []).forEach(function (item) {
@@ -69,6 +69,6 @@ function uploadBankTransactions_(request, context) {
 
 function getBankOcrLogs_(request) {
   var limit = Math.min(50, Math.max(1, Number((request || {}).limit || 10)));
-  var rows = findAllBankOcrLogRows_().slice().sort(function (a, b) { return String(b.createdAt || '').localeCompare(String(a.createdAt || '')); });
+  var rows = listBankOcrLogRows_().slice().sort(function (a, b) { return String(b.createdAt || '').localeCompare(String(a.createdAt || '')); });
   return { items: rows.slice(0, limit).map(function (row) { return { id: row.id, fileName: row.fileName, status: row.status, extractedCount: Number(row.extractedCount || 0), errorMessage: row.errorMessage || '', createdAt: formatDateTimeValue_(row.createdAt) }; }) };
 }

@@ -5,7 +5,7 @@ function getApplicantListData_(request) {
   var filter = request.filter && typeof request.filter === 'object' ? request.filter : {};
   var keyword = normalizeEventText_(filter.keyword).toLowerCase();
   var paymentTotals = getEventPaymentTotalsByApplicationId_();
-  var rows = findAllEventApplicationClientRows_().filter(function (row) {
+  var rows = listEventApplicationClientRows_().filter(function (row) {
     if (String(row.eventId) !== String(eventId)) return false;
     if (keyword && [row.name, row.studentId, row.phone, row.accountHolder]
       .join(' ').toLowerCase().indexOf(keyword) < 0) return false;
