@@ -9,11 +9,27 @@ function getUserDbSchema_() {
         name: '성명',
         studentId: '학번',
         phone: '연락처',
+        departmentId: '부서ID',
         status: '계정상태',
         updatedAt: '최종수정일시',
         updatedBy: '등록자이메일'
       },
       primaryKey: ['email'],
+      foreignKeys: [
+        { field: 'departmentId', refTable: 'departments', refField: 'id' }
+      ]
+    },
+    departments: {
+      name: '부서',
+      sheetName: '부서',
+      fields: {
+        id: '부서ID',
+        name: '부서명',
+        type: '부서유형',
+        sortOrder: '정렬순서',
+        active: '활성여부'
+      },
+      primaryKey: ['id'],
       foreignKeys: []
     },
     roles: {
