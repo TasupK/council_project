@@ -1,4 +1,4 @@
-verified_sha=8d9b496b97f5395714df962dac77457654cafe30
+verified_sha=ed8c693cafc7e0a68b0aa145c0d46c24abacc589
 api_access=failure
 domain_access=success
 student_fee_mutation=success
