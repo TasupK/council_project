@@ -1,6 +1,7 @@
-verified_sha=5125c988d49b274c680d7d1a5b168d64e74661d4
+verified_sha=4cde4cf25337b24fc43d765e354d04481290b876
 api_access=success
 domain_access=success
 student_fee_mutation=success
 event_consistency=success
 accounting_money=success
+iam_menu=failure
