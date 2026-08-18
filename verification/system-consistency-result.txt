@@ -1,2 +1,3 @@
-verified_sha=8e5e37b41377f988d0e0263d699584dd6f8f8f6e
-focused=success
+verified_sha=dfaf921dc812c879d107987b1ab5919d6b6380ab
+api_access=success
+domain_access=failure
