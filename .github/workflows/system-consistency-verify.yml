@@ -18,7 +18,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Migrate API access declarations
+      - name: Migrate API access declarations and legacy test harness
         run: |
           python - <<'PY'
           from pathlib import Path
@@ -36,6 +36,15 @@ jobs:
                   new = pattern.sub(lambda m: "access: %s('%s')" % (helper, m.group(1)), text)
                   if new != text:
                       p.write_text(new)
+
+          test = Path('scripts/test-student-fee.js')
+          text = test.read_text()
+          marker = "    withOperationWriteLock_: function (fn) { return fn(); }\n"
+          replacement = marker.rstrip('\n') + ",\n    studentFeeApiAccess_: function (action) { return { domain: 'student_fee', action: action }; }\n"
+          if 'studentFeeApiAccess_' not in text.split('function createContext_()', 1)[1].split('});', 1)[0]:
+              if marker not in text:
+                  raise SystemExit('Student Fee context marker not found')
+              test.write_text(text.replace(marker, replacement, 1))
           PY
       - name: Common API access contract
         id: api_access
@@ -103,7 +112,7 @@ jobs:
           } > verification/system-consistency-result.txt
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/000_server verification/system-consistency-result.txt verification/full-regression.log
+          git add src/000_server scripts/test-student-fee.js verification/system-consistency-result.txt verification/full-regression.log
           git commit -m "refactor: use domain access override helpers [skip ci]" || true
           git push
       - name: Fail on verification failure
