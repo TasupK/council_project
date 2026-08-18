@@ -127,3 +127,5 @@ jobs:
           git commit -m 'ci: record department port verification'
           git push
           exit $STATUS
+
+# manual retrigger: 2026-08-18 final security pass
