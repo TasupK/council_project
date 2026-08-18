@@ -18,23 +18,28 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Focused API access contract
-        id: focused
+      - name: Common API access contract
+        id: api_access
         continue-on-error: true
         run: node scripts/test-api-access-contract.js
+      - name: Domain access resolvers
+        id: domain_access
+        continue-on-error: true
+        run: node scripts/test-domain-access-resolvers.js
       - name: Record result
         if: always()
         run: |
           mkdir -p verification
           {
             echo "verified_sha=${GITHUB_SHA}"
-            echo "focused=${{ steps.focused.outcome }}"
+            echo "api_access=${{ steps.api_access.outcome }}"
+            echo "domain_access=${{ steps.domain_access.outcome }}"
           } > verification/system-consistency-result.txt
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add verification/system-consistency-result.txt
           git commit -m "chore: record system consistency verification [skip ci]" || true
           git push
-      - name: Fail if focused test failed
-        if: steps.focused.outcome != 'success'
+      - name: Fail on focused verification failure
+        if: steps.api_access.outcome != 'success' || steps.domain_access.outcome != 'success'
         run: exit 1
