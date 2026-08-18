@@ -1,0 +1,129 @@
+<script>
+function callMyPageApi_(name) {
+  return new Promise(function (resolve, reject) {
+    var runner = google.script.run
+      .withSuccessHandler(resolve)
+      .withFailureHandler(function (error) {
+        reject(new Error(error && error.message ? error.message : '서버 요청에 실패했습니다.'));
+      });
+    runner[name]();
+  });
+}
+
+function setText_(id, value, fallback) {
+  var element = document.getElementById(id);
+  if (element) element.textContent = value || fallback || '-';
+}
+
+function renderRoles_(roles) {
+  var container = document.getElementById('mypageRoles');
+  container.innerHTML = '';
+  if (!roles || !roles.length) {
+    container.innerHTML = '<span class="muted">배정된 역할이 없습니다.</span>';
+    return;
+  }
+  roles.forEach(function (role) {
+    var chip = document.createElement('span');
+    chip.className = 'mypage-chip';
+    chip.textContent = role.name || role.id || '역할';
+    container.appendChild(chip);
+  });
+}
+
+function renderMenus_(menus) {
+  var container = document.getElementById('mypageMenus');
+  container.innerHTML = '';
+  if (!menus || !menus.length) {
+    container.innerHTML = '<span class="muted">표시할 업무영역이 없습니다.</span>';
+    return;
+  }
+  menus.forEach(function (menu) {
+    var chip = document.createElement('span');
+    chip.className = 'mypage-chip';
+    chip.textContent = menu.name || menu.group || menu.id || '업무영역';
+    container.appendChild(chip);
+  });
+}
+
+function grantLabels_(grants) {
+  var labels = [];
+  var names = { menu: '메뉴', view: '조회', edit: '등록·수정', approve: '승인·보관', export: '출력·다운로드' };
+  Object.keys(names).forEach(function (key) {
+    if (grants && grants[key]) labels.push(names[key]);
+  });
+  return labels;
+}
+
+function renderPermissions_(permissionDetails) {
+  var container = document.getElementById('mypagePermissions');
+  container.innerHTML = '';
+  if (!permissionDetails || !permissionDetails.length) {
+    container.innerHTML = '<span class="muted">표시할 유효 권한이 없습니다.</span>';
+    return;
+  }
+  permissionDetails.forEach(function (permission) {
+    var row = document.createElement('div');
+    row.className = 'mypage-permission';
+
+    var name = document.createElement('strong');
+    name.textContent = permission.name || permission.action || permission.id || '권한';
+
+    var meta = document.createElement('div');
+    meta.className = 'mypage-permission-meta';
+    meta.textContent = [permission.area, permission.action].filter(Boolean).join(' · ');
+
+    var grants = document.createElement('div');
+    grants.className = 'mypage-grants';
+    grantLabels_(permission.grants).forEach(function (label) {
+      var tag = document.createElement('span');
+      tag.className = 'mypage-grant';
+      tag.textContent = label;
+      grants.appendChild(tag);
+    });
+
+    row.appendChild(name);
+    row.appendChild(meta);
+    row.appendChild(grants);
+    container.appendChild(row);
+  });
+}
+
+function renderProfile_(current) {
+  var user = current && current.user ? current.user : {};
+  var name = user.name || '이름 미등록';
+  setText_('mypageName', name);
+  setText_('mypageEmail', user.email, '이메일 미등록');
+  setText_('mypageDepartment', user.department, '소속 미등록');
+  setText_('mypageTitle', user.title, '역할 미등록');
+  setText_('mypageStatus', user.status === 'active' || user.status === '활성' ? '활성 계정' : (user.status || '상태 미등록'));
+  setText_('mypageAvatar', name.charAt(0) || '-');
+  renderRoles_(user.roles || []);
+}
+
+function showMyPageError_(error) {
+  var element = document.getElementById('mypageError');
+  element.textContent = error && error.message ? error.message : '마이페이지 정보를 불러오지 못했습니다.';
+  element.classList.remove('hidden');
+}
+
+async function initializeMyPage() {
+  try {
+    var results = await Promise.all([
+      callMyPageApi_('api_getCurrentUser'),
+      callMyPageApi_('api_getMyPermissions')
+    ]);
+    var current = results[0];
+    var permissions = results[1];
+    if (!current || !current.ok) throw new Error(current && current.message ? current.message : '사용자 정보를 불러오지 못했습니다.');
+    if (!permissions || !permissions.ok) throw new Error(permissions && permissions.message ? permissions.message : '권한 정보를 불러오지 못했습니다.');
+
+    renderProfile_(current);
+    renderMenus_(current.menus || []);
+    renderPermissions_(permissions.permissionDetails || []);
+  } catch (error) {
+    showMyPageError_(error);
+  }
+}
+
+initializeMyPage();
+</script>
