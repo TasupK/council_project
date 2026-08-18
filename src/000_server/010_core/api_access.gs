@@ -12,25 +12,16 @@ function resolveApiAccess_(context, access) {
   if (API_ACCESS_ACTIONS_.indexOf(action) < 0) {
     throwApiAccessConfigError_('지원하지 않는 API 권한 action입니다: ' + action);
   }
+  if (typeof access.resolve !== 'function') {
+    throwApiAccessConfigError_('API access resolver가 필요합니다: ' + domain + '/' + action);
+  }
 
-  var resolved = resolveDomainApiAccess_({
-    domain: domain,
-    action: action,
-    screenId: access.screenId || ''
-  });
+  var resolved = access.resolve(access);
   if (!resolved || !resolved.screenId) {
     throwApiAccessConfigError_('API access screenId를 확인할 수 없습니다: ' + domain + '/' + action);
   }
   requirePermission_(context, resolved);
   return true;
-}
-
-function resolveDomainApiAccess_(access) {
-  var domain = String(access && access.domain || '').trim().toLowerCase();
-  if (domain === 'event') return resolveEventAccess_(access);
-  if (domain === 'accounting') return resolveAccountingAccess_(access);
-  if (domain === 'student_fee') return resolveStudentFeeAccess_(access);
-  throwApiAccessConfigError_('지원하지 않는 API 권한 domain입니다: ' + domain);
 }
 
 function throwApiAccessConfigError_(message) {
