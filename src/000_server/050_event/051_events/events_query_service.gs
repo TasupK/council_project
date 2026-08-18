@@ -58,6 +58,17 @@ function getEventData_(request) {
   return withoutInternalRowNumber_(event);
 }
 
+function buildEventFormSyncView_(eventForm) {
+  var row = eventForm || {};
+  return {
+    configured: !!(row.googleFormId || row.responseSheetId),
+    googleFormId: row.googleFormId || '',
+    responseSheetId: row.responseSheetId || '',
+    status: row.status || '미연동',
+    lastSyncedAt: row.lastSyncedAt || ''
+  };
+}
+
 function getEventDetailData_(request) {
   var event = getEventData_(request);
   var applicants = findAllEventApplicationClientRows_().filter(function (row) {
@@ -85,6 +96,7 @@ function getEventDetailData_(request) {
       actualAttendees: attended.length,
       // TODO(회계 연동): 현재 잔액은 행사 DB/API 스키마에 원천 테이블이 없다.
       currentBalance: null
-    }
+    },
+    formSync: buildEventFormSyncView_(findEventFormByEventId_(event.id))
   };
 }
