@@ -55,8 +55,8 @@ Event Form sync frontend contract passed.
 exit=0
 
 ===== node scripts/verify-event-form-sync-architecture.js =====
-Form mapper must be pure from Google/DB persistence
-exit=1
+Event Form sync architecture verification passed.
+exit=0
 
 ===== node scripts/test-core.js =====
 Core behavior tests passed.
@@ -176,4 +176,4 @@ Department/access architecture verification passed.
 exit=0
 
 FINAL=FAIL
-verified_sha=82a7ebb381bc702a5e4189fb7d395ad3d8c18890
+verified_sha=cfdb86aaa0e19d3ea2695b7e37a091d52d2674a5
