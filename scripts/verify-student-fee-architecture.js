@@ -28,7 +28,7 @@ var REQUIRED_FILES = [
 
 var FUNCTION_OWNERS = {
   api_getStudentFeeReferenceData: '080_common/student_fee_reference_api.gs',
-  findAllStudentFeeSemesterRows_: '080_common/student_fee_reference_query_service.gs',
+  readStudentFeeSemesterRows_: '080_common/student_fee_reference_query_service.gs',
   getStudentFeeReferenceData_: '080_common/student_fee_reference_query_service.gs',
   api_getFeePayerList: '081_payers/fee_payers_api.gs',
   api_getFeePayerDetail: '081_payers/fee_payers_api.gs',

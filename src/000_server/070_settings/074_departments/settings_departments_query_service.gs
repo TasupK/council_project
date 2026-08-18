@@ -1,6 +1,6 @@
 // Settings 부서 조직도 조회 모델 생성
 function buildSettingsDepartmentChart_() {
-  var departments = listActiveDepartments_();
+  var departments = getActiveDepartmentsData_();
   var departmentIndex = {};
   departments.forEach(function (department) {
     departmentIndex[department.id] = {
@@ -11,7 +11,7 @@ function buildSettingsDepartmentChart_() {
     };
   });
 
-  var users = listUsersForSettings_();
+  var users = getSettingsUsersData_();
   var unassigned = [];
 
   users.forEach(function (user) {
@@ -30,7 +30,7 @@ function buildSettingsDepartmentChart_() {
     }
   });
 
-  function memberSort_(a, b) {
+  function compareSettingsDepartmentMembers_(a, b) {
     var aRole = a.roles && a.roles.length ? a.roles[0].name : '';
     var bRole = b.roles && b.roles.length ? b.roles[0].name : '';
     if (aRole !== bRole) return aRole.localeCompare(bRole);
@@ -39,10 +39,10 @@ function buildSettingsDepartmentChart_() {
 
   var departmentGroups = departments.map(function (department) {
     var group = departmentIndex[department.id];
-    group.members.sort(memberSort_);
+    group.members.sort(compareSettingsDepartmentMembers_);
     return group;
   });
-  unassigned.sort(memberSort_);
+  unassigned.sort(compareSettingsDepartmentMembers_);
 
   var roleMap = buildRolesById_();
   return {

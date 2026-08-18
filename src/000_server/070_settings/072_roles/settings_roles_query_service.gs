@@ -1,5 +1,5 @@
 // Settings 역할 화면 조회 모델 구성
-function listRolesForSettings_() {
+function getSettingsRolesData_() {
   var fields = getUserDbFields_('userRoles');
   var assignedCounts = {};
   var roleMap = buildRolesById_();

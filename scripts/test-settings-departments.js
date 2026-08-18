@@ -8,7 +8,7 @@ var servicePath = 'src/000_server/070_settings/071_users/settings_users_departme
 var view = read('src/300_settings/310_users/Settings_Users_View.html');
 var js = read('src/300_settings/310_users/settings_users_js.html');
 
-assert.ok(api.includes('departments: listActiveDepartments_()'), 'department options missing from loadSettingsUsersData');
+assert.ok(api.includes('departments: getActiveDepartmentsData_()'), 'department options missing from loadSettingsUsersData');
 assert.ok(api.includes('function saveSettingsUserDepartment'), 'saveSettingsUserDepartment API missing');
 assert.ok(fs.existsSync(servicePath), 'department assignment service missing');
 var service = fs.existsSync(servicePath) ? read(servicePath) : '';

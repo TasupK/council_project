@@ -35,14 +35,14 @@ function getEventListData_(request) {
     closed: allRows.filter(function (row) { return row.status === '종료'; }).length
   };
   result.options = {
-    managers: getUniqueEventValues_(allRows.map(function (row) { return row.managerId; })),
-    eventTypes: getUniqueEventValues_(allRows.map(function (row) { return row.category; })),
+    managers: buildUniqueEventValues_(allRows.map(function (row) { return row.managerId; })),
+    eventTypes: buildUniqueEventValues_(allRows.map(function (row) { return row.category; })),
     eventStatuses: EVENT_STATUSES.slice()
   };
   return result;
 }
 
-function getUniqueEventValues_(values) {
+function buildUniqueEventValues_(values) {
   var seen = {};
   return values.filter(function (value) {
     var key = String(value || '').trim();
@@ -79,7 +79,7 @@ function getEventDetailData_(request) {
     attendanceById[String(row.applicationId)] = row;
   });
   var approved = applicants.filter(function (row) { return row.status === '승인'; });
-  var paymentTotals = getEventPaymentTotalsByApplicationId_();
+  var paymentTotals = buildEventPaymentTotalsByApplicationId_();
   var paid = applicants.filter(function (row) {
     return Number(paymentTotals[row.id] || 0) >= Number(row.appliedFee || 0);
   });

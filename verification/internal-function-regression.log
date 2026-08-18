@@ -62,5 +62,18 @@ Event architecture verification passed.
 == scripts/verify-event-form-sync-architecture.js ==
 Event Form sync architecture verification passed.
 == scripts/verify-internal-function-naming.js ==
-Query-service view/result must not masquerade as DAO list*: listFeeRateRows_ in src/000_server/080_student_fee/080_common/student_fee_reference_query_service.gs
-Query-service view/result must not masquerade as DAO list*: listStudentFeeSemesterRows_ in src/000_server/080_student_fee/080_common/student_fee_reference_query_service.gs
+Internal function naming verification passed.
+== scripts/verify-mypage-architecture.js ==
+MyPage architecture verification passed.
+== scripts/verify-server-architecture.js ==
+Server architecture verification passed.
+== scripts/verify-settings-architecture.js ==
+Settings architecture verification passed.
+== scripts/verify-student-fee-architecture.js ==
+Student Fee architecture verification passed.
+== scripts/verify-student-fee-frontend.js ==
+Student Fee frontend architecture verification passed.
+== scripts/verify-system-consistency-architecture.js ==
+System consistency architecture guardrails passed.
+== scripts/verify-ui-system-migration.js ==
+Shared UI system migration verification passed.

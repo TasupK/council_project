@@ -42,8 +42,8 @@ function scoreReconciliationCandidate_(bank, ledger) {
 
 function getReconciliationLedgerCandidates_(filter) {
   filter = filter || {};
-  return getLedgerEntries_().filter(function (item) {
-    return item.record_status === 'ACTIVE' && inAccountingDateRange_(item.transaction_date, filter.startDate, filter.endDate);
+  return getLedgerEntriesData_().filter(function (item) {
+    return item.record_status === 'ACTIVE' && isAccountingDateInRange_(item.transaction_date, filter.startDate, filter.endDate);
   });
 }
 
@@ -74,7 +74,7 @@ function buildReconciliationResults_(banks, ledgers) {
   return results;
 }
 
-function getReconciliationList_(filter) {
+function getReconciliationListData_(filter) {
   filter = filter || {};
   var items = listReconciliationRows_().filter(function (row) {
     if (filter.startDate && String(row.auditEndDate || '') < filter.startDate) return false;
@@ -84,18 +84,18 @@ function getReconciliationList_(filter) {
   return { items: items, totalCount: items.length };
 }
 
-function getReconciliationDetail_(reconciliationId) {
+function getReconciliationDetailData_(reconciliationId) {
   var header = findReconciliationRowById_(reconciliationId);
   if (!header) return null;
   var bankById = listBankTransactionRows_().reduce(function (index, row) { index[row.id] = row; return index; }, {});
-  var ledgerById = getLedgerEntries_().reduce(function (index, row) { index[row.transaction_id] = row; return index; }, {});
+  var ledgerById = getLedgerEntriesData_().reduce(function (index, row) { index[row.transaction_id] = row; return index; }, {});
   var items = listReconciliationItemRows_().filter(function (row) { return String(row.reconciliationId) === String(reconciliationId); }).map(function (row) {
     return { id: row.id, reconciliationId: row.reconciliationId, bankTransactionId: row.bankTransactionId, ledgerId: row.ledgerId || '', status: row.status, differenceAmount: Number(row.differenceAmount || 0), matchMethod: row.matchMethod || '', note: row.note || '', createdAt: formatDateTimeValue_(row.createdAt), updatedAt: formatDateTimeValue_(row.updatedAt), bank: bankById[row.bankTransactionId] || null, ledger: row.ledgerId ? (ledgerById[row.ledgerId] || null) : null };
   });
   return { header: header, items: items };
 }
 
-function getReconciliationCandidates_(request) {
+function getReconciliationCandidatesData_(request) {
   request = request || {};
   var item = request.reconciliationItemId ? findReconciliationItemRowById_(request.reconciliationItemId) : null;
   var bank = item ? findBankTransactionRowById_(item.bankTransactionId) : (request.bankTransactionId ? findBankTransactionRowById_(request.bankTransactionId) : null);

@@ -22,7 +22,7 @@ function buildDepartmentsById_() {
 }
 
 // 3. 활성 부서 목록 조회
-function listActiveDepartments_() {
+function getActiveDepartmentsData_() {
   return listDepartmentRows_()
     .map(mapDepartmentDto_)
     .filter(function (department) { return department.id && department.status === 'active'; })

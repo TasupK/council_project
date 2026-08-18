@@ -1,10 +1,10 @@
 /** Accounting 전역에서 공유하는 최소 공통 헬퍼 */
 
-function makeId_(prefix) {
+function generateAccountingId_(prefix) {
   return prefix + '-' + Utilities.getUuid();
 }
 
-function getCurrentUserName_() {
+function resolveAccountingSessionEmail_() {
   try {
     return Session.getActiveUser().getEmail() || '운영자';
   } catch (error) {
@@ -13,11 +13,11 @@ function getCurrentUserName_() {
   }
 }
 
-function getAccountingActorEmail_(context) {
-  return context && context.user && context.user.email ? context.user.email : getCurrentUserName_();
+function resolveAccountingActorEmail_(context) {
+  return context && context.user && context.user.email ? context.user.email : resolveAccountingSessionEmail_();
 }
 
-function inAccountingDateRange_(value, startDate, endDate) {
+function isAccountingDateInRange_(value, startDate, endDate) {
   var date = String(formatDateTimeValue_(value) || '').slice(0, 10);
   if (startDate && date < String(startDate)) return false;
   if (endDate && date > String(endDate)) return false;

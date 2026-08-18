@@ -22,7 +22,7 @@ function buildPermissionsById_() {
 }
 
 // 3. 역할ID 기준 권한ID 목록 생성
-function getPermissionIdsByRoleId_() {
+function buildPermissionIdsByRoleId_() {
   var fields = getUserDbFields_('rolePermissions');
   var map = {};
   listRolePermissionRows_().forEach(function (row) {
@@ -87,7 +87,7 @@ function buildPermissionTreeFromDb_() {
 // 7. 역할별 런타임 권한 매트릭스 생성
 function buildPermissionsByRoleFromDb_() {
   var permissionsById = buildPermissionsById_();
-  var permissionIdsByRole = getPermissionIdsByRoleId_();
+  var permissionIdsByRole = buildPermissionIdsByRoleId_();
   var result = {};
 
   Object.keys(permissionIdsByRole).forEach(function (roleId) {

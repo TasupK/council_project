@@ -24,7 +24,7 @@ var query = fs.existsSync(queryPath) ? read(queryPath) : '';
 assert.ok(dao.includes('function listDepartmentRows_'), 'listDepartmentRows_ missing');
 assert.ok(query.includes('function mapDepartmentDto_'), 'mapDepartmentDto_ missing');
 assert.ok(query.includes('function buildDepartmentsById_'), 'buildDepartmentsById_ missing');
-assert.ok(query.includes('function listActiveDepartments_'), 'listActiveDepartments_ missing');
+assert.ok(query.includes('function getActiveDepartmentsData_'), 'getActiveDepartmentsData_ missing');
 assert.ok(users.includes('departmentId:'), 'user DTO departmentId missing');
 assert.ok(users.includes('department:'), 'user DTO department name missing');
 assert.ok(integrity.includes("tableKey === 'departments'"), 'integrity Department reader missing');

@@ -1,2 +1,1 @@
-Query-service view/result must not masquerade as DAO list*: listFeeRateRows_ in src/000_server/080_student_fee/080_common/student_fee_reference_query_service.gs
-Query-service view/result must not masquerade as DAO list*: listStudentFeeSemesterRows_ in src/000_server/080_student_fee/080_common/student_fee_reference_query_service.gs
+Internal function naming verification passed.

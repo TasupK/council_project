@@ -1,17 +1,17 @@
 /** 감사대사 mutation/business service */
 
-function runReconciliation_(request, context) {
+function processReconciliationData_(request, context) {
   request = request || {};
   if (!request.startDate || !request.endDate) throw new Error('startDate와 endDate가 필요합니다.');
   if (request.startDate > request.endDate) throw new Error('감사 시작일이 종료일보다 늦을 수 없습니다.');
-  var banks = listBankTransactionRows_().filter(function (row) { return inAccountingDateRange_(row.transactionAt, request.startDate, request.endDate); });
+  var banks = listBankTransactionRows_().filter(function (row) { return isAccountingDateInRange_(row.transactionAt, request.startDate, request.endDate); });
   var ledgers = getReconciliationLedgerCandidates_({ startDate: request.startDate, endDate: request.endDate });
   var results = buildReconciliationResults_(banks, ledgers);
   var claimed = {};
   results.forEach(function (item) { if (item.status === '정상' && item.ledgerId) claimed[item.ledgerId] = true; });
   var evidenceByTransaction = groupBy_(listLedgerEvidenceRows_(), 'transactionId');
   var now = getCurrentIsoDateTime_();
-  var id = makeId_('REC');
+  var id = generateAccountingId_('REC');
   var header = {
     id: id, auditStartDate: request.startDate, auditEndDate: request.endDate,
     accountOpeningBalance: '', ledgerOpeningBalance: '', accountClosingBalance: '', ledgerClosingBalance: '',
@@ -21,18 +21,18 @@ function runReconciliation_(request, context) {
     mismatchCount: results.filter(function (item) { return item.status === '확인필요'; }).length,
     missingEvidenceCount: results.filter(function (item) { return item.status === '정상' && item.ledgerId && !(evidenceByTransaction[item.ledgerId] || []).length; }).length,
     status: results.some(function (item) { return item.status !== '정상'; }) ? '확인필요' : '정상',
-    managerId: getAccountingActorEmail_(context), confirmedAt: now,
+    managerId: resolveAccountingActorEmail_(context), confirmedAt: now,
     confirmation: '계좌-원장 자동 대사 실행'
   };
   insertReconciliationRow_(header);
   results.forEach(function (result) {
-    insertReconciliationItemRow_({ id: makeId_('RCI'), reconciliationId: id, bankTransactionId: result.bankTransactionId, ledgerId: result.ledgerId || '', status: result.status, differenceAmount: Number(result.differenceAmount || 0), matchMethod: result.matchMethod || '', note: result.note || '', createdAt: now, updatedAt: now });
+    insertReconciliationItemRow_({ id: generateAccountingId_('RCI'), reconciliationId: id, bankTransactionId: result.bankTransactionId, ledgerId: result.ledgerId || '', status: result.status, differenceAmount: Number(result.differenceAmount || 0), matchMethod: result.matchMethod || '', note: result.note || '', createdAt: now, updatedAt: now });
   });
   writeAccountingAudit_(header.managerId, 'RECONCILE', 'RECONCILIATION', id, '', JSON.stringify(header), '공식 감사대사 실행');
-  return getReconciliationDetail_(id);
+  return getReconciliationDetailData_(id);
 }
 
-function linkReconciliation_(request, context) {
+function applyReconciliationLinkData_(request, context) {
   request = request || {};
   if (!request.reconciliationItemId || !request.ledgerId) throw new Error('대사상세ID와 원장ID가 필요합니다.');
   var item = findReconciliationItemRowById_(request.reconciliationItemId);
@@ -46,17 +46,17 @@ function linkReconciliation_(request, context) {
   if (claimed) throw new Error('같은 대사에서 이미 연결된 원장입니다.');
   var changes = { ledgerId: request.ledgerId, status: '정상', differenceAmount: 0, matchMethod: 'manual', note: request.note || '수동 연결', updatedAt: getCurrentIsoDateTime_() };
   updateReconciliationItemRowById_(item.id, changes);
-  writeAccountingAudit_(getAccountingActorEmail_(context), 'LINK', 'RECONCILIATION_ITEM', item.id, JSON.stringify(item), JSON.stringify(changes), changes.note);
-  return getReconciliationDetail_(item.reconciliationId);
+  writeAccountingAudit_(resolveAccountingActorEmail_(context), 'LINK', 'RECONCILIATION_ITEM', item.id, JSON.stringify(item), JSON.stringify(changes), changes.note);
+  return getReconciliationDetailData_(item.reconciliationId);
 }
 
-function createLedgerFromReconciliation_(request, context) {
+function createLedgerFromReconciliationData_(request, context) {
   request = request || {};
   var item = findReconciliationItemRowById_(request.reconciliationItemId);
   if (!item) throw new Error('대사 상세를 찾을 수 없습니다.');
   var bank = findBankTransactionRowById_(item.bankTransactionId);
   if (!bank) throw new Error('계좌 거래를 찾을 수 없습니다.');
-  var saved = saveLedgerEntry_({
+  var saved = createLedgerEntryData_({
     transaction_type: isTruthyValue_(bank.expense) ? '지출' : '수입',
     transaction_date: String(bank.transactionAt || '').slice(0, 10), amount: Number(bank.amount || 0),
     counterparty: request.counterparty || bank.counterparty || '', description: request.description || bank.description || '',
@@ -64,6 +64,6 @@ function createLedgerFromReconciliation_(request, context) {
   }, context, 'ACTIVE');
   var changes = { ledgerId: saved.item.transaction_id, status: '정상', differenceAmount: 0, matchMethod: 'created', note: request.note || '계좌 거래에서 원장 생성 후 연결', updatedAt: getCurrentIsoDateTime_() };
   updateReconciliationItemRowById_(item.id, changes);
-  writeAccountingAudit_(getAccountingActorEmail_(context), 'CREATE_AND_LINK', 'RECONCILIATION_ITEM', item.id, JSON.stringify(item), JSON.stringify(changes), changes.note);
-  return getReconciliationDetail_(item.reconciliationId);
+  writeAccountingAudit_(resolveAccountingActorEmail_(context), 'CREATE_AND_LINK', 'RECONCILIATION_ITEM', item.id, JSON.stringify(item), JSON.stringify(changes), changes.note);
+  return getReconciliationDetailData_(item.reconciliationId);
 }

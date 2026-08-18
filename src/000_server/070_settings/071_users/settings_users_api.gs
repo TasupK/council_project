@@ -3,10 +3,10 @@ function loadSettingsUsersData() {
   var current = getSettingsCurrent_();
   if (!current.ok) return current;
 
-  return okResponse_(Object.assign(buildSettingsBaseData_(current), {
-    users: listUsersForSettings_(),
-    roles: listRolesForSettings_(),
-    departments: listActiveDepartments_()
+  return okResponse_(Object.assign(buildSettingsBaseView_(current), {
+    users: getSettingsUsersData_(),
+    roles: getSettingsRolesData_(),
+    departments: getActiveDepartmentsData_()
   }));
 }
 

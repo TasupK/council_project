@@ -36,7 +36,7 @@ function buildSessionUserContextFromDb_(email) {
   }
 
   var roleMap = buildRolesById_();
-  var roleIdsByEmail = getActiveRoleIdsByEmail_();
+  var roleIdsByEmail = buildActiveRoleIdsByEmail_();
   var roleIds = roleIdsByEmail[email] || [];
   if (roleIds.length === 0) {
     return failResponse_('NO_ROLE', '배정된 역할이 없는 계정입니다.', { email: email });

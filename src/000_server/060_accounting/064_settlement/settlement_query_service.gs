@@ -2,12 +2,12 @@
 
 function getSettlementEligibleItems_(filter) {
   filter = filter || {};
-  return getLedgerEntries_().filter(function (item) {
-    return isSettlementEligibleLedgerEntry_(item) && inAccountingDateRange_(item.transaction_date, filter.startDate, filter.endDate);
+  return getLedgerEntriesData_().filter(function (item) {
+    return isSettlementEligibleLedgerEntry_(item) && isAccountingDateInRange_(item.transaction_date, filter.startDate, filter.endDate);
   });
 }
 
-function getSettlementSummary_(filter) {
+function getSettlementSummaryData_(filter) {
   var items = getSettlementEligibleItems_(filter || {});
   var ids = items.reduce(function (index, item) { index[item.transaction_id] = true; return index; }, {});
   var evidenceCount = listLedgerEvidenceRows_().filter(function (row) { return ids[row.transactionId]; }).length;
@@ -16,7 +16,7 @@ function getSettlementSummary_(filter) {
   return { totalIncome: totalIncome, totalExpense: totalExpense, balance: totalIncome - totalExpense, incomeCount: items.filter(function (item) { return item.transaction_type === '수입'; }).length, expenseCount: items.filter(function (item) { return item.transaction_type === '지출'; }).length, evidenceCount: evidenceCount };
 }
 
-function getSettlementReportList_(filter) {
+function getSettlementReportListData_(filter) {
   filter = filter || {};
   var items = listSettlementReportRows_().filter(function (row) {
     if (filter.startDate && String(row.endDate || '') < filter.startDate) return false;
@@ -26,7 +26,7 @@ function getSettlementReportList_(filter) {
   return { items: items, totalCount: items.length };
 }
 
-function getSettlementReport_(reportId) { return findSettlementReportRowById_(reportId); }
+function getSettlementReportData_(reportId) { return findSettlementReportRowById_(reportId); }
 
 function exportSettlementReport_(request) {
   request = request || {};

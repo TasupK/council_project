@@ -3,7 +3,7 @@ function loadSettingsRolesData() {
   var current = getSettingsCurrent_();
   if (!current.ok) return current;
 
-  return okResponse_(Object.assign(buildSettingsBaseData_(current), {
-    roles: listRolesForSettings_()
+  return okResponse_(Object.assign(buildSettingsBaseView_(current), {
+    roles: getSettingsRolesData_()
   }));
 }

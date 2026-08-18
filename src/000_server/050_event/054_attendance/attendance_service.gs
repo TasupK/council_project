@@ -22,7 +22,7 @@ function applyAttendanceChangesData_(request) {
         managerId: getActiveUserEmailFromSession_(),
         method: 'manual'
       };
-      var current = findEventAttendanceByApplicationId_(applicationId);
+      var current = findEventAttendanceRowByApplicationId_(applicationId);
       if (current) {
         updateEventAttendanceRowById_(current.id, patch);
         return withoutInternalRowNumber_(findEventAttendanceRowById_(current.id));

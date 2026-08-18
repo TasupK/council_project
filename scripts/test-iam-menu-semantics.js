@@ -22,7 +22,7 @@ vm.runInContext(fs.readFileSync(file, 'utf8'), context, { filename: file });
 context.buildPermissionsById_ = function () {
   return { P: { id: 'P', area: '행사', action: '수정', name: '행사 수정', status: 'active' } };
 };
-context.getPermissionIdsByRoleId_ = function () { return { ROLE: ['P'] }; };
+context.buildPermissionIdsByRoleId_ = function () { return { ROLE: ['P'] }; };
 
 var byRole = context.buildPermissionsByRoleFromDb_();
 assert.strictEqual(byRole.ROLE.perm_P.edit, true);

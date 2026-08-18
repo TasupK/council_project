@@ -53,12 +53,12 @@ var sourceFiles = listGsFiles_(SETTINGS_ROOT).concat(listGsFiles_(AUTH_ROOT)).co
 var functions = collectFunctions_(sourceFiles);
 var settingsOwnership = {
   getAdminSettingsCurrent_: '070_settings/070_common/settings_access.gs',
-  buildSettingsBaseData_: '070_settings/070_common/settings_shell_query_service.gs',
+  buildSettingsBaseView_: '070_settings/070_common/settings_shell_query_service.gs',
   loadSettingsHomeData: '070_settings/070_common/settings_shell_query_service.gs',
   loadSettingsUsersData: '070_settings/071_users/settings_users_api.gs',
-  listUsersForSettings_: '070_settings/071_users/settings_users_query_service.gs',
+  getSettingsUsersData_: '070_settings/071_users/settings_users_query_service.gs',
   loadSettingsRolesData: '070_settings/072_roles/settings_roles_api.gs',
-  listRolesForSettings_: '070_settings/072_roles/settings_roles_query_service.gs',
+  getSettingsRolesData_: '070_settings/072_roles/settings_roles_query_service.gs',
   loadSettingsPermissionsData: '070_settings/073_permissions/settings_permissions_api.gs',
   getSettingsPermissionsData_: '070_settings/073_permissions/settings_permissions_query_service.gs'
 };
@@ -92,7 +92,7 @@ listGsFiles_(SETTINGS_ROOT).forEach(function (file) {
 listGsFiles_(AUTH_ROOT).concat(listGsFiles_(IAM_ROOT)).forEach(function (file) {
   var source = fs.readFileSync(file, 'utf8');
   var relative = normalize_(path.relative(SERVER_ROOT, file));
-  if (/\bgetSettingsPermissionsData_\b|\blistUsersForSettings_\b|\blistRolesForSettings_\b/.test(source)) {
+  if (/\bgetSettingsPermissionsData_\b|\bgetSettingsUsersData_\b|\bgetSettingsRolesData_\b/.test(source)) {
     failures.push('Auth/IAM must not depend on Settings application functions: ' + relative);
   }
 });

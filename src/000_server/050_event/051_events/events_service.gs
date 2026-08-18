@@ -43,7 +43,7 @@ function updateEventData_(request) {
   });
 }
 
-function processEventStatusData_(request) {
+function updateEventStatusData_(request) {
   var id = requireEventRequestId_(request);
   var payload = request.payload && typeof request.payload === 'object' ? request.payload : request;
   var status = requireEventText_(payload.status, 'status');
@@ -54,7 +54,7 @@ function processEventStatusData_(request) {
   });
 }
 
-function processEventClosureData_(request) {
+function updateEventClosureData_(request) {
   var id = requireEventRequestId_(request);
   return withOperationWriteLock_(function () {
     updateEventRowById_(id, { status: '종료' });

@@ -23,13 +23,13 @@ function parseLedgerInformationalBalance_(value, fallback) {
   return balance;
 }
 
-function saveLedgerEntry_(request, context, recordStatus) {
+function createLedgerEntryData_(request, context, recordStatus) {
   request = request || {};
   var now = getCurrentIsoDateTime_();
-  var actor = getAccountingActorEmail_(context);
+  var actor = resolveAccountingActorEmail_(context);
   var transactionType = normalizeLedgerTransactionType_(request.transaction_type);
   var item = {
-    id: request.transaction_id || makeId_('TRX'),
+    id: request.transaction_id || generateAccountingId_('TRX'),
     transactionAt: request.transaction_date || now,
     description: request.description || '',
     expense: transactionType === '지출',
@@ -48,16 +48,16 @@ function saveLedgerEntry_(request, context, recordStatus) {
     updatedAt: now
   };
   insertLedgerRow_(item);
-  var evidence = saveEvidenceFiles_(item.id, request.evidence_files || request.evidence || [], now);
+  var evidence = createEvidenceFiles_(item.id, request.evidence_files || request.evidence || [], now);
   writeAccountingAudit_(actor, 'CREATE', 'LEDGER', item.id, '', JSON.stringify(item), item.recordStatus === 'DRAFT' ? '임시저장' : '원장 등록');
-  return { ok: true, evidence: evidence, item: getLedgerEntryDto_(item) };
+  return { ok: true, evidence: evidence, item: mapLedgerEntryDto_(item) };
 }
 
-function saveLedgerDraft_(request, context) {
-  return saveLedgerEntry_(request || {}, context, 'DRAFT');
+function createLedgerDraftData_(request, context) {
+  return createLedgerEntryData_(request || {}, context, 'DRAFT');
 }
 
-function updateLedgerEntry_(input, context) {
+function updateLedgerEntryData_(input, context) {
   input = input || {};
   if (!input.transaction_id) throw new Error('transaction_id is required.');
   var before = findLedgerRowById_(input.transaction_id);
@@ -81,24 +81,24 @@ function updateLedgerEntry_(input, context) {
     updatedAt: now
   };
   updateLedgerRowById_(input.transaction_id, changes);
-  var actor = getAccountingActorEmail_(context);
+  var actor = resolveAccountingActorEmail_(context);
   writeAccountingAudit_(actor, 'UPDATE', 'LEDGER', input.transaction_id, JSON.stringify(before), JSON.stringify(changes), input.reason || '원장 수정');
-  return { ok: true, item: findLedgerEntryDtoById_(input.transaction_id) || getLedgerEntryDto_(Object.assign({}, before, changes)) };
+  return { ok: true, item: findLedgerEntryDtoById_(input.transaction_id) || mapLedgerEntryDto_(Object.assign({}, before, changes)) };
 }
 
-function softDeleteLedgerEntry_(input, context) {
+function deleteLedgerEntryData_(input, context) {
   input = input || {};
   if (!input.transaction_id) throw new Error('transaction_id is required.');
   var before = findLedgerRowById_(input.transaction_id);
   if (!before) throw new Error('원장 거래를 찾을 수 없습니다.');
   var changes = { recordStatus: 'DELETED', updatedAt: getCurrentIsoDateTime_() };
   updateLedgerRowById_(input.transaction_id, changes);
-  var actor = getAccountingActorEmail_(context);
+  var actor = resolveAccountingActorEmail_(context);
   writeAccountingAudit_(actor, 'DELETE', 'LEDGER', input.transaction_id, JSON.stringify(before), JSON.stringify(changes), input.reason || '원장 soft delete');
   return { ok: true, transaction_id: input.transaction_id };
 }
 
-function processLedgerEntry_(input, context) {
+function processLedgerEntryData_(input, context) {
   input = input || {};
   if (!input.transaction_id) throw new Error('transaction_id is required.');
   var before = findLedgerRowById_(input.transaction_id);
@@ -106,6 +106,6 @@ function processLedgerEntry_(input, context) {
   var status = input.action === 'approve' ? '정상' : '확인필요';
   var changes = { matchStatus: status, recordStatus: before.recordStatus || 'ACTIVE', updatedAt: getCurrentIsoDateTime_() };
   updateLedgerRowById_(input.transaction_id, changes);
-  writeAccountingAudit_(getAccountingActorEmail_(context), 'PROCESS', 'LEDGER', input.transaction_id, JSON.stringify(before), JSON.stringify(changes), input.reason || status);
+  writeAccountingAudit_(resolveAccountingActorEmail_(context), 'PROCESS', 'LEDGER', input.transaction_id, JSON.stringify(before), JSON.stringify(changes), input.reason || status);
   return { ok: true, transaction_id: input.transaction_id, status: status, item: findLedgerEntryDtoById_(input.transaction_id) };
 }

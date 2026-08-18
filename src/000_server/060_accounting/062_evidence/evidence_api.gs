@@ -5,5 +5,5 @@ function api_getEvidenceFileContent(request) {
 }
 
 function api_getEvidenceAuditList(filter) {
-  return apiHandler_({ operation: 'getEvidenceAuditList', input: filter, requireLogin: true, access: accountingApiAccess_('view'), service: function (input) { return getEvidenceAuditList_(input || {}); } });
+  return apiHandler_({ operation: 'getEvidenceAuditList', input: filter, requireLogin: true, access: accountingApiAccess_('view'), service: function (input) { return getEvidenceAuditListData_(input || {}); } });
 }

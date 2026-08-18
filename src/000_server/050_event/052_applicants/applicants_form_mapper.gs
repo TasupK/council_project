@@ -25,7 +25,7 @@ function buildEventFormHeaderAliases_() {
   };
 }
 
-function findEventFormAliasField_(header) {
+function resolveEventFormAliasField_(header) {
   var normalized = normalizeEventFormHeader_(header).toLowerCase();
   var aliases = buildEventFormHeaderAliases_();
   var fields = Object.keys(aliases);
@@ -42,7 +42,7 @@ function buildEventFormHeaderMap_(headers) {
   var byField = {};
   var recognized = {};
   (headers || []).forEach(function (header, index) {
-    var field = findEventFormAliasField_(header);
+    var field = resolveEventFormAliasField_(header);
     if (field && typeof byField[field] === 'undefined') {
       byField[field] = index;
       recognized[index] = true;

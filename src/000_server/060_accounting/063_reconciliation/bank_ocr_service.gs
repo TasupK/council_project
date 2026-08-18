@@ -1,6 +1,6 @@
 /** 계좌 거래 OCR 수집 orchestration */
 
-function bankTransactionDuplicateKey_(item) {
+function buildBankTransactionDuplicateKey_(item) {
   return [
     String(item.sourceFileName || '').trim().toLowerCase(),
     String(item.transactionAt || '').slice(0, 10),
@@ -10,18 +10,18 @@ function bankTransactionDuplicateKey_(item) {
   ].join('|');
 }
 
-function saveParsedBankTransactions_(items) {
+function applyParsedBankTransactions_(items) {
   var lock = LockService.getScriptLock();
   lock.waitLock(30000);
   try {
     var existing = listBankTransactionRows_();
-    var keys = existing.reduce(function (index, row) { index[bankTransactionDuplicateKey_(row)] = true; return index; }, {});
+    var keys = existing.reduce(function (index, row) { index[buildBankTransactionDuplicateKey_(row)] = true; return index; }, {});
     var saved = [], duplicates = [];
     (items || []).forEach(function (item) {
-      var key = bankTransactionDuplicateKey_(item);
+      var key = buildBankTransactionDuplicateKey_(item);
       if (keys[key]) { duplicates.push(item); return; }
       var row = {
-        id: makeId_('BNK'), transactionAt: item.transactionAt, expense: Boolean(item.expense),
+        id: generateAccountingId_('BNK'), transactionAt: item.transactionAt, expense: Boolean(item.expense),
         counterparty: item.counterparty || '', description: item.description || '', amount: Math.abs(Number(item.amount || 0)),
         sourceFileName: item.sourceFileName || '', createdAt: getCurrentIsoDateTime_()
       };
@@ -31,7 +31,7 @@ function saveParsedBankTransactions_(items) {
   } finally { lock.releaseLock(); }
 }
 
-function uploadBankTransactions_(request, context) {
+function processBankTransactionUploadData_(request, context) {
   request = request || {};
   var files = request.files || (request.file ? [request.file] : []);
   if (!files.length) throw new Error('업로드할 계좌 파일이 없습니다.');
@@ -53,13 +53,13 @@ function uploadBankTransactions_(request, context) {
       errorMessage = error && error.message ? error.message : String(error);
       failures.push({ file_name: file.file_name, reason: errorMessage });
     }
-    insertBankOcrLogRow_({ id: makeId_('OCR'), fileName: file.file_name, status: status, extractedCount: parsed.extractedCount || 0, errorMessage: errorMessage, createdAt: getCurrentIsoDateTime_() });
+    insertBankOcrLogRow_({ id: generateAccountingId_('OCR'), fileName: file.file_name, status: status, extractedCount: parsed.extractedCount || 0, errorMessage: errorMessage, createdAt: getCurrentIsoDateTime_() });
   });
-  var saveResult = saveParsedBankTransactions_(parsedItems);
+  var saveResult = applyParsedBankTransactions_(parsedItems);
   var previewItems = typeof buildReconciliationResults_ === 'function'
     ? buildReconciliationResults_(saveResult.savedItems, getReconciliationLedgerCandidates_({}))
     : [];
-  writeAccountingAudit_(getAccountingActorEmail_(context), 'OCR_UPLOAD', 'BANK_TRANSACTION', 'BATCH', '', JSON.stringify({ savedCount: saveResult.savedItems.length, duplicateCount: saveResult.duplicateItems.length }), '계좌 거래 OCR 업로드');
+  writeAccountingAudit_(resolveAccountingActorEmail_(context), 'OCR_UPLOAD', 'BANK_TRANSACTION', 'BATCH', '', JSON.stringify({ savedCount: saveResult.savedItems.length, duplicateCount: saveResult.duplicateItems.length }), '계좌 거래 OCR 업로드');
   return {
     uploadedFileCount: files.length, processedFileCount: processed, failedFileCount: failures.length,
     extractedCount: extracted, savedCount: saveResult.savedItems.length, duplicateCount: saveResult.duplicateItems.length,
@@ -67,7 +67,7 @@ function uploadBankTransactions_(request, context) {
   };
 }
 
-function getBankOcrLogs_(request) {
+function getBankOcrLogsData_(request) {
   var limit = Math.min(50, Math.max(1, Number((request || {}).limit || 10)));
   var rows = listBankOcrLogRows_().slice().sort(function (a, b) { return String(b.createdAt || '').localeCompare(String(a.createdAt || '')); });
   return { items: rows.slice(0, limit).map(function (row) { return { id: row.id, fileName: row.fileName, status: row.status, extractedCount: Number(row.extractedCount || 0), errorMessage: row.errorMessage || '', createdAt: formatDateTimeValue_(row.createdAt) }; }) };

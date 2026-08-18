@@ -28,7 +28,7 @@ function updateSettingsUserDepartment_(input) {
   invalidateLoginContextCache_(email);
 
   var roleMap = buildRolesById_();
-  var userRoleMap = getActiveRoleIdsByEmail_();
+  var userRoleMap = buildActiveRoleIdsByEmail_();
   var roleIds = userRoleMap[email] || [];
   var roles = roleIds.map(function (roleId) {
     return summarizeRoleForUser_(roleMap[roleId], roleId);

@@ -8,7 +8,7 @@ function getAttendanceListData_(request) {
   listEventAttendanceClientRows_().forEach(function (row) {
     attendanceById[String(row.applicationId)] = row;
   });
-  var paymentTotals = getEventPaymentTotalsByApplicationId_();
+  var paymentTotals = buildEventPaymentTotalsByApplicationId_();
   var rows = listEventApplicationClientRows_().filter(function (row) {
     return String(row.eventId) === String(eventId);
   }).map(function (applicant) {

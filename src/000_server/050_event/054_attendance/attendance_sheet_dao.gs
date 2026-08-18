@@ -7,7 +7,7 @@ function findEventAttendanceRowById_(attendanceId) {
   return findOperationTableRowById_('eventAttendance', attendanceId);
 }
 
-function findEventAttendanceByApplicationId_(applicationId) {
+function findEventAttendanceRowByApplicationId_(applicationId) {
   return listEventAttendanceClientRows_().filter(function (item) {
     return String(item.applicationId) === String(applicationId);
   })[0] || null;

@@ -9,7 +9,7 @@ function buildRolesById_() {
 }
 
 // 2. Google 이메일 기준 활성 역할ID 목록 생성
-function getActiveRoleIdsByEmail_() {
+function buildActiveRoleIdsByEmail_() {
   var fields = getUserDbFields_('userRoles');
   var map = {};
   listUserRoleRows_().forEach(function (row) {

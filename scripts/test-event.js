@@ -79,7 +79,7 @@ function testPaymentTotals_() {
   load_(context, 'src/000_server/050_event/053_payment/payment_service.gs');
 
   assert.deepStrictEqual(
-    JSON.parse(JSON.stringify(context.getEventPaymentTotalsByApplicationId_())),
+    JSON.parse(JSON.stringify(context.buildEventPaymentTotalsByApplicationId_())),
     { 'app-1': 1500, 'app-2': 700 }
   );
 }
@@ -152,7 +152,7 @@ function testEventDetail_() {
       { applicationId: 'app-2', status: '결석' }
     ];
   };
-  context.getEventPaymentTotalsByApplicationId_ = function () {
+  context.buildEventPaymentTotalsByApplicationId_ = function () {
     return { 'app-1': 1000, 'app-2': 1500 };
   };
 
@@ -181,10 +181,10 @@ function testApplicantListAndDetail_() {
   context.findEventApplicationRowById_ = function () {
     return { id: 'app-1', eventId: 'event-1', name: '김학생', appliedFee: 1000, __rowNumber: 2 };
   };
-  context.findEventAttendanceByApplicationId_ = function () {
+  context.findEventAttendanceRowByApplicationId_ = function () {
     return { id: 'attendance-1', applicationId: 'app-1', status: '출석', __rowNumber: 4 };
   };
-  context.getEventPaymentTotalsByApplicationId_ = function () {
+  context.buildEventPaymentTotalsByApplicationId_ = function () {
     return { 'app-1': 1000, 'app-2': 500 };
   };
 
@@ -212,7 +212,7 @@ function testAttendanceList_() {
       { id: 'app-2', eventId: 'event-1', studentId: '6002', name: '이학생', phone: '010-2222', applicantType: '재학생', appliedFee: 2000 }
     ];
   };
-  context.getEventPaymentTotalsByApplicationId_ = function () {
+  context.buildEventPaymentTotalsByApplicationId_ = function () {
     return { 'app-1': 1000, 'app-2': 500 };
   };
 

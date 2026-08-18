@@ -1,4 +1,4 @@
-﻿function getEventPaymentTotalsByApplicationId_() {
+﻿function buildEventPaymentTotalsByApplicationId_() {
   var totals = {};
   listEventPaymentClientRows_().forEach(function (payment) {
     var applicationId = String(payment.applicationId || '');
