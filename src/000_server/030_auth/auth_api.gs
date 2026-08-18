@@ -43,6 +43,7 @@ function api_getMyPermissions() {
   if (!current.ok) return current;
   return okResponse_({
     roles: current.user.roles || [],
-    permissions: current.permissions || {}
+    permissions: current.permissions || {},
+    permissionDetails: buildEffectivePermissionDetails_(current.permissions || {})
   });
 }
