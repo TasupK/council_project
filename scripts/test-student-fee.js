@@ -22,7 +22,8 @@ function createContext_() {
     Date: Date,
     JSON: JSON,
     isFinite: isFinite,
-    Utilities: { getUuid: function () { return 'uuid-test'; } }
+    Utilities: { getUuid: function () { return 'uuid-test'; } },
+    withOperationWriteLock_: function (fn) { return fn(); }
   });
 }
 
