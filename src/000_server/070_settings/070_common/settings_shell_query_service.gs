@@ -1,6 +1,6 @@
 // Settings 홈과 공통 shell 조회
 function loadSettingsHomeData() {
-  var current = getAdminSettingsCurrent_();
+  var current = getSettingsCurrent_();
   if (!current.ok) return current;
   return okResponse_(buildSettingsBaseData_(current));
 }
@@ -26,6 +26,7 @@ function buildSettingsBaseData_(current) {
     session: {
       email: current.user.email,
       isAdmin: current.isAdmin,
+      canAccessSettings: !!(current.isAdmin || (current.domainAccess && current.domainAccess.settings)),
       preview: false
     },
     currentUser: current.user
