@@ -17,10 +17,7 @@ var context = vm.createContext({
   Object: Object,
   Array: Array,
   requireLoginContext_: function () { calls.push('login'); return { ok: true, isAdmin: false }; },
-  requirePermission_: function (ctx, permission) { calls.push('permission:' + permission.screenId + ':' + permission.action); return true; },
-  resolveEventAccess_: function (access) { calls.push('resolve:event'); return { screenId: access.screenId || 'event_screen', action: access.action }; },
-  resolveAccountingAccess_: function (access) { return { screenId: 'accounting_screen', action: access.action }; },
-  resolveStudentFeeAccess_: function (access) { return { screenId: 'student_fee_screen', action: access.action }; }
+  requirePermission_: function (ctx, permission) { calls.push('permission:' + permission.screenId + ':' + permission.action); return true; }
 });
 
 vm.runInContext(fs.readFileSync(accessPath, 'utf8'), context, { filename: accessPath });
@@ -29,7 +26,14 @@ vm.runInContext(fs.readFileSync(handlerPath, 'utf8'), context, { filename: handl
 var result = context.apiHandler_({
   operation: 'demo',
   requireLogin: true,
-  access: { domain: 'event', action: 'edit' },
+  access: {
+    domain: 'event',
+    action: 'edit',
+    resolve: function (access) {
+      calls.push('resolve:event');
+      return { screenId: access.screenId || 'event_screen', action: access.action };
+    }
+  },
   input: { raw: true },
   parse: function () { calls.push('parse'); return { parsed: true }; },
   service: function (request) { calls.push('service'); return request; }
@@ -50,18 +54,21 @@ assert.throws(function () {
   context.apiHandler_({
     operation: 'invalid-dual',
     requireLogin: true,
-    access: { domain: 'event', action: 'view' },
+    access: { domain: 'event', action: 'view', resolve: function () { return { screenId: 'x', action: 'view' }; } },
     permission: { screenId: 'legacy', action: 'view' },
     service: function () { return true; }
   });
 }, /access.*permission|permission.*access/i);
 
 assert.throws(function () {
-  context.resolveApiAccess_({ ok: true }, { domain: 'event', action: 'deleteEverything' });
+  context.resolveApiAccess_({ ok: true }, {
+    domain: 'event', action: 'deleteEverything',
+    resolve: function () { return { screenId: 'x', action: 'deleteEverything' }; }
+  });
 }, /지원하지 않는 API 권한 action|unsupported/i);
 
 assert.throws(function () {
-  context.resolveApiAccess_({ ok: true }, { domain: 'unknown', action: 'view' });
-}, /지원하지 않는 API 권한 domain|unsupported/i);
+  context.resolveApiAccess_({ ok: true }, { domain: 'event', action: 'view' });
+}, /resolver/i);
 
 console.log('Common API access contract passed.');
