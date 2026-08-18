@@ -26,6 +26,10 @@ jobs:
         id: domain_access
         continue-on-error: true
         run: node scripts/test-domain-access-resolvers.js
+      - name: Student Fee mutation consistency
+        id: student_fee_mutation
+        continue-on-error: true
+        run: node scripts/test-student-fee-mutation-consistency.js
       - name: Record result
         if: always()
         run: |
@@ -34,6 +38,7 @@ jobs:
             echo "verified_sha=${GITHUB_SHA}"
             echo "api_access=${{ steps.api_access.outcome }}"
             echo "domain_access=${{ steps.domain_access.outcome }}"
+            echo "student_fee_mutation=${{ steps.student_fee_mutation.outcome }}"
           } > verification/system-consistency-result.txt
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -41,5 +46,5 @@ jobs:
           git commit -m "chore: record system consistency verification [skip ci]" || true
           git push
       - name: Fail on focused verification failure
-        if: steps.api_access.outcome != 'success' || steps.domain_access.outcome != 'success'
+        if: steps.api_access.outcome != 'success' || steps.domain_access.outcome != 'success' || steps.student_fee_mutation.outcome != 'success'
         run: exit 1
