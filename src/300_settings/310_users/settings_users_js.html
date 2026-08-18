@@ -27,12 +27,13 @@
     });
     var rows = filtered.map(function (user) {
       var roles = (user.roles || []).map(function (role) { return role.name; }).join(", ");
+      var disabled = SETTINGS_CAN_ADMIN ? '' : ' disabled';
       return (
         "<tr><td>" + escapeSettingsHtml(user.name) +
         "</td><td>" + escapeSettingsHtml(user.email) +
         "</td><td>" + escapeSettingsHtml(user.studentId) +
         "</td><td>" + escapeSettingsHtml(user.phone) +
-        '</td><td><select class="select ui-control" data-user-department="' + escapeSettingsHtml(user.email) + '" data-current-department="' + escapeSettingsHtml(user.departmentId || '') + '">' + departmentOptionHtml(user.departmentId || '') + '</select>' +
+        '</td><td><select class="select ui-control" data-user-department="' + escapeSettingsHtml(user.email) + '" data-current-department="' + escapeSettingsHtml(user.departmentId || '') + '"' + disabled + '>' + departmentOptionHtml(user.departmentId || '') + '</select>' +
         "</td><td>" + escapeSettingsHtml(roles) +
         "</td><td>" + escapeSettingsHtml(user.status === "active" ? "활성" : "비활성") +
         "</td><td>" + escapeSettingsHtml(user.updatedAt || "-") +
@@ -49,6 +50,7 @@
   }
 
   async function saveUserDepartment(select) {
+    if (!SETTINGS_CAN_ADMIN) return;
     var email = select.getAttribute('data-user-department');
     var previous = select.getAttribute('data-current-department') || '';
     var departmentId = select.value || '';
