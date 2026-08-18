@@ -54,8 +54,7 @@ function listFiles_(directory) {
   }, []);
 }
 
-function collectFunctions_(file) {
-  var source = fs.readFileSync(file, 'utf8');
+function collectFunctionsFromSource_(source) {
   var pattern = /function\s+([A-Za-z_$][\w$]*)\s*\(/g;
   var names = [];
   var match;
@@ -65,7 +64,13 @@ function collectFunctions_(file) {
 
 listFiles_(SERVER).forEach(function (file) {
   var relative = path.relative(ROOT, file).replace(/\\/g, '/');
-  collectFunctions_(file).forEach(function (name) {
+  var source = fs.readFileSync(file, 'utf8');
+
+  RENAMED_SYMBOLS.forEach(function (legacyName) {
+    if (source.indexOf(legacyName) >= 0) failures.push('Legacy internal symbol reference remains: ' + legacyName + ' in ' + relative);
+  });
+
+  collectFunctionsFromSource_(source).forEach(function (name) {
     if (/^api_/.test(name)) {
       if (/_$/.test(name)) failures.push('Public API must not use private trailing underscore: ' + name + ' in ' + relative);
       return;
@@ -77,7 +82,6 @@ listFiles_(SERVER).forEach(function (file) {
     if (/_query_service\.gs$/.test(relative) && /^list[A-Z]/.test(name)) failures.push('Query-service view/result must not masquerade as DAO list*: ' + name + ' in ' + relative);
     if (/(?:_mapper|_reader)\.gs$/.test(relative) && /^get[A-Z].*Data_$/.test(name)) failures.push('Mapper/reader must not expose application Data_ contract: ' + name + ' in ' + relative);
     if (/^build[A-Z].*Data_$/.test(name)) failures.push('Pure builder must not use Data_ suffix: ' + name + ' in ' + relative);
-    if (RENAMED_SYMBOLS.indexOf(name) >= 0) failures.push('Legacy internal symbol remains: ' + name + ' in ' + relative);
   });
 });
 
