@@ -7,7 +7,7 @@ var failures = [];
 
 var RENAMED_SYMBOLS = [
   'toUserDto_', 'getRolesById_', 'toRoleDto_', 'toPermissionDto_', 'getPermissionsById_',
-  'toDepartmentDto_', 'getDepartmentsById_', 'updateEventStatusData_', 'closeEventData_',
+  'toDepartmentDto_', 'getDepartmentsById_', 'closeEventData_',
   'findAllEventRows_', 'findAllEventClientRows_', 'getEventFormHeaderAliases_', 'eventFormCell_',
   'stableEventFormResponseId_', 'eventFormQuestionId_', 'extractGoogleResourceId_',
   'selectEventFormResponseSheet_', 'syncApplicantsFromFormsData_',
