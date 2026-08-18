@@ -123,16 +123,34 @@ function validateOperationDbBusinessKeys_(schema, tables) {
 
   rules.forEach(function (rule) {
     var table = schema[rule.tableKey];
+    var seen = {};
     if (!table) return;
+
     var columns = resolveOperationDbFieldColumns_(table, rule.fields);
-    validateDuplicateKeys_(table.name, tables[rule.tableKey] || [], columns).forEach(function (issue) {
-      var copy = {};
-      Object.keys(issue).forEach(function (key) { copy[key] = issue[key]; });
-      copy.code = 'DUPLICATE_BUSINESS_KEY';
-      copy.businessKey = rule.fields.join('+');
-      issues.push(copy);
+    (tables[rule.tableKey] || []).forEach(function (row) {
+      var values = columns.map(function (column) {
+        return String(row[column] == null ? '' : row[column]).trim().toLowerCase();
+      });
+      if (values.some(function (value) { return !value; })) return;
+
+      var key = values.join('|');
+      if (!seen[key]) {
+        seen[key] = true;
+        return;
+      }
+
+      issues.push({
+        code: 'DUPLICATE_BUSINESS_KEY',
+        table: table.name,
+        rowNumber: row._rowNumber || '',
+        column: columns.join('+'),
+        businessKey: rule.fields.join('+'),
+        key: key,
+        message: '중복된 업무키가 있습니다.'
+      });
     });
   });
+
   return issues;
 }
 
