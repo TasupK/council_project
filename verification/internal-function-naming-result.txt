@@ -1,4 +1,0 @@
-verified_sha=de988134a768750665bf1b15c144abdcf4eb8af6
-naming=success
-regression=success
-public_api=success
