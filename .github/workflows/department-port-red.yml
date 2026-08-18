@@ -1,9 +1,9 @@
-name: Route Access RED
+name: Sidebar Access RED
 on:
   push:
     branches: [refactor/settings-department-access-port]
     paths:
-      - scripts/test-route-access.js
+      - scripts/test-sidebar-access.js
       - .github/workflows/department-port-red.yml
 permissions:
   contents: write
@@ -17,14 +17,14 @@ jobs:
           node-version: '22'
       - name: Verify expected failure
         run: |
-          if node scripts/test-route-access.js; then
+          if node scripts/test-sidebar-access.js; then
             echo 'Expected RED failure but test passed'
             exit 1
           fi
           mkdir -p verification
-          printf 'red_verified_sha=%s\n' "$GITHUB_SHA" > verification/route-access-red.txt
+          printf 'red_verified_sha=%s\n' "$GITHUB_SHA" > verification/sidebar-access-red.txt
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add verification/route-access-red.txt
-          git commit -m 'ci: record route access red verification'
+          git add verification/sidebar-access-red.txt
+          git commit -m 'ci: record sidebar access red verification'
           git push
