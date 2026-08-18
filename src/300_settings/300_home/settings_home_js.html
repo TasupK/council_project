@@ -1,10 +1,9 @@
 <script>
   // 1. 설정 하위 페이지 링크 연결
+  getSettingsElement("departmentsLink").href = buildAppPageUrl("settings_departments");
   getSettingsElement("usersLink").href = buildAppPageUrl("settings_users");
   getSettingsElement("rolesLink").href = buildAppPageUrl("settings_roles");
-  getSettingsElement("permissionsLink").href = buildAppPageUrl(
-    "settings_permissions",
-  );
+  getSettingsElement("permissionsLink").href = buildAppPageUrl("settings_permissions");
 
   // TODO: connectDriveFolder 서버 함수 구현 후 Drive 연결 이벤트 연결
   // getSettingsElement('btnConnectFolder').onclick = function () {};
@@ -15,12 +14,7 @@
   async function loadSettingsHome() {
     try {
       var data = await callSettingsApi("loadSettingsHomeData");
-      if (!data || !data.ok)
-        throw new Error(
-          data && data.message
-            ? data.message
-            : "설정 데이터를 불러오지 못했습니다.",
-        );
+      if (!data || !data.ok) throw new Error(data && data.message ? data.message : "설정 데이터를 불러오지 못했습니다.");
       var database = applySettingsShell(data);
       var link = getSettingsElement("dbOpenLink");
       if (database.spreadsheetUrl) {
