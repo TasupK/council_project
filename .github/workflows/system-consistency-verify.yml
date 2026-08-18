@@ -18,34 +18,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Migrate API access declarations and legacy test harness
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          import re
-
-          roots = [
-              (Path('src/000_server/050_event'), 'event', 'eventApiAccess_'),
-              (Path('src/000_server/060_accounting'), 'accounting', 'accountingApiAccess_'),
-              (Path('src/000_server/080_student_fee'), 'student_fee', 'studentFeeApiAccess_'),
-          ]
-          for root, domain, helper in roots:
-              pattern = re.compile(r"access\s*:\s*\{\s*domain\s*:\s*['\"]" + re.escape(domain) + r"['\"]\s*,\s*action\s*:\s*['\"](view|edit|approve|export)['\"]\s*\}")
-              for p in root.rglob('*_api.gs'):
-                  text = p.read_text()
-                  new = pattern.sub(lambda m: "access: %s('%s')" % (helper, m.group(1)), text)
-                  if new != text:
-                      p.write_text(new)
-
-          test = Path('scripts/test-student-fee.js')
-          text = test.read_text()
-          marker = "    withOperationWriteLock_: function (fn) { return fn(); }\n"
-          replacement = marker.rstrip('\n') + ",\n    studentFeeApiAccess_: function (action) { return { domain: 'student_fee', action: action }; }\n"
-          if 'studentFeeApiAccess_' not in text.split('function createContext_()', 1)[1].split('});', 1)[0]:
-              if marker not in text:
-                  raise SystemExit('Student Fee context marker not found')
-              test.write_text(text.replace(marker, replacement, 1))
-          PY
       - name: Common API access contract
         id: api_access
         continue-on-error: true
@@ -112,8 +84,8 @@ jobs:
           } > verification/system-consistency-result.txt
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/000_server scripts/test-student-fee.js verification/system-consistency-result.txt verification/full-regression.log
-          git commit -m "refactor: use domain access override helpers [skip ci]" || true
+          git add verification/system-consistency-result.txt verification/full-regression.log
+          git commit -m "chore: record clean system consistency verification [skip ci]" || true
           git push
       - name: Fail on verification failure
         if: steps.api_access.outcome != 'success' || steps.domain_access.outcome != 'success' || steps.student_fee_mutation.outcome != 'success' || steps.event_consistency.outcome != 'success' || steps.accounting_money.outcome != 'success' || steps.iam_menu.outcome != 'success' || steps.business_keys.outcome != 'success' || steps.architecture.outcome != 'success' || steps.regression.outcome != 'success'
