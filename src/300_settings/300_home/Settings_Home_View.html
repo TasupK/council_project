@@ -9,55 +9,31 @@
     <div class="loading ui-loading">데이터 불러오는 중…</div>
   </div>
   <div class="page-panel" id="panel-content">
-    <p class="admin-note" id="adminNote">이 영역은 시스템 관리자 전용입니다.</p>
+    <p class="admin-note" id="adminNote">사용자·권한 설정 영역입니다.</p>
     <h2 class="section-title">사용자·권한</h2>
     <div class="settings-list ui-card">
-      <a class="settings-row" id="usersLink" target="_top"
-        >사용자 관리 <span class="chevron">›</span></a
-      >
-      <a class="settings-row" id="rolesLink" target="_top"
-        >역할 관리 <span class="chevron">›</span></a
-      >
-      <a class="settings-row" id="permissionsLink" target="_top"
-        >업무 권한 설정 <span class="chevron">›</span></a
-      >
+      <a class="settings-row" id="departmentsLink" target="_top">부서 조직도 <span class="chevron">›</span></a>
+      <a class="settings-row" id="usersLink" target="_top">사용자 관리 <span class="chevron">›</span></a>
+      <a class="settings-row" id="rolesLink" target="_top">역할 관리 <span class="chevron">›</span></a>
+      <a class="settings-row" id="permissionsLink" target="_top">업무 권한 설정 <span class="chevron">›</span></a>
     </div>
     <div class="db-card ui-card">
       <div>
         <strong>Google Sheets 데이터베이스</strong>
-        <p id="dbCardDesc">
-          연결된 스프레드시트에서 사용자·역할·권한을 관리합니다.
-        </p>
+        <p id="dbCardDesc">연결된 스프레드시트에서 사용자·역할·권한·부서를 관리합니다.</p>
       </div>
       <div class="ui-page-actions">
-        <button class="ui-btn outline" type="button" id="btnReloadData">
-          다시 불러오기
-        </button>
-        <a
-          class="ui-btn outline hidden"
-          id="dbOpenLink"
-          target="_blank"
-          rel="noopener"
-          >시트 열기</a
-        >
+        <button class="ui-btn outline" type="button" id="btnReloadData">다시 불러오기</button>
+        <a class="ui-btn outline hidden" id="dbOpenLink" target="_blank" rel="noopener">시트 열기</a>
       </div>
     </div>
     <div class="connect-card ui-card">
       <strong>운영 Google Drive 연결 (준비되면 설정)</strong>
-      <p style="margin: 8px 0 0; color: var(--text-3); font-size: 13px">
-        실제 운영 Drive 폴더 ID를 받으면 여기서 연결합니다.
-      </p>
+      <p style="margin: 8px 0 0; color: var(--text-3); font-size: 13px">실제 운영 Drive 폴더 ID를 받으면 여기서 연결합니다.</p>
       <label for="folderIdInput">Drive 폴더 ID</label>
       <div class="connect-row">
         <input class="ui-control" id="folderIdInput" type="text" placeholder="Drive 폴더 ID" />
-        <button
-          class="ui-btn primary"
-          type="button"
-          id="btnConnectFolder"
-          disabled
-        >
-          연결 준비 중
-        </button>
+        <button class="ui-btn primary" type="button" id="btnConnectFolder" disabled>연결 준비 중</button>
       </div>
     </div>
   </div>
