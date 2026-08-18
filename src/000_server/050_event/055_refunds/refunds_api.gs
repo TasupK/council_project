@@ -2,7 +2,7 @@
 function api_getEventRefundList(input) {
   return apiHandler_({
     operation: 'getEventRefundList', input: input, requireLogin: true,
-    access: { domain: 'event', action: 'view' },
+    access: eventApiAccess_('view'),
     parse: parseEventRequest_,
     service: function (parsed) { return getEventRefundListData_(parsed.request); }
   });

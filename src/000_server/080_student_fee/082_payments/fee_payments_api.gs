@@ -2,7 +2,7 @@
 function api_getStudentFeeSummary(input) {
   return apiHandler_({
     operation: 'getStudentFeeSummary', input: input, requireLogin: true,
-    access: { domain: 'student_fee', action: 'view' },
+    access: studentFeeApiAccess_('view'),
     parse: parseStudentFeeRequest_,
     service: function () { return getStudentFeeSummaryData_(); }
   });
@@ -12,7 +12,7 @@ function api_getStudentFeeSummary(input) {
 function api_getFeeApplicationList(input) {
   return apiHandler_({
     operation: 'getFeeApplicationList', input: input, requireLogin: true,
-    access: { domain: 'student_fee', action: 'view' },
+    access: studentFeeApiAccess_('view'),
     parse: parseStudentFeeRequest_,
     service: function (parsed) { return getFeeApplicationListData_(parsed.request); }
   });
@@ -21,7 +21,7 @@ function api_getFeeApplicationList(input) {
 function api_getFeeApplicationDetail(input) {
   return apiHandler_({
     operation: 'getFeeApplicationDetail', input: input, requireLogin: true,
-    access: { domain: 'student_fee', action: 'view' },
+    access: studentFeeApiAccess_('view'),
     parse: parseStudentFeeRequest_,
     service: function (parsed) { return getFeeApplicationDetailData_(parsed.request); }
   });
@@ -31,7 +31,7 @@ function api_getFeeApplicationDetail(input) {
 function api_processFeeApplications(input) {
   return apiHandler_({
     operation: 'processFeeApplications', input: input, requireLogin: true,
-    access: { domain: 'student_fee', action: 'approve' },
+    access: studentFeeApiAccess_('approve'),
     parse: parseStudentFeeRequest_,
     service: function (parsed, context) { return processFeeApplicationsData_(parsed.request, context); }
   });
@@ -40,7 +40,7 @@ function api_processFeeApplications(input) {
 function api_calculateFeeAmount(input) {
   return apiHandler_({
     operation: 'calculateFeeAmount', input: input, requireLogin: true,
-    access: { domain: 'student_fee', action: 'view' },
+    access: studentFeeApiAccess_('view'),
     parse: parseStudentFeeRequest_,
     service: function (parsed) { return calculateFeeAmountData_(parsed.request); }
   });
@@ -49,7 +49,7 @@ function api_calculateFeeAmount(input) {
 function api_confirmFeePayment(input) {
   return apiHandler_({
     operation: 'confirmFeePayment', input: input, requireLogin: true,
-    access: { domain: 'student_fee', action: 'approve' },
+    access: studentFeeApiAccess_('approve'),
     parse: parseStudentFeeRequest_,
     service: function (parsed, context) { return confirmFeePaymentData_(parsed.request, context); }
   });

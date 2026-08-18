@@ -2,7 +2,7 @@
 function api_getEventList(input) {
   return apiHandler_({
     operation: 'getEventList', input: input, requireLogin: true,
-    access: { domain: 'event', action: 'view' },
+    access: eventApiAccess_('view'),
     parse: parseEventRequest_,
     service: function (parsed) { return getEventListData_(parsed.request); }
   });
@@ -11,7 +11,7 @@ function api_getEventList(input) {
 function api_getEventForEdit(input) {
   return apiHandler_({
     operation: 'getEventForEdit', input: input, requireLogin: true,
-    access: { domain: 'event', action: 'view' },
+    access: eventApiAccess_('view'),
     parse: parseEventRequest_,
     service: function (parsed) { return getEventData_(parsed.request); }
   });
@@ -20,7 +20,7 @@ function api_getEventForEdit(input) {
 function api_getEventDetail(input) {
   return apiHandler_({
     operation: 'getEventDetail', input: input, requireLogin: true,
-    access: { domain: 'event', action: 'view' },
+    access: eventApiAccess_('view'),
     parse: parseEventRequest_,
     service: function (parsed) { return getEventDetailData_(parsed.request); }
   });
@@ -30,7 +30,7 @@ function api_getEventDetail(input) {
 function api_createEvent(input) {
   return apiHandler_({
     operation: 'createEvent', input: input, requireLogin: true,
-    access: { domain: 'event', action: 'edit' },
+    access: eventApiAccess_('edit'),
     parse: parseEventRequest_,
     service: function (parsed, context) { return createEventData_(parsed.request, context); }
   });
@@ -39,7 +39,7 @@ function api_createEvent(input) {
 function api_updateEvent(input) {
   return apiHandler_({
     operation: 'updateEvent', input: input, requireLogin: true,
-    access: { domain: 'event', action: 'edit' },
+    access: eventApiAccess_('edit'),
     parse: parseEventRequest_,
     service: function (parsed, context) { return updateEventData_(parsed.request, context); }
   });
@@ -49,7 +49,7 @@ function api_updateEvent(input) {
 function api_updateEventStatus(input) {
   return apiHandler_({
     operation: 'updateEventStatus', input: input, requireLogin: true,
-    access: { domain: 'event', action: 'approve' },
+    access: eventApiAccess_('approve'),
     parse: parseEventRequest_,
     service: function (parsed, context) { return updateEventStatusData_(parsed.request, context); }
   });
@@ -58,7 +58,7 @@ function api_updateEventStatus(input) {
 function api_closeEvent(input) {
   return apiHandler_({
     operation: 'closeEvent', input: input, requireLogin: true,
-    access: { domain: 'event', action: 'approve' },
+    access: eventApiAccess_('approve'),
     parse: parseEventRequest_,
     service: function (parsed, context) { return closeEventData_(parsed.request, context); }
   });

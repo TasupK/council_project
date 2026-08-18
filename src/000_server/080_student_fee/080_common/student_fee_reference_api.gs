@@ -2,7 +2,7 @@
 function api_getStudentFeeReferenceData(input) {
   return apiHandler_({
     operation: 'getStudentFeeReferenceData', input: input, requireLogin: true,
-    access: { domain: 'student_fee', action: 'view' },
+    access: studentFeeApiAccess_('view'),
     parse: parseStudentFeeRequest_,
     service: function () { return getStudentFeeReferenceData_(); }
   });

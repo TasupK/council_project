@@ -2,7 +2,7 @@
 function api_getAttendanceList(input) {
   return apiHandler_({
     operation: 'getAttendanceList', input: input, requireLogin: true,
-    access: { domain: 'event', action: 'view' },
+    access: eventApiAccess_('view'),
     parse: parseEventRequest_,
     service: function (parsed) { return getAttendanceListData_(parsed.request); }
   });
@@ -12,7 +12,7 @@ function api_getAttendanceList(input) {
 function api_applyAttendanceChanges(input) {
   return apiHandler_({
     operation: 'applyAttendanceChanges', input: input, requireLogin: true,
-    access: { domain: 'event', action: 'edit' },
+    access: eventApiAccess_('edit'),
     parse: parseEventRequest_,
     service: function (parsed, context) { return applyAttendanceChangesData_(parsed.request, context); }
   });

@@ -16,25 +16,54 @@ Domain access resolver contract passed.
 == scripts/test-event-consistency-hardening.js ==
 Event consistency hardening contract passed.
 == scripts/test-event-form-sync-api.js ==
-node:internal/assert/utils:77
-    throw err;
-    ^
+Event Form sync API/access contract passed.
+== scripts/test-event-form-sync-frontend.js ==
+Event Form sync frontend contract passed.
+== scripts/test-event-form-sync-mapper.js ==
+Event Form mapper/reader contract passed.
+== scripts/test-event-form-sync-service.js ==
+Event Form sync service contract passed.
+== scripts/test-event.js ==
+Event behavior regression tests passed.
+== scripts/test-iam-menu-semantics.js ==
+IAM menu semantics contract passed.
+== scripts/test-mypage-auth.js ==
+MyPage Auth/IAM contract tests passed.
+== scripts/test-mypage-frontend.js ==
+MyPage frontend contract tests passed.
+== scripts/test-mypage-routing.js ==
+MyPage routing and entry-point tests passed.
+== scripts/test-operation-business-key-integrity.js ==
+OperationDB business-key integrity contract passed.
+== scripts/test-route-access.js ==
+IAM route access contract passed.
+== scripts/test-settings-department-chart.js ==
+Settings department chart contract passed.
+== scripts/test-settings-departments.js ==
+Settings department assignment contract passed.
+== scripts/test-settings.js ==
+Settings behavior regression tests passed.
+== scripts/test-sidebar-access.js ==
+Sidebar access contract passed.
+== scripts/test-student-fee-frontend.js ==
+Student Fee frontend regression tests passed.
+== scripts/test-student-fee-mutation-consistency.js ==
+Student Fee mutation consistency contract passed.
+== scripts/test-student-fee.js ==
+/home/runner/work/council_project/council_project/src/000_server/080_student_fee/080_common/student_fee_reference_api.gs:5
+    access: studentFeeApiAccess_('view'),
+            ^
 
-AssertionError [ERR_ASSERTION]: sync API must use Event access override helper
-    at Object.<anonymous> (/home/runner/work/council_project/council_project/scripts/test-event-form-sync-api.js:15:8)
+ReferenceError: studentFeeApiAccess_ is not defined
+    at Object.api_getStudentFeeReferenceData (/home/runner/work/council_project/council_project/src/000_server/080_student_fee/080_common/student_fee_reference_api.gs:5:13)
+    at testApiRequiresLogin_ (/home/runner/work/council_project/council_project/scripts/test-student-fee.js:289:11)
+    at Object.<anonymous> (/home/runner/work/council_project/council_project/scripts/test-student-fee.js:321:1)
     at Module._compile (node:internal/modules/cjs/loader:1781:14)
     at Object..js (node:internal/modules/cjs/loader:1913:10)
     at Module.load (node:internal/modules/cjs/loader:1505:32)
     at Function._load (node:internal/modules/cjs/loader:1309:12)
     at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
     at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
-    at node:internal/main/run_main_module:36:49 {
-  generatedMessage: false,
-  code: 'ERR_ASSERTION',
-  actual: false,
-  expected: true,
-  operator: '==',
-  diff: 'simple'
-}
+    at node:internal/main/run_main_module:36:49
 
 Node.js v22.23.2
