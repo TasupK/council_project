@@ -24,6 +24,11 @@ var context = vm.createContext({
   Utilities: { getUuid: (function () { var n = 0; return function () { n += 1; return 'uuid-' + n; }; })() },
   getCurrentIsoDateTime_: function () { return '2026-08-18T20:20:00+09:00'; },
   throwEventError_: function (code, message) { var error = new Error(message); error.code = code; throw error; },
+  requireEventRequestId_: function (request) {
+    var id = String(request && request.id || '').trim();
+    if (!id) { var error = new Error('id가 필요합니다.'); error.code = 'VALIDATION_FAILED'; throw error; }
+    return id;
+  },
   findEventRowById_: function (id) { return id === 'EVT-1' ? { id: 'EVT-1', feeEnabled: false, payerFee: 0, nonPayerFee: 0 } : null; },
   findEventFormByEventId_: function () { return { id: 'FORM-1', eventId: 'EVT-1', googleFormId: 'old-form', responseSheetId: 'old-sheet' }; },
   resolveEventFormResponseSource_: function (formId, sheetId) {
