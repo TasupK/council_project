@@ -70,8 +70,8 @@ jobs:
             'listUsersForSettings_': 'getSettingsUsersData_',
             'listRolesForSettings_': 'getSettingsRolesData_',
             'memberSort_': 'compareSettingsDepartmentMembers_',
-            'findAllFeeRateRows_': 'listFeeRateRows_',
-            'findAllStudentFeeSemesterRows_': 'listStudentFeeSemesterRows_',
+            'findAllFeeRateRows_': 'readFeeRateRows_',
+            'findAllStudentFeeSemesterRows_': 'readStudentFeeSemesterRows_',
           }
 
           roots = [Path('src/000_server'), Path('scripts')]
