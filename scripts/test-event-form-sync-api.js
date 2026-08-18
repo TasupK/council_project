@@ -12,7 +12,7 @@ assert.ok(fs.existsSync(accessPath), 'event_access.gs must exist');
 
 var apiSource = fs.readFileSync(apiPath, 'utf8');
 assert.ok(/function\s+api_syncApplicantsFromForms\s*\(/.test(apiSource), 'sync API must exist');
-assert.ok(/access\s*:\s*\{\s*domain\s*:\s*['"]event['"]\s*,\s*action\s*:\s*['"]edit['"]\s*\}/.test(apiSource), 'sync API must use common Event edit access contract');
+assert.ok(/access\s*:\s*eventApiAccess_\s*\(\s*['"]edit['"]\s*\)/.test(apiSource), 'sync API must use Event access override helper');
 assert.ok(!/requireEventEditContext_\s*\(context\)/.test(apiSource), 'sync API must not keep a second authorization path');
 assert.ok(/syncApplicantsFromFormsData_\s*\(/.test(apiSource), 'sync API must delegate to sync service');
 
@@ -37,7 +37,11 @@ var accessContext = vm.createContext({
 });
 vm.runInContext(fs.readFileSync(iamAccessPath, 'utf8'), accessContext, { filename: iamAccessPath });
 vm.runInContext(fs.readFileSync(accessPath, 'utf8'), accessContext, { filename: accessPath });
-assert.deepStrictEqual(JSON.parse(JSON.stringify(accessContext.resolveEventAccess_({ domain: 'event', action: 'edit' }))), {
+var declared = accessContext.eventApiAccess_('edit');
+assert.strictEqual(declared.domain, 'event');
+assert.strictEqual(declared.action, 'edit');
+assert.strictEqual(declared.resolve, accessContext.resolveEventAccess_);
+assert.deepStrictEqual(JSON.parse(JSON.stringify(declared.resolve(declared))), {
   screenId: 'perm_EE',
   action: 'edit'
 });
