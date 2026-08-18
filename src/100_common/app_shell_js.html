@@ -2,6 +2,7 @@
 // 1. 공통 사용자 정보 표시
 getAppElement('appUserName').textContent = APP_USER_NAME || '운영자';
 getAppElement('appUserTitle').textContent = APP_USER_TITLE || '사용자';
+getAppElement('appUserCard').href = buildAppPageUrl('mypage');
 
 // 2. 공통 페이지 링크 및 활성 메뉴 연결
 getAppElement('appNavMain').href = buildAppPageUrl('main');
