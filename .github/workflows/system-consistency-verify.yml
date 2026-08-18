@@ -38,6 +38,10 @@ jobs:
         id: accounting_money
         continue-on-error: true
         run: node scripts/test-accounting-money-validation.js
+      - name: IAM menu semantics
+        id: iam_menu
+        continue-on-error: true
+        run: node scripts/test-iam-menu-semantics.js
       - name: Record result
         if: always()
         run: |
@@ -49,6 +53,7 @@ jobs:
             echo "student_fee_mutation=${{ steps.student_fee_mutation.outcome }}"
             echo "event_consistency=${{ steps.event_consistency.outcome }}"
             echo "accounting_money=${{ steps.accounting_money.outcome }}"
+            echo "iam_menu=${{ steps.iam_menu.outcome }}"
           } > verification/system-consistency-result.txt
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -56,5 +61,5 @@ jobs:
           git commit -m "chore: record system consistency verification [skip ci]" || true
           git push
       - name: Fail on focused verification failure
-        if: steps.api_access.outcome != 'success' || steps.domain_access.outcome != 'success' || steps.student_fee_mutation.outcome != 'success' || steps.event_consistency.outcome != 'success' || steps.accounting_money.outcome != 'success'
+        if: steps.api_access.outcome != 'success' || steps.domain_access.outcome != 'success' || steps.student_fee_mutation.outcome != 'success' || steps.event_consistency.outcome != 'success' || steps.accounting_money.outcome != 'success' || steps.iam_menu.outcome != 'success'
         run: exit 1
