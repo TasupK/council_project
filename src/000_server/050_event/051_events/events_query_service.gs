@@ -87,7 +87,7 @@ function getEventDetailData_(request) {
     var attendance = attendanceById[String(row.id)];
     return attendance && attendance.status === '출석';
   });
-  return {
+  var result = {
     event: event,
     summary: {
       totalApplicants: applicants.length,
@@ -96,7 +96,12 @@ function getEventDetailData_(request) {
       actualAttendees: attended.length,
       // TODO(회계 연동): 현재 잔액은 행사 DB/API 스키마에 원천 테이블이 없다.
       currentBalance: null
-    },
-    formSync: buildEventFormSyncView_(findEventFormByEventId_(event.id))
+    }
   };
+  // 실제 GAS 런타임에서는 DAO가 항상 로드되며 additive formSync를 제공한다.
+  // 격리된 레거시 테스트 harness가 query service만 로드하는 경우 기존 응답 모양을 유지한다.
+  if (typeof findEventFormByEventId_ === 'function') {
+    result.formSync = buildEventFormSyncView_(findEventFormByEventId_(event.id));
+  }
+  return result;
 }
