@@ -14,14 +14,38 @@ getAppElement('appNavStudentFeeRefunds').href = buildAppPageUrl('student_fee_ref
 getAppElement('appNavEvent').href = buildAppPageUrl('event');
 getAppElement('appNavSettings').href = buildAppPageUrl('settings');
 setAppActiveNavigation(APP_CURRENT_PAGE);
+loadAppNavigationAccess_();
 
 getAppElement('appNavStudentFee').addEventListener('click', function () {
   var expanded = getAppElement('appNavStudentFee').getAttribute('aria-expanded') === 'true';
   setStudentFeeSubmenuExpanded_(!expanded);
 });
 
-if (APP_IS_ADMIN) {
-  getAppElement('appNavSettings').classList.remove('hidden');
+function loadAppNavigationAccess_() {
+  google.script.run
+    .withSuccessHandler(function (current) {
+      if (!current || !current.ok) return;
+      var access = current.domainAccess || {};
+      setAppDomainVisible_('main', !!access.main);
+      setAppDomainVisible_('accounting', !!access.accounting);
+      setAppDomainVisible_('student_fee', !!access.student_fee);
+      setAppDomainVisible_('event', !!access.event);
+      setAppDomainVisible_('settings', !!access.settings);
+    })
+    .withFailureHandler(function () {})
+    .api_getCurrentUser();
+}
+
+function setAppDomainVisible_(domain, visible) {
+  var target = {
+    main: 'appNavMain',
+    accounting: 'appNavAccounting',
+    student_fee: 'appNavStudentFeeGroup',
+    event: 'appNavEvent',
+    settings: 'appNavSettings'
+  }[domain];
+  if (!target) return;
+  getAppElement(target).classList.toggle('hidden', !visible);
 }
 
 function isStudentFeePage_(page) {
