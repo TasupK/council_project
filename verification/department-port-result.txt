@@ -167,4 +167,4 @@ MyPage architecture verification passed.
 exit=0
 
 FINAL=PASS
-verified_sha=847101df9e3a9ca69fdb82498fe723cd60d41278
+verified_sha=11983a8365186027ee984f6ee90020fbbd6c807d
