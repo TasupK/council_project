@@ -4,8 +4,9 @@ on:
     branches: [refactor/settings-department-access-port]
     paths:
       - scripts/test-department-iam.js
+      - .github/workflows/department-port-red.yml
 permissions:
-  contents: read
+  contents: write
 jobs:
   red:
     runs-on: ubuntu-latest
@@ -14,4 +15,16 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: node scripts/test-department-iam.js
+      - name: Verify expected failure
+        run: |
+          if node scripts/test-department-iam.js; then
+            echo 'Expected RED failure but test passed'
+            exit 1
+          fi
+          mkdir -p verification
+          printf 'red_verified_sha=%s\n' "$GITHUB_SHA" > verification/department-red.txt
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add verification/department-red.txt
+          git commit -m 'ci: record department red verification'
+          git push
