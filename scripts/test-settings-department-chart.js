@@ -1,0 +1,21 @@
+var fs = require('fs');
+var assert = require('assert');
+function read(path) { return fs.readFileSync(path, 'utf8'); }
+var apiPath = 'src/000_server/070_settings/074_departments/settings_departments_api.gs';
+var queryPath = 'src/000_server/070_settings/074_departments/settings_departments_query_service.gs';
+var htmlPath = 'src/300_settings/340_departments/Settings_Departments.html';
+var viewPath = 'src/300_settings/340_departments/Settings_Departments_View.html';
+var jsPath = 'src/300_settings/340_departments/settings_departments_js.html';
+[apiPath, queryPath, htmlPath, viewPath, jsPath].forEach(function (path) { assert.ok(fs.existsSync(path), 'missing ' + path); });
+var api = fs.existsSync(apiPath) ? read(apiPath) : '';
+var query = fs.existsSync(queryPath) ? read(queryPath) : '';
+var view = fs.existsSync(viewPath) ? read(viewPath) : '';
+assert.ok(api.includes('function loadSettingsDepartmentsData'), 'chart API missing');
+assert.ok(query.includes('function buildSettingsDepartmentChart_'), 'chart query service missing');
+assert.ok(query.includes('unassigned'), 'unassigned group missing');
+assert.ok(query.includes('permissionAreas'), 'permission area summary missing');
+assert.ok(!query.includes('executives:'), 'phase 1 must not expose executives');
+assert.ok(view.includes('departmentSummary'), 'summary container missing');
+assert.ok(view.includes('departmentGroups'), 'department groups container missing');
+assert.ok(!/create|delete|edit Department|부서 추가|부서 삭제|부서 수정/.test(view), 'Department CRUD controls must not exist');
+console.log('Settings department chart contract passed.');
