@@ -1,16 +1,41 @@
 /** 수입지출원장 mutation/business service */
 
+function normalizeLedgerTransactionType_(value) {
+  var type = String(value == null ? '' : value).trim();
+  if (type !== '수입' && type !== '지출') {
+    throw new Error('거래유형(transaction_type)은 수입 또는 지출이어야 합니다.');
+  }
+  return type;
+}
+
+function parseLedgerPositiveAmount_(value) {
+  var amount = Number(value);
+  if (!isFinite(amount) || amount <= 0) {
+    throw new Error('거래금액(amount)은 0보다 큰 유한한 숫자여야 합니다.');
+  }
+  return amount;
+}
+
+function parseLedgerInformationalBalance_(value, fallback) {
+  if (value == null || value === '') return Number(fallback || 0);
+  var balance = Number(value);
+  if (!isFinite(balance)) throw new Error('잔액(balance_after)은 유한한 숫자여야 합니다.');
+  return balance;
+}
+
 function saveLedgerEntry_(request, context, recordStatus) {
   request = request || {};
   var now = getCurrentIsoDateTime_();
   var actor = getAccountingActorEmail_(context);
+  var transactionType = normalizeLedgerTransactionType_(request.transaction_type);
   var item = {
     id: request.transaction_id || makeId_('TRX'),
     transactionAt: request.transaction_date || now,
     description: request.description || '',
-    expense: request.transaction_type === '지출',
-    amount: Number(request.amount || 0),
-    balanceAfter: Number(request.balance_after || 0),
+    expense: transactionType === '지출',
+    amount: parseLedgerPositiveAmount_(request.amount),
+    // 화면 호환용 정보값일 뿐, 집계/결산은 amount와 transaction type으로 계산한다.
+    balanceAfter: parseLedgerInformationalBalance_(request.balance_after, 0),
     counterparty: request.counterparty || '',
     source: request.source || '수기등록',
     eventId: request.event_id || '',
@@ -38,12 +63,15 @@ function updateLedgerEntry_(input, context) {
   var before = findLedgerRowById_(input.transaction_id);
   if (!before || String(before.recordStatus || 'ACTIVE') === 'DELETED') throw new Error('원장 거래를 찾을 수 없습니다.');
   var now = getCurrentIsoDateTime_();
+  var transactionType = input.transaction_type == null || input.transaction_type === ''
+    ? (isTruthyValue_(before.expense) ? '지출' : '수입')
+    : normalizeLedgerTransactionType_(input.transaction_type);
   var changes = {
     transactionAt: input.transaction_date || before.transactionAt,
     description: input.description == null ? before.description : input.description,
-    expense: input.transaction_type ? input.transaction_type === '지출' : isTruthyValue_(before.expense),
-    amount: input.amount == null ? Number(before.amount || 0) : Number(input.amount || 0),
-    balanceAfter: input.balance_after == null ? Number(before.balanceAfter || 0) : Number(input.balance_after || 0),
+    expense: transactionType === '지출',
+    amount: input.amount == null || input.amount === '' ? parseLedgerPositiveAmount_(before.amount) : parseLedgerPositiveAmount_(input.amount),
+    balanceAfter: input.balance_after == null ? Number(before.balanceAfter || 0) : parseLedgerInformationalBalance_(input.balance_after, before.balanceAfter),
     counterparty: input.counterparty == null ? before.counterparty : input.counterparty,
     eventId: input.event_id == null ? before.eventId : input.event_id,
     businessType: input.business_type == null ? before.businessType : input.business_type,
