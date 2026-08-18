@@ -128,7 +128,40 @@ function buildUserPermissionsFromDb_(roleIds) {
   };
 }
 
-// 9. 권한이 있는 메뉴 목록 생성
+// 9. 현재 유효 권한을 사람이 읽을 수 있는 상세 목록으로 변환
+function buildEffectivePermissionDetails_(permissions) {
+  var permissionsById = getPermissionsById_();
+  var byScreen = permissions && permissions.byScreen ? permissions.byScreen : {};
+  var details = [];
+
+  Object.keys(permissionsById).forEach(function (permissionId) {
+    var permission = permissionsById[permissionId];
+    var screenId = permissionScreenId_(permission);
+    var grants = byScreen[screenId];
+    if (!grants) return;
+    if (!(grants.menu || grants.view || grants.edit || grants.approve || grants.export)) return;
+
+    details.push({
+      id: permission.id,
+      screenId: screenId,
+      area: permission.area,
+      action: permission.action,
+      name: permission.name || permission.action,
+      description: permission.description || '',
+      grants: {
+        menu: !!grants.menu,
+        view: !!grants.view,
+        edit: !!grants.edit,
+        approve: !!grants.approve,
+        export: !!grants.export
+      }
+    });
+  });
+
+  return details;
+}
+
+// 10. 권한이 있는 메뉴 목록 생성
 function buildMenusFromPermissions_(permissionsByScreen) {
   var tree = buildPermissionTreeFromDb_();
   var menus = [];
