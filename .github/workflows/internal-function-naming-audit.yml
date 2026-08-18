@@ -23,10 +23,17 @@ jobs:
           mkdir -p verification
           node scripts/audit-function-naming.js > verification/internal-function-inventory.tsv
           node scripts/audit-function-naming.js --candidates > verification/internal-function-candidates.tsv
-      - name: Commit inventory
+      - name: Naming verifier RED
+        id: naming
+        continue-on-error: true
+        run: node scripts/verify-internal-function-naming.js > verification/internal-function-naming.log 2>&1
+      - name: Record result
+        if: always()
         run: |
+          echo "verified_sha=${GITHUB_SHA}" > verification/internal-function-naming-result.txt
+          echo "naming=${{ steps.naming.outcome }}" >> verification/internal-function-naming-result.txt
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add verification/internal-function-inventory.tsv verification/internal-function-candidates.tsv
-          git commit -m "chore: record internal function inventory [skip ci]" || true
+          git add verification/internal-function-inventory.tsv verification/internal-function-candidates.tsv verification/internal-function-naming.log verification/internal-function-naming-result.txt
+          git commit -m "chore: record internal function naming verification [skip ci]" || true
           git push
