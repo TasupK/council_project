@@ -1,0 +1,17 @@
+name: System Consistency Verify
+
+on:
+  push:
+    branches:
+      - refactor/system-consistency-hardening
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Focused API access contract
+        run: node scripts/test-api-access-contract.js
