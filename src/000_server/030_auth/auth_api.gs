@@ -3,11 +3,14 @@
 function api_checkLogin() {
   var context = getSessionUserContext_(); // auth_context.gs
   if (!context.ok) return context;
+  var domainAccess = typeof buildDomainAccess_ === 'function'
+    ? buildDomainAccess_(context.permissions || {}, context.isAdmin)
+    : {};
   return okResponse_({
     email: context.email,
     user: context.user,
     isAdmin: context.isAdmin,
-    domainAccess: buildDomainAccess_(context.permissions || {}, context.isAdmin),
+    domainAccess: domainAccess,
     dbMode: context.dbMode,
     preview: false
   });
@@ -18,6 +21,9 @@ function api_checkLogin() {
 function api_getCurrentUser() {
   var context = getSessionUserContext_();
   if (!context.ok) return context;
+  var domainAccess = typeof buildDomainAccess_ === 'function'
+    ? buildDomainAccess_(context.permissions || {}, context.isAdmin)
+    : {};
 
   return okResponse_({
     user: {
@@ -33,7 +39,7 @@ function api_getCurrentUser() {
     },
     permissions: context.permissions || {},
     isAdmin: context.isAdmin,
-    domainAccess: buildDomainAccess_(context.permissions || {}, context.isAdmin),
+    domainAccess: domainAccess,
     dbMode: context.dbMode,
     menus: context.permissions.menus || []
   });
