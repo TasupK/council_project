@@ -1,4 +1,4 @@
-name: Internal Function Naming Audit
+name: Internal Function Naming Migration
 
 on:
   push:
@@ -11,29 +11,126 @@ permissions:
   contents: write
 
 jobs:
-  audit:
+  migrate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Build function inventory
+
+      - name: Apply exact symbol renames
         run: |
-          mkdir -p verification
-          node scripts/audit-function-naming.js > verification/internal-function-inventory.tsv
-          node scripts/audit-function-naming.js --candidates > verification/internal-function-candidates.tsv
-      - name: Naming verifier RED
+          python - <<'PY'
+          from pathlib import Path
+
+          mapping = {
+            'getActiveRoleIdsByEmail_': 'buildActiveRoleIdsByEmail_',
+            'getPermissionIdsByRoleId_': 'buildPermissionIdsByRoleId_',
+            'listActiveDepartments_': 'getActiveDepartmentsData_',
+            'getUniqueEventValues_': 'buildUniqueEventValues_',
+            'processEventStatusData_': 'updateEventStatusData_',
+            'processEventClosureData_': 'updateEventClosureData_',
+            'findEventFormAliasField_': 'resolveEventFormAliasField_',
+            'getEventPaymentTotalsByApplicationId_': 'buildEventPaymentTotalsByApplicationId_',
+            'findEventAttendanceByApplicationId_': 'findEventAttendanceRowByApplicationId_',
+            'makeId_': 'generateAccountingId_',
+            'getCurrentUserName_': 'resolveAccountingSessionEmail_',
+            'getAccountingActorEmail_': 'resolveAccountingActorEmail_',
+            'inAccountingDateRange_': 'isAccountingDateInRange_',
+            'findAllAccountingEventRows_': 'listAccountingEventRows_',
+            'getLedgerEntries_': 'getLedgerEntriesData_',
+            'getLedgerEntryDto_': 'mapLedgerEntryDto_',
+            'getEvidenceDto_': 'mapEvidenceDto_',
+            'getLedgerDatabaseInfo_': 'getLedgerDatabaseInfoData_',
+            'getLedgerEventOptions_': 'getLedgerEventOptionsData_',
+            'getLedgerSummary_': 'getLedgerSummaryData_',
+            'saveLedgerEntry_': 'createLedgerEntryData_',
+            'saveLedgerDraft_': 'createLedgerDraftData_',
+            'updateLedgerEntry_': 'updateLedgerEntryData_',
+            'softDeleteLedgerEntry_': 'deleteLedgerEntryData_',
+            'processLedgerEntry_': 'processLedgerEntryData_',
+            'saveEvidenceFiles_': 'createEvidenceFiles_',
+            'getEvidenceAuditList_': 'getEvidenceAuditListData_',
+            'bankTransactionDuplicateKey_': 'buildBankTransactionDuplicateKey_',
+            'saveParsedBankTransactions_': 'applyParsedBankTransactions_',
+            'uploadBankTransactions_': 'processBankTransactionUploadData_',
+            'getBankOcrLogs_': 'getBankOcrLogsData_',
+            'getReconciliationList_': 'getReconciliationListData_',
+            'getReconciliationDetail_': 'getReconciliationDetailData_',
+            'getReconciliationCandidates_': 'getReconciliationCandidatesData_',
+            'runReconciliation_': 'processReconciliationData_',
+            'linkReconciliation_': 'applyReconciliationLinkData_',
+            'createLedgerFromReconciliation_': 'createLedgerFromReconciliationData_',
+            'getSettlementSummary_': 'getSettlementSummaryData_',
+            'getSettlementReportList_': 'getSettlementReportListData_',
+            'getSettlementReport_': 'getSettlementReportData_',
+            'generateSettlementReport_': 'createSettlementReportData_',
+            'buildSettingsBaseData_': 'buildSettingsBaseView_',
+            'listUsersForSettings_': 'getSettingsUsersData_',
+            'listRolesForSettings_': 'getSettingsRolesData_',
+            'memberSort_': 'compareSettingsDepartmentMembers_',
+            'findAllFeeRateRows_': 'listFeeRateRows_',
+            'findAllStudentFeeSemesterRows_': 'listStudentFeeSemesterRows_',
+          }
+
+          roots = [Path('src/000_server'), Path('scripts')]
+          skip = {
+            Path('scripts/verify-internal-function-naming.js'),
+            Path('scripts/audit-function-naming.js'),
+          }
+          changed = []
+          for root in roots:
+            for p in root.rglob('*'):
+              if not p.is_file() or p in skip or p.suffix not in {'.gs', '.js'}:
+                continue
+              text = p.read_text()
+              new = text
+              for old, replacement in mapping.items():
+                new = new.replace(old, replacement)
+              if new != text:
+                p.write_text(new)
+                changed.append(str(p))
+          print('\n'.join(changed))
+          PY
+
+      - name: Naming verifier GREEN
         id: naming
         continue-on-error: true
-        run: node scripts/verify-internal-function-naming.js > verification/internal-function-naming.log 2>&1
-      - name: Record result
+        run: |
+          mkdir -p verification
+          node scripts/verify-internal-function-naming.js > verification/internal-function-naming.log 2>&1
+
+      - name: Full regression
+        id: regression
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          {
+            for file in scripts/test-*.js; do
+              echo "== $file =="
+              node "$file"
+            done
+            for file in scripts/verify-*.js; do
+              echo "== $file =="
+              node "$file"
+            done
+          } > verification/internal-function-regression.log 2>&1
+
+      - name: Record result and commit only on green
         if: always()
         run: |
           echo "verified_sha=${GITHUB_SHA}" > verification/internal-function-naming-result.txt
           echo "naming=${{ steps.naming.outcome }}" >> verification/internal-function-naming-result.txt
+          echo "regression=${{ steps.regression.outcome }}" >> verification/internal-function-naming-result.txt
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add verification/internal-function-inventory.tsv verification/internal-function-candidates.tsv verification/internal-function-naming.log verification/internal-function-naming-result.txt
-          git commit -m "chore: record internal function naming verification [skip ci]" || true
+          if [ "${{ steps.naming.outcome }}" = "success" ] && [ "${{ steps.regression.outcome }}" = "success" ]; then
+            git add src/000_server scripts verification/internal-function-naming.log verification/internal-function-regression.log verification/internal-function-naming-result.txt
+            git commit -m "refactor: standardize internal function names [skip ci]" || true
+          else
+            git restore src/000_server scripts || true
+            git add verification/internal-function-naming.log verification/internal-function-regression.log verification/internal-function-naming-result.txt
+            git commit -m "chore: record internal naming migration failure [skip ci]" || true
+          fi
           git push
