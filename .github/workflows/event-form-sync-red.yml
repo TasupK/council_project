@@ -3,7 +3,7 @@ on:
   push:
     branches: [refactor/event-form-sync-port]
     paths:
-      - scripts/test-event-form-sync-service.js
+      - scripts/test-event-form-sync-api.js
       - .github/workflows/event-form-sync-red.yml
 permissions:
   contents: write
@@ -15,16 +15,16 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Verify expected service failure
+      - name: Verify expected api/access failure
         run: |
-          if node scripts/test-event-form-sync-service.js; then
+          if node scripts/test-event-form-sync-api.js; then
             echo 'Expected RED failure but test passed'
             exit 1
           fi
           mkdir -p verification
-          printf 'red_verified_sha=%s\n' "$GITHUB_SHA" > verification/event-form-service-red.txt
+          printf 'red_verified_sha=%s\n' "$GITHUB_SHA" > verification/event-form-api-red.txt
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add verification/event-form-service-red.txt
-          git commit -m 'ci: record event form service red verification'
+          git add verification/event-form-api-red.txt
+          git commit -m 'ci: record event form api red verification'
           git push
