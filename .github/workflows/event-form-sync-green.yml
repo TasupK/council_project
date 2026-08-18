@@ -1,0 +1,28 @@
+name: Event Form Sync GREEN
+on:
+  push:
+    branches: [refactor/event-form-sync-port]
+    paths:
+      - 'src/000_server/050_event/052_applicants/applicants_form_*.gs'
+      - scripts/test-event-form-sync-mapper.js
+      - .github/workflows/event-form-sync-green.yml
+permissions:
+  contents: write
+jobs:
+  green:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify mapper green
+        run: |
+          node scripts/test-event-form-sync-mapper.js
+          mkdir -p verification
+          printf 'green_verified_sha=%s\n' "$GITHUB_SHA" > verification/event-form-sync-green.txt
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add verification/event-form-sync-green.txt
+          git commit -m 'ci: record event form sync green verification'
+          git push
