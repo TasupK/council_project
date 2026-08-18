@@ -18,6 +18,7 @@ function checkOperationDbIntegrity_() {
   issues = issues.concat(validateOperationDbHeaders_(schema, result.headers));
   issues = issues.concat(validateOperationDbPrimaryKeys_(schema, result.tables));
   issues = issues.concat(validateOperationDbForeignKeys_(schema, result.tables));
+  issues = issues.concat(validateOperationDbBusinessKeys_(schema, result.tables));
 
   return {
     valid: issues.length === 0,
@@ -110,7 +111,32 @@ function validateOperationDbForeignKeys_(schema, tables) {
   return issues;
 }
 
-// 7. FK가 참조할 DB와 테이블 조회
+// 7. 업무상 unique여야 하는 secondary key 중복 검증
+function validateOperationDbBusinessKeys_(schema, tables) {
+  var rules = [
+    { tableKey: 'eventForms', fields: ['eventId'] },
+    { tableKey: 'feePayments', fields: ['applicationId'] },
+    { tableKey: 'feeRefunds', fields: ['requestId'] },
+    { tableKey: 'eventApplications', fields: ['sourceResponseId'] }
+  ];
+  var issues = [];
+
+  rules.forEach(function (rule) {
+    var table = schema[rule.tableKey];
+    if (!table) return;
+    var columns = resolveOperationDbFieldColumns_(table, rule.fields);
+    validateDuplicateKeys_(table.name, tables[rule.tableKey] || [], columns).forEach(function (issue) {
+      var copy = {};
+      Object.keys(issue).forEach(function (key) { copy[key] = issue[key]; });
+      copy.code = 'DUPLICATE_BUSINESS_KEY';
+      copy.businessKey = rule.fields.join('+');
+      issues.push(copy);
+    });
+  });
+  return issues;
+}
+
+// 8. FK가 참조할 DB와 테이블 조회
 function getOperationDbReference_(foreignKey, schema, tables, userSchema, userTables) {
   var table;
 
@@ -134,7 +160,7 @@ function getOperationDbReference_(foreignKey, schema, tables, userSchema, userTa
   };
 }
 
-// 8. 스키마 필드키를 운영 DB 시트 컬럼명으로 변환
+// 9. 스키마 필드키를 운영 DB 시트 컬럼명으로 변환
 function resolveOperationDbFieldColumns_(table, fieldKeys) {
   return fieldKeys.map(function (fieldKey) {
     return resolveOperationDbFieldColumn_(table, fieldKey);
