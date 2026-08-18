@@ -16,19 +16,84 @@ Domain access resolver contract passed.
 == scripts/test-event-consistency-hardening.js ==
 Event consistency hardening contract passed.
 == scripts/test-event-form-sync-api.js ==
-/home/runner/work/council_project/council_project/src/000_server/050_event/050_common/event_access.gs:4
-  return resolvePermissionByAliases_(access || {}, ['event', '행사', '복지']);
+Event Form sync API/access contract passed.
+== scripts/test-event-form-sync-frontend.js ==
+Event Form sync frontend contract passed.
+== scripts/test-event-form-sync-mapper.js ==
+Event Form mapper/reader contract passed.
+== scripts/test-event-form-sync-service.js ==
+Event Form sync service contract passed.
+== scripts/test-event.js ==
+Event behavior regression tests passed.
+== scripts/test-iam-menu-semantics.js ==
+IAM menu semantics contract passed.
+== scripts/test-mypage-auth.js ==
+node:assert:150
+  throw new AssertionError(obj);
   ^
 
-ReferenceError: resolvePermissionByAliases_ is not defined
-    at Object.resolveEventAccess_ (/home/runner/work/council_project/council_project/src/000_server/050_event/050_common/event_access.gs:4:3)
-    at Object.<anonymous> (/home/runner/work/council_project/council_project/scripts/test-event-form-sync-api.js:38:64)
+AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
++ actual - expected
+... Skipped lines
+
+  {
+    action: '조회',
+    area: '행사',
+    description: '행사 목록을 조회합니다.',
+    grants: {
+...
+      export: false,
++     menu: false,
+-     menu: true,
+      view: true
+    },
+    id: 'EVENT_VIEW',
+    name: '행사 조회',
+    screenId: 'perm_EVENT_VIEW'
+
+    at testEffectivePermissionDetails_ (/home/runner/work/council_project/council_project/scripts/test-mypage-auth.js:60:10)
+    at Object.<anonymous> (/home/runner/work/council_project/council_project/scripts/test-mypage-auth.js:94:1)
     at Module._compile (node:internal/modules/cjs/loader:1781:14)
     at Object..js (node:internal/modules/cjs/loader:1913:10)
     at Module.load (node:internal/modules/cjs/loader:1505:32)
     at Function._load (node:internal/modules/cjs/loader:1309:12)
     at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
     at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
-    at node:internal/main/run_main_module:36:49
+    at node:internal/main/run_main_module:36:49 {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: {
+    id: 'EVENT_VIEW',
+    screenId: 'perm_EVENT_VIEW',
+    area: '행사',
+    action: '조회',
+    name: '행사 조회',
+    description: '행사 목록을 조회합니다.',
+    grants: {
+      menu: false,
+      view: true,
+      edit: false,
+      approve: false,
+      export: false
+    }
+  },
+  expected: {
+    id: 'EVENT_VIEW',
+    screenId: 'perm_EVENT_VIEW',
+    area: '행사',
+    action: '조회',
+    name: '행사 조회',
+    description: '행사 목록을 조회합니다.',
+    grants: {
+      menu: true,
+      view: true,
+      edit: false,
+      approve: false,
+      export: false
+    }
+  },
+  operator: 'deepStrictEqual',
+  diff: 'simple'
+}
 
 Node.js v22.23.2
