@@ -11,7 +11,8 @@ assert.ok(fs.existsSync(accessPath), 'event_access.gs must exist');
 
 var apiSource = fs.readFileSync(apiPath, 'utf8');
 assert.ok(/function\s+api_syncApplicantsFromForms\s*\(/.test(apiSource), 'sync API must exist');
-assert.ok(/requireEventEditContext_\s*\(context\)/.test(apiSource), 'sync API must enforce Event edit context');
+assert.ok(/access\s*:\s*\{\s*domain\s*:\s*['"]event['"]\s*,\s*action\s*:\s*['"]edit['"]\s*\}/.test(apiSource), 'sync API must use common Event edit access contract');
+assert.ok(!/requireEventEditContext_\s*\(context\)/.test(apiSource), 'sync API must not keep a second authorization path');
 assert.ok(/syncApplicantsFromFormsData_\s*\(/.test(apiSource), 'sync API must delegate to sync service');
 
 var accessContext = vm.createContext({
@@ -19,24 +20,25 @@ var accessContext = vm.createContext({
   String: String,
   Object: Object,
   Array: Array,
-  buildEffectivePermissionDetails_: function (permissions) { return permissions.details || []; },
-  normalizeAccessToken_: function (value) { return String(value || '').toLowerCase().replace(/[\s_-]+/g, ''); },
+  getPermissionsById_: function () {
+    return {
+      EV: { id: 'EV', area: '행사복지관리', action: '조회', name: '행사 조회', status: 'active' },
+      EE: { id: 'EE', area: '행사복지관리', action: '수정', name: '행사 수정', status: 'active' }
+    };
+  },
+  permissionScreenId_: function (permission) { return 'perm_' + permission.id; },
+  actionToPermissionKey_: function (action) {
+    if (String(action).indexOf('조회') >= 0) return 'view';
+    if (String(action).indexOf('수정') >= 0 || String(action).indexOf('등록') >= 0) return 'edit';
+    return 'view';
+  },
   throwPermissionError_: function (message) { var error = new Error(message); error.code = 'FORBIDDEN'; throw error; }
 });
 vm.runInContext(fs.readFileSync(accessPath, 'utf8'), accessContext, { filename: accessPath });
-assert.strictEqual(accessContext.requireEventEditContext_({ ok: true, isAdmin: true }), true);
-assert.strictEqual(accessContext.requireEventEditContext_({
-  ok: true,
-  isAdmin: false,
-  permissions: { details: [{ area: '행사복지관리', grants: { edit: true } }] }
-}), true);
-assert.throws(function () {
-  accessContext.requireEventEditContext_({
-    ok: true,
-    isAdmin: false,
-    permissions: { details: [{ area: '행사복지관리', grants: { view: true, edit: false } }] }
-  });
-}, function (error) { return error.code === 'FORBIDDEN'; });
+assert.deepStrictEqual(JSON.parse(JSON.stringify(accessContext.resolveEventAccess_({ domain: 'event', action: 'edit' }))), {
+  screenId: 'perm_EE',
+  action: 'edit'
+});
 
 var queryContext = vm.createContext({
   console: console,
