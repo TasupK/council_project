@@ -7,6 +7,7 @@ function api_checkLogin() {
     email: context.email,
     user: context.user,
     isAdmin: context.isAdmin,
+    domainAccess: buildDomainAccess_(context.permissions || {}, context.isAdmin),
     dbMode: context.dbMode,
     preview: false
   });
@@ -24,6 +25,7 @@ function api_getCurrentUser() {
       name: context.user.name,
       title: context.roles.length ? context.roles[0].name : '',
       email: context.email,
+      departmentId: context.user.departmentId || '',
       department: context.user.department || '',
       status: context.user.status,
       roleIds: context.user.roleIds || [],
@@ -31,6 +33,7 @@ function api_getCurrentUser() {
     },
     permissions: context.permissions || {},
     isAdmin: context.isAdmin,
+    domainAccess: buildDomainAccess_(context.permissions || {}, context.isAdmin),
     dbMode: context.dbMode,
     menus: context.permissions.menus || []
   });
