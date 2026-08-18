@@ -11,15 +11,18 @@ var context = vm.createContext({
   SETTINGS_PERMISSION_COLUMNS: [
     { key: 'menu' }, { key: 'view' }, { key: 'edit' }, { key: 'approve' }, { key: 'export' }
   ],
-  getPermissionsById_: function () {
-    return { P: { id: 'P', area: '행사', action: '수정', name: '행사 수정', status: 'active' } };
-  },
-  getPermissionIdsByRoleId_: function () { return { ROLE: ['P'] }; },
-  permissionScreenId_: function (permission) { return 'perm_' + permission.id; },
   listPermissionRows_: function () { return []; },
-  toPermissionDto_: function () { return null; }
+  listRolePermissionRows_: function () { return []; },
+  getUserDbFields_: function () { return {}; },
+  normalizeTextValue_: function (value) { return String(value || ''); },
+  isTruthyValue_: function (value) { return !!value; }
 });
 vm.runInContext(fs.readFileSync(file, 'utf8'), context, { filename: file });
+
+context.getPermissionsById_ = function () {
+  return { P: { id: 'P', area: '행사', action: '수정', name: '행사 수정', status: 'active' } };
+};
+context.getPermissionIdsByRoleId_ = function () { return { ROLE: ['P'] }; };
 
 var byRole = context.buildPermissionsByRoleFromDb_();
 assert.strictEqual(byRole.ROLE.perm_P.edit, true);
