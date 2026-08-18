@@ -24,26 +24,65 @@ jobs:
           root = Path('src/000_server')
           pattern = re.compile(r'function\s+([A-Za-z_$][\w$]*)\s*\(')
           rows = []
+          candidates = []
           for p in sorted(root.rglob('*.gs')):
               text = p.read_text(encoding='utf-8')
               for m in pattern.finditer(text):
                   name = m.group(1)
-                  if name.startswith('api_'):
-                      continue
-                  if not name.endswith('_'):
+                  if name.startswith('api_') or not name.endswith('_'):
                       continue
                   line = text.count('\n', 0, m.start()) + 1
-                  rows.append((str(p), line, name))
+                  path = str(p)
+                  rows.append((path, line, name))
+
+                  new = ''
+                  reason = ''
+                  if p.name.endswith('_sheet_dao.gs') and name.startswith('findAll'):
+                      new = 'list' + name[len('findAll'):]
+                      reason = 'DAO collection read uses list*'
+                  elif 'query_service' in p.name and re.match(r'^to[A-Z].*Dto_$', name):
+                      new = 'map' + name[len('to'):]
+                      reason = 'DTO conversion uses map*'
+                  elif 'query_service' in p.name and re.match(r'^get(?:Roles|Permissions|Departments)ById_$', name):
+                      new = 'build' + name[len('get'):]
+                      reason = 'in-memory index construction uses build*'
+                  elif name == 'eventFormCell_':
+                      new = 'readEventFormCell_'; reason = 'source cell read uses read*'
+                  elif name == 'eventFormQuestionId_':
+                      new = 'buildEventFormQuestionId_'; reason = 'derived identifier construction uses build*'
+                  elif name == 'stableEventFormResponseId_':
+                      new = 'buildStableEventFormResponseId_'; reason = 'derived identifier construction uses build*'
+                  elif name == 'extractGoogleResourceId_':
+                      new = 'parseGoogleResourceId_'; reason = 'raw resource identifier parsing uses parse*'
+                  elif name == 'selectEventFormResponseSheet_':
+                      new = 'resolveEventFormResponseSheet_'; reason = 'candidate selection uses resolve*'
+                  elif name == 'closeEventData_':
+                      new = 'processEventClosureData_'; reason = 'domain status transition uses process*Data_'
+                  elif name == 'updateEventStatusData_':
+                      new = 'processEventStatusData_'; reason = 'domain status transition uses process*Data_'
+                  elif name == 'syncApplicantsFromFormsData_':
+                      new = 'applyApplicantFormSyncData_'; reason = 'applies an external change set using apply*Data_'
+                  elif name in ('getEventFormHeaderAliases_',):
+                      new = 'buildEventFormHeaderAliases_'; reason = 'constructs mapping metadata using build*'
+
+                  if new and new != name:
+                      candidates.append((path, line, name, new, reason))
+
           Path('verification').mkdir(exist_ok=True)
           with Path('verification/internal-function-inventory.txt').open('w', encoding='utf-8') as f:
               for path, line, name in rows:
                   f.write(f'{path}:{line}\t{name}\n')
               f.write(f'\nTOTAL={len(rows)}\n')
+          with Path('verification/internal-function-candidates.tsv').open('w', encoding='utf-8') as f:
+              f.write('file\tline\told\tnew\treason\n')
+              for row in candidates:
+                  f.write('\t'.join(map(str, row)) + '\n')
+              f.write(f'\nTOTAL={len(candidates)}\n')
           PY
       - name: Commit report
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add verification/internal-function-inventory.txt
-          git commit -m "chore: record internal function inventory [skip ci]" || true
+          git add verification/internal-function-inventory.txt verification/internal-function-candidates.tsv
+          git commit -m "chore: classify internal function naming candidates [skip ci]" || true
           git push
