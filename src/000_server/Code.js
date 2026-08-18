@@ -4,6 +4,7 @@ function doGet(e) {
   var routes = {
     login: '200_login/Login',
     main: '250_main/Main',
+    mypage: '270_mypage/MyPage',
     accounting: '400_accounting/400_home/Accounting_Home',
     accounting_ledger: '400_accounting/410_ledger/Accounting_Ledger',
     accounting_reconciliation: '400_accounting/420_reconciliation/Accounting_Reconciliation',
@@ -30,8 +31,8 @@ function doGet(e) {
     resourceId: e && e.parameter && e.parameter.id ? String(e.parameter.id) : ''
   };
 
-  // 로그인 성공 사용자만 메인, 장부, 학생회비, 행사 및 설정 페이지에 접근
-  if (page === 'main' || page.indexOf('accounting') === 0 || page.indexOf('student_fee') === 0 || page.indexOf('event') === 0 || page.indexOf('settings') === 0) {
+  // 로그인 성공 사용자만 보호 페이지에 접근
+  if (page === 'main' || page === 'mypage' || page.indexOf('accounting') === 0 || page.indexOf('student_fee') === 0 || page.indexOf('event') === 0 || page.indexOf('settings') === 0) {
     var login = api_checkLogin();
     if (!login.ok) {
       file = routes.login;
