@@ -60,6 +60,7 @@ Source behavior explicitly rejected:
 - role assignments
 - permissions
 - effective permissions
+- permission metadata used for display
 
 `270_mypage` is a frontend-only read consumer of those capabilities. It does not own user, role, permission, or authentication business rules.
 
@@ -143,30 +144,51 @@ Display data already available from `api_getCurrentUser()`:
 
 ### 2. My Roles
 
-Display all roles returned by the current Auth/IAM DTO. Role metadata is shown only when already provided by the existing DTO; MyPage does not re-query or reconstruct role data from Sheets.
+Display all roles returned by the current Auth DTO. The current login role summary DTO intentionally contains only:
 
-At minimum:
-
+- role ID
 - role name
-- role identifier where useful for diagnostics/clarity
 
-If descriptions exist in the current role DTO, they may be shown. Do not add new role fields only for this screen unless implementation reveals that an already-owned IAM field is missing from its DTO.
+That is sufficient for this port. MyPage does not re-query the role sheet and does not widen the role summary DTO only to show decorative metadata such as description/type/update audit fields.
 
 ### 3. My Permissions
 
-Display effective permissions returned by `api_getMyPermissions()` / current authentication context.
+Display effective permissions from IAM without interpreting role names or permission IDs on the client.
 
-Presentation should distinguish conceptually where the existing permission object supports it:
+The current `permissions` object contains:
 
-- accessible menus
-- business/action permissions
-- other effective permission groups
+- `byScreen`: effective booleans (`menu`, `view`, `edit`, `approve`, `export`) keyed by permission screen ID
+- `menus`: accessible menu groups with IDs and names
 
-MyPage must not contain a hard-coded permission map. The server/IAM result is the source of truth.
+`byScreen` alone is not human-readable because its keys are `perm_<permissionId>`. Therefore IAM must expose the already-owned permission metadata alongside the effective booleans.
+
+`api_getMyPermissions()` is extended additively with:
+
+```text
+permissionDetails[]
+- id
+- screenId
+- area
+- action
+- name
+- description
+- grants
+  - menu
+  - view
+  - edit
+  - approve
+  - export
+```
+
+`permissionDetails` is produced server-side from the IAM permission catalog plus the current user's merged effective permissions. Only permissions for which at least one grant is true are returned.
+
+This is an IAM/Auth API DTO enhancement, not a MyPage-owned permission model. Existing `roles` and `permissions` response fields remain unchanged for backward compatibility.
+
+Presentation may group permission details by `area` and show the granted actions. MyPage must not contain a hard-coded permission map.
 
 ## API Contract
 
-No new MyPage-specific server API is required for the initial implementation.
+No new MyPage-specific server API is introduced.
 
 Frontend calls:
 
@@ -175,9 +197,25 @@ api_getCurrentUser()
 api_getMyPermissions()
 ```
 
-The screen may request them in parallel. Existing response shapes remain authoritative.
+The screen may request them in parallel.
 
-If both calls expose overlapping role data, `api_getCurrentUser()` owns profile/role presentation and `api_getMyPermissions()` owns permission presentation. The frontend must not attempt to merge permissions by interpreting role names itself.
+`api_getCurrentUser()` remains the source for profile and assigned role summaries.
+
+`api_getMyPermissions()` remains the source for effective permissions and is extended additively:
+
+```text
+{
+  ok: true,
+  roles: [...],
+  permissions: {
+    byScreen: {...},
+    menus: [...]
+  },
+  permissionDetails: [...]
+}
+```
+
+The frontend does not merge permissions by role name and does not query Sheets directly.
 
 ## Shared UI Integration
 
@@ -215,8 +253,9 @@ If an API call fails after MyPage has rendered, show a page-level error state/to
 - The client cannot request another user's profile by ID/email.
 - MyPage APIs resolve the user from the active Apps Script session.
 - No password field or credential authentication endpoint is introduced.
+- Permission labels and grants are composed server-side from IAM-owned data.
 - No permissions are inferred on the client.
-- No raw user DB data is exposed beyond the existing DTO contracts.
+- No raw user DB data is exposed beyond the existing/additive DTO contracts.
 
 ## Scope Exclusions
 
@@ -246,7 +285,9 @@ Extend existing Auth/IAM tests or architecture checks to verify:
 - no credential-login endpoint is introduced
 - no mock-user fallback is introduced
 - `mypage` is a protected route
-- existing `api_getCurrentUser()` / `api_getMyPermissions()` contracts remain valid
+- `api_getCurrentUser()` contract remains valid
+- `api_getMyPermissions()` preserves existing fields
+- `permissionDetails` is composed from IAM data and contains only granted effective permissions
 
 ### MyPage Frontend
 
@@ -254,8 +295,9 @@ Add focused frontend/static verification for:
 
 - `270_mypage` shell files exist
 - page consumes `api_getCurrentUser()` and `api_getMyPermissions()`
+- page renders profile, roles, and permission details
 - page does not contain `sessionStorage` auth/user logic
-- page does not contain hard-coded role permission mappings
+- page does not contain hard-coded role/permission mappings
 - common shell/header/sidebar/styles are reused
 - header user card links to `mypage`
 - required profile/roles/permissions hooks are present
@@ -288,8 +330,9 @@ The port is complete when:
 1. Current Google-only login semantics are unchanged.
 2. Clicking the shared header user card opens protected MyPage.
 3. MyPage shows current user's profile data from Auth/IAM.
-4. MyPage shows all assigned roles from the current DTO.
-5. MyPage shows effective permissions from IAM without client-side inference.
-6. No credential login, alternate DB, mock chairman fallback, hard-coded permission table, or notification settings are introduced.
-7. MyPage uses the current shared UI shell.
-8. Existing repository regression tests and architecture verifiers pass.
+4. MyPage shows every assigned role by current role summary (`id`, `name`).
+5. MyPage shows human-readable effective permission details produced by IAM, without client-side inference.
+6. Existing `api_getMyPermissions()` consumers remain compatible.
+7. No credential login, alternate DB, mock chairman fallback, hard-coded permission table, or notification settings are introduced.
+8. MyPage uses the current shared UI shell.
+9. Existing repository regression tests and architecture verifiers pass.
