@@ -1,0 +1,54 @@
+Legacy internal symbol remains: toUserDto_ in src/000_server/040_iam/041_users/users_query_service.gs
+Legacy internal symbol remains: getRolesById_ in src/000_server/040_iam/042_roles/roles_query_service.gs
+Legacy internal symbol remains: toRoleDto_ in src/000_server/040_iam/042_roles/roles_query_service.gs
+Legacy internal symbol remains: toPermissionDto_ in src/000_server/040_iam/043_permissions/permissions_query_service.gs
+Legacy internal symbol remains: getPermissionsById_ in src/000_server/040_iam/043_permissions/permissions_query_service.gs
+Legacy internal symbol remains: toDepartmentDto_ in src/000_server/040_iam/044_departments/departments_query_service.gs
+Legacy internal symbol remains: getDepartmentsById_ in src/000_server/040_iam/044_departments/departments_query_service.gs
+Legacy internal symbol remains: updateEventStatusData_ in src/000_server/050_event/051_events/events_service.gs
+Legacy internal symbol remains: closeEventData_ in src/000_server/050_event/051_events/events_service.gs
+DAO collection read must use list*: findAllEventRows_ in src/000_server/050_event/051_events/events_sheet_dao.gs
+Legacy internal symbol remains: findAllEventRows_ in src/000_server/050_event/051_events/events_sheet_dao.gs
+DAO collection read must use list*: findAllEventClientRows_ in src/000_server/050_event/051_events/events_sheet_dao.gs
+Legacy internal symbol remains: findAllEventClientRows_ in src/000_server/050_event/051_events/events_sheet_dao.gs
+Legacy internal symbol remains: getEventFormHeaderAliases_ in src/000_server/050_event/052_applicants/applicants_form_mapper.gs
+Legacy internal symbol remains: eventFormCell_ in src/000_server/050_event/052_applicants/applicants_form_mapper.gs
+Legacy internal symbol remains: stableEventFormResponseId_ in src/000_server/050_event/052_applicants/applicants_form_mapper.gs
+Legacy internal symbol remains: eventFormQuestionId_ in src/000_server/050_event/052_applicants/applicants_form_mapper.gs
+Legacy internal symbol remains: extractGoogleResourceId_ in src/000_server/050_event/052_applicants/applicants_form_reader.gs
+Legacy internal symbol remains: selectEventFormResponseSheet_ in src/000_server/050_event/052_applicants/applicants_form_reader.gs
+Legacy internal symbol remains: syncApplicantsFromFormsData_ in src/000_server/050_event/052_applicants/applicants_form_sync_service.gs
+DAO collection read must use list*: findAllEventApplicationClientRows_ in src/000_server/050_event/052_applicants/applicants_sheet_dao.gs
+Legacy internal symbol remains: findAllEventApplicationClientRows_ in src/000_server/050_event/052_applicants/applicants_sheet_dao.gs
+DAO collection read must use list*: findAllEventApplicationSourceResponseIds_ in src/000_server/050_event/052_applicants/applicants_sheet_dao.gs
+Legacy internal symbol remains: findAllEventApplicationSourceResponseIds_ in src/000_server/050_event/052_applicants/applicants_sheet_dao.gs
+DAO collection read must use list*: findAllEventPaymentClientRows_ in src/000_server/050_event/053_payment/payment_sheet_dao.gs
+Legacy internal symbol remains: findAllEventPaymentClientRows_ in src/000_server/050_event/053_payment/payment_sheet_dao.gs
+DAO collection read must use list*: findAllEventAttendanceClientRows_ in src/000_server/050_event/054_attendance/attendance_sheet_dao.gs
+Legacy internal symbol remains: findAllEventAttendanceClientRows_ in src/000_server/050_event/054_attendance/attendance_sheet_dao.gs
+DAO collection read must use list*: findAllEventRefundClientRows_ in src/000_server/050_event/055_refunds/refunds_sheet_dao.gs
+Legacy internal symbol remains: findAllEventRefundClientRows_ in src/000_server/050_event/055_refunds/refunds_sheet_dao.gs
+DAO collection read must use list*: findAllLedgerRows_ in src/000_server/060_accounting/061_ledger/ledger_sheet_dao.gs
+Legacy internal symbol remains: findAllLedgerRows_ in src/000_server/060_accounting/061_ledger/ledger_sheet_dao.gs
+DAO collection read must use list*: findAllLedgerEvidenceRows_ in src/000_server/060_accounting/062_evidence/evidence_sheet_dao.gs
+Legacy internal symbol remains: findAllLedgerEvidenceRows_ in src/000_server/060_accounting/062_evidence/evidence_sheet_dao.gs
+DAO collection read must use list*: findAllBankOcrLogRows_ in src/000_server/060_accounting/063_reconciliation/bank_ocr_sheet_dao.gs
+Legacy internal symbol remains: findAllBankOcrLogRows_ in src/000_server/060_accounting/063_reconciliation/bank_ocr_sheet_dao.gs
+DAO collection read must use list*: findAllBankTransactionRows_ in src/000_server/060_accounting/063_reconciliation/bank_transaction_sheet_dao.gs
+Legacy internal symbol remains: findAllBankTransactionRows_ in src/000_server/060_accounting/063_reconciliation/bank_transaction_sheet_dao.gs
+DAO collection read must use list*: findAllReconciliationRows_ in src/000_server/060_accounting/063_reconciliation/reconciliation_sheet_dao.gs
+Legacy internal symbol remains: findAllReconciliationRows_ in src/000_server/060_accounting/063_reconciliation/reconciliation_sheet_dao.gs
+DAO collection read must use list*: findAllReconciliationItemRows_ in src/000_server/060_accounting/063_reconciliation/reconciliation_sheet_dao.gs
+Legacy internal symbol remains: findAllReconciliationItemRows_ in src/000_server/060_accounting/063_reconciliation/reconciliation_sheet_dao.gs
+DAO collection read must use list*: findAllSettlementReportRows_ in src/000_server/060_accounting/064_settlement/settlement_sheet_dao.gs
+Legacy internal symbol remains: findAllSettlementReportRows_ in src/000_server/060_accounting/064_settlement/settlement_sheet_dao.gs
+DAO collection read must use list*: findAllFeePayerRows_ in src/000_server/080_student_fee/081_payers/fee_payers_sheet_dao.gs
+Legacy internal symbol remains: findAllFeePayerRows_ in src/000_server/080_student_fee/081_payers/fee_payers_sheet_dao.gs
+DAO collection read must use list*: findAllFeeApplicationRows_ in src/000_server/080_student_fee/082_payments/fee_applications_sheet_dao.gs
+Legacy internal symbol remains: findAllFeeApplicationRows_ in src/000_server/080_student_fee/082_payments/fee_applications_sheet_dao.gs
+DAO collection read must use list*: findAllFeePaymentRows_ in src/000_server/080_student_fee/082_payments/fee_payments_sheet_dao.gs
+Legacy internal symbol remains: findAllFeePaymentRows_ in src/000_server/080_student_fee/082_payments/fee_payments_sheet_dao.gs
+DAO collection read must use list*: findAllFeeRefundRequestRows_ in src/000_server/080_student_fee/083_refunds/fee_refund_requests_sheet_dao.gs
+Legacy internal symbol remains: findAllFeeRefundRequestRows_ in src/000_server/080_student_fee/083_refunds/fee_refund_requests_sheet_dao.gs
+DAO collection read must use list*: findAllFeeRefundRows_ in src/000_server/080_student_fee/083_refunds/fee_refunds_sheet_dao.gs
+Legacy internal symbol remains: findAllFeeRefundRows_ in src/000_server/080_student_fee/083_refunds/fee_refunds_sheet_dao.gs
