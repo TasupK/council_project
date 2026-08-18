@@ -23,7 +23,8 @@ function createContext_() {
     JSON: JSON,
     isFinite: isFinite,
     Utilities: { getUuid: function () { return 'uuid-test'; } },
-    withOperationWriteLock_: function (fn) { return fn(); }
+    withOperationWriteLock_: function (fn) { return fn(); },
+    studentFeeApiAccess_: function (action) { return { domain: 'student_fee', action: action }; }
   });
 }
 

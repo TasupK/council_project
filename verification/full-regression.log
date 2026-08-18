@@ -50,20 +50,28 @@ Student Fee frontend regression tests passed.
 == scripts/test-student-fee-mutation-consistency.js ==
 Student Fee mutation consistency contract passed.
 == scripts/test-student-fee.js ==
-/home/runner/work/council_project/council_project/src/000_server/080_student_fee/080_common/student_fee_reference_api.gs:5
-    access: studentFeeApiAccess_('view'),
-            ^
-
-ReferenceError: studentFeeApiAccess_ is not defined
-    at Object.api_getStudentFeeReferenceData (/home/runner/work/council_project/council_project/src/000_server/080_student_fee/080_common/student_fee_reference_api.gs:5:13)
-    at testApiRequiresLogin_ (/home/runner/work/council_project/council_project/scripts/test-student-fee.js:289:11)
-    at Object.<anonymous> (/home/runner/work/council_project/council_project/scripts/test-student-fee.js:321:1)
-    at Module._compile (node:internal/modules/cjs/loader:1781:14)
-    at Object..js (node:internal/modules/cjs/loader:1913:10)
-    at Module.load (node:internal/modules/cjs/loader:1505:32)
-    at Function._load (node:internal/modules/cjs/loader:1309:12)
-    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
-    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
-    at node:internal/main/run_main_module:36:49
-
-Node.js v22.23.2
+Student Fee behavior regression tests passed.
+== scripts/verify-accounting-architecture.js ==
+Accounting architecture verification passed.
+== scripts/verify-auth-iam-architecture.js ==
+Auth/IAM architecture verification passed.
+== scripts/verify-department-access-architecture.js ==
+Department/access architecture verification passed.
+== scripts/verify-event-architecture.js ==
+Event architecture verification passed.
+== scripts/verify-event-form-sync-architecture.js ==
+Event Form sync architecture verification passed.
+== scripts/verify-mypage-architecture.js ==
+MyPage architecture verification passed.
+== scripts/verify-server-architecture.js ==
+Server architecture verification passed.
+== scripts/verify-settings-architecture.js ==
+Settings architecture verification passed.
+== scripts/verify-student-fee-architecture.js ==
+Student Fee architecture verification passed.
+== scripts/verify-student-fee-frontend.js ==
+Student Fee frontend architecture verification passed.
+== scripts/verify-system-consistency-architecture.js ==
+System consistency architecture guardrails passed.
+== scripts/verify-ui-system-migration.js ==
+Shared UI system migration verification passed.
