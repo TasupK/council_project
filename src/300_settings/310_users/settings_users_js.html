@@ -1,75 +1,89 @@
 <script>
   var settingsUsers = [];
   var settingsRoles = [];
+  var settingsDepartments = [];
+
+  function departmentOptionHtml(selectedId) {
+    return ['<option value="">미배정</option>']
+      .concat(settingsDepartments.map(function (department) {
+        var selected = department.id === selectedId ? ' selected' : '';
+        return '<option value="' + escapeSettingsHtml(department.id) + '"' + selected + '>' + escapeSettingsHtml(department.name) + '</option>';
+      }))
+      .join('');
+  }
 
   function renderSettingsUsers() {
     var query = getSettingsElement("userQ").value.trim().toLowerCase();
     var roleId = getSettingsElement("userRole").value;
+    var departmentId = getSettingsElement("userDepartment").value;
     var status = getSettingsElement("userStatus").value;
     var filtered = settingsUsers.filter(function (user) {
       var text = String(user.name || "") + " " + String(user.email || "");
       var matchesQuery = !query || text.toLowerCase().indexOf(query) !== -1;
       var matchesRole = !roleId || (user.roleIds || []).indexOf(roleId) !== -1;
+      var matchesDepartment = !departmentId || (departmentId === '__unassigned__' ? !user.departmentId : user.departmentId === departmentId);
       var matchesStatus = !status || user.status === status;
-      return matchesQuery && matchesRole && matchesStatus;
+      return matchesQuery && matchesRole && matchesDepartment && matchesStatus;
     });
     var rows = filtered.map(function (user) {
-      var roles = (user.roles || [])
-        .map(function (role) {
-          return role.name;
-        })
-        .join(", ");
+      var roles = (user.roles || []).map(function (role) { return role.name; }).join(", ");
       return (
-        "<tr><td>" +
-        escapeSettingsHtml(user.name) +
-        "</td><td>" +
-        escapeSettingsHtml(user.email) +
-        "</td><td>" +
-        escapeSettingsHtml(user.studentId) +
-        "</td><td>" +
-        escapeSettingsHtml(user.phone) +
-        "</td><td>" +
-        escapeSettingsHtml(user.department) +
-        "</td><td>" +
-        escapeSettingsHtml(roles) +
-        "</td><td>" +
-        escapeSettingsHtml(user.status === "active" ? "활성" : "비활성") +
-        "</td><td>" +
-        escapeSettingsHtml(user.updatedAt || "-") +
+        "<tr><td>" + escapeSettingsHtml(user.name) +
+        "</td><td>" + escapeSettingsHtml(user.email) +
+        "</td><td>" + escapeSettingsHtml(user.studentId) +
+        "</td><td>" + escapeSettingsHtml(user.phone) +
+        '</td><td><select class="select ui-control" data-user-department="' + escapeSettingsHtml(user.email) + '" data-current-department="' + escapeSettingsHtml(user.departmentId || '') + '">' + departmentOptionHtml(user.departmentId || '') + '</select>' +
+        "</td><td>" + escapeSettingsHtml(roles) +
+        "</td><td>" + escapeSettingsHtml(user.status === "active" ? "활성" : "비활성") +
+        "</td><td>" + escapeSettingsHtml(user.updatedAt || "-") +
         "</td></tr>"
       );
     });
-    getSettingsElement("userTbody").innerHTML =
-      rows.join("") || '<tr><td colspan="8">사용자가 없습니다.</td></tr>';
-    getSettingsElement("userCountLabel").textContent =
-      "사용자 " + filtered.length + "명";
-    getSettingsElement("userFooterTotal").textContent =
-      "총 " + filtered.length + "명";
+    getSettingsElement("userTbody").innerHTML = rows.join("") || '<tr><td colspan="8">사용자가 없습니다.</td></tr>';
+    getSettingsElement("userCountLabel").textContent = "사용자 " + filtered.length + "명";
+    getSettingsElement("userFooterTotal").textContent = "총 " + filtered.length + "명";
+  }
+
+  function setUserMutationStatus(message) {
+    getSettingsElement('userMutationStatus').textContent = message || '';
+  }
+
+  async function saveUserDepartment(select) {
+    var email = select.getAttribute('data-user-department');
+    var previous = select.getAttribute('data-current-department') || '';
+    var departmentId = select.value || '';
+    select.disabled = true;
+    setUserMutationStatus('부서 저장 중…');
+    try {
+      var result = await callSettingsApi('saveSettingsUserDepartment', { email: email, departmentId: departmentId });
+      if (!result || !result.ok) throw new Error(result && result.message ? result.message : '부서를 저장하지 못했습니다.');
+      var updated = result.user || {};
+      settingsUsers = settingsUsers.map(function (user) { return user.email === email ? Object.assign({}, user, updated) : user; });
+      select.setAttribute('data-current-department', departmentId);
+      setUserMutationStatus('부서가 저장되었습니다.');
+      renderSettingsUsers();
+    } catch (error) {
+      select.value = previous;
+      setUserMutationStatus(error && error.message ? error.message : '부서 저장 중 오류가 발생했습니다.');
+    } finally {
+      select.disabled = false;
+    }
   }
 
   async function loadSettingsUsers() {
     try {
       var data = await callSettingsApi("loadSettingsUsersData");
-      if (!data || !data.ok)
-        throw new Error(
-          data && data.message
-            ? data.message
-            : "사용자 데이터를 불러오지 못했습니다.",
-        );
+      if (!data || !data.ok) throw new Error(data && data.message ? data.message : "사용자 데이터를 불러오지 못했습니다.");
       applySettingsShell(data);
       settingsUsers = data.users || [];
       settingsRoles = data.roles || [];
-      getSettingsElement("userRole").innerHTML += settingsRoles
-        .map(function (role) {
-          return (
-            '<option value="' +
-            escapeSettingsHtml(role.id) +
-            '">' +
-            escapeSettingsHtml(role.name) +
-            "</option>"
-          );
-        })
-        .join("");
+      settingsDepartments = data.departments || [];
+      getSettingsElement("userRole").innerHTML += settingsRoles.map(function (role) {
+        return '<option value="' + escapeSettingsHtml(role.id) + '">' + escapeSettingsHtml(role.name) + '</option>';
+      }).join("");
+      getSettingsElement("userDepartment").innerHTML += settingsDepartments.map(function (department) {
+        return '<option value="' + escapeSettingsHtml(department.id) + '">' + escapeSettingsHtml(department.name) + '</option>';
+      }).join('');
       renderSettingsUsers();
       showSettingsContent();
     } catch (error) {
@@ -79,13 +93,17 @@
 
   getSettingsElement("userQ").oninput = renderSettingsUsers;
   getSettingsElement("userRole").onchange = renderSettingsUsers;
+  getSettingsElement("userDepartment").onchange = renderSettingsUsers;
   getSettingsElement("userStatus").onchange = renderSettingsUsers;
   getSettingsElement("userReset").onclick = function () {
     getSettingsElement("userQ").value = "";
     getSettingsElement("userRole").value = "";
+    getSettingsElement("userDepartment").value = "";
     getSettingsElement("userStatus").value = "";
     renderSettingsUsers();
   };
-  // TODO: saveUserChanges 서버 함수 구현 후 사용자 저장 기능 연결
+  getSettingsElement('userTbody').addEventListener('change', function (event) {
+    if (event.target && event.target.matches('[data-user-department]')) saveUserDepartment(event.target);
+  });
   loadSettingsUsers();
 </script>
