@@ -5,6 +5,7 @@ var vm = require('vm');
 
 var ROOT = path.resolve(__dirname, '..');
 var files = [
+  'src/000_server/040_iam/043_permissions/permissions_access_service.gs',
   'src/000_server/050_event/050_common/event_access.gs',
   'src/000_server/060_accounting/060_common/accounting_access.gs',
   'src/000_server/080_student_fee/080_common/student_fee_access.gs'
@@ -32,8 +33,7 @@ var context = vm.createContext({
     if (String(action).indexOf('승인') >= 0) return 'approve';
     if (String(action).indexOf('다운로드') >= 0 || String(action).indexOf('출력') >= 0) return 'export';
     return 'view';
-  },
-  throwPermissionError_: function (message) { var error = new Error(message); error.code = 'FORBIDDEN'; throw error; }
+  }
 });
 files.forEach(function (file) { vm.runInContext(fs.readFileSync(file, 'utf8'), context, { filename: file }); });
 
@@ -44,10 +44,10 @@ assert.deepStrictEqual(JSON.parse(JSON.stringify(context.resolveStudentFeeAccess
 
 assert.throws(function () {
   context.resolveEventAccess_({ domain: 'event', action: 'export' });
-}, function (error) { return error.code === 'FORBIDDEN' || error.code === 'ACCESS_CONFIG_ERROR'; });
+}, function (error) { return error.code === 'FORBIDDEN'; });
 
 assert.throws(function () {
   context.resolveEventAccess_({ domain: 'event', action: 'view', screenId: 'perm_AA' });
-}, function (error) { return error.code === 'FORBIDDEN' || error.code === 'ACCESS_CONFIG_ERROR'; });
+}, function (error) { return error.code === 'FORBIDDEN'; });
 
 console.log('Domain access resolver contract passed.');
