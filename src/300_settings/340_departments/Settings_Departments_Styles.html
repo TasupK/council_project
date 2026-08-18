@@ -1,0 +1,17 @@
+<style>
+  .department-summary { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin-bottom:18px; }
+  .department-stat { padding:18px; }
+  .department-stat span { display:block; color:var(--text-3); font-size:12px; margin-bottom:6px; }
+  .department-stat strong { font-size:24px; }
+  .department-groups { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; }
+  .department-group { padding:18px; }
+  .department-group-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+  .department-group-head span { margin-left:8px; color:var(--text-3); font-size:12px; }
+  .department-members { display:grid; gap:10px; }
+  .department-member { border:1px solid var(--border); border-radius:10px; padding:12px; }
+  .department-member-head { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  .department-member-meta, .department-member-tags { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+  .department-tag { display:inline-flex; align-items:center; padding:3px 8px; border-radius:999px; background:var(--surface-2); font-size:12px; color:var(--text-2); }
+  .department-empty { color:var(--text-3); font-size:13px; padding:8px 0; }
+  @media (max-width: 900px) { .department-summary, .department-groups { grid-template-columns:1fr; } }
+</style>
