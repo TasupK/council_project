@@ -60,4 +60,8 @@ Department/access architecture verification passed.
 == scripts/verify-event-architecture.js ==
 Event architecture verification passed.
 == scripts/verify-event-form-sync-architecture.js ==
-Sync API must enforce Event edit permission
+Event Form sync architecture verification passed.
+== scripts/verify-mypage-architecture.js ==
+MyPage architecture verification passed.
+== scripts/verify-server-architecture.js ==
+Domain reference found in Core: src/000_server/010_core/api_access.gs
