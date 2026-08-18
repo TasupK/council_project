@@ -30,4 +30,16 @@ function api_processApplicant(input) {
   });
 }
 
-// TODO(행사 연동): Google Forms 원본 ID와 응답 열 매핑 확정 후 동기화 함수를 구현한다.
+// 3. Google Forms 응답 동기화
+function api_syncApplicantsFromForms(input) {
+  return apiHandler_({
+    operation: 'syncApplicantsFromForms',
+    input: input,
+    requireLogin: true,
+    parse: parseEventRequest_,
+    service: function (parsed, context) {
+      requireEventEditContext_(context);
+      return syncApplicantsFromFormsData_(parsed.request, context);
+    }
+  });
+}
