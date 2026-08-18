@@ -1,5 +1,5 @@
-verified_sha=12bcc9b4bee44501684e4948a89c30b4b03306e8
+verified_sha=a5b20c4547370ea521100f35a93eb938013ef688
 api_access=success
 domain_access=success
 student_fee_mutation=success
-event_consistency=failure
+event_consistency=success
