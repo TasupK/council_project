@@ -64,7 +64,7 @@ function testEffectivePermissionDetails_() {
     action: '조회',
     name: '행사 조회',
     description: '행사 목록을 조회합니다.',
-    grants: { menu: true, view: true, edit: false, approve: false, export: false }
+    grants: { menu: false, view: true, edit: false, approve: false, export: false }
   });
   assert.strictEqual(details.some(function (item) { return item.id === 'LEDGER_VIEW'; }), false);
 }
@@ -73,14 +73,14 @@ function testAuthApiAddsPermissionDetails_() {
   var context = createContext_();
   context.okResponse_ = function (payload) { return Object.assign({ ok: true }, payload || {}); };
   context.buildEffectivePermissionDetails_ = function () {
-    return [{ id: 'EVENT_VIEW', screenId: 'perm_EVENT_VIEW', area: '행사', action: '조회', name: '행사 조회', description: '', grants: { menu: true, view: true, edit: false, approve: false, export: false } }];
+    return [{ id: 'EVENT_VIEW', screenId: 'perm_EVENT_VIEW', area: '행사', action: '조회', name: '행사 조회', description: '', grants: { menu: false, view: true, edit: false, approve: false, export: false } }];
   };
   context.getSessionUserContext_ = function () {
     return {
       ok: true,
       user: { roles: [{ id: 'ROLE_EVENT', name: '행사 담당' }] },
       roles: [{ id: 'ROLE_EVENT', name: '행사 담당' }],
-      permissions: { byScreen: { perm_EVENT_VIEW: { menu: true, view: true, edit: false, approve: false, export: false } }, menus: [{ id: 'area_행사', name: '행사' }] }
+      permissions: { byScreen: { perm_EVENT_VIEW: { menu: false, view: true, edit: false, approve: false, export: false } }, menus: [{ id: 'area_행사', name: '행사' }] }
     };
   };
   load_(context, 'src/000_server/030_auth/auth_api.gs');
