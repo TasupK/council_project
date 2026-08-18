@@ -97,7 +97,7 @@ function buildPermissionsByRoleFromDb_() {
       if (!permission) return;
       var screenId = permissionScreenId_(permission);
       var key = actionToPermissionKey_(permission.action);
-      result[roleId][screenId] = { menu: true, view: false, edit: false, approve: false, export: false };
+      result[roleId][screenId] = { menu: false, view: false, edit: false, approve: false, export: false };
       result[roleId][screenId][key] = true;
     });
   });
