@@ -1,1 +1,0 @@
-red_verified_sha=00ab1e20edfd4ac6f1e607a601e767794365e555
