@@ -45,7 +45,9 @@ jobs:
       - name: OperationDB business-key integrity
         id: business_keys
         continue-on-error: true
-        run: node scripts/test-operation-business-key-integrity.js
+        run: |
+          mkdir -p verification
+          node scripts/test-operation-business-key-integrity.js > verification/business-key.log 2>&1
       - name: Record result
         if: always()
         run: |
@@ -62,7 +64,7 @@ jobs:
           } > verification/system-consistency-result.txt
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add verification/system-consistency-result.txt
+          git add verification/system-consistency-result.txt verification/business-key.log
           git commit -m "chore: record system consistency verification [skip ci]" || true
           git push
       - name: Fail on focused verification failure
