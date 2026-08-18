@@ -1,3 +1,4 @@
-verified_sha=5ff037a0e4f812bd2a2dd887f223e71ac7f6eef0
+verified_sha=4e8049764299087728c09fc0686294857a1d65a5
 naming=success
+public_api=success
 regression=success
