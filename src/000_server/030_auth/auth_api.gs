@@ -41,9 +41,12 @@ function api_getCurrentUser() {
 function api_getMyPermissions() {
   var current = api_getCurrentUser();
   if (!current.ok) return current;
+  var permissionDetails = typeof buildEffectivePermissionDetails_ === 'function'
+    ? buildEffectivePermissionDetails_(current.permissions || {})
+    : [];
   return okResponse_({
     roles: current.user.roles || [],
     permissions: current.permissions || {},
-    permissionDetails: buildEffectivePermissionDetails_(current.permissions || {})
+    permissionDetails: permissionDetails
   });
 }
