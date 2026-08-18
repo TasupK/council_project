@@ -34,6 +34,10 @@ jobs:
         id: event_consistency
         continue-on-error: true
         run: node scripts/test-event-consistency-hardening.js
+      - name: Accounting money validation
+        id: accounting_money
+        continue-on-error: true
+        run: node scripts/test-accounting-money-validation.js
       - name: Record result
         if: always()
         run: |
@@ -44,6 +48,7 @@ jobs:
             echo "domain_access=${{ steps.domain_access.outcome }}"
             echo "student_fee_mutation=${{ steps.student_fee_mutation.outcome }}"
             echo "event_consistency=${{ steps.event_consistency.outcome }}"
+            echo "accounting_money=${{ steps.accounting_money.outcome }}"
           } > verification/system-consistency-result.txt
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -51,5 +56,5 @@ jobs:
           git commit -m "chore: record system consistency verification [skip ci]" || true
           git push
       - name: Fail on focused verification failure
-        if: steps.api_access.outcome != 'success' || steps.domain_access.outcome != 'success' || steps.student_fee_mutation.outcome != 'success' || steps.event_consistency.outcome != 'success'
+        if: steps.api_access.outcome != 'success' || steps.domain_access.outcome != 'success' || steps.student_fee_mutation.outcome != 'success' || steps.event_consistency.outcome != 'success' || steps.accounting_money.outcome != 'success'
         run: exit 1
