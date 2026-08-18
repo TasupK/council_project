@@ -4,7 +4,9 @@ on:
     branches: [refactor/event-form-sync-port]
     paths:
       - 'src/000_server/050_event/052_applicants/applicants_form_*.gs'
+      - 'src/000_server/050_event/052_applicants/applicants_sheet_dao.gs'
       - scripts/test-event-form-sync-mapper.js
+      - scripts/test-event-form-sync-service.js
       - .github/workflows/event-form-sync-green.yml
 permissions:
   contents: write
@@ -16,9 +18,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Verify mapper green
+      - name: Verify mapper and service green
         run: |
           node scripts/test-event-form-sync-mapper.js
+          node scripts/test-event-form-sync-service.js
           mkdir -p verification
           printf 'green_verified_sha=%s\n' "$GITHUB_SHA" > verification/event-form-sync-green.txt
           git config user.name 'github-actions[bot]'
