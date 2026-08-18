@@ -1,10 +1,12 @@
 var fs = require('fs');
+var path = require('path');
 var assert = require('assert');
-function read(path) { return fs.readFileSync(path, 'utf8'); }
+var vm = require('vm');
+function read(file) { return fs.readFileSync(file, 'utf8'); }
 var helperPath = 'src/000_server/030_auth/auth_page_access.gs';
 var deniedPath = 'src/100_common/Access_Denied.html';
 assert.ok(fs.existsSync(helperPath), 'auth page access helper missing');
-var helper = fs.existsSync(helperPath) ? read(helperPath) : '';
+var helper = read(helperPath);
 var code = read('src/000_server/Code.js');
 var api = read('src/000_server/030_auth/auth_api.gs');
 assert.ok(helper.includes('function resolvePageDomain_'), 'resolvePageDomain_ missing');
@@ -15,4 +17,16 @@ assert.ok(code.includes('canAccessPage_(page, login)'), 'router access guard mis
 assert.ok(code.includes("file = '100_common/Access_Denied'"), 'access denied route missing');
 assert.ok(api.includes('domainAccess:'), 'auth API domainAccess missing');
 assert.ok(fs.existsSync(deniedPath), 'Access_Denied view missing');
+
+var context = vm.createContext({ String: String, Object: Object, Array: Array });
+vm.runInContext(helper, context, { filename: helperPath });
+var eventOnly = context.buildDomainAccess_({ menus: [{ id: 'area_행사', name: '행사', group: '행사' }] }, false);
+assert.strictEqual(eventOnly.event, true);
+assert.strictEqual(eventOnly.accounting, false);
+assert.strictEqual(context.canAccessPage_('event', { ok: true, isAdmin: false, domainAccess: eventOnly }), true);
+assert.strictEqual(context.canAccessPage_('accounting', { ok: true, isAdmin: false, domainAccess: eventOnly }), false);
+assert.strictEqual(context.canAccessPage_('mypage', { ok: true, isAdmin: false, domainAccess: {} }), true);
+assert.strictEqual(context.canAccessPage_('event', { ok: false }), false);
+var admin = context.buildDomainAccess_({}, true);
+assert.strictEqual(admin.main && admin.accounting && admin.student_fee && admin.event && admin.settings, true);
 console.log('IAM route access contract passed.');
