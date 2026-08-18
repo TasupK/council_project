@@ -1,4 +1,4 @@
-verified_sha=68e2b6ba9c1e95a40c54e3dea209a7ab249e78de
+verified_sha=4fbe63b98cb99825e3f978244f214877cab06048
 api_access=success
 domain_access=success
 student_fee_mutation=success
@@ -7,4 +7,4 @@ accounting_money=success
 iam_menu=success
 business_keys=success
 architecture=success
-regression=success
+regression=failure
