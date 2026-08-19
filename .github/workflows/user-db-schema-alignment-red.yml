@@ -1,19 +1,15 @@
 name: UserDB Schema Alignment RED
 
 on:
-  push:
+  pull_request:
     branches:
-      - fix/userdb-schema-alignment
-    paths:
-      - '.github/workflows/user-db-schema-alignment-red.yml'
+      - main
 
 jobs:
   red:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: fix/userdb-schema-alignment
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
