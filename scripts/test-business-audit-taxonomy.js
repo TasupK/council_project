@@ -89,4 +89,12 @@ for (const name of ['createEventData_', 'updateEventData_', 'updateEventStatusDa
   assert.ok(functionSource(eventsServiceSource, name).includes('writeBusinessAudit_('), `missing Event audit coverage: ${name}`);
 }
 
+const applicantsServicePath = path.join(root, 'src/000_server/050_event/052_applicants/applicants_service.gs');
+const applicantsServiceSource = fs.readFileSync(applicantsServicePath, 'utf8');
+assert.ok(functionSource(applicantsServiceSource, 'processApplicantData_').includes('writeBusinessAudit_('), 'missing Event applicant audit coverage');
+
+const formSyncServicePath = path.join(root, 'src/000_server/050_event/052_applicants/applicants_form_sync_service.gs');
+const formSyncServiceSource = fs.readFileSync(formSyncServicePath, 'utf8');
+assert.ok(functionSource(formSyncServiceSource, 'applyApplicantFormSyncData_').includes('writeBusinessAudit_('), 'missing Event form sync audit coverage');
+
 console.log('business audit taxonomy contract: PASS');
