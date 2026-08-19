@@ -11,6 +11,14 @@ function requireFeePaymentId_(request) {
   return id;
 }
 
+function requireFeeApplicationSemesterCount_(application) {
+  var count = Number(application && application.semesterCount);
+  if (!isFinite(count) || Math.floor(count) !== count || count < 1 || count > 8) {
+    throw new Error('적용학기수는 1~8 범위의 정수여야 합니다.');
+  }
+  return count;
+}
+
 // 2. 납부신청 승인/반려 처리
 function processFeeApplicationsData_(request, context) {
   var source = request && typeof request === 'object' ? request : {};
@@ -34,6 +42,7 @@ function processFeeApplicationsData_(request, context) {
       return {
         applicationId: applicationId,
         before: before,
+        semesterCount: action === 'APPROVE' ? requireFeeApplicationSemesterCount_(before) : null,
         rate: action === 'APPROVE' ? resolveStudentFeeRate_(before.paymentDate) : null
       };
     });
@@ -68,7 +77,7 @@ function processFeeApplicationsData_(request, context) {
         payment = {
           id: Utilities.getUuid(),
           applicationId: plan.applicationId,
-          amount: Number(plan.rate.amountPerSemester),
+          amount: Number(plan.rate.amountPerSemester) * plan.semesterCount,
           paymentDate: plan.before.paymentDate,
           depositorName: '',
           moneyStatus: '대기',
