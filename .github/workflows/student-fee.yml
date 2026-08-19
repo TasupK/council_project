@@ -1,0 +1,40 @@
+name: Student Fee
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'src/000_server/080_student_fee/**'
+      - 'src/000_server/020_schema/operation_db_schema.gs'
+      - 'scripts/test-student-fee*.js'
+      - 'scripts/verify-student-fee-architecture.js'
+      - '.github/workflows/student-fee.yml'
+  push:
+    branches:
+      - design/student-fee-form-source
+    paths:
+      - 'src/000_server/080_student_fee/**'
+      - 'src/000_server/020_schema/operation_db_schema.gs'
+      - 'scripts/test-student-fee*.js'
+      - 'scripts/verify-student-fee-architecture.js'
+      - '.github/workflows/student-fee.yml'
+
+jobs:
+  student-fee-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Student Fee regression
+        run: node scripts/test-student-fee.js
+      - name: Student Fee Form source contract
+        run: node scripts/test-student-fee-form-source.js
+      - name: Student Fee Form import contract
+        run: node scripts/test-student-fee-form-import.js
+      - name: Student Fee mutation consistency
+        run: node scripts/test-student-fee-mutation-consistency.js
+      - name: Student Fee architecture verifier
+        run: node scripts/verify-student-fee-architecture.js
