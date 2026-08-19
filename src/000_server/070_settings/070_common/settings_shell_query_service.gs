@@ -1,5 +1,5 @@
 // Settings 홈과 공통 shell 조회
-function loadSettingsHomeData() {
+function api_getSettingsHome() {
   var current = getSettingsCurrent_();
   if (!current.ok) return current;
   return okResponse_(buildSettingsBaseView_(current));

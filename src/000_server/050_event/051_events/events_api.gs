@@ -1,5 +1,5 @@
 // 1. 행사 목록과 상세 조회
-function api_getEventList(input) {
+function api_getEvents(input) {
   return apiHandler_({
     operation: 'getEventList', input: input, requireLogin: true,
     access: eventApiAccess_('view'),
@@ -8,7 +8,7 @@ function api_getEventList(input) {
   });
 }
 
-function api_getEventForEdit(input) {
+function api_getEvent(input) {
   return apiHandler_({
     operation: 'getEventForEdit', input: input, requireLogin: true,
     access: eventApiAccess_('view'),
@@ -17,7 +17,7 @@ function api_getEventForEdit(input) {
   });
 }
 
-function api_getEventDetail(input) {
+function api_getEventOverview(input) {
   return apiHandler_({
     operation: 'getEventDetail', input: input, requireLogin: true,
     access: eventApiAccess_('view'),

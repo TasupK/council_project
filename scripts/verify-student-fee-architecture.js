@@ -27,24 +27,24 @@ var REQUIRED_FILES = [
 ];
 
 var FUNCTION_OWNERS = {
-  api_getStudentFeeReferenceData: '080_common/student_fee_reference_api.gs',
+  api_getStudentFeeReference: '080_common/student_fee_reference_api.gs',
   readStudentFeeSemesterRows_: '080_common/student_fee_reference_query_service.gs',
   getStudentFeeReferenceData_: '080_common/student_fee_reference_query_service.gs',
-  api_getFeePayerList: '081_payers/fee_payers_api.gs',
-  api_getFeePayerDetail: '081_payers/fee_payers_api.gs',
-  api_createFeePayer: '081_payers/fee_payers_api.gs',
-  api_updateFeePayer: '081_payers/fee_payers_api.gs',
+  api_getStudentFeePayers: '081_payers/fee_payers_api.gs',
+  api_getStudentFeePayer: '081_payers/fee_payers_api.gs',
+  api_createStudentFeePayer: '081_payers/fee_payers_api.gs',
+  api_updateStudentFeePayer: '081_payers/fee_payers_api.gs',
   api_getStudentFeeSummary: '082_payments/fee_payments_api.gs',
-  api_getFeeApplicationList: '082_payments/fee_payments_api.gs',
-  api_getFeeApplicationDetail: '082_payments/fee_payments_api.gs',
-  api_processFeeApplications: '082_payments/fee_payments_api.gs',
-  api_calculateFeeAmount: '082_payments/fee_payments_api.gs',
-  api_confirmFeePayment: '082_payments/fee_payments_api.gs',
-  api_getFeeRefundRequestList: '083_refunds/fee_refunds_api.gs',
-  api_getFeeRefundRequestDetail: '083_refunds/fee_refunds_api.gs',
-  api_processFeeRefundRequests: '083_refunds/fee_refunds_api.gs',
-  api_calculateFeeRefund: '083_refunds/fee_refunds_api.gs',
-  api_confirmFeeRefund: '083_refunds/fee_refunds_api.gs'
+  api_getStudentFeeApplications: '082_payments/fee_payments_api.gs',
+  api_getStudentFeeApplication: '082_payments/fee_payments_api.gs',
+  api_processStudentFeeApplications: '082_payments/fee_payments_api.gs',
+  api_calculateStudentFeeAmount: '082_payments/fee_payments_api.gs',
+  api_confirmStudentFeePayment: '082_payments/fee_payments_api.gs',
+  api_getStudentFeeRefundRequests: '083_refunds/fee_refunds_api.gs',
+  api_getStudentFeeRefundRequest: '083_refunds/fee_refunds_api.gs',
+  api_processStudentFeeRefundRequests: '083_refunds/fee_refunds_api.gs',
+  api_calculateStudentFeeRefund: '083_refunds/fee_refunds_api.gs',
+  api_confirmStudentFeeRefund: '083_refunds/fee_refunds_api.gs'
 };
 
 var API_OWNERS = {};

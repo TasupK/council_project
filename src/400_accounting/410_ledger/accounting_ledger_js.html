@@ -120,7 +120,7 @@ function readFilePayloads(files) {
 
 async function refreshLedger() {
   const results = await Promise.all([
-    callServer('api_getLedgerList', {}, { items: state.items }),
+    callServer('api_getLedgerEntries', {}, { items: state.items }),
     callServer('api_getLedgerSummary', {}, {}),
     callServer('api_getLedgerEventOptions', {}, state.events)
   ]);
@@ -136,7 +136,7 @@ async function saveEntry(draft) {
   if (!draft && (!item.transaction_date || !item.amount || !item.counterparty)) return toast('필수 항목을 입력해 주세요.');
   try {
     if (!state.editingLedgerId) item.evidence_files = await readFilePayloads(state.uploadFiles.ledgerEntry);
-    const api = state.editingLedgerId ? 'api_updateLedgerEntry' : (draft ? 'api_saveLedgerDraft' : 'api_createLedgerEntry');
+    const api = state.editingLedgerId ? 'api_updateLedgerEntry' : (draft ? 'api_createLedgerDraft' : 'api_createLedgerEntry');
     const result = await callServer(api, item, null, { strict: true });
     if (!result || !result.ok) throw new Error('저장 결과가 올바르지 않습니다.');
     state.editingLedgerId = null;

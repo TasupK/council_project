@@ -1,5 +1,5 @@
 // 1. 행사 신청자 조회
-function api_getApplicantList(input) {
+function api_getEventApplicants(input) {
   return apiHandler_({
     operation: 'getApplicantList', input: input, requireLogin: true,
     access: eventApiAccess_('view'),
@@ -8,7 +8,7 @@ function api_getApplicantList(input) {
   });
 }
 
-function api_getApplicantDetail(input) {
+function api_getEventApplicant(input) {
   return apiHandler_({
     operation: 'getApplicantDetail', input: input, requireLogin: true,
     access: eventApiAccess_('view'),
@@ -18,7 +18,7 @@ function api_getApplicantDetail(input) {
 }
 
 // 2. 행사 신청자 처리
-function api_processApplicant(input) {
+function api_processEventApplicant(input) {
   return apiHandler_({
     operation: 'processApplicant', input: input, requireLogin: true,
     access: eventApiAccess_('approve'),
@@ -28,7 +28,7 @@ function api_processApplicant(input) {
 }
 
 // 3. Google Forms 응답 동기화
-function api_syncApplicantsFromForms(input) {
+function api_syncEventApplicantsFromForms(input) {
   return apiHandler_({
     operation: 'syncApplicantsFromForms', input: input, requireLogin: true,
     access: eventApiAccess_('edit'),

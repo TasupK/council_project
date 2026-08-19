@@ -41,7 +41,7 @@ if (!failures.length) {
   if (!/function\s+buildEventFormCandidates_\s*\(/.test(mapperSource)) failures.push('Response mapping must live in mapper');
   if (!/access\s*:\s*eventApiAccess_\s*\(\s*['"]edit['"]\s*\)/.test(apiSource)) failures.push('Sync API must use Event access override helper');
   if (!/event_form_sync_js/.test(pageSource)) failures.push('Event Detail must include focused Forms module');
-  if (!/api\(['"]api_syncApplicantsFromForms['"]/.test(frontendSource)) failures.push('Frontend must call sync API');
+  if (!/api\(['"]api_syncEventApplicantsFromForms['"]/.test(frontendSource)) failures.push('Frontend must call sync API');
 }
 
 if (failures.length) {

@@ -45,7 +45,7 @@ function testSettingsHomeData_() {
   context.api_getCurrentUser = function () { return { ok: true, isAdmin: true, user: { email: 'admin@example.com', name: '관리자' } }; };
   load_(context, 'src/000_server/070_settings/070_common/settings_access.gs');
   load_(context, 'src/000_server/070_settings/070_common/settings_shell_query_service.gs');
-  var result = context.loadSettingsHomeData();
+  var result = context.api_getSettingsHome();
   assert.strictEqual(result.app.version, 'v0.7');
   assert.strictEqual(result.app.term, '2026학년도');
   assert.strictEqual(result.database.spreadsheetId, 'user-db-id');
@@ -104,7 +104,7 @@ function testPermissionsIamAndSettingsComposition_() {
   load_(context, 'src/000_server/070_settings/073_permissions/settings_permissions_query_service.gs');
   load_(context, 'src/000_server/070_settings/073_permissions/settings_permissions_api.gs');
   context.getAdminSettingsCurrent_ = function () { return { ok: true, user: { email: 'admin@example.com' } }; };
-  var result = context.loadSettingsPermissionsData();
+  var result = context.api_getSettingsPermissions();
   assert.strictEqual(result.ok, true);
   assert.strictEqual(result.permissionTree[0].id, 'area_행사');
   assert.strictEqual(result.permissionsByRole.ROLE_ADMIN.perm_EVENT_VIEW.view, true);

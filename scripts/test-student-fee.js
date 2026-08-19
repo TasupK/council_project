@@ -287,22 +287,22 @@ function testApiRequiresLogin_() {
   load_(context, 'src/000_server/080_student_fee/082_payments/fee_payments_api.gs');
   load_(context, 'src/000_server/080_student_fee/083_refunds/fee_refunds_api.gs');
 
-  context.api_getStudentFeeReferenceData({});
-  context.api_getFeePayerList({});
-  context.api_getFeePayerDetail({});
-  context.api_createFeePayer({});
-  context.api_updateFeePayer({});
+  context.api_getStudentFeeReference({});
+  context.api_getStudentFeePayers({});
+  context.api_getStudentFeePayer({});
+  context.api_createStudentFeePayer({});
+  context.api_updateStudentFeePayer({});
   context.api_getStudentFeeSummary({});
-  context.api_getFeeApplicationList({});
-  context.api_getFeeApplicationDetail({});
-  context.api_processFeeApplications({});
-  context.api_calculateFeeAmount({});
-  context.api_confirmFeePayment({});
-  context.api_getFeeRefundRequestList({});
-  context.api_getFeeRefundRequestDetail({});
-  context.api_processFeeRefundRequests({});
-  context.api_calculateFeeRefund({});
-  context.api_confirmFeeRefund({});
+  context.api_getStudentFeeApplications({});
+  context.api_getStudentFeeApplication({});
+  context.api_processStudentFeeApplications({});
+  context.api_calculateStudentFeeAmount({});
+  context.api_confirmStudentFeePayment({});
+  context.api_getStudentFeeRefundRequests({});
+  context.api_getStudentFeeRefundRequest({});
+  context.api_processStudentFeeRefundRequests({});
+  context.api_calculateStudentFeeRefund({});
+  context.api_confirmStudentFeeRefund({});
 
   assert.strictEqual(seen.length, 16);
   seen.forEach(function (options) {

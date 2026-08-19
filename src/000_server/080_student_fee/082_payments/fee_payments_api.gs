@@ -9,7 +9,7 @@ function api_getStudentFeeSummary(input) {
 }
 
 // 2. 납부신청 조회 API
-function api_getFeeApplicationList(input) {
+function api_getStudentFeeApplications(input) {
   return apiHandler_({
     operation: 'getFeeApplicationList', input: input, requireLogin: true,
     access: studentFeeApiAccess_('view'),
@@ -18,7 +18,7 @@ function api_getFeeApplicationList(input) {
   });
 }
 
-function api_getFeeApplicationDetail(input) {
+function api_getStudentFeeApplication(input) {
   return apiHandler_({
     operation: 'getFeeApplicationDetail', input: input, requireLogin: true,
     access: studentFeeApiAccess_('view'),
@@ -28,7 +28,7 @@ function api_getFeeApplicationDetail(input) {
 }
 
 // 3. 납부 처리 API
-function api_processFeeApplications(input) {
+function api_processStudentFeeApplications(input) {
   return apiHandler_({
     operation: 'processFeeApplications', input: input, requireLogin: true,
     access: studentFeeApiAccess_('approve'),
@@ -37,7 +37,7 @@ function api_processFeeApplications(input) {
   });
 }
 
-function api_calculateFeeAmount(input) {
+function api_calculateStudentFeeAmount(input) {
   return apiHandler_({
     operation: 'calculateFeeAmount', input: input, requireLogin: true,
     access: studentFeeApiAccess_('view'),
@@ -46,7 +46,7 @@ function api_calculateFeeAmount(input) {
   });
 }
 
-function api_confirmFeePayment(input) {
+function api_confirmStudentFeePayment(input) {
   return apiHandler_({
     operation: 'confirmFeePayment', input: input, requireLogin: true,
     access: studentFeeApiAccess_('approve'),

@@ -48,12 +48,7 @@ var RENAMED_SYMBOLS = [
 
 var PUBLIC_ALLOWLIST = {
   authorizeApp: true,
-  loadSettingsHomeData: true,
-  loadSettingsUsersData: true,
-  saveSettingsUserDepartment: true,
-  loadSettingsRolesData: true,
-  loadSettingsPermissionsData: true,
-  loadSettingsDepartmentsData: true
+
 };
 
 function listFiles_(directory) {

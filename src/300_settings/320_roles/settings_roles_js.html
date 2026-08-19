@@ -39,7 +39,7 @@
   }
   async function loadSettingsRoles() {
     try {
-      var data = await callSettingsApi("loadSettingsRolesData");
+      var data = await callSettingsApi("api_getSettingsRoles");
       if (!data || !data.ok)
         throw new Error(
           data && data.message

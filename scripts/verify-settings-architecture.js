@@ -54,12 +54,12 @@ var functions = collectFunctions_(sourceFiles);
 var settingsOwnership = {
   getAdminSettingsCurrent_: '070_settings/070_common/settings_access.gs',
   buildSettingsBaseView_: '070_settings/070_common/settings_shell_query_service.gs',
-  loadSettingsHomeData: '070_settings/070_common/settings_shell_query_service.gs',
-  loadSettingsUsersData: '070_settings/071_users/settings_users_api.gs',
+  api_getSettingsHome: '070_settings/070_common/settings_shell_query_service.gs',
+  api_getSettingsUsers: '070_settings/071_users/settings_users_api.gs',
   getSettingsUsersData_: '070_settings/071_users/settings_users_query_service.gs',
-  loadSettingsRolesData: '070_settings/072_roles/settings_roles_api.gs',
+  api_getSettingsRoles: '070_settings/072_roles/settings_roles_api.gs',
   getSettingsRolesData_: '070_settings/072_roles/settings_roles_query_service.gs',
-  loadSettingsPermissionsData: '070_settings/073_permissions/settings_permissions_api.gs',
+  api_getSettingsPermissions: '070_settings/073_permissions/settings_permissions_api.gs',
   getSettingsPermissionsData_: '070_settings/073_permissions/settings_permissions_query_service.gs'
 };
 var iamOwnership = {

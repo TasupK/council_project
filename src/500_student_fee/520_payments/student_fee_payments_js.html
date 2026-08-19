@@ -51,7 +51,7 @@ function loadSfPaymentList_() {
   var error = studentFeeGetElement('sf-payment-error');
   loading.hidden = false;
   error.hidden = true;
-  return studentFeeApi('api_getFeeApplicationList', {
+  return studentFeeApi('api_getStudentFeeApplications', {
     keyword: sfPaymentState.keyword,
     status: sfPaymentState.status,
     page: sfPaymentState.page,
@@ -99,7 +99,7 @@ function renderSfPaymentDetail_(detail) {
 }
 
 function openSfPaymentDetail_(applicationId) {
-  studentFeeApi('api_getFeeApplicationDetail', { applicationId: applicationId })
+  studentFeeApi('api_getStudentFeeApplication', { applicationId: applicationId })
     .then(function (detail) {
       renderSfPaymentDetail_(detail || {});
       studentFeeOpenModal('sf-payment-detail-modal');
@@ -110,11 +110,11 @@ function openSfPaymentDetail_(applicationId) {
 function approveSfPaymentApplication_(application, button) {
   if (!application) return Promise.resolve(null);
   return studentFeeRunBusy(button, function () {
-    return studentFeeApi('api_calculateFeeAmount', { paymentDate: application.paymentDate })
+    return studentFeeApi('api_calculateStudentFeeAmount', { paymentDate: application.paymentDate })
       .then(function (calculation) {
         var amount = calculation && calculation.amount;
         if (!studentFeeConfirm(studentFeeMoney(amount) + '으로 납부신청을 승인하시겠습니까?')) return null;
-        return studentFeeApi('api_processFeeApplications', {
+        return studentFeeApi('api_processStudentFeeApplications', {
           ids: [application.id],
           action: 'APPROVE',
           reason: ''
@@ -134,7 +134,7 @@ function approveSfPaymentApplication_(application, button) {
 function rejectSfPaymentApplication_(applicationId, button) {
   if (!studentFeeConfirm('이 납부신청을 반려하시겠습니까?')) return;
   studentFeeRunBusy(button, function () {
-    return studentFeeApi('api_processFeeApplications', {
+    return studentFeeApi('api_processStudentFeeApplications', {
       ids: [applicationId],
       action: 'REJECT',
       reason: ''
@@ -152,11 +152,11 @@ function bulkApproveSfPayments_(button) {
   var rows = ids.map(function (id) { return sfPaymentState.rowsById[id]; }).filter(Boolean);
   studentFeeRunBusy(button, function () {
     return Promise.all(rows.map(function (row) {
-      return studentFeeApi('api_calculateFeeAmount', { paymentDate: row.paymentDate });
+      return studentFeeApi('api_calculateStudentFeeAmount', { paymentDate: row.paymentDate });
     })).then(function (calculations) {
       var total = calculations.reduce(function (sum, item) { return sum + (Number(item.amount) || 0); }, 0);
       if (!studentFeeConfirm(ids.length + '건, 합계 ' + studentFeeMoney(total) + '을 승인하시겠습니까?')) return null;
-      return studentFeeApi('api_processFeeApplications', {
+      return studentFeeApi('api_processStudentFeeApplications', {
         ids: ids,
         action: 'APPROVE',
         reason: ''
@@ -173,7 +173,7 @@ function bulkRejectSfPayments_(button) {
   var ids = selectedSfPaymentIds_();
   if (!ids.length || !studentFeeConfirm(ids.length + '건을 반려하시겠습니까?')) return;
   studentFeeRunBusy(button, function () {
-    return studentFeeApi('api_processFeeApplications', {
+    return studentFeeApi('api_processStudentFeeApplications', {
       ids: ids,
       action: 'REJECT',
       reason: ''
@@ -199,7 +199,7 @@ function confirmSfPayment_(result, button) {
   var message = result === 'DONE' ? '입금 완료로 처리하시겠습니까?' : '입금 불일치로 처리하시겠습니까?';
   if (!studentFeeConfirm(message)) return;
   studentFeeRunBusy(button, function () {
-    return studentFeeApi('api_confirmFeePayment', {
+    return studentFeeApi('api_confirmStudentFeePayment', {
       paymentId: payment.id,
       result: result,
       depositorName: form.elements.depositorName.value.trim(),

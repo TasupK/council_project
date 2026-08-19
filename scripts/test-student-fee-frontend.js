@@ -106,21 +106,21 @@ function testStudentFeeRouteHelpers_() {
 function testPayerEditUsesLookupKey_() {
   var source = read_('src/500_student_fee/510_payers/student_fee_payers_js.html');
   assert.match(source, /studentIdKey/);
-  assert.match(source, /api_getFeePayerDetail/);
+  assert.match(source, /api_getStudentFeePayer/);
   assert.doesNotMatch(source, /textContent\s*=\s*[^;]*studentIdKey/);
 }
 
 function testPaymentApprovalCalculatesBeforeMutation_() {
   var source = read_('src/500_student_fee/520_payments/student_fee_payments_js.html');
-  var calculateIndex = source.indexOf("'api_calculateFeeAmount'");
-  var processIndex = source.indexOf("'api_processFeeApplications'");
+  var calculateIndex = source.indexOf("'api_calculateStudentFeeAmount'");
+  var processIndex = source.indexOf("'api_processStudentFeeApplications'");
   assert.ok(calculateIndex >= 0 && processIndex > calculateIndex);
 }
 
 function testRefundApprovalCalculatesBeforeMutation_() {
   var source = read_('src/500_student_fee/530_refunds/student_fee_refunds_js.html');
-  var calculateIndex = source.indexOf("'api_calculateFeeRefund'");
-  var processIndex = source.indexOf("'api_processFeeRefundRequests'");
+  var calculateIndex = source.indexOf("'api_calculateStudentFeeRefund'");
+  var processIndex = source.indexOf("'api_processStudentFeeRefundRequests'");
   assert.ok(calculateIndex >= 0 && processIndex > calculateIndex);
 }
 
@@ -132,7 +132,7 @@ function testBulkRefundApprovalOmitsSharedApprovedAmount_() {
   var block = source.slice(start, end);
   assert.ok(start >= 0 && end > start);
   assert.doesNotMatch(block, /approvedAmount\s*:/);
-  assert.match(block, /api_processFeeRefundRequests/);
+  assert.match(block, /api_processStudentFeeRefundRequests/);
 }
 
 function testModalFailureKeepsDialogOpen_() {

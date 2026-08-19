@@ -1,5 +1,5 @@
 // 1. 회비납부자 조회 API
-function api_getFeePayerList(input) {
+function api_getStudentFeePayers(input) {
   return apiHandler_({
     operation: 'getFeePayerList', input: input, requireLogin: true,
     access: studentFeeApiAccess_('view'),
@@ -8,7 +8,7 @@ function api_getFeePayerList(input) {
   });
 }
 
-function api_getFeePayerDetail(input) {
+function api_getStudentFeePayer(input) {
   return apiHandler_({
     operation: 'getFeePayerDetail', input: input, requireLogin: true,
     access: studentFeeApiAccess_('view'),
@@ -18,7 +18,7 @@ function api_getFeePayerDetail(input) {
 }
 
 // 2. 회비납부자 생성/수정 API
-function api_createFeePayer(input) {
+function api_createStudentFeePayer(input) {
   return apiHandler_({
     operation: 'createFeePayer', input: input, requireLogin: true,
     access: studentFeeApiAccess_('edit'),
@@ -27,7 +27,7 @@ function api_createFeePayer(input) {
   });
 }
 
-function api_updateFeePayer(input) {
+function api_updateStudentFeePayer(input) {
   return apiHandler_({
     operation: 'updateFeePayer', input: input, requireLogin: true,
     access: studentFeeApiAccess_('edit'),

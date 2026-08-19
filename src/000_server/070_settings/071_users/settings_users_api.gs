@@ -1,5 +1,5 @@
 // Settings 사용자 관리 데이터 조회
-function loadSettingsUsersData() {
+function api_getSettingsUsers() {
   var current = getSettingsCurrent_();
   if (!current.ok) return current;
 
@@ -11,6 +11,6 @@ function loadSettingsUsersData() {
 }
 
 // Settings 사용자 소속 부서 저장
-function saveSettingsUserDepartment(input) {
+function api_updateSettingsUserDepartment(input) {
   return updateSettingsUserDepartment_(input);
 }

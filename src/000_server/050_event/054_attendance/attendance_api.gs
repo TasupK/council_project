@@ -1,5 +1,5 @@
 // 1. 행사 출석 조회
-function api_getAttendanceList(input) {
+function api_getEventAttendances(input) {
   return apiHandler_({
     operation: 'getAttendanceList', input: input, requireLogin: true,
     access: eventApiAccess_('view'),
@@ -9,7 +9,7 @@ function api_getAttendanceList(input) {
 }
 
 // 2. 행사 출석 변경
-function api_applyAttendanceChanges(input) {
+function api_applyEventAttendanceChanges(input) {
   return apiHandler_({
     operation: 'applyAttendanceChanges', input: input, requireLogin: true,
     access: eventApiAccess_('edit'),

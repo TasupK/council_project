@@ -4,7 +4,7 @@ function api_getLedgerDatabaseInfo() {
   return apiHandler_({ operation: 'getLedgerDatabaseInfo', requireLogin: true, access: accountingApiAccess_('view'), service: function () { return getLedgerDatabaseInfoData_(); } });
 }
 
-function api_getLedgerList(filter) {
+function api_getLedgerEntries(filter) {
   return apiHandler_({
     operation: 'getLedgerList', input: filter, requireLogin: true, access: accountingApiAccess_('view'),
     service: function (request) {
@@ -18,7 +18,7 @@ function api_getLedgerSummary(filter) {
   return apiHandler_({ operation: 'getLedgerSummary', input: filter, requireLogin: true, access: accountingApiAccess_('view'), service: function (request) { return getLedgerSummaryData_(request || {}); } });
 }
 
-function api_getLedgerDetail(transactionId) {
+function api_getLedgerEntry(transactionId) {
   return apiHandler_({ operation: 'getLedgerDetail', input: transactionId, requireLogin: true, access: accountingApiAccess_('view'), service: function (id) { return getLedgerDetailData_(id); } });
 }
 
@@ -30,7 +30,7 @@ function api_createLedgerEntry(request) {
   return apiHandler_({ operation: 'createLedgerEntry', input: request, requireLogin: true, access: accountingApiAccess_('edit'), service: function (input, context) { return createLedgerEntryData_(input || {}, context, 'ACTIVE'); } });
 }
 
-function api_saveLedgerDraft(request) {
+function api_createLedgerDraft(request) {
   return apiHandler_({ operation: 'saveLedgerDraft', input: request, requireLogin: true, access: accountingApiAccess_('edit'), service: function (input, context) { return createLedgerDraftData_(input || {}, context); } });
 }
 

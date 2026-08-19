@@ -11,7 +11,7 @@ var queryPath = path.join(ROOT, 'src/000_server/050_event/051_events/events_quer
 assert.ok(fs.existsSync(accessPath), 'event_access.gs must exist');
 
 var apiSource = fs.readFileSync(apiPath, 'utf8');
-assert.ok(/function\s+api_syncApplicantsFromForms\s*\(/.test(apiSource), 'sync API must exist');
+assert.ok(/function\s+api_syncEventApplicantsFromForms\s*\(/.test(apiSource), 'sync API must exist');
 assert.ok(/access\s*:\s*eventApiAccess_\s*\(\s*['"]edit['"]\s*\)/.test(apiSource), 'sync API must use Event access override helper');
 assert.ok(!/requireEventEditContext_\s*\(context\)/.test(apiSource), 'sync API must not keep a second authorization path');
 assert.ok(/applyApplicantFormSyncData_\s*\(/.test(apiSource), 'sync API must delegate to sync service');
