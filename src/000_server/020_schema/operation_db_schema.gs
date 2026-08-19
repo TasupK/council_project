@@ -344,11 +344,11 @@ function getOperationDbSchema_() {
       sheetName: OPERATION_TABLES.ledger,
       fields: {
         id: '거래ID',
+        bankTransactionId: '계좌거래ID',
         transactionAt: '거래일시',
         description: '거래내용',
-        expense: '거래구분',
+        transactionType: '거래구분',
         amount: '거래금액',
-        balanceAfter: '거래후잔액',
         counterparty: '거래상대명',
         source: '유입경로',
         eventId: '행사ID',
@@ -362,6 +362,7 @@ function getOperationDbSchema_() {
       },
       primaryKey: ['id'],
       foreignKeys: [
+        { field: 'bankTransactionId', refDatabase: 'operation', refTable: 'bankTransactions', refField: 'id', optional: true },
         { field: 'eventId', refDatabase: 'operation', refTable: 'events', refField: 'id' },
         { field: 'managerId', refDatabase: 'user', refTable: 'users', refField: 'email' }
       ]
@@ -378,6 +379,8 @@ function getOperationDbSchema_() {
         amount: '증빙금액',
         driveFileId: 'Drive파일ID',
         fileName: '파일명',
+        ocrStatus: 'OCR상태',
+        ocrValidationResult: 'OCR검증결과',
         managerId: '담당자ID',
         createdAt: '등록일시',
         note: '비고'
@@ -394,26 +397,16 @@ function getOperationDbSchema_() {
       fields: {
         id: '계좌거래ID',
         transactionAt: '거래일시',
-        expense: '거래구분',
-        counterparty: '거래상대명',
-        description: '거래내용',
+        description: '적요',
+        bankType: '거래유형',
+        institution: '거래기관',
+        counterpartyAccountNumber: '상대계좌번호',
         amount: '거래금액',
-        sourceFileName: '원본파일명',
+        balanceAfter: '거래후잔액',
+        memo: '메모',
+        sourceHash: '원본해시',
+        recordStatus: '레코드상태',
         createdAt: '등록일시'
-      },
-      primaryKey: ['id'],
-      foreignKeys: []
-    },
-    bankOcrLogs: {
-      name: '계좌OCR로그',
-      sheetName: OPERATION_TABLES.bankOcrLogs,
-      fields: {
-        id: 'OCR로그ID',
-        fileName: '파일명',
-        status: '처리상태',
-        extractedCount: '추출거래건수',
-        errorMessage: '오류메시지',
-        createdAt: '처리일시'
       },
       primaryKey: ['id'],
       foreignKeys: []
@@ -426,17 +419,15 @@ function getOperationDbSchema_() {
         reconciliationId: '대사ID',
         bankTransactionId: '계좌거래ID',
         ledgerId: '거래ID',
-        status: '대사상태',
+        result: '대사결과',
         differenceAmount: '차이금액',
-        matchMethod: '연결방식',
-        note: '비고',
-        createdAt: '등록일시',
-        updatedAt: '수정일시'
+        validationNote: '검증내용',
+        createdAt: '등록일시'
       },
       primaryKey: ['id'],
       foreignKeys: [
         { field: 'reconciliationId', refDatabase: 'operation', refTable: 'reconciliation', refField: 'id' },
-        { field: 'bankTransactionId', refDatabase: 'operation', refTable: 'bankTransactions', refField: 'id' },
+        { field: 'bankTransactionId', refDatabase: 'operation', refTable: 'bankTransactions', refField: 'id', optional: true },
         { field: 'ledgerId', refDatabase: 'operation', refTable: 'ledger', refField: 'id', optional: true }
       ]
     },
@@ -445,17 +436,23 @@ function getOperationDbSchema_() {
       sheetName: OPERATION_TABLES.settlementReports,
       fields: {
         id: '결산ID',
+        name: '결산명',
         startDate: '결산시작일',
         endDate: '결산종료일',
+        openingBalance: '기초잔액',
         totalIncome: '총수입',
         totalExpense: '총지출',
-        balance: '잔액',
+        closingBalance: '기말잔액',
         incomeCount: '수입건수',
         expenseCount: '지출건수',
-        evidenceCount: '증빙건수',
+        unreconciledCount: '미대사건수',
+        missingEvidenceCount: '증빙미비건수',
         status: '결산상태',
+        reportDriveFileId: '보고서Drive파일ID',
         managerId: '담당자ID',
-        createdAt: '등록일시'
+        createdAt: '생성일시',
+        confirmedAt: '확정일시',
+        note: '비고'
       },
       primaryKey: ['id'],
       foreignKeys: [
@@ -470,17 +467,16 @@ function getOperationDbSchema_() {
         auditStartDate: '감사시작일',
         auditEndDate: '감사종료일',
         accountOpeningBalance: '계좌기초잔액',
-        ledgerOpeningBalance: '원장기초잔액',
         accountClosingBalance: '계좌기말잔액',
-        ledgerClosingBalance: '원장기말잔액',
         accountTransactionCount: '계좌거래건수',
         ledgerTransactionCount: '원장거래건수',
-        missingCount: '누락건수',
-        excessCount: '초과건수',
-        mismatchCount: '불일치건수',
-        missingEvidenceCount: '증빙미비건수',
+        normalCount: '정상건수',
+        missingLedgerCount: '원장누락건수',
+        unverifiedBankCount: '계좌미확인건수',
+        reviewRequiredCount: '확인필요건수',
         status: '대사상태',
         managerId: '담당자ID',
+        executedAt: '실행일시',
         confirmedAt: '확인일시',
         confirmation: '확인내용'
       },
