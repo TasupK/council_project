@@ -16,7 +16,7 @@ function createFeePayerData_(request, context) {
     name: name,
     affiliation: affiliation,
     startSemesterId: startSemesterId,
-    managerId: actorEmail,
+    managerEmail: actorEmail,
     updatedAt: getCurrentIsoDateTime_()
   };
   insertFeePayerRow_(row);
@@ -44,7 +44,7 @@ function updateFeePayerData_(request, context) {
   }
   if (!Object.keys(changes).length) throw new Error('수정할 회비납부자 정보가 없습니다.');
 
-  changes.managerId = actorEmail;
+  changes.managerEmail = actorEmail;
   changes.updatedAt = getCurrentIsoDateTime_();
   updateFeePayerRowById_(studentId, changes);
 
