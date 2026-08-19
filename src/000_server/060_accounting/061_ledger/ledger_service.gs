@@ -20,6 +20,19 @@ function normalizeLedgerRecordStatus_(value) {
   return String(value || '활성') === '무효' ? '무효' : '활성';
 }
 
+function assertLedgerBusinessSourceAvailable_(businessType, businessId, currentLedgerId) {
+  if (String(businessType || '') !== 'EVENT_PAYMENT') return;
+  var sourceId = String(businessId || '').trim();
+  if (!sourceId) return;
+  var claimed = listLedgerRows_().some(function (row) {
+    if (currentLedgerId && String(row.id) === String(currentLedgerId)) return false;
+    return String(row.recordStatus || '활성') !== '무효' &&
+      String(row.businessType || '') === 'EVENT_PAYMENT' &&
+      String(row.businessId || '') === sourceId;
+  });
+  if (claimed) throw new Error('해당 행사 입금은 이미 다른 원장에 연결되어 있습니다.');
+}
+
 function resolveLedgerBankMatchStatus_(bankTransactionId, transactionType, amount, currentLedgerId) {
   if (!bankTransactionId) return '미확인';
   var bank = findBankTransactionRowById_(bankTransactionId);
@@ -45,10 +58,13 @@ function createLedgerEntryData_(request, context, recordStatus) {
   var transactionType = normalizeLedgerTransactionType_(request.transaction_type);
   var amount = parseLedgerPositiveAmount_(request.amount);
   var bankTransactionId = request.bank_transaction_id || request.bankTransactionId || '';
+  var businessType = request.business_type || '일반';
+  var businessId = request.business_id || '';
   var lock = LockService.getScriptLock();
   lock.waitLock(30000);
   var item;
   try {
+    assertLedgerBusinessSourceAvailable_(businessType, businessId, '');
     var matchStatus = resolveLedgerBankMatchStatus_(bankTransactionId, transactionType, amount, '');
     item = {
       id: request.transaction_id || generateAccountingId_('TRX'),
@@ -60,8 +76,8 @@ function createLedgerEntryData_(request, context, recordStatus) {
       counterparty: request.counterparty || '',
       source: request.source || (bankTransactionId ? 'BANK' : 'MANUAL'),
       eventId: request.event_id || '',
-      businessType: request.business_type || '일반',
-      businessId: request.business_id || '',
+      businessType: businessType,
+      businessId: businessId,
       matchStatus: bankTransactionId ? matchStatus : '미확인',
       recordStatus: normalizeLedgerRecordStatus_(recordStatus),
       managerEmail: actor,
@@ -103,6 +119,9 @@ function updateLedgerEntryData_(input, context) {
     var bankTransactionId = input.bank_transaction_id == null
       ? (before.bankTransactionId || '')
       : String(input.bank_transaction_id || '');
+    var businessType = input.business_type == null ? before.businessType : input.business_type;
+    var businessId = input.business_id == null ? before.businessId : input.business_id;
+    assertLedgerBusinessSourceAvailable_(businessType, businessId, input.transaction_id);
     var matchStatus = resolveLedgerBankMatchStatus_(bankTransactionId, transactionType, amount, input.transaction_id);
 
     changes = {
@@ -113,8 +132,8 @@ function updateLedgerEntryData_(input, context) {
       amount: amount,
       counterparty: input.counterparty == null ? before.counterparty : input.counterparty,
       eventId: input.event_id == null ? before.eventId : input.event_id,
-      businessType: input.business_type == null ? before.businessType : input.business_type,
-      businessId: input.business_id == null ? before.businessId : input.business_id,
+      businessType: businessType,
+      businessId: businessId,
       matchStatus: bankTransactionId ? matchStatus : '미확인',
       recordStatus: normalizeLedgerRecordStatus_(before.recordStatus),
       managerEmail: resolveAccountingActorEmail_(context),

@@ -56,30 +56,12 @@ function requireNoDirectAuditAppend_() {
 }
 
 [
-  '060_common/accounting_common.gs',
-  '060_common/accounting_audit_sheet_dao.gs',
-  '060_common/accounting_query_service.gs',
-  '060_common/accounting_event_read_dao.gs',
-  '061_ledger/ledger_api.gs',
-  '061_ledger/ledger_service.gs',
-  '061_ledger/ledger_sheet_dao.gs',
-  '062_evidence/evidence_api.gs',
-  '062_evidence/evidence_service.gs',
-  '062_evidence/evidence_sheet_dao.gs',
-  '062_evidence/evidence_file_service.gs',
-  '062_evidence/evidence_ocr_service.gs',
-  '063_reconciliation/reconciliation_api.gs',
-  '063_reconciliation/reconciliation_service.gs',
-  '063_reconciliation/reconciliation_query_service.gs',
-  '063_reconciliation/reconciliation_sheet_dao.gs',
-  '063_reconciliation/bank_transaction_sheet_dao.gs',
-  '063_reconciliation/bank_transaction_parser.gs',
-  '063_reconciliation/bank_transaction_file_service.gs',
-  '063_reconciliation/bank_transaction_import_service.gs',
-  '064_settlement/settlement_api.gs',
-  '064_settlement/settlement_service.gs',
-  '064_settlement/settlement_query_service.gs',
-  '064_settlement/settlement_sheet_dao.gs'
+  '060_common/accounting_common.gs','060_common/accounting_audit_sheet_dao.gs','060_common/accounting_query_service.gs','060_common/accounting_event_read_dao.gs',
+  '061_ledger/ledger_api.gs','061_ledger/ledger_service.gs','061_ledger/ledger_sheet_dao.gs',
+  '062_evidence/evidence_api.gs','062_evidence/evidence_service.gs','062_evidence/evidence_sheet_dao.gs','062_evidence/evidence_file_service.gs','062_evidence/evidence_ocr_service.gs',
+  '063_reconciliation/reconciliation_api.gs','063_reconciliation/reconciliation_service.gs','063_reconciliation/reconciliation_query_service.gs','063_reconciliation/reconciliation_sheet_dao.gs',
+  '063_reconciliation/bank_transaction_sheet_dao.gs','063_reconciliation/bank_transaction_parser.gs','063_reconciliation/bank_transaction_file_service.gs','063_reconciliation/bank_transaction_import_service.gs',
+  '064_settlement/settlement_api.gs','064_settlement/settlement_service.gs','064_settlement/settlement_query_service.gs','064_settlement/settlement_sheet_dao.gs'
 ].forEach(requireFile_);
 
 var functions = collectFunctions_();
@@ -90,6 +72,7 @@ var ownership = {
   createLedgerDraftData_: '061_ledger/ledger_service.gs',
   updateLedgerEntryData_: '061_ledger/ledger_service.gs',
   deleteLedgerEntryData_: '061_ledger/ledger_service.gs',
+  assertLedgerBusinessSourceAvailable_: '061_ledger/ledger_service.gs',
 
   api_getLedgerEvidenceAudits: '062_evidence/evidence_api.gs',
   getEvidenceAuditListData_: '062_evidence/evidence_service.gs',
@@ -102,9 +85,11 @@ var ownership = {
   readTossBankTransactionRowsFromFile_: '063_reconciliation/bank_transaction_file_service.gs',
   processBankTransactionUploadData_: '063_reconciliation/bank_transaction_import_service.gs',
   buildReconciliationSnapshotItems_: '063_reconciliation/reconciliation_query_service.gs',
+  buildEventPaymentReconciliationCandidates_: '063_reconciliation/reconciliation_query_service.gs',
   processReconciliationData_: '063_reconciliation/reconciliation_service.gs',
   applyReconciliationLinkData_: '063_reconciliation/reconciliation_service.gs',
   createLedgerFromReconciliationData_: '063_reconciliation/reconciliation_service.gs',
+  createLedgerFromEventPaymentReconciliationData_: '063_reconciliation/reconciliation_service.gs',
   api_processBankTransactionUpload: '063_reconciliation/reconciliation_api.gs',
   api_processReconciliation: '063_reconciliation/reconciliation_api.gs',
   api_getReconciliations: '063_reconciliation/reconciliation_api.gs',
@@ -140,6 +125,14 @@ reconciliationFiles.forEach(function (file) {
   var source = fs.readFileSync(file, 'utf8');
   if (/appendOperationTableRow_\(\s*['\"]ledger['\"]/.test(source)) {
     failures.push('Reconciliation must not write ledger table directly: ' + rel);
+  }
+});
+
+listSourceFiles_(ACCOUNTING_ROOT).forEach(function (file) {
+  var rel = normalize_(path.relative(ACCOUNTING_ROOT, file));
+  var source = fs.readFileSync(file, 'utf8');
+  if (/listEventPaymentClientRows_|findEventPaymentRowById_|findEventPaymentRowsByApplicationId_|insertEventPaymentRow_|updateEventPaymentRowById_/.test(source)) {
+    failures.push('Accounting must consume Event payments only through buildEventPaymentAccountingFacts_: ' + rel);
   }
 });
 

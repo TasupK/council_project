@@ -107,3 +107,80 @@ function getReconciliationCandidatesData_(request) {
   });
   return { items: items.slice(0, 10) };
 }
+
+function normalizeReconciliationMatchText_(value) {
+  return String(value || '').replace(/\s+/g, '').toLowerCase();
+}
+
+function reconciliationDateDistanceDays_(left, right) {
+  var leftTime = Date.parse(String(left || '').slice(0, 10) + 'T00:00:00Z');
+  var rightTime = Date.parse(String(right || '').slice(0, 10) + 'T00:00:00Z');
+  if (!isFinite(leftTime) || !isFinite(rightTime)) return 999999;
+  return Math.round(Math.abs(leftTime - rightTime) / 86400000);
+}
+
+function buildEventPaymentReconciliationCandidates_(request) {
+  request = request || {};
+  var claimedPaymentIds = {};
+  listLedgerRows_().forEach(function (ledger) {
+    if (String(ledger.recordStatus || '활성') === '무효') return;
+    if (String(ledger.businessType || '') !== 'EVENT_PAYMENT') return;
+    var businessId = String(ledger.businessId || '').trim();
+    if (businessId) claimedPaymentIds[businessId] = true;
+  });
+
+  var facts = buildEventPaymentAccountingFacts_().filter(function (fact) {
+    return fact.paymentId && !claimedPaymentIds[String(fact.paymentId)] && String(fact.moneyStatus || '') !== '무효';
+  });
+  var banks = listBankTransactionRows_().filter(function (bank) {
+    if (String(bank.recordStatus || '정상') === '무효') return false;
+    if (Number(bank.amount || 0) <= 0) return false;
+    if (request.startDate && String(bank.transactionAt || '') < String(request.startDate)) return false;
+    if (request.endDate && String(bank.transactionAt || '') > String(request.endDate) + 'T23:59:59') return false;
+    return true;
+  });
+
+  var candidates = [];
+  banks.forEach(function (bank) {
+    facts.forEach(function (fact) {
+      var bankAmount = Math.abs(Number(bank.amount || 0));
+      var paidAmount = Number(fact.paidAmount || 0);
+      var amountMatches = bankAmount === paidAmount;
+      if (!amountMatches) return;
+      var dateDistanceDays = reconciliationDateDistanceDays_(bank.transactionAt, fact.paymentDate);
+      var bankText = normalizeReconciliationMatchText_(bank.counterparty || bank.description || '');
+      var depositorText = normalizeReconciliationMatchText_(fact.depositorName || '');
+      var depositorMatches = !!depositorText && !!bankText && (bankText.indexOf(depositorText) >= 0 || depositorText.indexOf(bankText) >= 0);
+      var score = 60;
+      if (dateDistanceDays === 0) score += 25;
+      else if (dateDistanceDays <= 3) score += 10;
+      if (depositorMatches) score += 15;
+      candidates.push({
+        bankTransactionId: String(bank.id || ''),
+        eventPaymentId: String(fact.paymentId || ''),
+        eventId: String(fact.eventId || ''),
+        applicationId: String(fact.applicationId || ''),
+        bankAmount: bankAmount,
+        paidAmount: paidAmount,
+        amountMatches: amountMatches,
+        dateDistanceDays: dateDistanceDays,
+        depositorMatches: depositorMatches,
+        score: score,
+        result: dateDistanceDays === 0 && depositorMatches ? '정상' : '확인필요'
+      });
+    });
+  });
+
+  var byBank = {};
+  candidates.forEach(function (candidate) {
+    if (!byBank[candidate.bankTransactionId]) byBank[candidate.bankTransactionId] = [];
+    byBank[candidate.bankTransactionId].push(candidate);
+  });
+  Object.keys(byBank).forEach(function (bankId) {
+    var rows = byBank[bankId];
+    var maxScore = rows.reduce(function (max, row) { return Math.max(max, row.score); }, -1);
+    var tied = rows.filter(function (row) { return row.score === maxScore; });
+    if (tied.length > 1) tied.forEach(function (row) { row.result = '확인필요'; });
+  });
+  return candidates.sort(function (a, b) { return b.score - a.score; });
+}

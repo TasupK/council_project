@@ -103,3 +103,42 @@ function createLedgerFromReconciliationData_(request, context) {
   }, context, '활성');
   return { snapshot: getReconciliationDetailData_(item.reconciliationId), createdLedger: saved.item };
 }
+
+function createLedgerFromEventPaymentReconciliationData_(request, context) {
+  request = request || {};
+  var bankTransactionId = String(request.bankTransactionId || request.bank_transaction_id || '').trim();
+  var eventPaymentId = String(request.eventPaymentId || request.event_payment_id || '').trim();
+  if (!bankTransactionId || !eventPaymentId) throw new Error('bankTransactionId와 eventPaymentId가 필요합니다.');
+
+  var bank = findBankTransactionRowById_(bankTransactionId);
+  if (!bank || String(bank.recordStatus || '정상') === '무효') throw new Error('계좌 거래를 찾을 수 없습니다.');
+  if (Number(bank.amount || 0) <= 0) throw new Error('행사 입금은 수입 계좌거래와만 연결할 수 있습니다.');
+
+  var fact = buildEventPaymentAccountingFacts_().filter(function (item) {
+    return String(item.paymentId || '') === eventPaymentId;
+  })[0];
+  if (!fact || String(fact.moneyStatus || '') === '무효') throw new Error('행사 입금 정보를 찾을 수 없습니다.');
+
+  var bankAmount = Math.abs(Number(bank.amount || 0));
+  var paidAmount = Number(fact.paidAmount || 0);
+  if (bankAmount !== paidAmount) throw new Error('계좌 거래 금액과 행사 입금 금액이 일치하지 않습니다.');
+
+  var saved = createLedgerEntryData_({
+    bank_transaction_id: bank.id,
+    transaction_type: '수입',
+    transaction_date: bank.transactionAt,
+    amount: paidAmount,
+    counterparty: fact.depositorName || bank.counterparty || bank.description || '',
+    description: '행사 입금 ' + fact.paymentId,
+    event_id: fact.eventId || '',
+    source: 'BANK',
+    business_type: 'EVENT_PAYMENT',
+    business_id: fact.paymentId
+  }, context, '활성');
+
+  return {
+    createdLedger: saved.item,
+    bankTransactionId: bank.id,
+    eventPaymentId: fact.paymentId
+  };
+}

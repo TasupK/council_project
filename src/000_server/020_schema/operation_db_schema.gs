@@ -176,7 +176,7 @@ function getOperationDbSchema_() {
       name: '행사입금',
       sheetName: OPERATION_TABLES.eventPayments,
       fields: {
-        id: '행사입금ID', applicationId: '신청ID', expectedAmount: '납부예정금액', paidAmount: '실제입금액',
+        id: '행사입금ID', applicationId: '신청ID', paidAmount: '실제입금액',
         paymentDate: '입금일', depositorName: '입금자명', moneyStatus: '금전처리상태',
         managerEmail: '담당자이메일', confirmedAt: '확인일시'
       },
