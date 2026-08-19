@@ -15,6 +15,7 @@ const context = {
   writeAccountingAudit_: () => {}
 };
 vm.createContext(context);
+vm.runInContext(fs.readFileSync(path.join(root, 'src/000_server/060_accounting/062_evidence/evidence_ocr_service.gs'), 'utf8'), context);
 vm.runInContext(fs.readFileSync(path.join(root, 'src/000_server/060_accounting/062_evidence/evidence_service.gs'), 'utf8'), context);
 
 assert.strictEqual(typeof context.validateEvidenceOcrData_, 'function');
