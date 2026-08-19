@@ -1,0 +1,11 @@
+<script>
+var appClient = {
+  getCurrentUser: function () {
+    return runAppApi('api_getCurrentUser', {});
+  },
+
+  getMyPermissions: function () {
+    return runAppApi('api_getMyPermissions', {});
+  }
+};
+</script>
