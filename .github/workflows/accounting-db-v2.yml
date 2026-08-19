@@ -18,6 +18,8 @@ jobs:
           node-version: '20'
       - name: Accounting v2 schema contract
         run: node scripts/test-accounting-db-v2-schema.js
+      - name: Toss bank transaction ingestion
+        run: node scripts/test-bank-transaction-v2.js
       - name: Public API naming
         run: node scripts/verify-public-api-naming.js
       - name: Internal function naming
