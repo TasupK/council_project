@@ -66,7 +66,7 @@ function processReconciliationData_(request, context) {
       createdAt: now
     });
   });
-  writeAccountingAudit_(actor, 'RECONCILE', 'reconciliations', id, null, header, '감사대사 snapshot 생성');
+  writeAccountingAudit_(actor, 'RECONCILE', 'reconciliation', id, null, header, '감사대사 snapshot 생성');
   return getReconciliationDetailData_(id);
 }
 
