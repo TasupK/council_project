@@ -4,10 +4,13 @@ var path = require('path');
 var vm = require('vm');
 
 var ROOT = path.resolve(__dirname, '..');
+var requestPath = path.join(ROOT, 'src/000_server/010_core/api_request.gs');
+var responsePath = path.join(ROOT, 'src/000_server/010_core/response.gs');
 var accessPath = path.join(ROOT, 'src/000_server/010_core/api_access.gs');
 var handlerPath = path.join(ROOT, 'src/000_server/010_core/api_handler.gs');
 
 assert.ok(fs.existsSync(accessPath), 'api_access.gs must exist');
+assert.ok(fs.existsSync(requestPath), 'api_request.gs must exist');
 
 var calls = [];
 var context = vm.createContext({
@@ -16,10 +19,13 @@ var context = vm.createContext({
   String: String,
   Object: Object,
   Array: Array,
+  JSON: JSON,
   requireLoginContext_: function () { calls.push('login'); return { ok: true, isAdmin: false }; },
   requirePermission_: function (ctx, permission) { calls.push('permission:' + permission.screenId + ':' + permission.action); return true; }
 });
 
+vm.runInContext(fs.readFileSync(requestPath, 'utf8'), context, { filename: requestPath });
+vm.runInContext(fs.readFileSync(responsePath, 'utf8'), context, { filename: responsePath });
 vm.runInContext(fs.readFileSync(accessPath, 'utf8'), context, { filename: accessPath });
 vm.runInContext(fs.readFileSync(handlerPath, 'utf8'), context, { filename: handlerPath });
 
@@ -34,20 +40,21 @@ var result = context.apiHandler_({
       return { screenId: access.screenId || 'event_screen', action: access.action };
     }
   },
-  input: { raw: true },
-  parse: function () { calls.push('parse'); return { parsed: true }; },
+  input: { request: { raw: true } },
+  parse: function (request) { calls.push('parse'); return { parsed: request.raw }; },
   service: function (request) { calls.push('service'); return request; }
 });
-assert.deepStrictEqual(JSON.parse(JSON.stringify(result)), { parsed: true });
+assert.deepStrictEqual(JSON.parse(JSON.stringify(result)), { ok: true, data: { parsed: true } });
 assert.deepStrictEqual(calls, ['login', 'resolve:event', 'permission:event_screen:edit', 'parse', 'service']);
 
 calls.length = 0;
-context.apiHandler_({
+result = context.apiHandler_({
   operation: 'legacy',
   requireLogin: true,
   permission: { screenId: 'legacy_screen', action: 'view' },
   service: function () { return true; }
 });
+assert.deepStrictEqual(JSON.parse(JSON.stringify(result)), { ok: true, data: true });
 assert.ok(calls.indexOf('permission:legacy_screen:view') >= 0, 'legacy permission must remain supported');
 
 assert.throws(function () {
