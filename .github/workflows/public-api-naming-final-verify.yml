@@ -1,0 +1,62 @@
+name: Public API Naming Final Verify
+
+on:
+  push:
+    branches:
+      - refactor/system-consistency-hardening
+    paths:
+      - '.github/workflows/public-api-naming-final-verify.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: refactor/system-consistency-hardening
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Verify public API naming
+        run: node scripts/verify-public-api-naming.js
+
+      - name: Verify internal function naming
+        run: node scripts/verify-internal-function-naming.js
+
+      - name: Compile all server gs files
+        run: |
+          node <<'NODE'
+          const fs=require('fs'), path=require('path'), vm=require('vm');
+          function walk(d){return fs.readdirSync(d,{withFileTypes:true}).flatMap(e=>{const p=path.join(d,e.name);return e.isDirectory()?walk(p):[p];});}
+          for(const file of walk('src/000_server').filter(f=>/\.gs$/.test(f))) new vm.Script(fs.readFileSync(file,'utf8'),{filename:file});
+          console.log('All server .gs files compile.');
+          NODE
+
+      - name: Run all behavior tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in scripts/test-*.js; do echo "== $file =="; node "$file"; done
+
+      - name: Run all architecture verifiers
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in scripts/verify-*.js; do echo "== $file =="; node "$file"; done
+
+      - name: Record final PASS marker
+        shell: bash
+        run: |
+          mkdir -p verification
+          printf 'PUBLIC_API_FINAL=PASS\nVERIFIED_SHA=%s\n' "$(git rev-parse HEAD)" > verification/public-api-naming-final-pass.txt
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add verification/public-api-naming-final-pass.txt
+          git diff --cached --quiet && exit 0
+          git commit -m 'test: record final public API naming verification'
+          git push
