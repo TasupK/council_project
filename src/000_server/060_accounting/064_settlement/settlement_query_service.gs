@@ -33,7 +33,7 @@ function buildSettlementSnapshotMetrics_(priorRows, periodRows, evidenceRows) {
 
 function getSettlementSourceRows_(filter) {
   filter = filter || {};
-  var all = listLedgerRows_().filter(function (row) { return String(row.recordStatus || '활성') !== '무효'; });
+  var all = buildLedgerAccountingFacts_().filter(function (row) { return String(row.recordStatus || '활성') !== '무효'; });
   return {
     prior: all.filter(function (row) { return String(row.transactionAt || '').slice(0, 10) < String(filter.startDate || ''); }),
     period: all.filter(function (row) { return isAccountingDateInRange_(row.transactionAt, filter.startDate, filter.endDate); })
@@ -43,7 +43,7 @@ function getSettlementSourceRows_(filter) {
 function getSettlementSummaryData_(filter) {
   filter = filter || {};
   var source = getSettlementSourceRows_(filter);
-  return buildSettlementSnapshotMetrics_(source.prior, source.period, listLedgerEvidenceRows_());
+  return buildSettlementSnapshotMetrics_(source.prior, source.period, buildEvidenceAccountingFacts_());
 }
 
 function getSettlementReportListData_(filter) {
