@@ -10,11 +10,18 @@ var modalRoot = document.getElementById('ew-modal-root');
 var loading = document.getElementById('ew-loading');
 var toast = document.getElementById('ew-toast');
 
-function api(functionName, request) {
+function runEventBusy(task) {
   setLoading(true);
-  return runAppApi(functionName, request || {}).then(function (response) {
+  var result;
+  try {
+    result = task();
+  } catch (error) {
     setLoading(false);
-    return response;
+    return Promise.reject(error);
+  }
+  return Promise.resolve(result).then(function (value) {
+    setLoading(false);
+    return value;
   }, function (error) {
     setLoading(false);
     throw error;

@@ -63,7 +63,11 @@ document.getElementById('ew-event-form').addEventListener('submit', function (ev
   saveButton.disabled = true;
   readRelatedMaterialFile(form).then(function (fileInput) {
     if (fileInput) payload.relatedMaterialFile = fileInput;
-    return api(id ? 'api_updateEvent' : 'api_createEvent', id ? { id: id, payload: payload } : { payload: payload });
+    return runEventBusy(function () {
+      return id
+        ? eventClient.updateEvent({ id: id, payload: payload })
+        : eventClient.createEvent({ payload: payload });
+    });
   }).then(function (saved) { showToast('행사 정보가 저장되었습니다.'); goDetail(saved.id, 'basic'); })
     .catch(handleError).finally(function () { if (document.contains(saveButton)) saveButton.disabled = false; });
 });
@@ -72,6 +76,6 @@ document.getElementById('ew-related-material-file').addEventListener('change', f
   var file = event.target.files && event.target.files[0];
   document.getElementById('ew-related-material-name').textContent = file ? file.name + ' (' + Math.ceil(file.size / 1024) + 'KB)' : '선택된 파일 없음';
 });
-if (APP_RESOURCE_ID) api('api_getEvent', { id: APP_RESOURCE_ID }).then(renderEventForm).catch(handleError);
+if (APP_RESOURCE_ID) runEventBusy(function () { return eventClient.getEvent({ id: APP_RESOURCE_ID }); }).then(renderEventForm).catch(handleError);
 else renderEventForm(null);
 </script>
