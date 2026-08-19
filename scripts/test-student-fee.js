@@ -119,7 +119,7 @@ function testPayerBehavior_() {
 
 function testPaymentBehavior_() {
   var context = createContext_();
-  var application = { id: 'app-1', paymentDate: '2026-08-10', status: '접수' };
+  var application = { id: 'app-1', paymentDate: '2026-08-10', semesterCount: 1, status: '접수' };
   var inserted;
   var audits = [];
   context.findFeeApplicationRowById_ = function () { return application; };
