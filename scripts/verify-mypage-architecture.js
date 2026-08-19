@@ -28,6 +28,7 @@ var authApi = read_('src/000_server/030_auth/auth_api.gs');
 var permissionService = read_('src/000_server/040_iam/043_permissions/permissions_query_service.gs');
 var header = read_('src/100_common/App_Header.html');
 var shell = read_('src/100_common/app_shell_js.html');
+var appClient = read_('src/100_common/app_client_js.html');
 var page = read_('src/270_mypage/MyPage.html');
 var client = read_('src/270_mypage/mypage_js.html');
 
@@ -38,8 +39,8 @@ if (authApi.indexOf('buildEffectivePermissionDetails_(current.permissions || {})
 if (!/<a[^>]*id="appUserCard"/.test(header)) failures.push('Header user card must be an accessible anchor.');
 if (shell.indexOf("getAppElement('appUserCard').href = buildAppPageUrl('mypage')") === -1) failures.push('Shared shell must link the user card to MyPage.');
 
-['100_common/App_Styles', '100_common/App_Header', '100_common/App_Sidebar', '100_common/app_shell_js'].forEach(function (includePath) {
-  if (page.indexOf(includePath) === -1) failures.push('MyPage must reuse shared shell include: ' + includePath);
+['100_common/App_Styles', '100_common/App_Header', '100_common/App_Sidebar', '100_common/app_api_runner_js', '100_common/app_client_js', '100_common/app_shell_js'].forEach(function (includePath) {
+  if (page.indexOf(includePath) === -1) failures.push('MyPage must reuse shared shell/client include: ' + includePath);
 });
 
 if (fs.existsSync(path.join(ROOT, 'src', '000_server', '070_mypage'))) failures.push('MyPage must not introduce a server-owned domain directory.');
@@ -65,7 +66,9 @@ protectedSources.forEach(function (file) {
 
 if (/sessionStorage|localStorage/.test(client)) failures.push('MyPage must not use browser storage as identity/auth source.');
 if (/회계 담당|회장|부회장|국장|부원/.test(client)) failures.push('MyPage client must not hard-code role permission mappings.');
-if (client.indexOf("api_getCurrentUser") === -1 || client.indexOf("api_getMyPermissions") === -1) failures.push('MyPage must consume current Auth/IAM APIs.');
+if (client.indexOf('appClient.getCurrentUser()') === -1 || client.indexOf('appClient.getMyPermissions()') === -1) failures.push('MyPage must consume semantic Auth/IAM client methods.');
+if (appClient.indexOf("runAppApi('api_getCurrentUser'") === -1 || appClient.indexOf("runAppApi('api_getMyPermissions'") === -1) failures.push('Shared app client must own Auth/IAM API mappings.');
+if (/google\.script\.run/.test(client)) failures.push('MyPage must not call GAS transport directly.');
 if (client.indexOf('permissionDetails') === -1) failures.push('MyPage must render server-provided permissionDetails.');
 
 if (failures.length) {
