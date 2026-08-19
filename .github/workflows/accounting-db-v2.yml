@@ -16,4 +16,15 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - run: node scripts/test-accounting-db-v2-schema.js
+      - name: Accounting v2 schema contract
+        run: node scripts/test-accounting-db-v2-schema.js
+      - name: Public API naming
+        run: node scripts/verify-public-api-naming.js
+      - name: Internal function naming
+        run: node scripts/verify-internal-function-naming.js
+      - name: Existing Accounting tests
+        continue-on-error: true
+        run: node scripts/test-accounting.js
+      - name: Accounting money validation
+        continue-on-error: true
+        run: node scripts/test-accounting-money-validation.js
