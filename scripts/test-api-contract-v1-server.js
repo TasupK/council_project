@@ -27,6 +27,12 @@ sandbox.requireLoginContext_ = function () { return { email: 'tester@example.com
 sandbox.resolveApiAccess_ = function () {};
 sandbox.requirePermission_ = function () {};
 
+function decodeTransportedError(error) {
+  const prefix = '__APP_ERROR__:';
+  assert.ok(error && typeof error.message === 'string' && error.message.indexOf(prefix) === 0);
+  return JSON.parse(error.message.slice(prefix.length));
+}
+
 assert.deepStrictEqual(JSON.parse(JSON.stringify(sandbox.unwrapApiRequest_({ request: { id: 'A' } }))), { id: 'A' });
 assert.deepStrictEqual(JSON.parse(JSON.stringify(sandbox.unwrapApiRequest_({ id: 'A' }))), { id: 'A' });
 assert.deepStrictEqual(JSON.parse(JSON.stringify(sandbox.unwrapApiRequest_(null))), {});
@@ -56,7 +62,8 @@ assert.throws(function () {
     service: function () { throw typed; }
   });
 }, function (error) {
-  return error && error.code === 'NOT_FOUND' && error.message === '행사를 찾을 수 없습니다.';
+  const payload = decodeTransportedError(error);
+  return payload.code === 'NOT_FOUND' && payload.message === '행사를 찾을 수 없습니다.' && payload.details.id === 'A';
 });
 
 assert.throws(function () {
@@ -66,7 +73,8 @@ assert.throws(function () {
     service: function () { throw new Error('Spreadsheet 1ABC internal failure'); }
   });
 }, function (error) {
-  return error && error.code === 'INTERNAL_ERROR' && error.message === '서버 처리 중 오류가 발생했습니다.' && error.message.indexOf('1ABC') < 0;
+  const payload = decodeTransportedError(error);
+  return payload.code === 'INTERNAL_ERROR' && payload.message === '서버 처리 중 오류가 발생했습니다.' && JSON.stringify(payload).indexOf('1ABC') < 0;
 });
 assert.ok(logs.length >= 2, 'server boundary should log original exceptions');
 
