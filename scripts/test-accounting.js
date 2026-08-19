@@ -115,7 +115,7 @@ function testLedgerSaveDefaults_() {
   };
   context.listLedgerRows_ = function () { return []; };
 
-  var result = context.createLedgerEntryData_({ transaction_type: '수입', amount: 5000, evidence_files: [{ file_id: 'file-1' }] }, { user: { email: 'manager@example.com' } });
+  var result = context.createLedgerEntryWithEvidenceData_({ transaction_type: '수입', amount: 5000, evidence_files: [{ file_id: 'file-1' }] }, { user: { email: 'manager@example.com' } }, '활성');
   assert.strictEqual(inserted.id, 'TRX-uuid-1');
   assert.strictEqual(inserted.source, 'MANUAL');
   assert.strictEqual(inserted.businessType, '일반');
