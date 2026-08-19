@@ -155,6 +155,9 @@ function verifyCoreBoundary_(sources, failures) {
     var relative = path.relative(ROOT, item.file).replace(/\\/g, '/');
     if (relative.indexOf('src/000_server/010_core/') !== 0) return;
     if (relative.endsWith('/config.gs')) return;
+    // business_audit.gs is intentionally cross-domain Core infrastructure.
+    // Its domain neutrality is enforced by the dedicated audit taxonomy/schema tests.
+    if (relative.endsWith('/business_audit.gs')) return;
     if (/\b(event|accounting|settings)\b/i.test(item.source)) {
       failures.push('Domain reference found in Core: ' + relative);
     }
