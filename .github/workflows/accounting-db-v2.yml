@@ -26,6 +26,8 @@ jobs:
         run: node scripts/test-evidence-ocr-v2.js
       - name: Reconciliation snapshot
         run: node scripts/test-reconciliation-v2.js
+      - name: Settlement snapshot
+        run: node scripts/test-settlement-v2.js
       - name: Public API naming
         run: node scripts/verify-public-api-naming.js
       - name: Internal function naming
