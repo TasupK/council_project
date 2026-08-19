@@ -54,9 +54,11 @@ result = verifier.auditSourcePair(
 assert.deepStrictEqual(result.dynamicCalls, []);
 
 const ledgerFrontend = fs.readFileSync(path.join(root, 'src/400_accounting/410_ledger/accounting_ledger_js.html'), 'utf8');
+const accountingClient = fs.readFileSync(path.join(root, 'src/400_accounting/common/accounting_client_js.html'), 'utf8');
 assert.match(ledgerFrontend, /data-evidence-id/);
-assert.match(ledgerFrontend, /api_getLedgerEvidenceFileContent/);
+assert.match(ledgerFrontend, /accountingClient\.getLedgerEvidenceFileContent/);
 assert.match(ledgerFrontend, /content_base64/);
+assert.match(accountingClient, /api_getLedgerEvidenceFileContent/);
 
 const repoResult = verifier.auditRepository(root);
 if (repoResult.missingServerApis.length || repoResult.dynamicCalls.length) {
