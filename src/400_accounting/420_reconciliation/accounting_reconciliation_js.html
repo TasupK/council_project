@@ -32,12 +32,12 @@ function renderReconciliationDetail(detail) {
 }
 
 async function refreshReconciliationHistory(selectId) {
-  const list = await callServer('api_getReconciliations', {}, { items: [] });
+  const list = await accountingClient.getReconciliations();
   state.reconciliationRuns = (list && list.items) || [];
   const select = document.getElementById('reconciliationHistory');
   select.innerHTML = state.reconciliationRuns.length ? state.reconciliationRuns.map(function (row) { return '<option value="' + escapeHtml(row.id) + '">' + escapeHtml(row.auditStartDate + ' ~ ' + row.auditEndDate + ' · ' + row.status) + '</option>'; }).join('') : '<option value="">대사 이력 없음</option>';
   const id = selectId || (state.reconciliationRuns[0] && state.reconciliationRuns[0].id);
-  if (id) { select.value = id; const detail = await callServer('api_getReconciliation', id, null, { strict: true }); renderReconciliationDetail(detail); }
+  if (id) { select.value = id; const detail = await accountingClient.getReconciliation(id); renderReconciliationDetail(detail); }
   else renderReconciliationDetail(null);
 }
 
@@ -46,7 +46,7 @@ async function uploadBankFiles() {
   if (!files.length) return toast('분석할 파일을 선택해 주세요.');
   try {
     const payloads = await Promise.all(files.map(fileToBankPayload));
-    const result = await callServer('api_processBankTransactionUpload', { files: payloads }, null, { strict: true });
+    const result = await accountingClient.processBankTransactionUpload({ files: payloads });
     document.getElementById('ocrResultSummary').textContent = '저장 ' + (result.savedCount || 0) + '건 · 중복 ' + (result.duplicateCount || 0) + '건 · 검토 필요 ' + ((result.reviewRequiredItems || []).length) + '건 · 실패 파일 ' + (result.failedFileCount || 0) + '개';
     toast('계좌 파일 분석이 완료되었습니다.');
   } catch (error) { toast(error && error.message ? error.message : '파일 분석에 실패했습니다.'); }
@@ -57,20 +57,20 @@ async function runOfficialReconciliation() {
   const endDate = document.getElementById('reconciliationEndDate').value;
   if (!startDate || !endDate) return toast('대사 기간을 입력해 주세요.');
   try {
-    const detail = await callServer('api_processReconciliation', { startDate: startDate, endDate: endDate }, null, { strict: true });
+    const detail = await accountingClient.processReconciliation({ startDate: startDate, endDate: endDate });
     renderReconciliationDetail(detail); await refreshReconciliationHistory(detail && detail.header && detail.header.id); toast('공식 감사대사가 저장되었습니다.');
   } catch (error) { toast(error && error.message ? error.message : '대사 실행에 실패했습니다.'); }
 }
 
 async function manuallyLink(itemId) {
   try {
-    const result = await callServer('api_getReconciliationCandidates', { reconciliationItemId: itemId }, { items: [] }, { strict: true });
+    const result = await accountingClient.getReconciliationCandidates({ reconciliationItemId: itemId });
     const candidates = (result && result.items) || [];
     if (!candidates.length) return toast('연결할 수 있는 원장 후보가 없습니다.');
     const message = candidates.map(function (c, i) { return (i + 1) + '. ' + String(c.transactionAt || '').slice(0,10) + ' / ' + c.counterparty + ' / ' + currency(c.amount) + ' / ' + c.matchDetail; }).join('\n');
     const selected = Number(window.prompt('연결할 후보 번호를 입력하세요.\n' + message, '1')) - 1;
     if (selected < 0 || selected >= candidates.length) return;
-    const detail = await callServer('api_applyReconciliationLink', { reconciliationItemId: itemId, ledgerId: candidates[selected].ledgerId }, null, { strict: true });
+    const detail = await accountingClient.applyReconciliationLink({ reconciliationItemId: itemId, ledgerId: candidates[selected].ledgerId });
     renderReconciliationDetail(detail); await refreshReconciliationHistory(detail.header.id); toast('수동 연결되었습니다.');
   } catch (error) { toast(error && error.message ? error.message : '수동 연결에 실패했습니다.'); }
 }
@@ -78,7 +78,7 @@ async function manuallyLink(itemId) {
 async function createLedgerForItem(itemId) {
   if (!window.confirm('이 계좌 거래를 기준으로 새 원장을 만들까요?')) return;
   try {
-    const detail = await callServer('api_createLedgerEntryFromReconciliation', { reconciliationItemId: itemId }, null, { strict: true });
+    const detail = await accountingClient.createLedgerEntryFromReconciliation({ reconciliationItemId: itemId });
     renderReconciliationDetail(detail); await refreshReconciliationHistory(detail.header.id); toast('원장을 생성하고 연결했습니다.');
   } catch (error) { toast(error && error.message ? error.message : '원장 생성에 실패했습니다.'); }
 }
@@ -87,9 +87,9 @@ setupAccountingPageLinks();
 setupFileUpload({ key: 'reconciliation', zoneId: 'reconciliationDropzone', inputId: 'reconciliationFile', nameId: 'reconciliationFileName', multiple: true });
 document.getElementById('uploadBankTransactions').addEventListener('click', uploadBankFiles);
 document.getElementById('runReconcile').addEventListener('click', runOfficialReconciliation);
-document.getElementById('reconciliationHistory').addEventListener('change', async function (event) { if (event.target.value) renderReconciliationDetail(await callServer('api_getReconciliation', event.target.value, null, { strict: true })); });
+document.getElementById('reconciliationHistory').addEventListener('change', async function (event) { if (event.target.value) renderReconciliationDetail(await accountingClient.getReconciliation(event.target.value)); });
 ['reconciliationSearch','reconciliationStatus'].forEach(function (id) { document.getElementById(id).addEventListener('input', function () { renderReconciliationDetail(state.reconciliationDetail); }); });
 document.getElementById('resetReconciliationFilters').addEventListener('click', function () { document.getElementById('reconciliationSearch').value = ''; document.getElementById('reconciliationStatus').value = '전체'; renderReconciliationDetail(state.reconciliationDetail); });
 document.getElementById('reconciliationRows').addEventListener('click', function (event) { const button = event.target.closest('[data-action]'); if (!button) return; if (button.dataset.action === 'link') manuallyLink(button.dataset.id); if (button.dataset.action === 'create') createLedgerForItem(button.dataset.id); });
-refreshReconciliationHistory();
+refreshReconciliationHistory().catch(function (error) { toast(error && error.message ? error.message : '대사 이력을 불러오지 못했습니다.'); });
 </script>

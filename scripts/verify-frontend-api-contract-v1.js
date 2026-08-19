@@ -1,0 +1,43 @@
+var fs = require('fs');
+var path = require('path');
+
+var ROOT = path.resolve(__dirname, '..');
+var SRC = path.join(ROOT, 'src');
+var ALLOWED_DIRECT_GAS = 'src/100_common/app_api_runner_js.html';
+var failures = [];
+
+function listFiles_(directory) {
+  if (!fs.existsSync(directory)) return [];
+  return fs.readdirSync(directory, { withFileTypes: true }).reduce(function (files, entry) {
+    var target = path.join(directory, entry.name);
+    if (entry.isDirectory()) return files.concat(listFiles_(target));
+    if (/\.(html|js)$/.test(entry.name)) files.push(target);
+    return files;
+  }, []);
+}
+
+listFiles_(SRC).forEach(function (file) {
+  var relative = path.relative(ROOT, file).replace(/\\/g, '/');
+  if (relative.indexOf('src/000_server/') === 0) return;
+  var source = fs.readFileSync(file, 'utf8');
+  if (/google\.script\.run/.test(source) && relative !== ALLOWED_DIRECT_GAS) {
+    failures.push('Direct google.script.run outside shared runner: ' + relative);
+  }
+});
+
+[
+  'src/100_common/app_api_runner_js.html',
+  'src/100_common/app_client_js.html',
+  'src/300_settings/common/settings_client_js.html',
+  'src/400_accounting/common/accounting_client_js.html',
+  'src/500_student_fee/common/student_fee_client_js.html'
+].forEach(function (relative) {
+  if (!fs.existsSync(path.join(ROOT, relative))) failures.push('Missing API contract file: ' + relative);
+});
+
+if (failures.length) {
+  failures.forEach(function (failure) { console.error(failure); });
+  process.exitCode = 1;
+} else {
+  console.log('Frontend API Contract v1 verification passed.');
+}

@@ -13,8 +13,7 @@
 
   async function loadSettingsHome() {
     try {
-      var data = await callSettingsApi("api_getSettingsHome");
-      if (!data || !data.ok) throw new Error(data && data.message ? data.message : "설정 데이터를 불러오지 못했습니다.");
+      var data = await settingsClient.getHome();
       var database = applySettingsShell(data);
       var link = getSettingsElement("dbOpenLink");
       if (database.spreadsheetUrl) {

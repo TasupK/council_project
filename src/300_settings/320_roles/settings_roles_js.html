@@ -39,13 +39,7 @@
   }
   async function loadSettingsRoles() {
     try {
-      var data = await callSettingsApi("api_getSettingsRoles");
-      if (!data || !data.ok)
-        throw new Error(
-          data && data.message
-            ? data.message
-            : "역할 데이터를 불러오지 못했습니다.",
-        );
+      var data = await settingsClient.getRoles();
       applySettingsShell(data);
       settingsRoles = data.roles || [];
       renderSettingsRoles();

@@ -45,6 +45,10 @@ function createContext_() {
   var lock = { waitLock: function () {}, releaseLock: function () {} };
   return vm.createContext({
     console: console,
+    JSON: JSON,
+    Error: Error,
+    String: String,
+    Object: Object,
     LockService: { getScriptLock: function () { return lock; } },
     SpreadsheetApp: { flush: function () {} }
   });
@@ -55,18 +59,20 @@ function testApiLifecycle_() {
   var context = createContext_();
   context.requireLoginContext_ = function () { calls.push('login'); return { ok: true }; };
   context.requirePermission_ = function () { calls.push('permission'); };
+  load_(context, 'src/000_server/010_core/api_request.gs');
+  load_(context, 'src/000_server/010_core/response.gs');
   load_(context, 'src/000_server/010_core/api_handler.gs');
 
   var result = context.apiHandler_({
     operation: 'test',
-    input: ' raw ',
+    input: { request: { value: ' raw ' } },
     requireLogin: true,
     permission: { id: 'settings_view', action: 'view' },
-    parse: function (value) { calls.push('parse'); return value.trim(); },
+    parse: function (request) { calls.push('parse'); return request.value.trim(); },
     service: function (request) { calls.push('service'); return request; }
   });
 
-  assert.strictEqual(result, 'raw');
+  assert.deepStrictEqual(JSON.parse(JSON.stringify(result)), { ok: true, data: 'raw' });
   assert.deepStrictEqual(calls, ['login', 'permission', 'parse', 'service']);
 }
 

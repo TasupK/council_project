@@ -41,8 +41,7 @@
 
   async function loadSettingsDepartments() {
     try {
-      var data = await callSettingsApi('api_getSettingsDepartments');
-      if (!data || !data.ok) throw new Error(data && data.message ? data.message : '부서 정보를 불러오지 못했습니다.');
+      var data = await settingsClient.getDepartments();
       applySettingsShell(data);
       renderDepartmentSummary(data.summary || {});
       renderDepartmentGroups(data.departments || [], data.unassigned || []);

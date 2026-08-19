@@ -27,7 +27,7 @@ function createFrontendContext_() {
       if (key in target) return target[key];
       return function (payload) {
         calls.push({ name: key, payload: payload });
-        if (target.success) target.success({ ok: true });
+        if (target.success) target.success({ ok: true, data: {} });
       };
     }
   });
@@ -43,6 +43,7 @@ function createFrontendContext_() {
       Math: Math,
       Date: Date,
       JSON: JSON,
+      Error: Error,
       isFinite: isFinite,
       URL: URL,
       WEB_APP_URL: 'https://example.test/app',
@@ -64,6 +65,7 @@ function createFrontendContext_() {
 }
 
 function loadCommon_(fixture) {
+  vm.runInContext(scriptBody_('src/100_common/app_api_runner_js.html'), fixture.context);
   vm.runInContext(scriptBody_('src/500_student_fee/common/student_fee_common_js.html'), fixture.context);
 }
 
@@ -105,8 +107,10 @@ function testStudentFeeRouteHelpers_() {
 
 function testPayerEditUsesLookupKey_() {
   var source = read_('src/500_student_fee/510_payers/student_fee_payers_js.html');
+  var client = read_('src/500_student_fee/common/student_fee_client_js.html');
   assert.match(source, /studentIdKey/);
-  assert.match(source, /api_getStudentFeePayer/);
+  assert.match(source, /studentFeeClient\.getPayer/);
+  assert.match(client, /api_getStudentFeePayer/);
   assert.doesNotMatch(source, /textContent\s*=\s*[^;]*studentIdKey/);
 }
 

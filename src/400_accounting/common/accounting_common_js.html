@@ -6,23 +6,6 @@ const won = new Intl.NumberFormat('ko-KR');
 const currency = function (value) {
     return `₩${won.format(Number(value || 0))}`;
 };
-const gas = function () {
-    return typeof google !== 'undefined' && google.script && google.script.run;
-};
-
-function callServer(name, arg, fallback, options) {
-    return new Promise(function (resolve, reject) {
-        if (!gas())
-            return resolve(typeof fallback === 'function' ? fallback() : fallback);
-        google.script.run
-            .withSuccessHandler(resolve)
-            .withFailureHandler(function (error) {
-            if (options && options.strict)
-                return reject(error);
-            return resolve(typeof fallback === 'function' ? fallback(error) : fallback);
-        })[name](arg);
-    });
-}
 
 function toast(message) {
     const el = document.getElementById('toast');

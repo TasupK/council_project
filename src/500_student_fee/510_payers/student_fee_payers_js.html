@@ -53,7 +53,7 @@ function loadSfPayerList_() {
   var error = studentFeeGetElement('sf-payer-error');
   loading.hidden = false;
   error.hidden = true;
-  return studentFeeApi('api_getStudentFeePayers', {
+  return studentFeeClient.getPayers({
     keyword: sfPayerState.keyword,
     affiliation: sfPayerState.affiliation,
     page: sfPayerState.page,
@@ -70,7 +70,7 @@ function loadSfPayerList_() {
 }
 
 function loadSfPayerReferences_() {
-  return studentFeeApi('api_getStudentFeeReference', {}).then(function (data) {
+  return studentFeeClient.getReference().then(function (data) {
     sfPayerState.references = data || { semesters: [] };
   });
 }
@@ -94,7 +94,7 @@ function openSfPayerEdit_(token) {
   var row = sfPayerState.rowsByToken[token];
   if (!row || !row.studentIdKey) return;
   var studentIdKey = row.studentIdKey;
-  studentFeeApi('api_getStudentFeePayer', { studentId: studentIdKey })
+  studentFeeClient.getPayer({ studentId: studentIdKey })
     .then(function (detail) {
       var form = studentFeeGetElement('sf-payer-form');
       sfPayerState.editingStudentIdKey = studentIdKey;
@@ -125,40 +125,24 @@ function submitSfPayer_(event) {
 
   var isEdit = Boolean(sfPayerState.editingStudentIdKey);
   var payload;
-  var apiName;
   if (isEdit) {
-    var studentIdKey = sfPayerState.editingStudentIdKey;
-    payload = {
-      studentId: studentIdKey,
-      name: name,
-      affiliation: affiliation,
-      startSemesterId: startSemesterId
-    };
-    apiName = 'api_updateStudentFeePayer';
+    payload = { studentId: sfPayerState.editingStudentIdKey, name: name, affiliation: affiliation, startSemesterId: startSemesterId };
   } else {
     var studentId = form.elements.studentId.value.trim();
     if (!studentId) {
       studentFeeShowToast('학번을 입력해주세요.', true);
       return;
     }
-    payload = {
-      studentId: studentId,
-      name: name,
-      affiliation: affiliation,
-      startSemesterId: startSemesterId
-    };
-    apiName = 'api_createStudentFeePayer';
+    payload = { studentId: studentId, name: name, affiliation: affiliation, startSemesterId: startSemesterId };
   }
 
   studentFeeRunBusy(button, function () {
-    return studentFeeApi(apiName, payload).then(function () {
+    return (isEdit ? studentFeeClient.updatePayer(payload) : studentFeeClient.createPayer(payload)).then(function () {
       studentFeeCloseModal('sf-payer-modal');
       studentFeeShowToast(isEdit ? '가입자 정보를 수정했습니다.' : '가입자를 등록했습니다.');
       return loadSfPayerList_();
     });
-  }).catch(function (error) {
-    studentFeeHandleError(error);
-  });
+  }).catch(function (error) { studentFeeHandleError(error); });
 }
 
 studentFeeGetElement('sf-payer-create').addEventListener('click', openSfPayerCreate_);

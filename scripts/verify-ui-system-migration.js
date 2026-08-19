@@ -135,15 +135,11 @@ function verifyLiteralMap(map, attribute) {
 function verifySharedSystem() {
   const css = read('src/100_common/App_Styles.html');
   REQUIRED_SHARED_PRIMITIVES.forEach((name) => {
-    if (!new RegExp(`\\.${name}(?:[\\s:{,.>#\\[])`).test(css)) {
-      failures.push(`App_Styles.html missing shared primitive .${name}`);
-    }
+    if (!new RegExp(`\\.${name}(?:[\\s:{,.>#\\[])`).test(css)) failures.push(`App_Styles.html missing shared primitive .${name}`);
   });
   FORBIDDEN_GLOBAL_SELECTORS.forEach((selector) => {
     const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    if (new RegExp(`(^|[},\\n]\\s*)${escaped}(?=[\\s:{,.>#\\[])`, 'm').test(css)) {
-      failures.push(`App_Styles.html owns domain selector ${selector}`);
-    }
+    if (new RegExp(`(^|[},\\n]\\s*)${escaped}(?=[\\s:{,.>#\\[])`, 'm').test(css)) failures.push(`App_Styles.html owns domain selector ${selector}`);
   });
 }
 
@@ -151,9 +147,7 @@ function verifyShells(domain) {
   (DOMAIN_SHELLS[domain] || []).forEach((rel) => {
     const source = read(rel);
     if (!source.includes("include('100_common/App_Styles')")) failures.push(`${rel}: missing App_Styles include`);
-    if (domain === 'settings' && !source.includes("include('300_settings/common/Settings_Styles')")) {
-      failures.push(`${rel}: missing Settings_Styles include`);
-    }
+    if (domain === 'settings' && !source.includes("include('300_settings/common/Settings_Styles')")) failures.push(`${rel}: missing Settings_Styles include`);
   });
 }
 
@@ -196,23 +190,18 @@ function verifyAccounting() {
   requireClasses('src/400_accounting/430_settlement/Accounting_Settlement_View.html', ['ui-page-head', 'ui-tabs', 'ui-tab', 'ui-stat-card', 'ui-card', 'ui-field', 'ui-btn', 'ui-toast']);
 }
 
-
 function verifyAccountingServerContracts() {
-  const ledger = read('src/400_accounting/410_ledger/accounting_ledger_js.html');
-  ['api_getLedgerSummary','api_getLedgerEntries','api_createLedgerDraft','api_updateLedgerEntry','api_deleteLedgerEntry'].forEach((name) => {
-    if (!ledger.includes(name)) failures.push(`Accounting ledger client missing ${name}`);
+  const client = read('src/400_accounting/common/accounting_client_js.html');
+  [
+    'api_getLedgerSummary','api_getLedgerEntries','api_createLedgerDraft','api_updateLedgerEntry','api_deleteLedgerEntry',
+    'api_processBankTransactionUpload','api_processReconciliation','api_getReconciliations','api_getReconciliation',
+    'api_getReconciliationCandidates','api_applyReconciliationLink','api_createLedgerEntryFromReconciliation',
+    'api_getSettlementSummary','api_createSettlementReport','api_getSettlementReports','api_getSettlementReport','api_exportSettlementReport'
+  ].forEach((name) => {
+    if (!client.includes(name)) failures.push(`Accounting semantic client missing ${name}`);
   });
-  const reconciliation = read('src/400_accounting/420_reconciliation/accounting_reconciliation_js.html');
-  ['api_processBankTransactionUpload','api_processReconciliation','api_getReconciliations','api_getReconciliation','api_getReconciliationCandidates','api_applyReconciliationLink','api_createLedgerEntryFromReconciliation'].forEach((name) => {
-    if (!reconciliation.includes(name)) failures.push(`Accounting reconciliation client missing ${name}`);
-  });
+  if (client.includes('apiV1_')) failures.push('Accounting semantic client still references legacy apiV1_ contract');
   const settlement = read('src/400_accounting/430_settlement/accounting_settlement_js.html');
-  ['api_getSettlementSummary','api_createSettlementReport','api_getSettlementReports','api_getSettlementReport','api_exportSettlementReport'].forEach((name) => {
-    if (!settlement.includes(name)) failures.push(`Accounting settlement client missing ${name}`);
-  });
-  [ledger, reconciliation, settlement].forEach((source) => {
-    if (source.includes('apiV1_')) failures.push('Accounting client still references legacy apiV1_ contract');
-  });
   if (/generateSettlement['"]\)\.disabled\s*=\s*true/.test(settlement)) failures.push('Settlement generation remains forcibly disabled');
 }
 

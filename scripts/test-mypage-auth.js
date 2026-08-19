@@ -18,6 +18,7 @@ function createContext_() {
     String: String,
     Boolean: Boolean,
     JSON: JSON,
+    Error: Error,
     SETTINGS_PERMISSION_COLUMNS: [
       { key: 'menu' }, { key: 'view' }, { key: 'edit' }, { key: 'approve' }, { key: 'export' }
     ]
@@ -72,23 +73,27 @@ function testEffectivePermissionDetails_() {
 function testAuthApiAddsPermissionDetails_() {
   var context = createContext_();
   context.okResponse_ = function (payload) { return Object.assign({ ok: true }, payload || {}); };
+  context.wrapApiSuccess_ = function (payload) { return { ok: true, data: payload == null ? null : payload }; };
   context.buildEffectivePermissionDetails_ = function () {
     return [{ id: 'EVENT_VIEW', screenId: 'perm_EVENT_VIEW', area: '행사', action: '조회', name: '행사 조회', description: '', grants: { menu: false, view: true, edit: false, approve: false, export: false } }];
   };
   context.getSessionUserContext_ = function () {
     return {
       ok: true,
-      user: { roles: [{ id: 'ROLE_EVENT', name: '행사 담당' }] },
+      email: 'event@example.com',
+      user: { id: 'event@example.com', name: '행사 담당', status: 'active', roleIds: ['ROLE_EVENT'], roles: [{ id: 'ROLE_EVENT', name: '행사 담당' }] },
       roles: [{ id: 'ROLE_EVENT', name: '행사 담당' }],
-      permissions: { byScreen: { perm_EVENT_VIEW: { menu: false, view: true, edit: false, approve: false, export: false } }, menus: [{ id: 'area_행사', name: '행사' }] }
+      permissions: { byScreen: { perm_EVENT_VIEW: { menu: false, view: true, edit: false, approve: false, export: false } }, menus: [{ id: 'area_행사', name: '행사' }] },
+      isAdmin: false,
+      dbMode: 'connected'
     };
   };
   load_(context, 'src/000_server/030_auth/auth_api.gs');
 
   var result = context.api_getMyPermissions();
   assert.strictEqual(result.ok, true);
-  assert.strictEqual(result.permissionDetails[0].id, 'EVENT_VIEW');
-  assert.ok(result.permissions.byScreen.perm_EVENT_VIEW);
+  assert.strictEqual(result.data.permissionDetails[0].id, 'EVENT_VIEW');
+  assert.ok(result.data.permissions.byScreen.perm_EVENT_VIEW);
 }
 
 testEffectivePermissionDetails_();

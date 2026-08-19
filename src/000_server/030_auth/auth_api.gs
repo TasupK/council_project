@@ -16,16 +16,19 @@ function api_checkLogin() {
   });
 }
 
-// 2. 현재 로그인 사용자 정보 조회
-/** COM_API_002 현재 사용자 조회 */
-function api_getCurrentUser() {
+function requireAuthenticatedUserData_() {
   var context = getSessionUserContext_();
-  if (!context.ok) return context;
+  if (!context.ok) {
+    var error = new Error(context.message || '로그인 정보를 확인할 수 없습니다.');
+    error.code = context.code || 'UNAUTHORIZED';
+    error.details = {};
+    throw error;
+  }
   var domainAccess = typeof buildDomainAccess_ === 'function'
     ? buildDomainAccess_(context.permissions || {}, context.isAdmin)
     : {};
 
-  return okResponse_({
+  return {
     user: {
       id: context.user.id,
       name: context.user.name,
@@ -42,18 +45,23 @@ function api_getCurrentUser() {
     domainAccess: domainAccess,
     dbMode: context.dbMode,
     menus: context.permissions.menus || []
-  });
+  };
+}
+
+// 2. 현재 로그인 사용자 정보 조회
+/** COM_API_002 현재 사용자 조회 */
+function api_getCurrentUser() {
+  return wrapApiSuccess_(requireAuthenticatedUserData_());
 }
 
 // 3. 현재 로그인 사용자의 권한 조회
 /** COM_API_018 내 권한 조회 */
 function api_getMyPermissions() {
-  var current = api_getCurrentUser();
-  if (!current.ok) return current;
+  var current = requireAuthenticatedUserData_();
   var permissionDetails = typeof buildEffectivePermissionDetails_ === 'function'
     ? buildEffectivePermissionDetails_(current.permissions || {})
     : [];
-  return okResponse_({
+  return wrapApiSuccess_({
     roles: current.user.roles || [],
     permissions: current.permissions || {},
     permissionDetails: permissionDetails

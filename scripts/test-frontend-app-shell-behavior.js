@@ -53,15 +53,10 @@ const storage = {
   setItem(key, value) { storageValues.set(key, String(value)); }
 };
 
-const runChain = {
-  withSuccessHandler() { return this; },
-  withFailureHandler() { return this; },
-  api_getCurrentUser() { return this; }
-};
-
 const context = {
   console,
   URL,
+  Promise,
   APP_USER_NAME: '테스트',
   APP_USER_TITLE: '사용자',
   APP_CURRENT_PAGE: 'main',
@@ -71,7 +66,13 @@ const context = {
     getElementById(id) { return elements[id] || null; },
     querySelector(selector) { return selector === '.app' ? app : null; }
   },
-  google: { script: { run: runChain } }
+  appClient: {
+    getCurrentUser() {
+      return Promise.resolve({
+        domainAccess: { main: true, accounting: true, student_fee: true, event: true, settings: true }
+      });
+    }
+  }
 };
 vm.createContext(context);
 vm.runInContext(source, context);
