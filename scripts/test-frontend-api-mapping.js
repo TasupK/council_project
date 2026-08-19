@@ -1,8 +1,10 @@
 const assert = require('assert');
+const fs = require('fs');
 const path = require('path');
 
 const verifier = require('./verify-frontend-api-mapping');
 
+const root = path.resolve(__dirname, '..');
 const validFrontend = `
   google.script.run
     .withSuccessHandler(function (response) {})
@@ -51,7 +53,12 @@ result = verifier.auditSourcePair(
 );
 assert.deepStrictEqual(result.dynamicCalls, []);
 
-const repoResult = verifier.auditRepository(path.resolve(__dirname, '..'));
+const ledgerFrontend = fs.readFileSync(path.join(root, 'src/400_accounting/410_ledger/accounting_ledger_js.html'), 'utf8');
+assert.match(ledgerFrontend, /data-evidence-id/);
+assert.match(ledgerFrontend, /api_getLedgerEvidenceFileContent/);
+assert.match(ledgerFrontend, /content_base64/);
+
+const repoResult = verifier.auditRepository(root);
 if (repoResult.missingServerApis.length || repoResult.dynamicCalls.length) {
   console.error(verifier.formatAuditFailures(repoResult));
 }
