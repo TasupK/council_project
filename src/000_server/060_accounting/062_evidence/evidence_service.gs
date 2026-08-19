@@ -35,7 +35,7 @@ function createEvidenceFilesData_(transactionId, files, timestamp) {
       fileName: fileName,
       ocrStatus: file.ocr_status || '',
       ocrValidationResult: file.ocr_validation_result || '',
-      managerId: resolveAccountingSessionEmail_(),
+      managerEmail: resolveAccountingSessionEmail_(),
       createdAt: timestamp || getCurrentIsoDateTime_(),
       note: file.note || ''
     };
@@ -66,7 +66,7 @@ function validateEvidenceOcrData_(request, context) {
     validationResult = '추출실패';
   }
 
-  var changes = { ocrStatus: ocrStatus, ocrValidationResult: validationResult };
+  var changes = { ocrStatus: ocrStatus, ocrValidationResult: validationResult, managerEmail: resolveAccountingActorEmail_(context) };
   updateLedgerEvidenceRowById_(evidence.id, changes);
   writeAccountingAudit_(
     resolveAccountingActorEmail_(context),
