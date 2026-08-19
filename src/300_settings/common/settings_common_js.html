@@ -1,26 +1,7 @@
 <script>
   var SETTINGS_CAN_ADMIN = false;
 
-  // 1. 설정 서버 API 호출
-  function callSettingsApi(functionName) {
-    var args = Array.prototype.slice.call(arguments, 1);
-    return new Promise(function (resolve, reject) {
-      google.script.run
-        .withSuccessHandler(function (result) {
-          resolve(parseSettingsApiResult(result));
-        })
-        .withFailureHandler(function (error) {
-          reject(new Error(error && error.message ? error.message : String(error)));
-        })[functionName].apply(google.script.run, args);
-    });
-  }
-
-  function parseSettingsApiResult(result) {
-    if (typeof result !== "string") return result;
-    try { return JSON.parse(result); } catch (error) { return result; }
-  }
-
-  // 2. 공통 사용자 및 상태 표시
+  // 1. 공통 사용자 및 상태 표시
   function applySettingsShell(data) {
     if (!data.session || !data.session.canAccessSettings) {
       throw new Error("설정 화면에 접근할 권한이 없습니다.");
@@ -49,7 +30,7 @@
     loading.innerHTML = '<div class="placeholder-page"><strong>초기화 실패</strong><p>' + escapeSettingsHtml(error.message || error) + "</p></div>";
   }
 
-  // 3. 설정 문자열 처리
+  // 2. 설정 문자열 처리
   function escapeSettingsHtml(value) {
     return String(value == null ? "" : value)
       .replace(/&/g, "&amp;")
@@ -58,7 +39,7 @@
       .replace(/"/g, "&quot;");
   }
 
-  // 4. 설정 DOM 조회
+  // 3. 설정 DOM 조회
   function getSettingsElement(id) {
     return document.getElementById(id);
   }
