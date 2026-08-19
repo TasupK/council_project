@@ -50,7 +50,7 @@ assert.deepStrictEqual(JSON.parse(JSON.stringify(schema.reconciliation.fields)),
   unverifiedBankCount: '계좌미확인건수',
   reviewRequiredCount: '확인필요건수',
   status: '대사상태',
-  managerId: '담당자ID',
+  managerEmail: '담당자이메일',
   executedAt: '실행일시',
   confirmedAt: '확인일시',
   confirmation: '확인내용'
@@ -82,7 +82,7 @@ assert.deepStrictEqual(JSON.parse(JSON.stringify(schema.settlementReports.fields
   missingEvidenceCount: '증빙미비건수',
   status: '결산상태',
   reportDriveFileId: '보고서Drive파일ID',
-  managerId: '담당자ID',
+  managerEmail: '담당자이메일',
   createdAt: '생성일시',
   confirmedAt: '확정일시',
   note: '비고'
