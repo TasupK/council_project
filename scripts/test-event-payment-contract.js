@@ -6,6 +6,7 @@ var vm = require('vm');
 var ROOT = path.resolve(__dirname, '..');
 var servicePath = path.join(ROOT, 'src/000_server/050_event/053_payment/payment_service.gs');
 var queryPath = path.join(ROOT, 'src/000_server/050_event/053_payment/payment_query_service.gs');
+var apiPath = path.join(ROOT, 'src/000_server/050_event/053_payment/payment_api.gs');
 
 function load_(context, file) {
   vm.runInContext(fs.readFileSync(file, 'utf8'), context, { filename: file });
@@ -106,4 +107,16 @@ assert.deepStrictEqual(JSON.parse(JSON.stringify(facts)), [{
   confirmedAt: '2026-08-20T03:45:00+09:00'
 }]);
 
-console.log('Event payment runtime contract passed.');
+assert.ok(fs.existsSync(apiPath), 'payment_api.gs must exist');
+var apiSource = fs.readFileSync(apiPath, 'utf8');
+assert.ok(/function\s+api_createEventPayment\s*\(/.test(apiSource));
+assert.ok(/function\s+api_updateEventPayment\s*\(/.test(apiSource));
+assert.ok(/requireLogin\s*:\s*true/.test(apiSource));
+assert.ok(/eventApiAccess_\s*\(\s*['"]edit['"]\s*\)/.test(apiSource));
+assert.ok(/createEventPaymentData_\s*\(/.test(apiSource));
+assert.ok(/updateEventPaymentData_\s*\(/.test(apiSource));
+['createLedgerEntryData_', 'linkLedgerBankTransactionData_', 'findBankTransactionRowById_', 'processReconciliationData_'].forEach(function (symbol) {
+  assert.ok(apiSource.indexOf(symbol) < 0, 'Event payment API must not reference Accounting symbol ' + symbol);
+});
+
+console.log('Event payment runtime/API contract passed.');
