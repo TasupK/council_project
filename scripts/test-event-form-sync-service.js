@@ -77,7 +77,7 @@ assert.strictEqual(audits[0].actionType, 'SYNC');
 assert.strictEqual(audits[0].targetType, 'eventForms');
 assert.strictEqual(audits[1].actionType, 'IMPORT');
 assert.strictEqual(audits[1].targetType, 'eventApplications');
-assert.deepStrictEqual(audits[1].afterValue.importedApplicationIds, ['A2']);
+assert.deepStrictEqual(JSON.parse(JSON.stringify(audits[1].afterValue.importedApplicationIds)), ['A2']);
 
 assert.throws(function () {
   context.applyApplicantFormSyncData_({ id: 'MISSING', payload: { googleFormId: 'x' } }, {});
