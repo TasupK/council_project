@@ -37,7 +37,7 @@ function mapLedgerEntryDto_(item) {
     business_type: item.businessType || '',
     business_id: item.businessId || '',
     note: '',
-    manager: item.managerId || '',
+    manager: item.managerEmail || '',
     status: item.matchStatus || '미확인',
     match_status: item.matchStatus || '미확인',
     record_status: recordStatus,
