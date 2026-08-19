@@ -77,7 +77,7 @@ function renderPendingTab(panel, title, message) {
 
 function loadApplicants(panel) {
     panel.innerHTML = applicantsToolbar() + '<div id="ew-applicants-table" class="ew-card ew-table-card ui-card"></div>';
-    api('api_getApplicantList', {
+    api('api_getEventApplicants', {
       id: state.currentEventId,
       filter: state.applicantFilters,
       page: state.applicantPage,
@@ -108,7 +108,7 @@ function renderApplicantsTable(data) {
   }
 
 function openApplicantModal(applicationId) {
-    api('api_getApplicantDetail', { id: applicationId }).then(function (data) {
+    api('api_getEventApplicant', { id: applicationId }).then(function (data) {
       var item = data.applicant;
       var paid = Number(item.paidAmount || 0) >= Number(item.appliedFee || 0);
       modalRoot.innerHTML = '<div class="ew-modal-backdrop ui-modal-overlay" data-action="close-modal"><section class="ew-modal ui-modal" role="dialog" aria-modal="true" aria-labelledby="ew-modal-title" data-modal-stop>' +
@@ -127,7 +127,7 @@ function openApplicantModal(applicationId) {
 
 function loadAttendance(panel) {
     panel.innerHTML = attendanceToolbar() + '<div id="ew-attendance-table" class="ew-card ew-table-card ui-card"></div><div id="ew-dirty-bar"></div>';
-    api('api_getAttendanceList', {
+    api('api_getEventAttendances', {
       id: state.currentEventId,
       filter: state.attendanceFilters,
       page: state.attendancePage,
@@ -176,7 +176,7 @@ function renderDirtyBar() {
 
 function loadRefunds(panel) {
     panel.innerHTML = '<div class="ew-card ew-tab-toolbar ui-card ui-toolbar"><strong>환불 대상</strong><span class="ew-spacer"></span><button type="button" class="ew-btn ew-btn-small ui-btn outline small" disabled title="환불 대상 선정 규칙 확인 필요">↻ 대상 동기화</button><button type="button" class="ew-btn ew-btn-outline ew-btn-small ui-btn outline small" disabled title="환불 계좌 필드 계약 확인 필요">환불 파일 내보내기</button></div><div id="ew-refund-table" class="ew-card ew-table-card ui-card"></div>';
-    api('api_getEventRefundList', { id: state.currentEventId, page: state.refundPage, pageSize: 10 })
+    api('api_getEventRefunds', { id: state.currentEventId, page: state.refundPage, pageSize: 10 })
       .then(renderRefundTable).catch(handleError);
   }
 
@@ -195,7 +195,7 @@ function closeModal(event) {
   }
 
 function processApplicant(id, action) {
-    api('api_processApplicant', { id: id, action: action }).then(function () {
+    api('api_processEventApplicant', { id: id, action: action }).then(function () {
       showToast(action === 'confirmDeposit' ? '입금을 확인했습니다.' : '신청자를 승인했습니다.');
       modalRoot.innerHTML = '';
       goDetail(state.currentEventId, 'applicants');
@@ -204,7 +204,7 @@ function processApplicant(id, action) {
 
 function applyAttendance() {
     var items = Object.keys(state.dirtyAttendance).map(function (key) { return state.dirtyAttendance[key]; });
-    api('api_applyAttendanceChanges', { id: state.currentEventId, payload: { items: items } })
+    api('api_applyEventAttendanceChanges', { id: state.currentEventId, payload: { items: items } })
       .then(function () {
         state.dirtyAttendance = {};
         showToast('출석 변경사항을 저장했습니다.');
@@ -228,9 +228,9 @@ document.addEventListener('click', function (event) {
   else if (action === 'detail-tab') { state.activeTab = button.dataset.tab; renderActiveTab(); }
   else if (action === 'applicant-detail') openApplicantModal(button.dataset.id);
   else if (action === 'close-modal') closeModal(event);
-  else if (action === 'process-applicant') api_processApplicant(button.dataset.id, button.dataset.process);
+  else if (action === 'process-applicant') api_processEventApplicant(button.dataset.id, button.dataset.process);
   // TODO(행사 연동): Google Forms와 출석 원본 계약 확정 후 동기화 API 호출을 연결한다.
-  // else if (action === 'sync-applicants') api('api_syncApplicantsFromForms', { id: state.currentEventId });
+  // else if (action === 'sync-applicants') api('api_syncEventApplicantsFromForms', { id: state.currentEventId });
   // else if (action === 'sync-attendance') api('api_syncAttendanceList', { id: state.currentEventId });
   else if (action === 'cancel-attendance') { state.dirtyAttendance = {}; loadAttendance(document.getElementById('ew-tab-panel')); }
   else if (action === 'apply-attendance') applyAttendance();
@@ -252,6 +252,6 @@ document.addEventListener('keydown', function (event) { if (event.key === 'Escap
 if (!APP_RESOURCE_ID) { showToast('행사 ID가 없습니다.', true); }
 else {
   state.currentEventId = APP_RESOURCE_ID; state.activeTab = 'basic';
-  api('api_getEventDetail', { id: APP_RESOURCE_ID }).then(function (data) { state.detail = data; renderDetailShell(); renderActiveTab(); }).catch(handleError);
+  api('api_getEventOverview', { id: APP_RESOURCE_ID }).then(function (data) { state.detail = data; renderDetailShell(); renderActiveTab(); }).catch(handleError);
 }
 </script>

@@ -3,7 +3,7 @@
 function getEventListData_(request) {
   var filter = request.filter && typeof request.filter === 'object' ? request.filter : {};
   var keyword = normalizeEventText_(filter.keyword).toLowerCase();
-  var rows = findAllEventClientRows_().filter(function (item) {
+  var rows = listEventClientRows_().filter(function (item) {
     if (keyword) {
       var haystack = [item.name, item.id, item.managerId]
         .join(' ').toLowerCase();
@@ -25,7 +25,7 @@ function getEventListData_(request) {
   });
 
   var result = paginateEventItems_(rows, request);
-  var allRows = findAllEventClientRows_();
+  var allRows = listEventClientRows_();
   // TODO(API 상세 계약): 행사복지 Response 상세 필드 확정 후 summary/options 이름을 대조한다.
   result.summary = {
     total: allRows.length,
@@ -35,14 +35,14 @@ function getEventListData_(request) {
     closed: allRows.filter(function (row) { return row.status === '종료'; }).length
   };
   result.options = {
-    managers: getUniqueEventValues_(allRows.map(function (row) { return row.managerId; })),
-    eventTypes: getUniqueEventValues_(allRows.map(function (row) { return row.category; })),
+    managers: buildUniqueEventValues_(allRows.map(function (row) { return row.managerId; })),
+    eventTypes: buildUniqueEventValues_(allRows.map(function (row) { return row.category; })),
     eventStatuses: EVENT_STATUSES.slice()
   };
   return result;
 }
 
-function getUniqueEventValues_(values) {
+function buildUniqueEventValues_(values) {
   var seen = {};
   return values.filter(function (value) {
     var key = String(value || '').trim();
@@ -52,7 +52,7 @@ function getUniqueEventValues_(values) {
   }).sort();
 }
 
-function getEventData_(request) {
+function getEventForEditData_(request) {
   var event = findEventRowById_(requireEventRequestId_(request));
   if (!event) throwEventError_('NOT_FOUND', '행사를 찾을 수 없습니다.');
   return withoutInternalRowNumber_(event);
@@ -70,16 +70,16 @@ function buildEventFormSyncView_(eventForm) {
 }
 
 function getEventDetailData_(request) {
-  var event = getEventData_(request);
-  var applicants = findAllEventApplicationClientRows_().filter(function (row) {
+  var event = getEventForEditData_(request);
+  var applicants = listEventApplicationClientRows_().filter(function (row) {
     return String(row.eventId) === String(event.id);
   });
   var attendanceById = {};
-  findAllEventAttendanceClientRows_().forEach(function (row) {
+  listEventAttendanceClientRows_().forEach(function (row) {
     attendanceById[String(row.applicationId)] = row;
   });
   var approved = applicants.filter(function (row) { return row.status === '승인'; });
-  var paymentTotals = getEventPaymentTotalsByApplicationId_();
+  var paymentTotals = buildEventPaymentTotalsByApplicationId_();
   var paid = applicants.filter(function (row) {
     return Number(paymentTotals[row.id] || 0) >= Number(row.appliedFee || 0);
   });

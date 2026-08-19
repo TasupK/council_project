@@ -53,18 +53,18 @@ var sourceFiles = listGsFiles_(SETTINGS_ROOT).concat(listGsFiles_(AUTH_ROOT)).co
 var functions = collectFunctions_(sourceFiles);
 var settingsOwnership = {
   getAdminSettingsCurrent_: '070_settings/070_common/settings_access.gs',
-  buildSettingsBaseData_: '070_settings/070_common/settings_shell_query_service.gs',
-  loadSettingsHomeData: '070_settings/070_common/settings_shell_query_service.gs',
-  loadSettingsUsersData: '070_settings/071_users/settings_users_api.gs',
-  listUsersForSettings_: '070_settings/071_users/settings_users_query_service.gs',
-  loadSettingsRolesData: '070_settings/072_roles/settings_roles_api.gs',
-  listRolesForSettings_: '070_settings/072_roles/settings_roles_query_service.gs',
-  loadSettingsPermissionsData: '070_settings/073_permissions/settings_permissions_api.gs',
+  buildSettingsBaseView_: '070_settings/070_common/settings_shell_query_service.gs',
+  api_getSettingsHome: '070_settings/070_common/settings_shell_query_service.gs',
+  api_getSettingsUsers: '070_settings/071_users/settings_users_api.gs',
+  getSettingsUsersData_: '070_settings/071_users/settings_users_query_service.gs',
+  api_getSettingsRoles: '070_settings/072_roles/settings_roles_api.gs',
+  getSettingsRolesData_: '070_settings/072_roles/settings_roles_query_service.gs',
+  api_getSettingsPermissions: '070_settings/073_permissions/settings_permissions_api.gs',
   getSettingsPermissionsData_: '070_settings/073_permissions/settings_permissions_query_service.gs'
 };
 var iamOwnership = {
-  actionToPermissionKey_: '040_iam/043_permissions/permissions_query_service.gs',
-  permissionScreenId_: '040_iam/043_permissions/permissions_query_service.gs',
+  mapActionToPermissionKey_: '040_iam/043_permissions/permissions_query_service.gs',
+  resolvePermissionScreenId_: '040_iam/043_permissions/permissions_query_service.gs',
   buildPermissionTreeFromDb_: '040_iam/043_permissions/permissions_query_service.gs',
   buildPermissionsByRoleFromDb_: '040_iam/043_permissions/permissions_query_service.gs',
   requirePermission_: '040_iam/043_permissions/permissions_access_service.gs',
@@ -81,7 +81,7 @@ Object.keys(functions).forEach(function (name) {
 listGsFiles_(SETTINGS_ROOT).forEach(function (file) {
   var source = fs.readFileSync(file, 'utf8');
   var relative = normalize_(path.relative(SETTINGS_ROOT, file));
-  if (/_query_service\.gs$/.test(relative) && /withOperationWriteLock_|appendOperationTableRow_|updateOperationTableRow_|sheetInsert_|sheetUpdateById_|DriveApp\.create|createFile\s*\(/.test(source)) {
+  if (/_query_service\.gs$/.test(relative) && /withOperationWriteLock_|appendOperationTableRow_|updateOperationTableRow_|insertSheetCrudItem_|updateSheetCrudItemById_|DriveApp\.create|createFile\s*\(/.test(source)) {
     failures.push('Settings Query Service must be read-only: ' + relative);
   }
   if (/readTableRows_|openUserSpreadsheet_|append[A-Za-z_$]*Row_|update[A-Za-z_$]*Row_/.test(source)) {
@@ -92,7 +92,7 @@ listGsFiles_(SETTINGS_ROOT).forEach(function (file) {
 listGsFiles_(AUTH_ROOT).concat(listGsFiles_(IAM_ROOT)).forEach(function (file) {
   var source = fs.readFileSync(file, 'utf8');
   var relative = normalize_(path.relative(SERVER_ROOT, file));
-  if (/\bgetSettingsPermissionsData_\b|\blistUsersForSettings_\b|\blistRolesForSettings_\b/.test(source)) {
+  if (/\bgetSettingsPermissionsData_\b|\bgetSettingsUsersData_\b|\bgetSettingsRolesData_\b/.test(source)) {
     failures.push('Auth/IAM must not depend on Settings application functions: ' + relative);
   }
 });

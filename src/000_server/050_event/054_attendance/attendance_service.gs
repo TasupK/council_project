@@ -19,10 +19,10 @@ function applyAttendanceChangesData_(request) {
         applicationId: applicationId,
         confirmedAt: item.confirmedAt || getCurrentIsoDateTime_(),
         status: status,
-        managerId: getActiveUserEmailFromSession_(),
+        managerId: readActiveUserEmailFromSession_(),
         method: 'manual'
       };
-      var current = findEventAttendanceByApplicationId_(applicationId);
+      var current = findEventAttendanceRowByApplicationId_(applicationId);
       if (current) {
         updateEventAttendanceRowById_(current.id, patch);
         return withoutInternalRowNumber_(findEventAttendanceRowById_(current.id));

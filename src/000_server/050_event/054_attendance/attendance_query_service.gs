@@ -5,11 +5,11 @@ function getAttendanceListData_(request) {
   var filter = request.filter && typeof request.filter === 'object' ? request.filter : {};
   var keyword = normalizeEventText_(filter.keyword).toLowerCase();
   var attendanceById = {};
-  findAllEventAttendanceClientRows_().forEach(function (row) {
+  listEventAttendanceClientRows_().forEach(function (row) {
     attendanceById[String(row.applicationId)] = row;
   });
-  var paymentTotals = getEventPaymentTotalsByApplicationId_();
-  var rows = findAllEventApplicationClientRows_().filter(function (row) {
+  var paymentTotals = buildEventPaymentTotalsByApplicationId_();
+  var rows = listEventApplicationClientRows_().filter(function (row) {
     return String(row.eventId) === String(eventId);
   }).map(function (applicant) {
     var attendance = attendanceById[String(applicant.id)] || {};

@@ -1,18 +1,18 @@
 /** Accounting 화면용 read-only 조합과 DTO 변환 */
 
-function getLedgerEntries_() {
-  var evidenceByTransaction = groupBy_(findAllLedgerEvidenceRows_(), 'transactionId');
-  var eventsById = findAllAccountingEventRows_().reduce(function (index, event) {
+function getLedgerEntriesData_() {
+  var evidenceByTransaction = groupBy_(listLedgerEvidenceRows_(), 'transactionId');
+  var eventsById = listAccountingEventRows_().reduce(function (index, event) {
     index[event.id] = event;
     return index;
   }, {});
 
-  return findAllLedgerRows_().filter(function (item) {
+  return listLedgerRows_().filter(function (item) {
     return String(item.recordStatus || 'ACTIVE') !== 'DELETED';
   }).map(function (item) {
-    var dto = getLedgerEntryDto_(item);
+    var dto = mapLedgerEntryDto_(item);
     dto.event_name = eventsById[item.eventId] ? eventsById[item.eventId].name : '해당없음';
-    dto.evidence = (evidenceByTransaction[item.id] || []).map(getEvidenceDto_);
+    dto.evidence = (evidenceByTransaction[item.id] || []).map(mapEvidenceDto_);
     dto.has_evidence = dto.evidence.length > 0;
     return dto;
   }).sort(function (a, b) {
@@ -20,7 +20,7 @@ function getLedgerEntries_() {
   });
 }
 
-function getLedgerEntryDto_(item) {
+function mapLedgerEntryDto_(item) {
   var recordStatus = item.recordStatus || 'ACTIVE';
   return {
     transaction_id: item.id,
@@ -47,7 +47,7 @@ function getLedgerEntryDto_(item) {
   };
 }
 
-function getEvidenceDto_(item) {
+function mapEvidenceDto_(item) {
   return {
     evidence_id: item.id,
     transaction_id: item.transactionId,
@@ -90,13 +90,13 @@ function groupBy_(items, key) {
   }, {});
 }
 
-function findLedgerEntryDtoById_(transactionId) {
-  return getLedgerEntries_().filter(function (item) {
+function getLedgerDetailData_(transactionId) {
+  return getLedgerEntriesData_().filter(function (item) {
     return String(item.transaction_id) === String(transactionId);
   })[0] || null;
 }
 
-function getLedgerDatabaseInfo_() {
+function getLedgerDatabaseInfoData_() {
   var spreadsheet = openOperationSpreadsheet_();
   var table = getOperationDbTableSchema_('ledger');
   requireOperationTableSheet_('ledger');
@@ -110,9 +110,9 @@ function getLedgerDatabaseInfo_() {
   };
 }
 
-function getLedgerEventOptions_() {
-  var items = getLedgerEntries_().filter(function (item) { return item.record_status === 'ACTIVE'; });
-  return findAllAccountingEventRows_().map(function (event) {
+function getLedgerEventOptionsData_() {
+  var items = getLedgerEntriesData_().filter(function (item) { return item.record_status === 'ACTIVE'; });
+  return listAccountingEventRows_().map(function (event) {
     var balance = items.reduce(function (sum, item) {
       if (String(item.event_id) !== String(event.id)) return sum;
       return sum + (item.transaction_type === '수입' ? Number(item.amount) : -Number(item.amount));
@@ -131,8 +131,8 @@ function isSettlementEligibleLedgerEntry_(item) {
   return isActiveLedgerEntry_(item) && recordStatus !== 'DRAFT' && status === '정상';
 }
 
-function getLedgerSummary_(filter) {
-  var items = filterLedgerEntries_(getLedgerEntries_(), filter || {});
+function getLedgerSummaryData_(filter) {
+  var items = filterLedgerEntries_(getLedgerEntriesData_(), filter || {});
   var active = items.filter(function (item) { return item.record_status === 'ACTIVE'; });
   return {
     totalIncome: active.reduce(function (sum, item) { return sum + (item.transaction_type === '수입' ? Number(item.amount || 0) : 0); }, 0),

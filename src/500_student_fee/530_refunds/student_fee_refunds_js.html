@@ -53,7 +53,7 @@ function loadSfRefundList_() {
   var error = studentFeeGetElement('sf-refund-error');
   loading.hidden = false;
   error.hidden = true;
-  return studentFeeApi('api_getFeeRefundRequestList', {
+  return studentFeeApi('api_getStudentFeeRefundRequests', {
     keyword: sfRefundState.keyword,
     status: sfRefundState.status,
     page: sfRefundState.page,
@@ -105,9 +105,9 @@ function renderSfRefundDetail_(detail, calculation) {
 }
 
 function openSfRefundDetail_(requestId) {
-  studentFeeApi('api_getFeeRefundRequestDetail', { refundRequestId: requestId })
+  studentFeeApi('api_getStudentFeeRefundRequest', { refundRequestId: requestId })
     .then(function (detail) {
-      return studentFeeApi('api_calculateFeeRefund', { paymentId: detail.request.paymentId })
+      return studentFeeApi('api_calculateStudentFeeRefund', { paymentId: detail.request.paymentId })
         .then(function (calculation) {
           renderSfRefundDetail_(detail || {}, calculation || {});
           studentFeeOpenModal('sf-refund-detail-modal');
@@ -120,7 +120,7 @@ function openSfRefundApproval_(button) {
   var detail = sfRefundState.currentDetail;
   if (!detail || !detail.request) return;
   studentFeeRunBusy(button, function () {
-    return studentFeeApi('api_calculateFeeRefund', { paymentId: detail.request.paymentId }).then(function (calculation) {
+    return studentFeeApi('api_calculateStudentFeeRefund', { paymentId: detail.request.paymentId }).then(function (calculation) {
       sfRefundState.currentCalculation = calculation;
       var maximum = Number(calculation.refundableAmount) || 0;
       studentFeeGetElement('sf-refund-maximum').textContent = studentFeeMoney(maximum);
@@ -148,7 +148,7 @@ function submitSfRefundApproval_(event) {
   if (!studentFeeConfirm(studentFeeMoney(approvedAmount) + '으로 환불 승인하시겠습니까?')) return;
   var button = studentFeeGetElement('sf-refund-approve-submit');
   studentFeeRunBusy(button, function () {
-    return studentFeeApi('api_processFeeRefundRequests', {
+    return studentFeeApi('api_processStudentFeeRefundRequests', {
       ids: [detail.request.id],
       action: 'APPROVE',
       approvedAmount: approvedAmount,
@@ -167,7 +167,7 @@ function submitSfRefundApproval_(event) {
 function rejectSfRefund_(requestId, button) {
   if (!studentFeeConfirm('이 환불신청을 반려하시겠습니까?')) return;
   studentFeeRunBusy(button, function () {
-    return studentFeeApi('api_processFeeRefundRequests', {
+    return studentFeeApi('api_processStudentFeeRefundRequests', {
       ids: [requestId],
       action: 'REJECT',
       reason: ''
@@ -185,11 +185,11 @@ function bulkApproveSfRefunds_(button) {
   var rows = ids.map(function (id) { return sfRefundState.rowsById[id]; }).filter(Boolean);
   studentFeeRunBusy(button, function () {
     return Promise.all(rows.map(function (row) {
-      return studentFeeApi('api_calculateFeeRefund', { paymentId: row.paymentId });
+      return studentFeeApi('api_calculateStudentFeeRefund', { paymentId: row.paymentId });
     })).then(function (calculations) {
       var total = calculations.reduce(function (sum, item) { return sum + (Number(item.refundableAmount) || 0); }, 0);
       if (!studentFeeConfirm(ids.length + '건을 각 최대 환불 가능액으로 승인하시겠습니까? 예상 합계 ' + studentFeeMoney(total))) return null;
-      return studentFeeApi('api_processFeeRefundRequests', {
+      return studentFeeApi('api_processStudentFeeRefundRequests', {
         ids: ids,
         action: 'APPROVE',
         reason: ''
@@ -206,7 +206,7 @@ function bulkRejectSfRefunds_(button) {
   var ids = selectedSfRefundIds_();
   if (!ids.length || !studentFeeConfirm(ids.length + '건을 반려하시겠습니까?')) return;
   studentFeeRunBusy(button, function () {
-    return studentFeeApi('api_processFeeRefundRequests', {
+    return studentFeeApi('api_processStudentFeeRefundRequests', {
       ids: ids,
       action: 'REJECT',
       reason: ''
@@ -233,7 +233,7 @@ function confirmSfRefundTransfer_(result, button) {
   var message = result === 'DONE' ? '송금 완료로 처리하시겠습니까?' : '송금 실패로 처리하시겠습니까?';
   if (!studentFeeConfirm(message)) return;
   studentFeeRunBusy(button, function () {
-    return studentFeeApi('api_confirmFeeRefund', {
+    return studentFeeApi('api_confirmStudentFeeRefund', {
       refundId: refund.id,
       result: result,
       transferDate: form.elements.transferDate.value,

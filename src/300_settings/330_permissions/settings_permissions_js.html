@@ -75,7 +75,7 @@
 
   async function loadSettingsPermissions() {
     try {
-      var data = await callSettingsApi("loadSettingsPermissionsData");
+      var data = await callSettingsApi("api_getSettingsPermissions");
       if (!data || !data.ok)
         throw new Error(
           data && data.message

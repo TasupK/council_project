@@ -46,7 +46,7 @@ var context = vm.createContext({
       invalidRows: [{ row: 5, reason: '학번 또는 성명 누락' }]
     };
   },
-  findAllEventApplicationSourceResponseIds_: function () { return ['SRC-1']; },
+  listEventApplicationSourceResponseIds_: function () { return ['SRC-1']; },
   withOperationWriteLock_: function (callback) { lockCalls += 1; return callback(); },
   insertEventApplicationRow_: function (item) { insertedApplications.push(item); return item; },
   insertEventExtraAnswerRow_: function (item) { insertedAnswers.push(item); return item; },
@@ -56,7 +56,7 @@ var context = vm.createContext({
 });
 vm.runInContext(fs.readFileSync(servicePath, 'utf8'), context, { filename: servicePath });
 
-var result = context.syncApplicantsFromFormsData_({ id: 'EVT-1', payload: { googleFormId: 'new-form' } }, { email: 'manager@example.com' });
+var result = context.applyApplicantFormSyncData_({ id: 'EVT-1', payload: { googleFormId: 'new-form' } }, { email: 'manager@example.com' });
 assert.strictEqual(lockCalls, 1);
 assert.strictEqual(result.importedCount, 1);
 assert.strictEqual(result.duplicateCount, 2);
@@ -71,7 +71,7 @@ assert.strictEqual(updatedForms[0].changes.status, '연동');
 assert.strictEqual(paymentWrites, 0, 'Forms sync must never write eventPayments');
 
 assert.throws(function () {
-  context.syncApplicantsFromFormsData_({ id: 'MISSING', payload: { googleFormId: 'x' } }, {});
+  context.applyApplicantFormSyncData_({ id: 'MISSING', payload: { googleFormId: 'x' } }, {});
 }, function (error) { return error.code === 'NOT_FOUND'; });
 
 console.log('Event Form sync service contract passed.');

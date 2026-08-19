@@ -27,24 +27,24 @@ var REQUIRED_FILES = [
 ];
 
 var FUNCTION_OWNERS = {
-  api_getStudentFeeReferenceData: '080_common/student_fee_reference_api.gs',
-  findAllStudentFeeSemesterRows_: '080_common/student_fee_reference_query_service.gs',
+  api_getStudentFeeReference: '080_common/student_fee_reference_api.gs',
+  readStudentFeeSemesterRows_: '080_common/student_fee_reference_query_service.gs',
   getStudentFeeReferenceData_: '080_common/student_fee_reference_query_service.gs',
-  api_getFeePayerList: '081_payers/fee_payers_api.gs',
-  api_getFeePayerDetail: '081_payers/fee_payers_api.gs',
-  api_createFeePayer: '081_payers/fee_payers_api.gs',
-  api_updateFeePayer: '081_payers/fee_payers_api.gs',
+  api_getStudentFeePayers: '081_payers/fee_payers_api.gs',
+  api_getStudentFeePayer: '081_payers/fee_payers_api.gs',
+  api_createStudentFeePayer: '081_payers/fee_payers_api.gs',
+  api_updateStudentFeePayer: '081_payers/fee_payers_api.gs',
   api_getStudentFeeSummary: '082_payments/fee_payments_api.gs',
-  api_getFeeApplicationList: '082_payments/fee_payments_api.gs',
-  api_getFeeApplicationDetail: '082_payments/fee_payments_api.gs',
-  api_processFeeApplications: '082_payments/fee_payments_api.gs',
-  api_calculateFeeAmount: '082_payments/fee_payments_api.gs',
-  api_confirmFeePayment: '082_payments/fee_payments_api.gs',
-  api_getFeeRefundRequestList: '083_refunds/fee_refunds_api.gs',
-  api_getFeeRefundRequestDetail: '083_refunds/fee_refunds_api.gs',
-  api_processFeeRefundRequests: '083_refunds/fee_refunds_api.gs',
-  api_calculateFeeRefund: '083_refunds/fee_refunds_api.gs',
-  api_confirmFeeRefund: '083_refunds/fee_refunds_api.gs'
+  api_getStudentFeeApplications: '082_payments/fee_payments_api.gs',
+  api_getStudentFeeApplication: '082_payments/fee_payments_api.gs',
+  api_processStudentFeeApplications: '082_payments/fee_payments_api.gs',
+  api_calculateStudentFeeAmount: '082_payments/fee_payments_api.gs',
+  api_confirmStudentFeePayment: '082_payments/fee_payments_api.gs',
+  api_getStudentFeeRefundRequests: '083_refunds/fee_refunds_api.gs',
+  api_getStudentFeeRefundRequest: '083_refunds/fee_refunds_api.gs',
+  api_processStudentFeeRefundRequests: '083_refunds/fee_refunds_api.gs',
+  api_calculateStudentFeeRefund: '083_refunds/fee_refunds_api.gs',
+  api_confirmStudentFeeRefund: '083_refunds/fee_refunds_api.gs'
 };
 
 var API_OWNERS = {};
@@ -164,7 +164,7 @@ function verifyApiFiles_(failures) {
     var block = source.slice(start, next < 0 ? source.length : next);
     if (block.indexOf('apiHandler_') < 0) failures.push(name + ' must use apiHandler_.');
     if (!/requireLogin\s*:\s*true/.test(block)) failures.push(name + ' must set requireLogin: true.');
-    if (/\b(sheetFindAll_|sheetFindById_|sheetInsert_|sheetUpdateById_|readOperationTableRows_|readOperationTableClientRows_|findOperationTableRowById_|appendOperationTableRow_|updateOperationTableRow_)\s*\(/.test(block)) {
+    if (/\b(listSheetCrudItems_|findSheetCrudItemById_|insertSheetCrudItem_|updateSheetCrudItemById_|readOperationTableRows_|readOperationTableClientRows_|findOperationTableRowById_|appendOperationTableRow_|updateOperationTableRow_)\s*\(/.test(block)) {
       failures.push(name + ' performs direct Sheet/data primitive access.');
     }
   });
@@ -175,7 +175,7 @@ function verifyQueryServices_(files, failures) {
     var relative = path.relative(DOMAIN_ROOT, file).replace(/\\/g, '/');
     if (relative.indexOf('_query_service.gs') < 0) return;
     var source = fs.readFileSync(file, 'utf8');
-    if (/\b(sheetInsert_|sheetUpdateById_|appendOperationTableRow_|updateOperationTableRow_|insert[A-Za-z0-9_]*Row_|update[A-Za-z0-9_]*RowById_)\s*\(/.test(source)) {
+    if (/\b(insertSheetCrudItem_|updateSheetCrudItemById_|appendOperationTableRow_|updateOperationTableRow_|insert[A-Za-z0-9_]*Row_|update[A-Za-z0-9_]*RowById_)\s*\(/.test(source)) {
       failures.push('Query Service performs write: ' + relative);
     }
   });

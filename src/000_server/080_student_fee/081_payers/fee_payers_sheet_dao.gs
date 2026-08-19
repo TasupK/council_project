@@ -1,5 +1,5 @@
 // 1. 회비납부자 전체 조회
-function findAllFeePayerRows_() {
+function listFeePayerRows_() {
   return readOperationTableClientRows_('feePayers');
 }
 

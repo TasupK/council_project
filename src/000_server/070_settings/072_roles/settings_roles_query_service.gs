@@ -1,8 +1,8 @@
 // Settings 역할 화면 조회 모델 구성
-function listRolesForSettings_() {
+function getSettingsRolesData_() {
   var fields = getUserDbFields_('userRoles');
   var assignedCounts = {};
-  var roleMap = getRolesById_();
+  var roleMap = buildRolesById_();
   listUserRoleRows_().forEach(function (row) {
     if (!isActiveStatus_(row[fields.assignedStatus])) return;
     var roleId = normalizeTextValue_(row[fields.roleId]);

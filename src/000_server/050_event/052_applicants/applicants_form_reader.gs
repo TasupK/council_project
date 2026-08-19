@@ -1,6 +1,6 @@
 // Google Form / 응답 Spreadsheet를 읽어 mapper가 소비할 source 객체로 변환한다.
 
-function extractGoogleResourceId_(value) {
+function parseGoogleResourceId_(value) {
   var text = String(value == null ? '' : value).trim();
   if (!text) return '';
   var match = text.match(/\/d\/([A-Za-z0-9_-]+)/);
@@ -11,11 +11,11 @@ function extractGoogleResourceId_(value) {
 }
 
 function resolveEventFormResponseSource_(googleFormId, responseSheetId) {
-  var formId = extractGoogleResourceId_(googleFormId);
-  var spreadsheetId = extractGoogleResourceId_(responseSheetId);
+  var formId = parseGoogleResourceId_(googleFormId);
+  var spreadsheetId = parseGoogleResourceId_(responseSheetId);
   if (!spreadsheetId && formId) {
     try {
-      spreadsheetId = extractGoogleResourceId_(FormApp.openById(formId).getDestinationId());
+      spreadsheetId = parseGoogleResourceId_(FormApp.openById(formId).getDestinationId());
     } catch (error) {
       throwEventError_('PROCESS_FAILED', 'Google Form의 응답 Spreadsheet를 확인할 수 없습니다. 폼 응답 저장 위치와 접근 권한을 확인해주세요.');
     }
@@ -30,7 +30,7 @@ function resolveEventFormResponseSource_(googleFormId, responseSheetId) {
   } catch (error) {
     throwEventError_('PROCESS_FAILED', 'Google Form 응답 Spreadsheet를 열 수 없습니다. ID와 실행 계정의 접근 권한을 확인해주세요.');
   }
-  var sheet = selectEventFormResponseSheet_(spreadsheet);
+  var sheet = resolveEventFormResponseSheet_(spreadsheet);
   var lastRow = sheet.getLastRow();
   var lastColumn = sheet.getLastColumn();
   var values = lastColumn ? sheet.getRange(1, 1, Math.max(1, lastRow), lastColumn).getDisplayValues() : [];
@@ -45,7 +45,7 @@ function resolveEventFormResponseSource_(googleFormId, responseSheetId) {
   };
 }
 
-function selectEventFormResponseSheet_(spreadsheet) {
+function resolveEventFormResponseSheet_(spreadsheet) {
   var sheets = spreadsheet.getSheets();
   var best = null;
   sheets.forEach(function (sheet) {

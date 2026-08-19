@@ -10,7 +10,7 @@ var jsPath = 'src/300_settings/340_departments/settings_departments_js.html';
 var api = fs.existsSync(apiPath) ? read(apiPath) : '';
 var query = fs.existsSync(queryPath) ? read(queryPath) : '';
 var view = fs.existsSync(viewPath) ? read(viewPath) : '';
-assert.ok(api.includes('function loadSettingsDepartmentsData'), 'chart API missing');
+assert.ok(api.includes('function api_getSettingsDepartments'), 'chart API missing');
 assert.ok(query.includes('function buildSettingsDepartmentChart_'), 'chart query service missing');
 assert.ok(query.includes('unassigned'), 'unassigned group missing');
 assert.ok(query.includes('permissionAreas'), 'permission area summary missing');

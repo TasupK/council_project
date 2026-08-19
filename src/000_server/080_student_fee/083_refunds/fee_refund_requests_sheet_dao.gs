@@ -1,5 +1,5 @@
 // 1. 환불신청 전체 조회
-function findAllFeeRefundRequestRows_() {
+function listFeeRefundRequestRows_() {
   return readOperationTableClientRows_('feeRefundRequests');
 }
 

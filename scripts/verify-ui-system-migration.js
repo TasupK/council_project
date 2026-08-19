@@ -199,15 +199,15 @@ function verifyAccounting() {
 
 function verifyAccountingServerContracts() {
   const ledger = read('src/400_accounting/410_ledger/accounting_ledger_js.html');
-  ['api_getLedgerSummary','api_getLedgerList','api_saveLedgerDraft','api_updateLedgerEntry','api_deleteLedgerEntry'].forEach((name) => {
+  ['api_getLedgerSummary','api_getLedgerEntries','api_createLedgerDraft','api_updateLedgerEntry','api_deleteLedgerEntry'].forEach((name) => {
     if (!ledger.includes(name)) failures.push(`Accounting ledger client missing ${name}`);
   });
   const reconciliation = read('src/400_accounting/420_reconciliation/accounting_reconciliation_js.html');
-  ['api_uploadBankTransactions','api_runReconciliation','api_getReconciliationList','api_getReconciliationDetail','api_getReconciliationCandidates','api_linkReconciliation','api_createLedgerFromReconciliation'].forEach((name) => {
+  ['api_processBankTransactionUpload','api_processReconciliation','api_getReconciliations','api_getReconciliation','api_getReconciliationCandidates','api_applyReconciliationLink','api_createLedgerEntryFromReconciliation'].forEach((name) => {
     if (!reconciliation.includes(name)) failures.push(`Accounting reconciliation client missing ${name}`);
   });
   const settlement = read('src/400_accounting/430_settlement/accounting_settlement_js.html');
-  ['api_getSettlementSummary','api_generateSettlementReport','api_getSettlementReportList','api_getSettlementReport','api_exportSettlementReport'].forEach((name) => {
+  ['api_getSettlementSummary','api_createSettlementReport','api_getSettlementReports','api_getSettlementReport','api_exportSettlementReport'].forEach((name) => {
     if (!settlement.includes(name)) failures.push(`Accounting settlement client missing ${name}`);
   });
   [ledger, reconciliation, settlement].forEach((source) => {

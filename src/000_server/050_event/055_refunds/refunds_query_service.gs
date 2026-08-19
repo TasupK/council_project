@@ -3,10 +3,10 @@
 function getEventRefundListData_(request) {
   var eventId = requireEventRequestId_(request);
   var applicantsById = {};
-  findAllEventApplicationClientRows_().forEach(function (applicant) {
+  listEventApplicationClientRows_().forEach(function (applicant) {
     if (String(applicant.eventId) === String(eventId)) applicantsById[applicant.id] = applicant;
   });
-  var rows = findAllEventRefundClientRows_().filter(function (refund) {
+  var rows = listEventRefundClientRows_().filter(function (refund) {
     return Boolean(applicantsById[refund.applicationId]);
   }).map(function (refund) {
     var applicant = applicantsById[refund.applicationId];

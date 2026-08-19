@@ -5,11 +5,17 @@ function apiHandler_(options) {
   var request;
 
   try {
+    if (options && options.access && options.permission) {
+      throw new Error('API는 access와 permission을 동시에 선언할 수 없습니다.');
+    }
+
     if (options && options.requireLogin) {
       context = requireLoginContext_();
     }
 
-    if (options && options.permission) {
+    if (options && options.access) {
+      resolveApiAccess_(context, options.access);
+    } else if (options && options.permission) {
       requirePermission_(context, options.permission);
     }
 

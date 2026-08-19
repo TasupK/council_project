@@ -32,13 +32,13 @@ var PAGE_SHELLS = [
 var PAGE_JS_ALLOWLIST = {
   '500_home/student_fee_home_js.html': ['api_getStudentFeeSummary'],
   '510_payers/student_fee_payers_js.html': [
-    'api_getStudentFeeReferenceData', 'api_getFeePayerList', 'api_getFeePayerDetail', 'api_createFeePayer', 'api_updateFeePayer'
+    'api_getStudentFeeReference', 'api_getStudentFeePayers', 'api_getStudentFeePayer', 'api_createStudentFeePayer', 'api_updateStudentFeePayer'
   ],
   '520_payments/student_fee_payments_js.html': [
-    'api_getFeeApplicationList', 'api_getFeeApplicationDetail', 'api_processFeeApplications', 'api_calculateFeeAmount', 'api_confirmFeePayment'
+    'api_getStudentFeeApplications', 'api_getStudentFeeApplication', 'api_processStudentFeeApplications', 'api_calculateStudentFeeAmount', 'api_confirmStudentFeePayment'
   ],
   '530_refunds/student_fee_refunds_js.html': [
-    'api_getFeeRefundRequestList', 'api_getFeeRefundRequestDetail', 'api_processFeeRefundRequests', 'api_calculateFeeRefund', 'api_confirmFeeRefund'
+    'api_getStudentFeeRefundRequests', 'api_getStudentFeeRefundRequest', 'api_processStudentFeeRefundRequests', 'api_calculateStudentFeeRefund', 'api_confirmStudentFeeRefund'
   ]
 };
 

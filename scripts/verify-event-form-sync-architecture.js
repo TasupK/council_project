@@ -29,18 +29,19 @@ if (!failures.length) {
   var pageSource = read_(page);
   var portSource = [readerSource, mapperSource, serviceSource, accessSource, apiSource, frontendSource].join('\n');
 
-  forbid_(readerSource, /appendOperationTableRow_|updateOperationTableRow_|withOperationWriteLock_|sheetInsert_|sheetUpdateById_/, 'Form reader must not write OperationDB');
+  forbid_(readerSource, /appendOperationTableRow_|updateOperationTableRow_|withOperationWriteLock_|insertSheetCrudItem_|updateSheetCrudItemById_/, 'Form reader must not write OperationDB');
   forbid_(mapperSource, /\bFormApp\b|\bSpreadsheetApp\b|appendOperationTableRow_|updateOperationTableRow_|withOperationWriteLock_/, 'Form mapper must be pure from Google/DB persistence');
   forbid_(serviceSource, /\bFormApp\b|\bSpreadsheetApp\b/, 'Sync service must delegate external reads to reader');
   forbid_(serviceSource, /eventPayments|insertEventPayment|appendOperationTableRow_\(['"]eventPayments['"]/, 'Forms sync must never write eventPayments');
   forbid_(portSource, /\bapiV1_|\bEventWelfare_/, 'Legacy EventWelfare/API stack must not be reintroduced');
+  forbid_(apiSource, /requireEventEditContext_\s*\(context\)/, 'Sync API must not retain a second Event authorization path');
 
-  if (!/function\s+syncApplicantsFromFormsData_\s*\(/.test(serviceSource)) failures.push('Sync orchestration must live in applicants_form_sync_service.gs');
+  if (!/function\s+applyApplicantFormSyncData_\s*\(/.test(serviceSource)) failures.push('Sync orchestration must live in applicants_form_sync_service.gs');
   if (!/function\s+resolveEventFormResponseSource_\s*\(/.test(readerSource)) failures.push('External source resolution must live in reader');
   if (!/function\s+buildEventFormCandidates_\s*\(/.test(mapperSource)) failures.push('Response mapping must live in mapper');
-  if (!/requireEventEditContext_\s*\(context\)/.test(apiSource)) failures.push('Sync API must enforce Event edit permission');
+  if (!/access\s*:\s*eventApiAccess_\s*\(\s*['"]edit['"]\s*\)/.test(apiSource)) failures.push('Sync API must use Event access override helper');
   if (!/event_form_sync_js/.test(pageSource)) failures.push('Event Detail must include focused Forms module');
-  if (!/api\(['"]api_syncApplicantsFromForms['"]/.test(frontendSource)) failures.push('Frontend must call sync API');
+  if (!/api\(['"]api_syncEventApplicantsFromForms['"]/.test(frontendSource)) failures.push('Frontend must call sync API');
 }
 
 if (failures.length) {

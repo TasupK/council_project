@@ -14,7 +14,7 @@ function createEventData_(request) {
     payload.eventEndAt = payload.eventEndAt || payload.eventStartAt;
     payload.createdAt = getCurrentIsoDateTime_();
     payload.updatedAt = payload.createdAt;
-    payload.evidenceFolderId = getEventMaterialFolder_().getId();
+    payload.evidenceFolderId = resolveEventMaterialFolder_().getId();
     if (source.relatedMaterialFile) {
       uploadEventRelatedMaterial_(source.relatedMaterialFile, payload.id);
     }
@@ -54,7 +54,7 @@ function updateEventStatusData_(request) {
   });
 }
 
-function closeEventData_(request) {
+function updateEventClosureData_(request) {
   var id = requireEventRequestId_(request);
   return withOperationWriteLock_(function () {
     updateEventRowById_(id, { status: '종료' });

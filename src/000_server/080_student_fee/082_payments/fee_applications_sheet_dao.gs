@@ -1,5 +1,5 @@
 // 1. 납부신청 전체 조회
-function findAllFeeApplicationRows_() {
+function listFeeApplicationRows_() {
   return readOperationTableClientRows_('feeApplications');
 }
 

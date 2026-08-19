@@ -4,8 +4,8 @@ function getApplicantListData_(request) {
   var eventId = requireEventRequestId_(request);
   var filter = request.filter && typeof request.filter === 'object' ? request.filter : {};
   var keyword = normalizeEventText_(filter.keyword).toLowerCase();
-  var paymentTotals = getEventPaymentTotalsByApplicationId_();
-  var rows = findAllEventApplicationClientRows_().filter(function (row) {
+  var paymentTotals = buildEventPaymentTotalsByApplicationId_();
+  var rows = listEventApplicationClientRows_().filter(function (row) {
     if (String(row.eventId) !== String(eventId)) return false;
     if (keyword && [row.name, row.studentId, row.phone, row.accountHolder]
       .join(' ').toLowerCase().indexOf(keyword) < 0) return false;
@@ -23,8 +23,8 @@ function getApplicantListData_(request) {
 function getApplicantDetailData_(request) {
   var applicant = findEventApplicationRowById_(requireEventRequestId_(request));
   if (!applicant) throwEventError_('NOT_FOUND', '신청자를 찾을 수 없습니다.');
-  var attendance = findEventAttendanceByApplicationId_(applicant.id);
-  applicant.paidAmount = getEventPaymentTotalsByApplicationId_()[applicant.id] || 0;
+  var attendance = findEventAttendanceRowByApplicationId_(applicant.id);
+  applicant.paidAmount = buildEventPaymentTotalsByApplicationId_()[applicant.id] || 0;
   return {
     applicant: withoutInternalRowNumber_(applicant),
     attendance: withoutInternalRowNumber_(attendance)

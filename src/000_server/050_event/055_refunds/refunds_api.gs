@@ -1,9 +1,8 @@
 // 1. 행사 환불 대상 조회
-function api_getEventRefundList(input) {
+function api_getEventRefunds(input) {
   return apiHandler_({
-    operation: 'getEventRefundList',
-    input: input,
-    requireLogin: true,
+    operation: 'getEventRefundList', input: input, requireLogin: true,
+    access: eventApiAccess_('view'),
     parse: parseEventRequest_,
     service: function (parsed) { return getEventRefundListData_(parsed.request); }
   });

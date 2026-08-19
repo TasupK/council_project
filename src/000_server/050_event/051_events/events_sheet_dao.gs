@@ -1,9 +1,9 @@
 // 1. 행사 행 조회
-function findAllEventRows_() {
+function listEventRows_() {
   return readOperationTableRows_('events');
 }
 
-function findAllEventClientRows_() {
+function listEventClientRows_() {
   return readOperationTableClientRows_('events');
 }
 

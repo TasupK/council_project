@@ -40,11 +40,11 @@ function uploadEventRelatedMaterial_(fileInput, eventId) {
   var storedName = String(eventId || 'event') + '_' + new Date().getTime() + '_' + safeName;
   var mimeType = normalizeEventText_(fileInput.mimeType) || 'application/octet-stream';
   var blob = Utilities.newBlob(bytes, mimeType, storedName);
-  var file = getEventMaterialFolder_().createFile(blob);
+  var file = resolveEventMaterialFolder_().createFile(blob);
   return file.getUrl();
 }
 
-function getEventMaterialFolder_() {
+function resolveEventMaterialFolder_() {
   var properties = PropertiesService.getScriptProperties();
   var folderId = properties.getProperty(EVENT_MATERIAL_FOLDER_PROPERTY_KEY);
   if (folderId) {

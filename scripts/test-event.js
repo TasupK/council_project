@@ -68,7 +68,7 @@ function createQueryContext_() {
 
 function testPaymentTotals_() {
   var context = createContext_();
-  context.findAllEventPaymentClientRows_ = function () {
+  context.listEventPaymentClientRows_ = function () {
     return [
       { applicationId: 'app-1', paidAmount: 1000 },
       { applicationId: 'app-1', paidAmount: 500 },
@@ -79,7 +79,7 @@ function testPaymentTotals_() {
   load_(context, 'src/000_server/050_event/053_payment/payment_service.gs');
 
   assert.deepStrictEqual(
-    JSON.parse(JSON.stringify(context.getEventPaymentTotalsByApplicationId_())),
+    JSON.parse(JSON.stringify(context.buildEventPaymentTotalsByApplicationId_())),
     { 'app-1': 1500, 'app-2': 700 }
   );
 }
@@ -96,11 +96,11 @@ function testEventData_() {
   };
 
   assert.deepStrictEqual(
-    JSON.parse(JSON.stringify(context.getEventData_({ id: 'event-1' }))),
+    JSON.parse(JSON.stringify(context.getEventForEditData_({ id: 'event-1' }))),
     { id: 'event-1', name: '행사' }
   );
   assert.throws(function () {
-    context.getEventData_({ id: 'missing' });
+    context.getEventForEditData_({ id: 'missing' });
   }, function (error) {
     return error.code === 'NOT_FOUND';
   });
@@ -113,7 +113,7 @@ function testEventList_() {
     { id: 'event-2', name: '종강 행사', managerId: 'manager-b', category: '문화', status: '종료', eventStartAt: '2026-06-20' },
     { id: 'event-3', name: '체육 행사', managerId: 'manager-a', category: '체육', status: '예정', eventStartAt: '2026-10-01' }
   ];
-  context.findAllEventClientRows_ = function () { return rows.map(function (row) { return Object.assign({}, row); }); };
+  context.listEventClientRows_ = function () { return rows.map(function (row) { return Object.assign({}, row); }); };
 
   var result = context.getEventListData_({
     filter: { managerId: 'manager-a', includeClosed: false },
@@ -138,21 +138,21 @@ function testEventList_() {
 
 function testEventDetail_() {
   var context = createQueryContext_();
-  context.getEventData_ = function () { return { id: 'event-1', name: '행사' }; };
-  context.findAllEventApplicationClientRows_ = function () {
+  context.getEventForEditData_ = function () { return { id: 'event-1', name: '행사' }; };
+  context.listEventApplicationClientRows_ = function () {
     return [
       { id: 'app-1', eventId: 'event-1', status: '승인', appliedFee: 1000 },
       { id: 'app-2', eventId: 'event-1', status: '대기', appliedFee: 2000 },
       { id: 'app-3', eventId: 'event-2', status: '승인', appliedFee: 1000 }
     ];
   };
-  context.findAllEventAttendanceClientRows_ = function () {
+  context.listEventAttendanceClientRows_ = function () {
     return [
       { applicationId: 'app-1', status: '출석' },
       { applicationId: 'app-2', status: '결석' }
     ];
   };
-  context.getEventPaymentTotalsByApplicationId_ = function () {
+  context.buildEventPaymentTotalsByApplicationId_ = function () {
     return { 'app-1': 1000, 'app-2': 1500 };
   };
 
@@ -171,7 +171,7 @@ function testEventDetail_() {
 
 function testApplicantListAndDetail_() {
   var context = createQueryContext_();
-  context.findAllEventApplicationClientRows_ = function () {
+  context.listEventApplicationClientRows_ = function () {
     return [
       { id: 'app-1', eventId: 'event-1', name: '김학생', studentId: '6001', phone: '010-1111', accountHolder: '김학생', applicantType: '재학생', status: '승인', sourceResponseAt: '2026-08-03', appliedFee: 1000 },
       { id: 'app-2', eventId: 'event-1', name: '이학생', studentId: '6002', phone: '010-2222', accountHolder: '이학생', applicantType: '재학생', status: '대기', sourceResponseAt: '2026-08-04', appliedFee: 2000 },
@@ -181,10 +181,10 @@ function testApplicantListAndDetail_() {
   context.findEventApplicationRowById_ = function () {
     return { id: 'app-1', eventId: 'event-1', name: '김학생', appliedFee: 1000, __rowNumber: 2 };
   };
-  context.findEventAttendanceByApplicationId_ = function () {
+  context.findEventAttendanceRowByApplicationId_ = function () {
     return { id: 'attendance-1', applicationId: 'app-1', status: '출석', __rowNumber: 4 };
   };
-  context.getEventPaymentTotalsByApplicationId_ = function () {
+  context.buildEventPaymentTotalsByApplicationId_ = function () {
     return { 'app-1': 1000, 'app-2': 500 };
   };
 
@@ -203,16 +203,16 @@ function testApplicantListAndDetail_() {
 
 function testAttendanceList_() {
   var context = createQueryContext_();
-  context.findAllEventAttendanceClientRows_ = function () {
+  context.listEventAttendanceClientRows_ = function () {
     return [{ applicationId: 'app-1', confirmedAt: '2026-08-01T10:00:00', status: '출석', managerId: 'staff@example.com' }];
   };
-  context.findAllEventApplicationClientRows_ = function () {
+  context.listEventApplicationClientRows_ = function () {
     return [
       { id: 'app-1', eventId: 'event-1', studentId: '6001', name: '김학생', phone: '010-1111', applicantType: '재학생', appliedFee: 1000 },
       { id: 'app-2', eventId: 'event-1', studentId: '6002', name: '이학생', phone: '010-2222', applicantType: '재학생', appliedFee: 2000 }
     ];
   };
-  context.getEventPaymentTotalsByApplicationId_ = function () {
+  context.buildEventPaymentTotalsByApplicationId_ = function () {
     return { 'app-1': 1000, 'app-2': 500 };
   };
 
@@ -233,13 +233,13 @@ function testAttendanceList_() {
 
 function testRefundList_() {
   var context = createQueryContext_();
-  context.findAllEventApplicationClientRows_ = function () {
+  context.listEventApplicationClientRows_ = function () {
     return [
       { id: 'app-1', eventId: 'event-1', name: '김학생', studentId: '6001' },
       { id: 'app-2', eventId: 'event-2', name: '이학생', studentId: '6002' }
     ];
   };
-  context.findAllEventRefundClientRows_ = function () {
+  context.listEventRefundClientRows_ = function () {
     return [
       { id: 'refund-1', applicationId: 'app-1', amount: 1000 },
       { id: 'refund-2', applicationId: 'app-2', amount: 2000 }

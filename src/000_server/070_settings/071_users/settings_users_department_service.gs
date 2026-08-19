@@ -11,7 +11,7 @@ function updateSettingsUserDepartment_(input) {
   var userRow = findUserRowByEmail_(email);
   if (!userRow) return failResponse_('NOT_FOUND', '대상 사용자를 찾을 수 없습니다.', { email: email });
 
-  var departmentMap = getDepartmentsById_();
+  var departmentMap = buildDepartmentsById_();
   if (departmentId) {
     var department = departmentMap[departmentId];
     if (!department || department.status !== 'active') {
@@ -20,21 +20,21 @@ function updateSettingsUserDepartment_(input) {
   }
 
   var actorEmail = current.user && current.user.email ? current.user.email : current.email || '';
-  sheetUpdateById_('user', 'users', email, {
+  updateSheetCrudItemById_('user', 'users', email, {
     departmentId: departmentId,
     updatedAt: new Date(),
     updatedBy: actorEmail
   });
   invalidateLoginContextCache_(email);
 
-  var roleMap = getRolesById_();
-  var userRoleMap = getActiveRoleIdsByEmail_();
+  var roleMap = buildRolesById_();
+  var userRoleMap = buildActiveRoleIdsByEmail_();
   var roleIds = userRoleMap[email] || [];
   var roles = roleIds.map(function (roleId) {
-    return summarizeRoleForUser_(roleMap[roleId], roleId);
+    return buildRoleSummaryForUser_(roleMap[roleId], roleId);
   });
   var updatedRow = findUserRowByEmail_(email);
   return okResponse_({
-    user: toUserDto_(updatedRow || userRow, roleIds, roles, departmentMap)
+    user: mapUserDto_(updatedRow || userRow, roleIds, roles, departmentMap)
   });
 }

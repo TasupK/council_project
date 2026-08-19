@@ -53,7 +53,7 @@ function loadSfPayerList_() {
   var error = studentFeeGetElement('sf-payer-error');
   loading.hidden = false;
   error.hidden = true;
-  return studentFeeApi('api_getFeePayerList', {
+  return studentFeeApi('api_getStudentFeePayers', {
     keyword: sfPayerState.keyword,
     affiliation: sfPayerState.affiliation,
     page: sfPayerState.page,
@@ -70,7 +70,7 @@ function loadSfPayerList_() {
 }
 
 function loadSfPayerReferences_() {
-  return studentFeeApi('api_getStudentFeeReferenceData', {}).then(function (data) {
+  return studentFeeApi('api_getStudentFeeReference', {}).then(function (data) {
     sfPayerState.references = data || { semesters: [] };
   });
 }
@@ -94,7 +94,7 @@ function openSfPayerEdit_(token) {
   var row = sfPayerState.rowsByToken[token];
   if (!row || !row.studentIdKey) return;
   var studentIdKey = row.studentIdKey;
-  studentFeeApi('api_getFeePayerDetail', { studentId: studentIdKey })
+  studentFeeApi('api_getStudentFeePayer', { studentId: studentIdKey })
     .then(function (detail) {
       var form = studentFeeGetElement('sf-payer-form');
       sfPayerState.editingStudentIdKey = studentIdKey;
@@ -134,7 +134,7 @@ function submitSfPayer_(event) {
       affiliation: affiliation,
       startSemesterId: startSemesterId
     };
-    apiName = 'api_updateFeePayer';
+    apiName = 'api_updateStudentFeePayer';
   } else {
     var studentId = form.elements.studentId.value.trim();
     if (!studentId) {
@@ -147,7 +147,7 @@ function submitSfPayer_(event) {
       affiliation: affiliation,
       startSemesterId: startSemesterId
     };
-    apiName = 'api_createFeePayer';
+    apiName = 'api_createStudentFeePayer';
   }
 
   studentFeeRunBusy(button, function () {

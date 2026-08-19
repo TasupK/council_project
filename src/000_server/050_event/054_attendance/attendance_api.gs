@@ -1,22 +1,20 @@
 // 1. 행사 출석 조회
-function api_getAttendanceList(input) {
+function api_getEventAttendances(input) {
   return apiHandler_({
-    operation: 'getAttendanceList',
-    input: input,
-    requireLogin: true,
+    operation: 'getAttendanceList', input: input, requireLogin: true,
+    access: eventApiAccess_('view'),
     parse: parseEventRequest_,
     service: function (parsed) { return getAttendanceListData_(parsed.request); }
   });
 }
 
 // 2. 행사 출석 변경
-function api_applyAttendanceChanges(input) {
+function api_applyEventAttendanceChanges(input) {
   return apiHandler_({
-    operation: 'applyAttendanceChanges',
-    input: input,
-    requireLogin: true,
+    operation: 'applyAttendanceChanges', input: input, requireLogin: true,
+    access: eventApiAccess_('edit'),
     parse: parseEventRequest_,
-    service: function (parsed) { return applyAttendanceChangesData_(parsed.request); }
+    service: function (parsed, context) { return applyAttendanceChangesData_(parsed.request, context); }
   });
 }
 

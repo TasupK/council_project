@@ -1,18 +1,18 @@
 // Google Forms 응답을 행사 신청/추가답변 테이블로 명시적으로 동기화한다.
 
-function syncApplicantsFromFormsData_(request, current) {
+function applyApplicantFormSyncData_(request, current) {
   var eventId = requireEventRequestId_(request);
   var event = findEventRowById_(eventId);
   if (!event) throwEventError_('NOT_FOUND', '행사를 찾을 수 없습니다.');
 
-  var existingForm = findEventFormByEventId_(eventId);
+  var configuredForm = findEventFormByEventId_(eventId);
   var payload = request && request.payload && typeof request.payload === 'object' ? request.payload : {};
   var googleFormId = Object.prototype.hasOwnProperty.call(payload, 'googleFormId')
     ? payload.googleFormId
-    : existingForm && existingForm.googleFormId;
+    : configuredForm && configuredForm.googleFormId;
   var responseSheetId = Object.prototype.hasOwnProperty.call(payload, 'responseSheetId')
     ? payload.responseSheetId
-    : existingForm && existingForm.responseSheetId;
+    : configuredForm && configuredForm.responseSheetId;
 
   // 외부 Google 데이터 읽기는 OperationDB write lock 밖에서 수행한다.
   var source = resolveEventFormResponseSource_(googleFormId, responseSheetId);
@@ -20,7 +20,7 @@ function syncApplicantsFromFormsData_(request, current) {
 
   return withOperationWriteLock_(function () {
     var existingIds = {};
-    findAllEventApplicationSourceResponseIds_().forEach(function (id) {
+    listEventApplicationSourceResponseIds_().forEach(function (id) {
       existingIds[String(id)] = true;
     });
     var seenBatch = {};
@@ -53,8 +53,10 @@ function syncApplicantsFromFormsData_(request, current) {
       status: '연동',
       lastSyncedAt: syncedAt
     };
-    if (existingForm) {
-      updateEventFormRowById_(existingForm.id, formPatch);
+    // 첫 동기화 경쟁 조건을 막기 위해 upsert 판단은 반드시 lock 안에서 다시 읽는다.
+    var currentForm = findEventFormByEventId_(eventId);
+    if (currentForm) {
+      updateEventFormRowById_(currentForm.id, formPatch);
     } else {
       formPatch.id = Utilities.getUuid();
       formPatch.createdAt = syncedAt;

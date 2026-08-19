@@ -15,7 +15,7 @@ async function refreshSettlementSummary() {
   renderSettlement(await callServer('api_getSettlementSummary', period, {}, { strict: true }));
 }
 async function refreshSettlementHistory(selectId) {
-  const list = await callServer('api_getSettlementReportList', {}, { items: [] });
+  const list = await callServer('api_getSettlementReports', {}, { items: [] });
   const items = (list && list.items) || [];
   state.settlementReports = items;
   const select = document.getElementById('settlementHistory');
@@ -26,7 +26,7 @@ async function refreshSettlementHistory(selectId) {
 async function generateSettlement() {
   const period = settlementPeriod();
   if (!period.startDate || !period.endDate) return toast('결산 기간을 입력해 주세요.');
-  try { const report = await callServer('api_generateSettlementReport', period, null, { strict: true }); renderSettlement(report); await refreshSettlementHistory(report.id); toast('결산 스냅샷이 생성되었습니다.'); }
+  try { const report = await callServer('api_createSettlementReport', period, null, { strict: true }); renderSettlement(report); await refreshSettlementHistory(report.id); toast('결산 스냅샷이 생성되었습니다.'); }
   catch (error) { toast(error && error.message ? error.message : '결산 생성에 실패했습니다.'); }
 }
 async function exportSettlement() {

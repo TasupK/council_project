@@ -1,5 +1,5 @@
 // 1. Apps Script 세션에서 Google 계정 이메일 확인
-function getActiveUserEmailFromSession_() {
+function readActiveUserEmailFromSession_() {
   try {
     return normalizeEmail_(Session.getActiveUser().getEmail());
   } catch (e) {

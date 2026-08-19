@@ -1,15 +1,15 @@
 // 1. 역할ID 기준 역할 목록 생성
-function getRolesById_() {
+function buildRolesById_() {
   var map = {};
   listRoleRows_().forEach(function (row) {
-    var role = toRoleDto_(row);
+    var role = mapRoleDto_(row);
     if (role.id) map[role.id] = role;
   });
   return map;
 }
 
 // 2. Google 이메일 기준 활성 역할ID 목록 생성
-function getActiveRoleIdsByEmail_() {
+function buildActiveRoleIdsByEmail_() {
   var fields = getUserDbFields_('userRoles');
   var map = {};
   listUserRoleRows_().forEach(function (row) {
@@ -24,7 +24,7 @@ function getActiveRoleIdsByEmail_() {
 }
 
 // 3. 역할 시트 행을 화면/API 응답용 객체로 변환
-function toRoleDto_(row) {
+function mapRoleDto_(row) {
   var fields = getUserDbFields_('roles');
   var isSystem = isTruthyValue_(row[fields.isSystem]);
   return {
@@ -42,7 +42,7 @@ function toRoleDto_(row) {
 }
 
 // 4. 로그인 사용자에게 필요한 역할 요약 정보 생성
-function summarizeRoleForUser_(role, fallbackId) {
+function buildRoleSummaryForUser_(role, fallbackId) {
   if (!role) return { id: fallbackId, name: fallbackId };
   return { id: role.id, name: role.name };
 }

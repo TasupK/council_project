@@ -102,9 +102,9 @@ var ownership = {
   api_checkLogin: '030_auth/auth_api.gs',
   api_getCurrentUser: '030_auth/auth_api.gs',
   api_getMyPermissions: '030_auth/auth_api.gs',
-  getActiveUserEmailFromSession_: '030_auth/auth_session.gs',
-  getCachedLoginContext_: '030_auth/auth_cache.gs',
-  cacheLoginContext_: '030_auth/auth_cache.gs',
+  readActiveUserEmailFromSession_: '030_auth/auth_session.gs',
+  readCachedLoginContext_: '030_auth/auth_cache.gs',
+  writeLoginContextCache_: '030_auth/auth_cache.gs',
   invalidateLoginContextCache_: '030_auth/auth_cache.gs',
   buildLoginContextCacheKey_: '030_auth/auth_cache.gs',
   getSessionUserContext_: '030_auth/auth_context.gs',
@@ -112,21 +112,21 @@ var ownership = {
   requireLoginContext_: '030_auth/auth_context.gs',
   listUserRows_: '040_iam/041_users/users_sheet_dao.gs',
   findUserRowByEmail_: '040_iam/041_users/users_query_service.gs',
-  toUserDto_: '040_iam/041_users/users_query_service.gs',
+  mapUserDto_: '040_iam/041_users/users_query_service.gs',
   listRoleRows_: '040_iam/042_roles/roles_sheet_dao.gs',
   listUserRoleRows_: '040_iam/042_roles/user_roles_sheet_dao.gs',
-  getRolesById_: '040_iam/042_roles/roles_query_service.gs',
-  getActiveRoleIdsByEmail_: '040_iam/042_roles/roles_query_service.gs',
-  toRoleDto_: '040_iam/042_roles/roles_query_service.gs',
-  summarizeRoleForUser_: '040_iam/042_roles/roles_query_service.gs',
+  buildRolesById_: '040_iam/042_roles/roles_query_service.gs',
+  buildActiveRoleIdsByEmail_: '040_iam/042_roles/roles_query_service.gs',
+  mapRoleDto_: '040_iam/042_roles/roles_query_service.gs',
+  buildRoleSummaryForUser_: '040_iam/042_roles/roles_query_service.gs',
   isAdminRoleSet_: '040_iam/042_roles/roles_query_service.gs',
   listPermissionRows_: '040_iam/043_permissions/permissions_sheet_dao.gs',
   listRolePermissionRows_: '040_iam/043_permissions/role_permissions_sheet_dao.gs',
-  toPermissionDto_: '040_iam/043_permissions/permissions_query_service.gs',
-  getPermissionsById_: '040_iam/043_permissions/permissions_query_service.gs',
-  getPermissionIdsByRoleId_: '040_iam/043_permissions/permissions_query_service.gs',
-  actionToPermissionKey_: '040_iam/043_permissions/permissions_query_service.gs',
-  permissionScreenId_: '040_iam/043_permissions/permissions_query_service.gs',
+  mapPermissionDto_: '040_iam/043_permissions/permissions_query_service.gs',
+  buildPermissionsById_: '040_iam/043_permissions/permissions_query_service.gs',
+  buildPermissionIdsByRoleId_: '040_iam/043_permissions/permissions_query_service.gs',
+  mapActionToPermissionKey_: '040_iam/043_permissions/permissions_query_service.gs',
+  resolvePermissionScreenId_: '040_iam/043_permissions/permissions_query_service.gs',
   buildPermissionTreeFromDb_: '040_iam/043_permissions/permissions_query_service.gs',
   buildPermissionsByRoleFromDb_: '040_iam/043_permissions/permissions_query_service.gs',
   buildUserPermissionsFromDb_: '040_iam/043_permissions/permissions_query_service.gs',
@@ -152,10 +152,10 @@ listGsFiles_(IAM_ROOT).forEach(function (file) {
   if (/\bgetSessionUserContext_\b|\brequireLoginContext_\b|\bapi_checkLogin\b|\bapi_getCurrentUser\b|\bapi_getMyPermissions\b/.test(source)) {
     failures.push('IAM must not depend on Auth: ' + relative);
   }
-  if (/\bgetSettingsPermissionsData_\b|\blistUsersForSettings_\b|\blistRolesForSettings_\b/.test(source)) {
+  if (/\bgetSettingsPermissionsData_\b|\bgetSettingsUsersData_\b|\bgetSettingsRolesData_\b/.test(source)) {
     failures.push('IAM must not depend on Settings: ' + relative);
   }
-  if (/sheetInsert_|sheetUpdateById_|append[A-Za-z_$]*Row_|update[A-Za-z_$]*Row_|DriveApp\.create|createFile\s*\(/.test(source)) {
+  if (/insertSheetCrudItem_|updateSheetCrudItemById_|append[A-Za-z_$]*Row_|update[A-Za-z_$]*Row_|DriveApp\.create|createFile\s*\(/.test(source)) {
     failures.push('IAM read/access files must not perform writes: ' + relative);
   }
 });
@@ -163,7 +163,7 @@ listGsFiles_(IAM_ROOT).forEach(function (file) {
 listGsFiles_(AUTH_ROOT).forEach(function (file) {
   var source = fs.readFileSync(file, 'utf8');
   var relative = normalize_(path.relative(SERVER_ROOT, file));
-  if (/\bgetSettingsPermissionsData_\b|\blistUsersForSettings_\b|\blistRolesForSettings_\b/.test(source)) {
+  if (/\bgetSettingsPermissionsData_\b|\bgetSettingsUsersData_\b|\bgetSettingsRolesData_\b/.test(source)) {
     failures.push('Auth must not depend on Settings: ' + relative);
   }
   if (/\bopenUserSpreadsheet_\b|\breadTableRows_\b/.test(source)) {

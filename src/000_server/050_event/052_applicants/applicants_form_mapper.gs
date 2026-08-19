@@ -10,7 +10,7 @@ function normalizeEventFormHeader_(value) {
     .trim();
 }
 
-function getEventFormHeaderAliases_() {
+function buildEventFormHeaderAliases_() {
   return {
     sourceResponseAt: ['타임스탬프', '응답일시', '제출일시', '신청일시'],
     sourceResponseId: ['응답ID', '응답 ID', '원본응답ID'],
@@ -25,9 +25,9 @@ function getEventFormHeaderAliases_() {
   };
 }
 
-function findEventFormAliasField_(header) {
+function resolveEventFormAliasField_(header) {
   var normalized = normalizeEventFormHeader_(header).toLowerCase();
-  var aliases = getEventFormHeaderAliases_();
+  var aliases = buildEventFormHeaderAliases_();
   var fields = Object.keys(aliases);
   for (var i = 0; i < fields.length; i += 1) {
     var field = fields[i];
@@ -42,7 +42,7 @@ function buildEventFormHeaderMap_(headers) {
   var byField = {};
   var recognized = {};
   (headers || []).forEach(function (header, index) {
-    var field = findEventFormAliasField_(header);
+    var field = resolveEventFormAliasField_(header);
     if (field && typeof byField[field] === 'undefined') {
       byField[field] = index;
       recognized[index] = true;
@@ -51,7 +51,7 @@ function buildEventFormHeaderMap_(headers) {
   return { byField: byField, recognized: recognized };
 }
 
-function eventFormCell_(row, index) {
+function readEventFormCell_(row, index) {
   if (typeof index === 'undefined' || index < 0) return '';
   return String(row[index] == null ? '' : row[index]).trim();
 }
@@ -71,12 +71,7 @@ function calculateEventFormAppliedFee_(event, applicantType) {
   throwEventError_('VALIDATION_FAILED', '참가비가 있는 행사는 학생회비 납부 여부가 필요합니다.');
 }
 
-function stableEventFormResponseId_(source, row) {
-  var payload = [
-    String(source.responseSheetId || ''),
-    String(source.sheetId || ''),
-    (row || []).map(function (value) { return String(value == null ? '' : value).trim(); }).join('\u241f')
-  ].join('\u241e');
+function hashEventFormResponseIdentity_(payload) {
   var digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, payload);
   return 'form_' + digest.map(function (value) {
     var byte = value < 0 ? value + 256 : value;
@@ -84,7 +79,17 @@ function stableEventFormResponseId_(source, row) {
   }).join('').slice(0, 32);
 }
 
-function eventFormQuestionId_(header, index) {
+function buildStableEventFormResponseId_(source, row, sourceResponseAt, studentId) {
+  var parts = [String(source.responseSheetId || ''), String(source.sheetId || '')];
+  if (sourceResponseAt && studentId) {
+    parts.push(String(sourceResponseAt).trim(), String(studentId).trim());
+  } else {
+    parts.push((row || []).map(function (value) { return String(value == null ? '' : value).trim(); }).join('\u241f'));
+  }
+  return hashEventFormResponseIdentity_(parts.join('\u241e'));
+}
+
+function buildEventFormQuestionId_(header, index) {
   var normalized = normalizeEventFormHeader_(header).toLowerCase();
   var digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, normalized + '|' + String(index));
   return 'q_' + digest.map(function (value) {
@@ -107,14 +112,14 @@ function buildEventFormCandidates_(source, event) {
     var sourceRow = index + 2;
     var hasValue = (row || []).some(function (value) { return String(value == null ? '' : value).trim() !== ''; });
     if (!hasValue) return;
-    var studentId = eventFormCell_(row, mapping.byField.studentId);
-    var name = eventFormCell_(row, mapping.byField.name);
+    var studentId = readEventFormCell_(row, mapping.byField.studentId);
+    var name = readEventFormCell_(row, mapping.byField.name);
     if (!studentId || !name) {
       invalidRows.push({ row: sourceRow, reason: '학번 또는 성명 누락' });
       return;
     }
 
-    var applicantType = normalizeEventFormApplicantType_(eventFormCell_(row, mapping.byField.applicantType));
+    var applicantType = normalizeEventFormApplicantType_(readEventFormCell_(row, mapping.byField.applicantType));
     var appliedFee;
     try {
       appliedFee = calculateEventFormAppliedFee_(event, applicantType);
@@ -124,21 +129,22 @@ function buildEventFormCandidates_(source, event) {
     }
 
     var applicationId = Utilities.getUuid();
-    var explicitResponseId = eventFormCell_(row, mapping.byField.sourceResponseId);
+    var explicitResponseId = readEventFormCell_(row, mapping.byField.sourceResponseId);
+    var sourceResponseAt = readEventFormCell_(row, mapping.byField.sourceResponseAt);
     var applicant = {
       id: applicationId,
       eventId: event.id,
-      sourceResponseId: explicitResponseId || stableEventFormResponseId_(source, row),
-      sourceResponseAt: eventFormCell_(row, mapping.byField.sourceResponseAt),
+      sourceResponseId: explicitResponseId || buildStableEventFormResponseId_(source, row, sourceResponseAt, studentId),
+      sourceResponseAt: sourceResponseAt,
       studentId: studentId,
       name: name,
-      department: eventFormCell_(row, mapping.byField.department),
-      phone: eventFormCell_(row, mapping.byField.phone),
+      department: readEventFormCell_(row, mapping.byField.department),
+      phone: readEventFormCell_(row, mapping.byField.phone),
       applicantType: applicantType,
       appliedFee: appliedFee,
-      bankName: eventFormCell_(row, mapping.byField.bankName),
-      accountNumber: eventFormCell_(row, mapping.byField.accountNumber),
-      accountHolder: eventFormCell_(row, mapping.byField.accountHolder),
+      bankName: readEventFormCell_(row, mapping.byField.bankName),
+      accountNumber: readEventFormCell_(row, mapping.byField.accountNumber),
+      accountHolder: readEventFormCell_(row, mapping.byField.accountHolder),
       status: '대기',
       importedAt: getCurrentIsoDateTime_(),
       managerId: '',
@@ -150,12 +156,12 @@ function buildEventFormCandidates_(source, event) {
     var extraAnswers = [];
     headers.forEach(function (header, columnIndex) {
       if (mapping.recognized[columnIndex]) return;
-      var answer = eventFormCell_(row, columnIndex);
+      var answer = readEventFormCell_(row, columnIndex);
       if (!answer || !normalizeEventFormHeader_(header)) return;
       extraAnswers.push({
         id: Utilities.getUuid(),
         applicationId: applicationId,
-        questionId: eventFormQuestionId_(header, columnIndex),
+        questionId: buildEventFormQuestionId_(header, columnIndex),
         questionTitle: String(header || '').trim(),
         answer: answer
       });

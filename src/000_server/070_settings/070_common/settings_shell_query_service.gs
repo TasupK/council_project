@@ -1,11 +1,11 @@
 // Settings 홈과 공통 shell 조회
-function loadSettingsHomeData() {
+function api_getSettingsHome() {
   var current = getSettingsCurrent_();
   if (!current.ok) return current;
-  return okResponse_(buildSettingsBaseData_(current));
+  return okResponse_(buildSettingsBaseView_(current));
 }
 
-function buildSettingsBaseData_(current) {
+function buildSettingsBaseView_(current) {
   var canManageInfrastructure = !!current.isAdmin;
   return {
     app: {

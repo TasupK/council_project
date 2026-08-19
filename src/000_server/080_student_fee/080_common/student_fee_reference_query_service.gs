@@ -1,10 +1,10 @@
 // 1. 회비 금액 기준 전체 조회
-function findAllFeeRateRows_() {
+function readFeeRateRows_() {
   return readOperationTableClientRows_('feeRates');
 }
 
 // 2. 학기 기준 전체/단건 조회
-function findAllStudentFeeSemesterRows_() {
+function readStudentFeeSemesterRows_() {
   return readOperationTableClientRows_('semesters');
 }
 
@@ -30,7 +30,7 @@ function formatStudentFeeDateKey_(value) {
 
 // 4. 학생회비 화면용 학기 기준 조회
 function getStudentFeeReferenceData_() {
-  var semesters = findAllStudentFeeSemesterRows_().map(function (row) {
+  var semesters = readStudentFeeSemesterRows_().map(function (row) {
     return {
       id: row.id,
       year: Number(row.year) || row.year,
@@ -55,7 +55,7 @@ function resolveStudentFeeRate_(targetDate) {
     throw new Error('회비금액기준 조회 날짜가 올바르지 않습니다.');
   }
 
-  var matches = findAllFeeRateRows_().filter(function (row) {
+  var matches = readFeeRateRows_().filter(function (row) {
     var start = formatStudentFeeDateKey_(row.startDate);
     var end = formatStudentFeeDateKey_(row.endDate);
     var active = typeof isTruthyValue_ === 'function' ? isTruthyValue_(row.active) : !!row.active;

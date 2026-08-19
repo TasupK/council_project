@@ -38,8 +38,8 @@ var context = vm.createContext({
 vm.runInContext(fs.readFileSync(mapperPath, 'utf8'), context, { filename: mapperPath });
 
 assert.strictEqual(context.normalizeEventFormHeader_('  성명 (실명)  '), '성명');
-assert.strictEqual(context.findEventFormAliasField_('학생 이름'), 'name');
-assert.strictEqual(context.findEventFormAliasField_('학번을 입력해주세요'), 'studentId');
+assert.strictEqual(context.resolveEventFormAliasField_('학생 이름'), 'name');
+assert.strictEqual(context.resolveEventFormAliasField_('학번을 입력해주세요'), 'studentId');
 
 var source = {
   responseSheetId: 'sheet-source-1',

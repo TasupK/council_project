@@ -1,20 +1,20 @@
 // 1. 로그인 사용자 컨텍스트 생성
 function getSessionUserContext_() {
-  var email = getActiveUserEmailFromSession_();
+  var email = readActiveUserEmailFromSession_();
   if (!email) return failResponse_('NO_SESSION', 'Google 로그인이 필요합니다.');
 
-  var cachedContext = getCachedLoginContext_(email);
+  var cachedContext = readCachedLoginContext_(email);
   if (cachedContext) return cachedContext;
 
   var lock = LockService.getScriptLock();
   var hasLock = lock.tryLock(5000);
   if (hasLock) {
     try {
-      cachedContext = getCachedLoginContext_(email);
+      cachedContext = readCachedLoginContext_(email);
       if (cachedContext) return cachedContext;
 
       var lockedContext = buildSessionUserContextFromDb_(email);
-      if (lockedContext.ok) cacheLoginContext_(email, lockedContext);
+      if (lockedContext.ok) writeLoginContextCache_(email, lockedContext);
       return lockedContext;
     } finally {
       lock.releaseLock();
@@ -22,7 +22,7 @@ function getSessionUserContext_() {
   }
 
   var context = buildSessionUserContextFromDb_(email);
-  if (context.ok) cacheLoginContext_(email, context);
+  if (context.ok) writeLoginContextCache_(email, context);
   return context;
 }
 
@@ -35,14 +35,14 @@ function buildSessionUserContextFromDb_(email) {
     return failResponse_('INACTIVE', '비활성화된 계정입니다.', { email: email });
   }
 
-  var roleMap = getRolesById_();
-  var roleIdsByEmail = getActiveRoleIdsByEmail_();
+  var roleMap = buildRolesById_();
+  var roleIdsByEmail = buildActiveRoleIdsByEmail_();
   var roleIds = roleIdsByEmail[email] || [];
   if (roleIds.length === 0) {
     return failResponse_('NO_ROLE', '배정된 역할이 없는 계정입니다.', { email: email });
   }
 
-  var loginIntegrity = checkLoginUserDbIntegrity_(email, roleIds);
+  var loginIntegrity = validateLoginUserDbIntegrity_(email, roleIds);
   if (!loginIntegrity.valid) {
     return failResponse_('LOGIN_DB_INTEGRITY_ERROR', '로그인 사용자의 DB 무결성이 올바르지 않습니다.', {
       email: email,
@@ -51,9 +51,9 @@ function buildSessionUserContextFromDb_(email) {
   }
 
   var roles = roleIds.map(function (roleId) {
-    return summarizeRoleForUser_(roleMap[roleId], roleId);
+    return buildRoleSummaryForUser_(roleMap[roleId], roleId);
   });
-  var user = toUserDto_(userRow, roleIds, roles);
+  var user = mapUserDto_(userRow, roleIds, roles);
   var permissions = buildUserPermissionsFromDb_(roleIds);
 
   return okResponse_({

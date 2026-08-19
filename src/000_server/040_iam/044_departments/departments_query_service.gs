@@ -1,5 +1,5 @@
 // 1. 부서 시트 행을 화면/API 응답용 객체로 변환
-function toDepartmentDto_(row) {
+function mapDepartmentDto_(row) {
   var fields = getUserDbFields_('departments');
   var order = Number(row[fields.sortOrder]);
   return {
@@ -12,19 +12,19 @@ function toDepartmentDto_(row) {
 }
 
 // 2. 부서ID 기준 부서 맵 생성
-function getDepartmentsById_() {
+function buildDepartmentsById_() {
   var map = {};
   listDepartmentRows_().forEach(function (row) {
-    var department = toDepartmentDto_(row);
+    var department = mapDepartmentDto_(row);
     if (department.id) map[department.id] = department;
   });
   return map;
 }
 
 // 3. 활성 부서 목록 조회
-function listActiveDepartments_() {
+function getActiveDepartmentsData_() {
   return listDepartmentRows_()
-    .map(toDepartmentDto_)
+    .map(mapDepartmentDto_)
     .filter(function (department) { return department.id && department.status === 'active'; })
     .sort(function (a, b) {
       if (a.sortOrder !== b.sortOrder) return a.sortOrder - b.sortOrder;

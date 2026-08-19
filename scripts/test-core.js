@@ -85,10 +85,10 @@ function testSheetCrud_() {
   context.getUserDbTableSchema_ = context.getOperationDbTableSchema_;
   load_(context, 'src/000_server/010_core/sheet_crud.gs');
 
-  assert.strictEqual(context.sheetFindById_('operation', 'events', 'event_1').name, '첫 행사');
-  context.sheetInsert_('operation', 'events', { id: 'event_2', name: '둘째 행사' });
+  assert.strictEqual(context.findSheetCrudItemById_('operation', 'events', 'event_1').name, '첫 행사');
+  context.insertSheetCrudItem_('operation', 'events', { id: 'event_2', name: '둘째 행사' });
   assert.deepStrictEqual(sheet.values[2], ['event_2', '둘째 행사']);
-  context.sheetUpdateById_('operation', 'events', 'event_2', { name: '수정 행사' });
+  context.updateSheetCrudItemById_('operation', 'events', 'event_2', { name: '수정 행사' });
   assert.deepStrictEqual(sheet.values[2], ['event_2', '수정 행사']);
 }
 

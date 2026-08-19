@@ -10,7 +10,7 @@ function renderEventListShell() {
   }
 
 function loadEventList() {
-    api('api_getEventList', {
+    api('api_getEvents', {
       filter: state.eventFilters,
       page: state.eventPage,
       pageSize: 10

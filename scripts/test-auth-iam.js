@@ -87,11 +87,11 @@ function testPermissionModel_() {
   assert.strictEqual(userPermissions.byScreen.perm_EVENT_VIEW.view, true);
   assert.strictEqual(userPermissions.byScreen.perm_EVENT_EDIT.edit, true);
   assert.strictEqual(userPermissions.menus[0].id, 'area_행사');
-  assert.strictEqual(context.actionToPermissionKey_('조회'), 'view');
-  assert.strictEqual(context.actionToPermissionKey_('수정'), 'edit');
-  assert.strictEqual(context.actionToPermissionKey_('승인'), 'approve');
-  assert.strictEqual(context.actionToPermissionKey_('출력'), 'export');
-  assert.strictEqual(context.actionToPermissionKey_('메뉴 접근'), 'menu');
+  assert.strictEqual(context.mapActionToPermissionKey_('조회'), 'view');
+  assert.strictEqual(context.mapActionToPermissionKey_('수정'), 'edit');
+  assert.strictEqual(context.mapActionToPermissionKey_('승인'), 'approve');
+  assert.strictEqual(context.mapActionToPermissionKey_('출력'), 'export');
+  assert.strictEqual(context.mapActionToPermissionKey_('메뉴 접근'), 'menu');
 }
 
 function testRequirePermission_() {
@@ -116,11 +116,11 @@ function createLoginContextHarness_() {
 
 function testBuildSessionUserContext_() {
   var context = createLoginContextHarness_();
-  context.getRolesById_ = function () { return { role_staff: { id: 'role_staff', name: '일반 사용자', protected: false } }; };
-  context.getActiveRoleIdsByEmail_ = function () { return { 'student@example.com': ['role_staff'] }; };
-  context.checkLoginUserDbIntegrity_ = function () { return { valid: true, issues: [] }; };
-  context.toUserDto_ = function (row, roleIds, roles) { return { id: row.email, email: row.email, status: 'active', roleIds: roleIds, roles: roles }; };
-  context.summarizeRoleForUser_ = function (role) { return { id: role.id, name: role.name }; };
+  context.buildRolesById_ = function () { return { role_staff: { id: 'role_staff', name: '일반 사용자', protected: false } }; };
+  context.buildActiveRoleIdsByEmail_ = function () { return { 'student@example.com': ['role_staff'] }; };
+  context.validateLoginUserDbIntegrity_ = function () { return { valid: true, issues: [] }; };
+  context.mapUserDto_ = function (row, roleIds, roles) { return { id: row.email, email: row.email, status: 'active', roleIds: roleIds, roles: roles }; };
+  context.buildRoleSummaryForUser_ = function (role) { return { id: role.id, name: role.name }; };
   context.buildUserPermissionsFromDb_ = function () { return { byScreen: {}, menus: [] }; };
   context.isAdminRoleSet_ = function () { return false; };
 
@@ -129,12 +129,12 @@ function testBuildSessionUserContext_() {
   context.findUserRowByEmail_ = function () { return { email: 'student@example.com', status: 'inactive' }; };
   assert.strictEqual(context.buildSessionUserContextFromDb_('student@example.com').code, 'INACTIVE');
   context.findUserRowByEmail_ = function () { return { email: 'student@example.com', status: 'active' }; };
-  context.getActiveRoleIdsByEmail_ = function () { return { 'student@example.com': [] }; };
+  context.buildActiveRoleIdsByEmail_ = function () { return { 'student@example.com': [] }; };
   assert.strictEqual(context.buildSessionUserContextFromDb_('student@example.com').code, 'NO_ROLE');
-  context.getActiveRoleIdsByEmail_ = function () { return { 'student@example.com': ['role_staff'] }; };
-  context.checkLoginUserDbIntegrity_ = function () { return { valid: false, issues: ['broken'] }; };
+  context.buildActiveRoleIdsByEmail_ = function () { return { 'student@example.com': ['role_staff'] }; };
+  context.validateLoginUserDbIntegrity_ = function () { return { valid: false, issues: ['broken'] }; };
   assert.strictEqual(context.buildSessionUserContextFromDb_('student@example.com').code, 'LOGIN_DB_INTEGRITY_ERROR');
-  context.checkLoginUserDbIntegrity_ = function () { return { valid: true, issues: [] }; };
+  context.validateLoginUserDbIntegrity_ = function () { return { valid: true, issues: [] }; };
   var result = context.buildSessionUserContextFromDb_('student@example.com');
   assert.strictEqual(result.ok, true);
   assert.deepStrictEqual(Object.keys(plain_(result)).sort(), ['dbMode', 'email', 'isAdmin', 'ok', 'permissions', 'preview', 'roles', 'user'].sort());
@@ -144,15 +144,15 @@ function testSessionContextCache_() {
   var context = createLoginContextHarness_();
   var buildCalls = 0;
   var cacheCalls = 0;
-  context.getActiveUserEmailFromSession_ = function () { return 'student@example.com'; };
-  context.getCachedLoginContext_ = function () { return { ok: true, email: 'student@example.com', cached: true }; };
+  context.readActiveUserEmailFromSession_ = function () { return 'student@example.com'; };
+  context.readCachedLoginContext_ = function () { return { ok: true, email: 'student@example.com', cached: true }; };
   context.buildSessionUserContextFromDb_ = function () { buildCalls += 1; return { ok: true, email: 'student@example.com' }; };
   assert.strictEqual(context.getSessionUserContext_().cached, true);
   assert.strictEqual(buildCalls, 0);
 
   var reads = 0;
-  context.getCachedLoginContext_ = function () { reads += 1; return null; };
-  context.cacheLoginContext_ = function () { cacheCalls += 1; };
+  context.readCachedLoginContext_ = function () { reads += 1; return null; };
+  context.writeLoginContextCache_ = function () { cacheCalls += 1; };
   context.LockService = { getScriptLock: function () { return { tryLock: function () { return true; }, releaseLock: function () {} }; } };
   assert.strictEqual(context.getSessionUserContext_().ok, true);
   assert.strictEqual(buildCalls, 1);

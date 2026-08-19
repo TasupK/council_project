@@ -1,5 +1,5 @@
 // 1. 권한 시트 행을 화면/API 응답용 객체로 변환
-function toPermissionDto_(row) {
+function mapPermissionDto_(row) {
   var fields = getUserDbFields_('permissions');
   return {
     id: normalizeTextValue_(row[fields.id]),
@@ -12,17 +12,17 @@ function toPermissionDto_(row) {
 }
 
 // 2. 권한ID 기준 활성 권한 목록 생성
-function getPermissionsById_() {
+function buildPermissionsById_() {
   var map = {};
   listPermissionRows_().forEach(function (row) {
-    var permission = toPermissionDto_(row);
+    var permission = mapPermissionDto_(row);
     if (permission.id && permission.status === 'active') map[permission.id] = permission;
   });
   return map;
 }
 
 // 3. 역할ID 기준 권한ID 목록 생성
-function getPermissionIdsByRoleId_() {
+function buildPermissionIdsByRoleId_() {
   var fields = getUserDbFields_('rolePermissions');
   var map = {};
   listRolePermissionRows_().forEach(function (row) {
@@ -36,7 +36,7 @@ function getPermissionIdsByRoleId_() {
 }
 
 // 4. 권한 행위명을 런타임 권한 키로 변환
-function actionToPermissionKey_(action) {
+function mapActionToPermissionKey_(action) {
   if (action.indexOf('조회') !== -1) return 'view';
   if (action.indexOf('등록') !== -1 || action.indexOf('수정') !== -1) return 'edit';
   if (action.indexOf('승인') !== -1 || action.indexOf('보관') !== -1) return 'approve';
@@ -46,7 +46,7 @@ function actionToPermissionKey_(action) {
 }
 
 // 5. 권한ID를 화면 권한 노드ID로 변환
-function permissionScreenId_(permission) {
+function resolvePermissionScreenId_(permission) {
   return 'perm_' + permission.id;
 }
 
@@ -55,7 +55,7 @@ function buildPermissionTreeFromDb_() {
   var grouped = {};
   var permissions = [];
   listPermissionRows_().forEach(function (row) {
-    var permission = toPermissionDto_(row);
+    var permission = mapPermissionDto_(row);
     if (!permission.id || permission.status !== 'active') return;
     permissions.push(permission);
     if (!grouped[permission.area]) grouped[permission.area] = [];
@@ -69,11 +69,11 @@ function buildPermissionTreeFromDb_() {
       group: area,
       applicable: { menu: true, view: true, edit: true, approve: true, export: true },
       children: grouped[area].map(function (permission) {
-        var key = actionToPermissionKey_(permission.action);
+        var key = mapActionToPermissionKey_(permission.action);
         var applicable = { menu: true, view: false, edit: false, approve: false, export: false };
         applicable[key] = true;
         return {
-          id: permissionScreenId_(permission),
+          id: resolvePermissionScreenId_(permission),
           name: permission.name || permission.action,
           group: permission.area,
           applicable: applicable,
@@ -86,8 +86,8 @@ function buildPermissionTreeFromDb_() {
 
 // 7. 역할별 런타임 권한 매트릭스 생성
 function buildPermissionsByRoleFromDb_() {
-  var permissionsById = getPermissionsById_();
-  var permissionIdsByRole = getPermissionIdsByRoleId_();
+  var permissionsById = buildPermissionsById_();
+  var permissionIdsByRole = buildPermissionIdsByRoleId_();
   var result = {};
 
   Object.keys(permissionIdsByRole).forEach(function (roleId) {
@@ -95,9 +95,9 @@ function buildPermissionsByRoleFromDb_() {
     permissionIdsByRole[roleId].forEach(function (permissionId) {
       var permission = permissionsById[permissionId];
       if (!permission) return;
-      var screenId = permissionScreenId_(permission);
-      var key = actionToPermissionKey_(permission.action);
-      result[roleId][screenId] = { menu: true, view: false, edit: false, approve: false, export: false };
+      var screenId = resolvePermissionScreenId_(permission);
+      var key = mapActionToPermissionKey_(permission.action);
+      result[roleId][screenId] = { menu: false, view: false, edit: false, approve: false, export: false };
       result[roleId][screenId][key] = true;
     });
   });
@@ -130,13 +130,13 @@ function buildUserPermissionsFromDb_(roleIds) {
 
 // 9. 현재 유효 권한을 사람이 읽을 수 있는 상세 목록으로 변환
 function buildEffectivePermissionDetails_(permissions) {
-  var permissionsById = getPermissionsById_();
+  var permissionsById = buildPermissionsById_();
   var byScreen = permissions && permissions.byScreen ? permissions.byScreen : {};
   var details = [];
 
   Object.keys(permissionsById).forEach(function (permissionId) {
     var permission = permissionsById[permissionId];
-    var screenId = permissionScreenId_(permission);
+    var screenId = resolvePermissionScreenId_(permission);
     var grants = byScreen[screenId];
     if (!grants) return;
     if (!(grants.menu || grants.view || grants.edit || grants.approve || grants.export)) return;

@@ -1,6 +1,6 @@
 /** 거래증빙 metadata service */
 
-function saveEvidenceFiles_(transactionId, files, timestamp) {
+function createEvidenceFilesData_(transactionId, files, timestamp) {
   files = files || [];
   if (!files.length) return { savedCount: 0, errors: [] };
 
@@ -19,7 +19,7 @@ function saveEvidenceFiles_(transactionId, files, timestamp) {
     }
 
     var evidence = {
-      id: makeId_('EVD'),
+      id: generateAccountingId_('EVD'),
       transactionId: transactionId,
       category: file.evidence_category || '추가증빙',
       type: file.evidence_type || '기타',
@@ -27,7 +27,7 @@ function saveEvidenceFiles_(transactionId, files, timestamp) {
       amount: file.evidence_amount || '',
       driveFileId: storedFile ? storedFile.getId() : (file.file_id || ''),
       fileName: fileName,
-      managerId: getCurrentUserName_(),
+      managerId: resolveAccountingSessionEmail_(),
       createdAt: timestamp || getCurrentIsoDateTime_(),
       note: file.note || ''
     };
@@ -38,14 +38,14 @@ function saveEvidenceFiles_(transactionId, files, timestamp) {
   return result;
 }
 
-function getEvidenceAuditList_(filter) {
+function getEvidenceAuditListData_(filter) {
   filter = filter || {};
-  var ledgerById = getLedgerEntries_().reduce(function (index, item) {
+  var ledgerById = getLedgerEntriesData_().reduce(function (index, item) {
     index[item.transaction_id] = item;
     return index;
   }, {});
   var keyword = String(filter.keyword || '').trim().toLowerCase();
-  var items = findAllLedgerEvidenceRows_().map(function (evidence) {
+  var items = listLedgerEvidenceRows_().map(function (evidence) {
     var ledger = ledgerById[evidence.transactionId];
     if (!ledger) return null;
     return {
