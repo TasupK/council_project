@@ -12,6 +12,7 @@
       rel="stylesheet"
     />
     <?!= include('100_common/App_Styles'); ?>
+    <?!= include('100_common/App_Shell_Styles'); ?>
     <?!= include('300_settings/common/Settings_Styles'); ?>
     <script>
       var WEB_APP_URL = "<?= getWebAppUrl() ?>";
@@ -30,7 +31,6 @@
           <?!= include('300_settings/300_home/Settings_Home_View'); ?>
         </main>
       </div>
-      <footer class="status-bar" id="statusBar">시스템 준비 중…</footer>
     </div>
     <?!= include('100_common/app_shell_js'); ?>
     <?!= include('300_settings/common/settings_common_js'); ?> <?!=
