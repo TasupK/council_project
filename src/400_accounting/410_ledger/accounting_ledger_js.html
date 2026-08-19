@@ -128,11 +128,11 @@ function evidenceBase64ToBlob(contentBase64, mimeType) {
 async function openEvidenceFile(button) {
   const popup = window.open('about:blank', '_blank');
   try {
-    const response = await callServer('api_getLedgerEvidenceFileContent', {
+    const response = await accountingClient.getLedgerEvidenceFileContent({
       evidence_id: button.dataset.evidenceId || '',
       file_id: button.dataset.fileId || ''
-    }, null, { strict: true });
-    if (!response || !response.ok || !response.content_base64) throw new Error('증빙 파일 응답이 올바르지 않습니다.');
+    });
+    if (!response || !response.content_base64) throw new Error('증빙 파일 응답이 올바르지 않습니다.');
     const blob = evidenceBase64ToBlob(response.content_base64, response.mime_type);
     const objectUrl = URL.createObjectURL(blob);
     if (popup) popup.location.href = objectUrl;
@@ -146,9 +146,9 @@ async function openEvidenceFile(button) {
 
 async function refreshLedger() {
   const results = await Promise.all([
-    callServer('api_getLedgerEntries', {}, { items: state.items }),
-    callServer('api_getLedgerSummary', {}, {}),
-    callServer('api_getLedgerEventOptions', {}, state.events)
+    accountingClient.getLedgerEntries({}),
+    accountingClient.getLedgerSummary({}),
+    accountingClient.getLedgerEventOptions({})
   ]);
   state.items = (results[0] && results[0].items) || [];
   state.events = results[2] || [];
@@ -162,9 +162,9 @@ async function saveEntry(draft) {
   if (!draft && (!item.transaction_date || !item.amount || !item.counterparty)) return toast('필수 항목을 입력해 주세요.');
   try {
     if (!state.editingLedgerId) item.evidence_files = await readFilePayloads(state.uploadFiles.ledgerEntry);
-    const api = state.editingLedgerId ? 'api_updateLedgerEntry' : (draft ? 'api_createLedgerDraft' : 'api_createLedgerEntry');
-    const result = await callServer(api, item, null, { strict: true });
-    if (!result || !result.ok) throw new Error('저장 결과가 올바르지 않습니다.');
+    if (state.editingLedgerId) await accountingClient.updateLedgerEntry(item);
+    else if (draft) await accountingClient.createLedgerDraft(item);
+    else await accountingClient.createLedgerEntry(item);
     state.editingLedgerId = null;
     document.getElementById('create').textContent = '등록하기';
     document.getElementById('entryForm').reset();
@@ -201,7 +201,7 @@ function renderDetailEvidence(item) {
 
 async function approve() {
   if (!state.selectedId) return;
-  await callServer('api_processLedgerEntry', { transaction_id: state.selectedId, action: 'approve' }, null, { strict: true });
+  await accountingClient.processLedgerEntry({ transaction_id: state.selectedId, action: 'approve' });
   closeModal('detailModal');
   await refreshLedger();
   toast('정상 처리되었습니다.');
@@ -224,15 +224,20 @@ function editSelectedLedger() {
 
 async function deleteSelectedLedger() {
   if (!state.selectedId || !window.confirm('이 거래를 삭제 상태로 변경할까요?')) return;
-  await callServer('api_deleteLedgerEntry', { transaction_id: state.selectedId }, null, { strict: true });
+  await accountingClient.removeLedgerEntry({ transaction_id: state.selectedId });
   closeModal('detailModal'); await refreshLedger(); toast('삭제 처리되었습니다.');
 }
 
 async function updateDatabaseLink() {
-  const info = await callServer('api_getLedgerDatabaseInfo', {}, null);
-  const link = document.getElementById('ledgerDbLink');
-  if (!info || !info.spreadsheetUrl) { link.removeAttribute('href'); link.textContent = 'DB 시트 확인 불가'; return; }
-  link.href = info.spreadsheetUrl; link.textContent = 'DB 시트 확인 (' + info.transactionRowCount + '건)';
+  try {
+    const info = await accountingClient.getLedgerDatabaseInfo();
+    const link = document.getElementById('ledgerDbLink');
+    if (!info || !info.spreadsheetUrl) { link.removeAttribute('href'); link.textContent = 'DB 시트 확인 불가'; return; }
+    link.href = info.spreadsheetUrl; link.textContent = 'DB 시트 확인 (' + info.transactionRowCount + '건)';
+  } catch (error) {
+    const link = document.getElementById('ledgerDbLink');
+    link.removeAttribute('href'); link.textContent = 'DB 시트 확인 불가';
+  }
 }
 
 setupAccountingPageLinks();
@@ -253,6 +258,9 @@ document.getElementById('nextLedgerPage').addEventListener('click', function () 
 document.getElementById('rows').addEventListener('click', function (event) { const button = event.target.closest('[data-id]'); if (button) openDetail(button.dataset.id); });
 document.getElementById('detailEvidenceList').addEventListener('click', function (event) { const button = event.target.closest('[data-evidence-id]'); if (button) openEvidenceFile(button); });
 
-async function initializeLedgerPage() { await refreshLedger(); await updateDatabaseLink(); }
+async function initializeLedgerPage() {
+  try { await refreshLedger(); } catch (error) { toast(error && error.message ? error.message : '원장 정보를 불러오지 못했습니다.'); }
+  await updateDatabaseLink();
+}
 initializeLedgerPage();
 </script>
