@@ -43,7 +43,7 @@ function buildReconciliationSnapshotItems_(banks, ledgers) {
 
 function buildReconciliationLedgerCandidates_(filter) {
   filter = filter || {};
-  return listLedgerRows_().filter(function (row) {
+  return buildLedgerAccountingFacts_().filter(function (row) {
     return String(row.recordStatus || '활성') !== '무효' &&
       isAccountingDateInRange_(row.transactionAt, filter.startDate, filter.endDate);
   });
@@ -63,7 +63,7 @@ function getReconciliationDetailData_(reconciliationId) {
   var header = findReconciliationRowById_(reconciliationId);
   if (!header) return null;
   var bankById = listBankTransactionRows_().reduce(function (index, row) { index[row.id] = row; return index; }, {});
-  var ledgerById = listLedgerRows_().reduce(function (index, row) { index[row.id] = row; return index; }, {});
+  var ledgerById = buildLedgerAccountingFacts_().reduce(function (index, row) { index[row.id] = row; return index; }, {});
   var items = listReconciliationItemRows_().filter(function (row) {
     return String(row.reconciliationId) === String(reconciliationId);
   }).map(function (row) {
@@ -122,7 +122,7 @@ function reconciliationDateDistanceDays_(left, right) {
 function buildEventPaymentReconciliationCandidates_(request) {
   request = request || {};
   var claimedPaymentIds = {};
-  listLedgerRows_().forEach(function (ledger) {
+  buildLedgerAccountingFacts_().forEach(function (ledger) {
     if (String(ledger.recordStatus || '활성') === '무효') return;
     if (String(ledger.businessType || '') !== 'EVENT_PAYMENT') return;
     var businessId = String(ledger.businessId || '').trim();

@@ -8,7 +8,7 @@ let evidenceUpdate = null;
 const context = {
   console,
   findLedgerEvidenceRowById_: id => id === 'EVD-1' ? { id, transactionId: 'TRX-1', driveFileId: 'FILE-1' } : null,
-  findLedgerRowById_: id => id === 'TRX-1' ? { id, transactionAt: '2026-02-01 18:21:00', transactionType: '수입', amount: 1151683 } : null,
+  findLedgerAccountingFactById_: id => id === 'TRX-1' ? { id, transactionAt: '2026-02-01 18:21:00', transactionType: '수입', amount: 1151683 } : null,
   updateLedgerEvidenceRowById_: (id, changes) => { evidenceUpdate = { id, ...changes }; },
   resolveAccountingActorEmail_: () => 'tester@mju.ac.kr',
   writeAccountingAudit_: () => {}

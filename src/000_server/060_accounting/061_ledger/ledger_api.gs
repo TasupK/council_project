@@ -27,11 +27,11 @@ function api_getLedgerEventOptions() {
 }
 
 function api_createLedgerEntry(request) {
-  return apiHandler_({ operation: 'createLedgerEntry', input: request, requireLogin: true, access: accountingApiAccess_('edit'), service: function (input, context) { return createLedgerEntryData_(input || {}, context, 'ACTIVE'); } });
+  return apiHandler_({ operation: 'createLedgerEntry', input: request, requireLogin: true, access: accountingApiAccess_('edit'), service: function (input, context) { return createLedgerEntryWithEvidenceData_(input || {}, context, '활성'); } });
 }
 
 function api_createLedgerDraft(request) {
-  return apiHandler_({ operation: 'saveLedgerDraft', input: request, requireLogin: true, access: accountingApiAccess_('edit'), service: function (input, context) { return createLedgerDraftData_(input || {}, context); } });
+  return apiHandler_({ operation: 'saveLedgerDraft', input: request, requireLogin: true, access: accountingApiAccess_('edit'), service: function (input, context) { return createLedgerDraftWithEvidenceData_(input || {}, context); } });
 }
 
 function api_updateLedgerEntry(request) {

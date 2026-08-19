@@ -19,6 +19,8 @@ jobs:
           node-version: '20'
       - name: Accounting v2 schema contract
         run: node scripts/test-accounting-db-v2-schema.js
+      - name: Accounting subdomain boundary contract
+        run: node scripts/test-accounting-boundary-contract.js
       - name: Operation user FK and semester normalization contract
         run: node scripts/test-operation-user-fk-semester-normalization.js
       - name: Toss bank transaction ingestion

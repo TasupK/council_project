@@ -31,7 +31,7 @@ var queryContext = vm.createContext({
   Math: Math, Date: Date, JSON: JSON, isFinite: isFinite,
   listBankTransactionRows_: function () { return banks; },
   buildEventPaymentAccountingFacts_: function () { return facts; },
-  listLedgerRows_: function () { return ledgers; }
+  buildLedgerAccountingFacts_: function () { return ledgers; }
 });
 load_(queryContext, reconciliationQueryPath);
 
