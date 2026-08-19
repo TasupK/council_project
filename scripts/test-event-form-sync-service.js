@@ -11,6 +11,7 @@ var insertedApplications = [];
 var insertedAnswers = [];
 var insertedForms = [];
 var updatedForms = [];
+var audits = [];
 var paymentWrites = 0;
 var lockCalls = 0;
 var context = vm.createContext({
@@ -52,7 +53,9 @@ var context = vm.createContext({
   insertEventExtraAnswerRow_: function (item) { insertedAnswers.push(item); return item; },
   insertEventFormRow_: function (item) { insertedForms.push(item); return item; },
   updateEventFormRowById_: function (id, changes) { updatedForms.push({ id: id, changes: changes }); return true; },
-  insertEventPaymentRow_: function () { paymentWrites += 1; }
+  insertEventPaymentRow_: function () { paymentWrites += 1; },
+  withoutInternalRowNumber_: function (value) { return value && Object.assign({}, value); },
+  writeBusinessAudit_: function (event) { audits.push(event); return event; }
 });
 vm.runInContext(fs.readFileSync(servicePath, 'utf8'), context, { filename: servicePath });
 
@@ -69,6 +72,12 @@ assert.strictEqual(updatedForms[0].changes.googleFormId, 'new-form');
 assert.strictEqual(updatedForms[0].changes.responseSheetId, 'old-sheet');
 assert.strictEqual(updatedForms[0].changes.status, '연동');
 assert.strictEqual(paymentWrites, 0, 'Forms sync must never write eventPayments');
+assert.strictEqual(audits.length, 2);
+assert.strictEqual(audits[0].actionType, 'SYNC');
+assert.strictEqual(audits[0].targetType, 'eventForms');
+assert.strictEqual(audits[1].actionType, 'IMPORT');
+assert.strictEqual(audits[1].targetType, 'eventApplications');
+assert.deepStrictEqual(audits[1].afterValue.importedApplicationIds, ['A2']);
 
 assert.throws(function () {
   context.applyApplicantFormSyncData_({ id: 'MISSING', payload: { googleFormId: 'x' } }, {});
