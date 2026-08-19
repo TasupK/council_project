@@ -75,13 +75,7 @@
 
   async function loadSettingsPermissions() {
     try {
-      var data = await callSettingsApi("api_getSettingsPermissions");
-      if (!data || !data.ok)
-        throw new Error(
-          data && data.message
-            ? data.message
-            : "권한 데이터를 불러오지 못했습니다.",
-        );
+      var data = await settingsClient.getPermissions();
       applySettingsShell(data);
       permissionRoles = data.roles || [];
       permissionTree = data.permissionTree || [];
