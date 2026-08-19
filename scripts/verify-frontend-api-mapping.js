@@ -281,5 +281,10 @@ if (require.main === module) {
     console.log('Mapped frontend API references: ' + result.frontendReferences.length);
     console.log('Recognized GAS dynamic dispatch wrappers: ' + result.dynamicDispatchers.length);
     console.log('Server public APIs not referenced by frontend: ' + result.unusedServerApis.length);
+    if (result.unusedServerApis.length) {
+      result.unusedServerApis.forEach(function (api) {
+        console.log('  - ' + api.name + ' (' + api.path + ':' + api.line + ')');
+      });
+    }
   }
 }
