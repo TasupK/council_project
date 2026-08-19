@@ -64,4 +64,16 @@ for (const file of studentFeeFiles) {
   assert.ok(!source.includes("appendOperationTableRow_('businessAuditLogs'"), `direct businessAuditLogs append remains: ${path.relative(root, file)}`);
 }
 
+const accountingDir = path.join(root, 'src/000_server/060_accounting');
+const accountingFiles = collectFiles(accountingDir).filter((file) => file.endsWith('.gs'));
+const accountingSource = accountingFiles.map((file) => fs.readFileSync(file, 'utf8')).join('\n');
+for (const legacyLiteral of ['PROCESS', 'SETTLEMENT', 'LEDGER', 'EVIDENCE', 'BANK_TRANSACTION', 'RECONCILIATION', 'SETTLEMENT_REPORT']) {
+  const pattern = new RegExp(`writeAccountingAudit_\\([\\s\\S]{0,220}?['\"]${legacyLiteral}['\"]`);
+  assert.ok(!pattern.test(accountingSource), `legacy Accounting audit literal remains: ${legacyLiteral}`);
+}
+for (const file of accountingFiles) {
+  const source = fs.readFileSync(file, 'utf8');
+  assert.ok(!source.includes("appendOperationTableRow_('businessAuditLogs'"), `direct businessAuditLogs append remains: ${path.relative(root, file)}`);
+}
+
 console.log('business audit taxonomy contract: PASS');
