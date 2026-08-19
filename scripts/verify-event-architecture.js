@@ -124,7 +124,7 @@ var ownership = {
   processApplicantData_: '052_applicants/applicants_service.gs',
   getApplicantListData_: '052_applicants/applicants_query_service.gs',
   getApplicantDetailData_: '052_applicants/applicants_query_service.gs',
-  getEventPaymentTotalsByApplicationId_: '053_payment/payment_query_service.gs',
+  buildEventPaymentTotalsByApplicationId_: '053_payment/payment_query_service.gs',
   getEventPaymentRowsByApplicationId_: '053_payment/payment_query_service.gs',
   listEventPaymentClientRows_: '053_payment/payment_sheet_dao.gs',
   findEventPaymentRowsByApplicationId_: '053_payment/payment_sheet_dao.gs',
