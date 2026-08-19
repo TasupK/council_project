@@ -32,8 +32,8 @@ function load(file, extra) {
 
 (function testPaymentBatchPrevalidation() {
   var rows = {
-    A: { id: 'A', status: '접수', paymentDate: '2026-03-01' },
-    B: { id: 'B', status: '승인', paymentDate: '2026-03-01' }
+    A: { id: 'A', status: '접수', paymentDate: '2026-03-01', semesterCount: 1 },
+    B: { id: 'B', status: '승인', paymentDate: '2026-03-01', semesterCount: 1 }
   };
   var h = load('src/000_server/080_student_fee/082_payments/fee_payments_service.gs', {
     findFeeApplicationRowById_: function (id) { return rows[id] || null; },
@@ -56,7 +56,7 @@ function load(file, extra) {
   var inLock = false;
   var h = load('src/000_server/080_student_fee/082_payments/fee_payments_service.gs', {
     withOperationWriteLock_: function (fn) { h.state.lockCount += 1; inLock = true; try { return fn(); } finally { inLock = false; } },
-    findFeeApplicationRowById_: function () { assert.ok(inLock, 'application re-read must occur inside lock'); return { id: 'A', status: '접수', paymentDate: '2026-03-01' }; },
+    findFeeApplicationRowById_: function () { assert.ok(inLock, 'application re-read must occur inside lock'); return { id: 'A', status: '접수', paymentDate: '2026-03-01', semesterCount: 1 }; },
     findFeePaymentRowByApplicationId_: function () { assert.ok(inLock, 'duplicate payment check must occur inside lock'); return { id: 'EXISTING' }; },
     resolveStudentFeeRate_: function () { return { amountPerSemester: 10000 }; },
     updateFeeApplicationRowById_: function () { throw new Error('must not write'); },
