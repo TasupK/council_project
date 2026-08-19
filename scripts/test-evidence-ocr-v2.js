@@ -9,7 +9,6 @@ const context = {
   console,
   findLedgerEvidenceRowById_: id => id === 'EVD-1' ? { id, transactionId: 'TRX-1', driveFileId: 'FILE-1' } : null,
   findLedgerRowById_: id => id === 'TRX-1' ? { id, transactionAt: '2026-02-01 18:21:00', transactionType: '수입', amount: 1151683 } : null,
-  extractEvidenceOcrText_: () => '+1,151,683원\n2026-02-01 18:21\n학생회비 이월\n입금',
   updateLedgerEvidenceRowById_: (id, changes) => { evidenceUpdate = { id, ...changes }; },
   resolveAccountingActorEmail_: () => 'tester@mju.ac.kr',
   writeAccountingAudit_: () => {}
@@ -17,6 +16,7 @@ const context = {
 vm.createContext(context);
 vm.runInContext(fs.readFileSync(path.join(root, 'src/000_server/060_accounting/062_evidence/evidence_ocr_service.gs'), 'utf8'), context);
 vm.runInContext(fs.readFileSync(path.join(root, 'src/000_server/060_accounting/062_evidence/evidence_service.gs'), 'utf8'), context);
+context.extractEvidenceOcrText_ = () => '+1,151,683원\n2026-02-01 18:21\n학생회비 이월\n입금';
 
 assert.strictEqual(typeof context.validateEvidenceOcrData_, 'function');
 assert.strictEqual(typeof context.parseEvidenceOcrCandidate_, 'function');
