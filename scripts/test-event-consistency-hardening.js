@@ -40,6 +40,7 @@ function digestBytes(text) {
   var findCalls = 0;
   var updated = [];
   var inserted = [];
+  var audits = [];
   var inLock = false;
   var ctx = vm.createContext({
     console: console,
@@ -62,6 +63,8 @@ function digestBytes(text) {
     getCurrentIsoDateTime_: function () { return '2026-08-18T21:00:00+09:00'; },
     updateEventFormRowById_: function (id, patch) { updated.push([id, patch]); },
     insertEventFormRow_: function (row) { inserted.push(row); },
+    withoutInternalRowNumber_: function (value) { return value && Object.assign({}, value); },
+    writeBusinessAudit_: function (event) { audits.push(event); return event; },
     throwEventError_: function (code, message) { var e = new Error(message); e.code = code; throw e; }
   });
   var file = path.join(ROOT, 'src/000_server/050_event/052_applicants/applicants_form_sync_service.gs');
@@ -71,10 +74,12 @@ function digestBytes(text) {
   assert.strictEqual(updated.length, 1, 'concurrent existing form must be updated');
   assert.strictEqual(updated[0][0], 'FORM-EXISTING');
   assert.strictEqual(inserted.length, 0, 'must not create a duplicate eventForms row');
+  assert.strictEqual(audits.length, 2, 'form sync must emit form and import audit events');
 })();
 
 (function testRejectRecordsProcessedAt() {
   var row = { id: 'APP-1', status: '대기' };
+  var audits = [];
   var ctx = vm.createContext({
     console: console,
     String: String, Object: Object, Array: Array, Error: Error,
@@ -84,7 +89,9 @@ function digestBytes(text) {
     findEventApplicationRowById_: function () { return row; },
     updateEventApplicationRowById_: function (_, patch) { row = Object.assign({}, row, patch); },
     getCurrentIsoDateTime_: function () { return '2026-08-18T21:00:00+09:00'; },
+    readActiveUserEmailFromSession_: function () { return 'staff@example.com'; },
     withoutInternalRowNumber_: function (value) { return value; },
+    writeBusinessAudit_: function (event) { audits.push(event); return event; },
     throwEventError_: function (code, message) { var e = new Error(message); e.code = code; throw e; }
   });
   var file = path.join(ROOT, 'src/000_server/050_event/052_applicants/applicants_service.gs');
@@ -92,6 +99,9 @@ function digestBytes(text) {
   var result = ctx.processApplicantData_({ id: 'APP-1', action: 'reject' });
   assert.strictEqual(result.status, '반려');
   assert.strictEqual(result.processedAt, '2026-08-18T21:00:00+09:00');
+  assert.strictEqual(result.managerEmail, 'staff@example.com');
+  assert.strictEqual(audits.length, 1);
+  assert.strictEqual(audits[0].actionType, 'REJECT');
 })();
 
 console.log('Event consistency hardening contract passed.');
