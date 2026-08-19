@@ -32,6 +32,7 @@ function createContext_() {
   listGsFiles_(ACCOUNTING_ROOT).forEach(function (file) {
     vm.runInContext(fs.readFileSync(file, 'utf8'), context, { filename: file });
   });
+  context.writeBusinessAudit_ = function () { return true; };
   context.formatDateTimeValue_ = function (value) { return value || ''; };
   context.isTruthyValue_ = function (value) { return Boolean(value); };
   context.getCurrentIsoDateTime_ = function () { return '2026-08-17T13:00:00+09:00'; };
