@@ -5,6 +5,7 @@ var vm = require('vm');
 
 var ROOT = path.resolve(__dirname, '..');
 var reconciliationQueryPath = path.join(ROOT, 'src/000_server/060_accounting/063_reconciliation/reconciliation_query_service.gs');
+var reconciliationServicePath = path.join(ROOT, 'src/000_server/060_accounting/063_reconciliation/reconciliation_service.gs');
 var ledgerServicePath = path.join(ROOT, 'src/000_server/060_accounting/061_ledger/ledger_service.gs');
 
 function load_(context, file) {
@@ -65,5 +66,41 @@ assert.throws(function () { ledgerContext.assertLedgerBusinessSourceAvailable_('
 assert.doesNotThrow(function () { ledgerContext.assertLedgerBusinessSourceAvailable_('EVENT_PAYMENT', 'PAY-VOID', ''); });
 assert.doesNotThrow(function () { ledgerContext.assertLedgerBusinessSourceAvailable_('EVENT_PAYMENT', 'PAY-1', 'L1'); });
 assert.doesNotThrow(function () { ledgerContext.assertLedgerBusinessSourceAvailable_('일반', 'PAY-1', ''); });
+
+var capturedLedgerRequest = null;
+var serviceFacts = [facts[0]];
+var serviceContext = vm.createContext({
+  console: console, String: String, Number: Number, Object: Object, Array: Array,
+  Math: Math, Date: Date, JSON: JSON, isFinite: isFinite,
+  findBankTransactionRowById_: function (id) { return id === 'BANK-1' ? banks[0] : null; },
+  buildEventPaymentAccountingFacts_: function () { return serviceFacts; },
+  createLedgerEntryData_: function (request) {
+    capturedLedgerRequest = Object.assign({}, request);
+    return { item: { id: 'LEDGER-NEW', businessType: request.business_type, businessId: request.business_id, bankTransactionId: request.bank_transaction_id } };
+  },
+  getReconciliationDetailData_: function () { return null; }
+});
+load_(serviceContext, reconciliationServicePath);
+var created = serviceContext.createLedgerFromEventPaymentReconciliationData_({
+  bankTransactionId: 'BANK-1',
+  eventPaymentId: 'PAY-1'
+}, { email: 'accounting@example.com' });
+assert.deepStrictEqual(JSON.parse(JSON.stringify(capturedLedgerRequest)), {
+  bank_transaction_id: 'BANK-1',
+  transaction_type: '수입',
+  transaction_date: '2026-08-20',
+  amount: 12000,
+  counterparty: '김학생',
+  description: '행사 입금 PAY-1',
+  event_id: 'EVENT-1',
+  source: 'BANK',
+  business_type: 'EVENT_PAYMENT',
+  business_id: 'PAY-1'
+});
+assert.strictEqual(created.createdLedger.id, 'LEDGER-NEW');
+assert.strictEqual(serviceFacts[0].moneyStatus, '확인', 'Event payment fact must not be mutated');
+assert.throws(function () {
+  serviceContext.createLedgerFromEventPaymentReconciliationData_({ bankTransactionId: 'BANK-3', eventPaymentId: 'PAY-1' }, {});
+}, /금액/);
 
 console.log('Event–Accounting payment integration contract passed.');
