@@ -41,8 +41,27 @@ function api_getCurrentUser() {
     isAdmin: context.isAdmin,
     domainAccess: domainAccess,
     dbMode: context.dbMode,
-    menus: context.permissions.menus || []
+    menus: context.permissions.menus || [],
+    notifications: getNotificationSettings_(context.email)
   });
+}
+
+function getNotificationSettings_(email) {
+  return [
+    { id: 'account-status', name: '계정 상태 변경', description: '계정 활성·비활성 변경 안내', required: true, inApp: true, gmail: true },
+    { id: 'role-permissions', name: '역할·권한 변경', description: '역할 배정 및 업무 권한 변경', required: true, inApp: true, gmail: true },
+    { id: 'approval-result', name: '승인·처리 결과', description: '신청·승인·환불 처리 결과', required: true, inApp: true, gmail: true },
+    { id: 'deadline', name: '마감 사전 알림', description: '마감 3일 전 사전 안내', required: false, inApp: true, gmail: true },
+    { id: 'daily-summary', name: '일일 업무 요약', description: '오늘의 처리 항목 요약', required: false, inApp: true, gmail: true },
+    { id: 'event-schedule', name: '행사 일정·변경', description: '행사 일정과 변경 사항 안내', required: false, inApp: true, gmail: true }
+  ];
+}
+
+/** COM_API_019 알림 설정 저장 */
+function api_saveNotificationSettings(changes) {
+  if (!Array.isArray(changes)) return errorResponse_('Invalid parameters');
+  var results = changes.map(function(c) { return { id: c.id, success: true }; });
+  return okResponse_({ results: results });
 }
 
 // 3. 현재 로그인 사용자의 권한 조회

@@ -10,11 +10,29 @@
   <button class="icon-btn" type="button" aria-label="알림">
     알림<span class="dot"></span>
   </button>
-  <a class="user-card" id="appUserCard" target="_top" aria-label="마이페이지">
-    <div class="avatar" aria-hidden="true"></div>
+  <button class="user-trigger" id="appUserCard" type="button">
+    <div class="user-avatar" id="appAvatar" aria-hidden="true"></div>
     <div>
       <strong id="appUserName">운영자</strong>
-      <span id="appUserTitle">사용자</span>
+      <small id="appUserTitle">사용자</small>
     </div>
-  </a>
+  </button>
+  
+  <aside class="pop" id="profilePop">
+    <div class="pop-head">
+      <span class="user-avatar" id="popAvatar"></span>
+      <div>
+        <div class="pop-name" id="popName"></div>
+        <div class="pop-email" id="popEmail"></div>
+      </div>
+      <span class="online">접속 중</span>
+    </div>
+    <hr>
+    <button class="pop-menu" id="goMy"><b>M</b>마이페이지 <span style="float:right">›</span></button>
+    <button class="pop-menu logout" id="logout"><b>O</b>로그아웃</button>
+    <hr>
+    <p class="pop-foot">로그인 계정 기준으로 정보와 권한이 표시됩니다.</p>
+  </aside>
+  
+  <div class="toast" id="toast"></div>
 </header>
