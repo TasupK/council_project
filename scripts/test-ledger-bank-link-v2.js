@@ -21,7 +21,6 @@ const context = {
   generateAccountingId_: () => 'TRX-1',
   insertLedgerRow_: row => { inserted = { ...row }; existingRows.push({ ...row }); },
   updateLedgerRowById_: (id, changes) => { updated = { id, ...changes }; },
-  createEvidenceFilesData_: () => ({ savedCount: 0, errors: [] }),
   writeAccountingAudit_: () => {},
   mapLedgerEntryDto_: row => ({ ...row }),
   getLedgerDetailData_: () => null,
@@ -33,7 +32,11 @@ const context = {
   }
 };
 vm.createContext(context);
-vm.runInContext(fs.readFileSync(path.join(root, 'src/000_server/060_accounting/061_ledger/ledger_service.gs'), 'utf8'), context);
+[
+  'src/000_server/060_accounting/061_ledger/ledger_read_service.gs',
+  'src/000_server/060_accounting/063_reconciliation/reconciliation_match_service.gs',
+  'src/000_server/060_accounting/061_ledger/ledger_service.gs'
+].forEach(file => vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context));
 
 function reset() { inserted = null; updated = null; existingRows = []; }
 
