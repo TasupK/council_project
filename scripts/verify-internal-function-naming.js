@@ -32,7 +32,18 @@ var RENAMED_SYMBOLS = [
   'linkReconciliation_', 'createLedgerFromReconciliation_', 'getSettlementSummary_',
   'getSettlementReportList_', 'getSettlementReport_', 'generateSettlementReport_',
   'buildSettingsBaseData_', 'listUsersForSettings_', 'listRolesForSettings_', 'memberSort_',
-  'findAllFeeRateRows_', 'findAllStudentFeeSemesterRows_'
+  'findAllFeeRateRows_', 'findAllStudentFeeSemesterRows_',
+
+  'sheetFindAll_', 'sheetFindById_', 'sheetInsert_', 'sheetUpdateById_',
+  'sheetCrudRowsToItems_', 'sheetCrudApplyChangesToRow_',
+  'checkOperationDbIntegrity_', 'getOperationDbReference_', 'checkUserDbIntegrity_',
+  'checkLoginUserDbIntegrity_', 'createIntegrityIssue_',
+  'getCachedLoginContext_', 'cacheLoginContext_', 'getActiveUserEmailFromSession_',
+  'summarizeRoleForUser_', 'actionToPermissionKey_', 'permissionScreenId_',
+  'getEventData_', 'getEventMaterialFolder_', 'findLedgerEntryDtoById_',
+  'getEvidenceFileContent_', 'getEvidenceFolder_', 'createEvidenceFiles_',
+  'bankAmountNumber_', 'reconciliationTokens_', 'reconciliationDateDifference_',
+  'getReconciliationLedgerCandidates_', 'getCandidateScoresForBank_', 'getSettlementEligibleItems_'
 ];
 
 var PUBLIC_ALLOWLIST = {
