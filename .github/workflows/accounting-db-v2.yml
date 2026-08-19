@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - design/accounting-db-v2
+      - design/operation-user-fk-semester-normalization
   pull_request:
     branches:
       - main
@@ -18,6 +19,8 @@ jobs:
           node-version: '20'
       - name: Accounting v2 schema contract
         run: node scripts/test-accounting-db-v2-schema.js
+      - name: Operation user FK and semester normalization contract
+        run: node scripts/test-operation-user-fk-semester-normalization.js
       - name: Toss bank transaction ingestion
         run: node scripts/test-bank-transaction-v2.js
       - name: Ledger bank-link lifecycle
