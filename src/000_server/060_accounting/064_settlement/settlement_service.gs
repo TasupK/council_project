@@ -25,7 +25,7 @@ function createSettlementReportData_(request, context) {
     note: request.note || ''
   };
   insertSettlementReportRow_(row);
-  writeAccountingAudit_(row.managerEmail, 'SETTLEMENT', 'SETTLEMENT_REPORT', row.id, '', JSON.stringify(row), '결산 snapshot 작성');
+  writeAccountingAudit_(row.managerEmail, 'SETTLE', 'settlementReports', row.id, null, row, '결산 snapshot 작성');
   return row;
 }
 
@@ -43,6 +43,9 @@ function confirmSettlementReportData_(request, context) {
     note: request.note == null ? (before.note || '') : request.note
   };
   updateSettlementReportRowById_(request.reportId, changes);
-  writeAccountingAudit_(resolveAccountingActorEmail_(context), 'CONFIRM', 'SETTLEMENT_REPORT', request.reportId, JSON.stringify(before), JSON.stringify(changes), '결산 확정');
-  return Object.assign({}, before, changes);
+  var after = Object.assign({}, before, changes);
+  delete before._rowNumber;
+  delete after._rowNumber;
+  writeAccountingAudit_(resolveAccountingActorEmail_(context), 'CONFIRM', 'settlementReports', request.reportId, before, after, '결산 확정');
+  return after;
 }

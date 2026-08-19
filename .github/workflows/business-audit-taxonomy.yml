@@ -1,0 +1,45 @@
+name: Business audit taxonomy
+
+on:
+  pull_request:
+    paths:
+      - 'src/000_server/**'
+      - 'scripts/**'
+      - '.github/workflows/business-audit-taxonomy.yml'
+  push:
+    branches:
+      - design/business-audit-taxonomy
+    paths:
+      - 'src/000_server/**'
+      - 'scripts/**'
+      - '.github/workflows/business-audit-taxonomy.yml'
+
+jobs:
+  audit-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Business audit contract
+        run: node scripts/test-business-audit-taxonomy.js
+      - name: Full Node regression suite
+        shell: bash
+        run: |
+          set -euo pipefail
+          for test_file in scripts/test-*.js; do
+            echo "::group::$test_file"
+            node "$test_file"
+            echo "::endgroup::"
+          done
+      - name: Architecture and naming verifiers
+        shell: bash
+        run: |
+          set -euo pipefail
+          for verify_file in scripts/verify-*.js; do
+            [ -e "$verify_file" ] || continue
+            echo "::group::$verify_file"
+            node "$verify_file"
+            echo "::endgroup::"
+          done

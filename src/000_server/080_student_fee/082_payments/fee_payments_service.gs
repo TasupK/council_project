@@ -55,11 +55,11 @@ function processFeeApplicationsData_(request, context) {
 
       writeStudentFeeAudit_(
         actorEmail,
-        action === 'APPROVE' ? '승인' : '반려',
+        action,
         'feeApplications',
         plan.applicationId,
-        String(plan.before.status || ''),
-        newStatus,
+        { status: String(plan.before.status || '') },
+        { status: newStatus },
         source.reason || ''
       );
 
@@ -76,7 +76,7 @@ function processFeeApplicationsData_(request, context) {
           confirmedAt: ''
         };
         insertFeePaymentRow_(payment);
-        writeStudentFeeAudit_(actorEmail, '생성', 'feePayments', payment.id, '', JSON.stringify(payment), '납부신청 승인에 따른 자동 생성');
+        writeStudentFeeAudit_(actorEmail, 'CREATE', 'feePayments', payment.id, null, payment, '납부신청 승인에 따른 자동 생성');
       }
 
       return { id: plan.applicationId, success: true, application: afterApplication, payment: payment };
@@ -111,7 +111,7 @@ function confirmFeePaymentData_(request, context) {
     Object.keys(changes).forEach(function (key) { after[key] = changes[key]; });
     delete after._rowNumber;
 
-    writeStudentFeeAudit_(actorEmail, '입금확인', 'feePayments', paymentId, String(before.moneyStatus || ''), changes.moneyStatus, request && request.reason || '');
+    writeStudentFeeAudit_(actorEmail, 'CONFIRM', 'feePayments', paymentId, { moneyStatus: String(before.moneyStatus || '') }, { moneyStatus: changes.moneyStatus }, request && request.reason || '');
     return after;
   });
 }

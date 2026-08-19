@@ -74,10 +74,10 @@ function processBankTransactionUploadData_(request, context) {
   writeAccountingAudit_(
     actor,
     'IMPORT',
-    'BANK_TRANSACTION',
+    'bankTransactions',
     'BATCH',
-    '',
-    JSON.stringify({ savedCount: result.savedCount, duplicateCount: result.duplicateCount }),
+    null,
+    { savedCount: result.savedCount, duplicateCount: result.duplicateCount },
     '토스뱅크 거래내역 가져오기'
   );
 

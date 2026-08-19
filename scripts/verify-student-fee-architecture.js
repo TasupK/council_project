@@ -53,7 +53,6 @@ Object.keys(FUNCTION_OWNERS).forEach(function (name) {
 });
 
 var DAO_TABLES = {
-  '080_common/student_fee_audit_sheet_dao.gs': 'businessAuditLogs',
   '081_payers/fee_payers_sheet_dao.gs': 'feePayers',
   '082_payments/fee_applications_sheet_dao.gs': 'feeApplications',
   '082_payments/fee_payments_sheet_dao.gs': 'feePayments',
@@ -200,6 +199,18 @@ function verifyDaoOwnership_(failures) {
   });
 }
 
+function verifyAuditWrapper_(failures) {
+  var relative = '080_common/student_fee_audit_sheet_dao.gs';
+  if (!fs.existsSync(filePath_(relative))) return;
+  var source = read_(relative);
+  if (source.indexOf('writeBusinessAudit_(') < 0) {
+    failures.push('Student Fee audit wrapper must delegate to writeBusinessAudit_: ' + relative);
+  }
+  if (/appendOperationTableRow_\(\s*['\"]businessAuditLogs['\"]/.test(source)) {
+    failures.push('Student Fee audit wrapper must not append businessAuditLogs directly: ' + relative);
+  }
+}
+
 function main_() {
   var failures = [];
   verifyRequired_(failures);
@@ -209,6 +220,7 @@ function main_() {
   verifyApiFiles_(failures);
   verifyQueryServices_(files, failures);
   verifyDaoOwnership_(failures);
+  verifyAuditWrapper_(failures);
 
   if (failures.length) {
     failures.forEach(function (failure) { console.error(failure); });

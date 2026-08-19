@@ -5,6 +5,9 @@ function applyApplicantFormSyncData_(request, current) {
   var event = findEventRowById_(eventId);
   if (!event) throwEventError_('NOT_FOUND', '행사를 찾을 수 없습니다.');
 
+  var actorEmail = String(current && current.email || readActiveUserEmailFromSession_() || '').trim();
+  if (!actorEmail) throwEventError_('UNAUTHORIZED', '처리자 이메일을 확인할 수 없습니다.');
+
   var configuredForm = findEventFormByEventId_(eventId);
   var payload = request && request.payload && typeof request.payload === 'object' ? request.payload : {};
   var googleFormId = Object.prototype.hasOwnProperty.call(payload, 'googleFormId')
@@ -56,12 +59,48 @@ function applyApplicantFormSyncData_(request, current) {
     // 첫 동기화 경쟁 조건을 막기 위해 upsert 판단은 반드시 lock 안에서 다시 읽는다.
     var currentForm = findEventFormByEventId_(eventId);
     if (currentForm) {
+      var beforeForm = withoutInternalRowNumber_(currentForm);
       updateEventFormRowById_(currentForm.id, formPatch);
+      var afterForm = Object.assign({}, beforeForm, formPatch);
+      writeBusinessAudit_({
+        actorEmail: actorEmail,
+        actionType: 'SYNC',
+        targetType: 'eventForms',
+        targetId: currentForm.id,
+        beforeValue: beforeForm,
+        afterValue: afterForm,
+        reason: '행사 신청폼 동기화'
+      });
     } else {
       formPatch.id = Utilities.getUuid();
       formPatch.createdAt = syncedAt;
       insertEventFormRow_(formPatch);
+      writeBusinessAudit_({
+        actorEmail: actorEmail,
+        actionType: 'CREATE',
+        targetType: 'eventForms',
+        targetId: formPatch.id,
+        beforeValue: null,
+        afterValue: formPatch,
+        reason: '행사 신청폼 연결 생성'
+      });
     }
+
+    writeBusinessAudit_({
+      actorEmail: actorEmail,
+      actionType: 'IMPORT',
+      targetType: 'eventApplications',
+      targetId: eventId,
+      beforeValue: null,
+      afterValue: {
+        eventId: eventId,
+        importedApplicationIds: imported.map(function (candidate) { return candidate.applicant.id; }),
+        importedCount: imported.length,
+        duplicateCount: duplicateCount,
+        invalidCount: (candidates.invalidRows || []).length
+      },
+      reason: '행사 신청폼 응답 가져오기'
+    });
 
     return {
       importedCount: imported.length,
