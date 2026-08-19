@@ -61,7 +61,7 @@ var queryContext = vm.createContext({
   withoutInternalRowNumber_: function (row) { return row; },
   listEventApplicationClientRows_: function () { return []; },
   listEventAttendanceClientRows_: function () { return []; },
-  buildEventPaymentTotalsByApplicationId_: function () { return {}; },
+  getEventPaymentTotalsByApplicationId_: function () { return {}; },
   findEventFormByEventId_: function () {
     return { id: 'FORM-1', eventId: 'EVT-1', googleFormId: 'FORM-ID', responseSheetId: 'SHEET-ID', status: '연동', lastSyncedAt: '2026-08-18T20:00:00+09:00' };
   },
