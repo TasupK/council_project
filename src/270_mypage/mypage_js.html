@@ -1,15 +1,4 @@
 <script>
-function callMyPageApi_(name) {
-  return new Promise(function (resolve, reject) {
-    var runner = google.script.run
-      .withSuccessHandler(resolve)
-      .withFailureHandler(function (error) {
-        reject(new Error(error && error.message ? error.message : '서버 요청에 실패했습니다.'));
-      });
-    runner[name]();
-  });
-}
-
 function setText_(id, value, fallback) {
   var element = document.getElementById(id);
   if (element) element.textContent = value || fallback || '-';
@@ -45,7 +34,6 @@ function renderMenus_(menus) {
   });
 }
 
-// 권한 영문 키(view, edit 등)를 한글 라벨(조회, 수정 등)로 변환
 function grantLabels_(grants) {
   var labels = [];
   var names = { menu: '메뉴', view: '조회', edit: '등록·수정', approve: '승인·보관', export: '출력·다운로드' };
@@ -55,7 +43,6 @@ function grantLabels_(grants) {
   return labels;
 }
 
-// 권한 목록 데이터를 화면에 그리기
 function renderPermissions_(permissionDetails) {
   var container = document.getElementById('mypagePermissions');
   container.innerHTML = '';
@@ -90,7 +77,6 @@ function renderPermissions_(permissionDetails) {
   });
 }
 
-// 내 정보(이름, 소속 등) 데이터를 화면에 세팅
 function renderProfile_(current) {
   var user = current && current.user ? current.user : {};
   var name = user.name || '이름 미등록';
@@ -109,17 +95,14 @@ function showMyPageError_(error) {
   element.classList.remove('hidden');
 }
 
-// 페이지 진입 시 '내 정보'와 '권한' API를 동시에 호출하여 속도 최적화
 async function initializeMyPage() {
   try {
     var results = await Promise.all([
-      callMyPageApi_('api_getCurrentUser'),
-      callMyPageApi_('api_getMyPermissions')
+      appClient.getCurrentUser(),
+      appClient.getMyPermissions()
     ]);
-    var current = results[0];
-    var permissions = results[1];
-    if (!current || !current.ok) throw new Error(current && current.message ? current.message : '사용자 정보를 불러오지 못했습니다.');
-    if (!permissions || !permissions.ok) throw new Error(permissions && permissions.message ? permissions.message : '권한 정보를 불러오지 못했습니다.');
+    var current = results[0] || {};
+    var permissions = results[1] || {};
 
     renderProfile_(current);
     renderMenus_(current.menus || []);
