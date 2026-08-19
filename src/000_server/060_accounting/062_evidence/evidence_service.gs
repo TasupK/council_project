@@ -71,7 +71,7 @@ function validateEvidenceOcrData_(request, context) {
   writeAccountingAudit_(
     resolveAccountingActorEmail_(context),
     'VALIDATE',
-    'ledgerEvidence',
+    'evidence',
     evidence.id,
     { ocrStatus: evidence.ocrStatus || '', ocrValidationResult: evidence.ocrValidationResult || '' },
     changes,
