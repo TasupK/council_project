@@ -12,7 +12,7 @@ assert.strictEqual(typeof context.parseTossBankTransactionRows_, 'function');
 assert.strictEqual(typeof context.buildBankTransactionSourceString_, 'function');
 
 const sourceRow = {
-  '거래 일시': '2026-05-16 14:31:42',
+  '거래 일시': '2026.05.16 14:31:42',
   '적요': '노브랜드스타필드고양점',
   '거래 유형': '체크카드결제',
   '거래 기관': '',
@@ -36,7 +36,7 @@ assert.deepStrictEqual(JSON.parse(JSON.stringify(parsed[0])), {
 });
 
 const blankBalance = context.parseTossBankTransactionRows_([{
-  '거래 일시': '2026-02-01 18:21:08',
+  '거래 일시': '2026.02.01 18:21:08',
   '적요': '학생회비 이월',
   '거래 유형': '입금',
   '거래 기관': '',
@@ -45,6 +45,7 @@ const blankBalance = context.parseTossBankTransactionRows_([{
   '거래 후 잔액': '',
   '메모': ''
 }])[0];
+assert.strictEqual(blankBalance.transactionAt, '2026-02-01 18:21:08');
 assert.strictEqual(blankBalance.balanceAfter, '');
 assert.strictEqual(blankBalance.amount, 1151683);
 
