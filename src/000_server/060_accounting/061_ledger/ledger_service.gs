@@ -74,7 +74,7 @@ function createLedgerEntryData_(request, context, recordStatus) {
   }
 
   var evidence = createEvidenceFilesData_(item.id, request.evidence_files || request.evidence || [], now);
-  writeAccountingAudit_(actor, 'CREATE', 'LEDGER', item.id, '', JSON.stringify(item), '원장 등록');
+  writeAccountingAudit_(actor, 'CREATE', 'ledger', item.id, null, item, '원장 등록');
   return { ok: true, evidence: evidence, item: mapLedgerEntryDto_(item) };
 }
 
@@ -126,8 +126,11 @@ function updateLedgerEntryData_(input, context) {
   }
 
   var actor = resolveAccountingActorEmail_(context);
-  writeAccountingAudit_(actor, 'UPDATE', 'LEDGER', input.transaction_id, JSON.stringify(before), JSON.stringify(changes), input.reason || '원장 수정');
-  return { ok: true, item: getLedgerDetailData_(input.transaction_id) || mapLedgerEntryDto_(Object.assign({}, before, changes)) };
+  var after = Object.assign({}, before, changes);
+  delete before._rowNumber;
+  delete after._rowNumber;
+  writeAccountingAudit_(actor, 'UPDATE', 'ledger', input.transaction_id, before, after, input.reason || '원장 수정');
+  return { ok: true, item: getLedgerDetailData_(input.transaction_id) || mapLedgerEntryDto_(after) };
 }
 
 function linkLedgerBankTransactionData_(request, context) {
@@ -150,7 +153,10 @@ function deleteLedgerEntryData_(input, context) {
   var changes = { recordStatus: '무효', managerEmail: resolveAccountingActorEmail_(context), updatedAt: getCurrentIsoDateTime_() };
   updateLedgerRowById_(input.transaction_id, changes);
   var actor = resolveAccountingActorEmail_(context);
-  writeAccountingAudit_(actor, 'DELETE', 'LEDGER', input.transaction_id, JSON.stringify(before), JSON.stringify(changes), input.reason || '원장 무효 처리');
+  var after = Object.assign({}, before, changes);
+  delete before._rowNumber;
+  delete after._rowNumber;
+  writeAccountingAudit_(actor, 'DELETE', 'ledger', input.transaction_id, before, after, input.reason || '원장 무효 처리');
   return { ok: true, transaction_id: input.transaction_id };
 }
 
@@ -169,6 +175,9 @@ function processLedgerEntryData_(input, context) {
   }
   var changes = { matchStatus: status, recordStatus: '활성', managerEmail: resolveAccountingActorEmail_(context), updatedAt: getCurrentIsoDateTime_() };
   updateLedgerRowById_(input.transaction_id, changes);
-  writeAccountingAudit_(resolveAccountingActorEmail_(context), 'PROCESS', 'LEDGER', input.transaction_id, JSON.stringify(before), JSON.stringify(changes), input.reason || status);
+  var after = Object.assign({}, before, changes);
+  delete before._rowNumber;
+  delete after._rowNumber;
+  writeAccountingAudit_(resolveAccountingActorEmail_(context), input.action === 'approve' ? 'CONFIRM' : 'UPDATE', 'ledger', input.transaction_id, before, after, input.reason || status);
   return { ok: true, transaction_id: input.transaction_id, status: status, item: getLedgerDetailData_(input.transaction_id) };
 }
