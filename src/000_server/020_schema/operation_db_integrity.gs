@@ -117,7 +117,9 @@ function validateOperationDbBusinessKeys_(schema, tables) {
     { tableKey: 'eventForms', fields: ['eventId'] },
     { tableKey: 'feePayments', fields: ['applicationId'] },
     { tableKey: 'feeRefunds', fields: ['requestId'] },
-    { tableKey: 'eventApplications', fields: ['sourceResponseId'] }
+    { tableKey: 'eventApplications', fields: ['sourceResponseId'] },
+    { tableKey: 'bankTransactions', fields: ['sourceHash'] },
+    { tableKey: 'ledger', fields: ['bankTransactionId'] }
   ];
   var issues = [];
 
