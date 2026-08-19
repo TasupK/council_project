@@ -1,19 +1,49 @@
 /** 전체 결산 read-only query */
 
-function buildSettlementEligibleItems_(filter) {
+function buildSettlementSnapshotMetrics_(priorRows, periodRows, evidenceRows) {
+  function active_(rows) {
+    return (rows || []).filter(function (row) { return String(row.recordStatus || '활성') !== '무효'; });
+  }
+  function signedTotal_(rows) {
+    return active_(rows).reduce(function (sum, row) {
+      return sum + (row.transactionType === '수입' ? Number(row.amount || 0) : -Number(row.amount || 0));
+    }, 0);
+  }
+
+  var prior = active_(priorRows);
+  var period = active_(periodRows);
+  var evidenceByTransaction = (evidenceRows || []).reduce(function (index, row) {
+    index[String(row.transactionId || '')] = true;
+    return index;
+  }, {});
+  var openingBalance = signedTotal_(prior);
+  var totalIncome = period.reduce(function (sum, row) { return sum + (row.transactionType === '수입' ? Number(row.amount || 0) : 0); }, 0);
+  var totalExpense = period.reduce(function (sum, row) { return sum + (row.transactionType === '지출' ? Number(row.amount || 0) : 0); }, 0);
+  return {
+    openingBalance: openingBalance,
+    totalIncome: totalIncome,
+    totalExpense: totalExpense,
+    closingBalance: openingBalance + totalIncome - totalExpense,
+    incomeCount: period.filter(function (row) { return row.transactionType === '수입'; }).length,
+    expenseCount: period.filter(function (row) { return row.transactionType === '지출'; }).length,
+    unreconciledCount: period.filter(function (row) { return !row.bankTransactionId || row.matchStatus !== '정상'; }).length,
+    missingEvidenceCount: period.filter(function (row) { return !evidenceByTransaction[String(row.id || '')]; }).length
+  };
+}
+
+function getSettlementSourceRows_(filter) {
   filter = filter || {};
-  return getLedgerEntriesData_().filter(function (item) {
-    return isSettlementEligibleLedgerEntry_(item) && isAccountingDateInRange_(item.transaction_date, filter.startDate, filter.endDate);
-  });
+  var all = listLedgerRows_().filter(function (row) { return String(row.recordStatus || '활성') !== '무효'; });
+  return {
+    prior: all.filter(function (row) { return String(row.transactionAt || '').slice(0, 10) < String(filter.startDate || ''); }),
+    period: all.filter(function (row) { return isAccountingDateInRange_(row.transactionAt, filter.startDate, filter.endDate); })
+  };
 }
 
 function getSettlementSummaryData_(filter) {
-  var items = buildSettlementEligibleItems_(filter || {});
-  var ids = items.reduce(function (index, item) { index[item.transaction_id] = true; return index; }, {});
-  var evidenceCount = listLedgerEvidenceRows_().filter(function (row) { return ids[row.transactionId]; }).length;
-  var totalIncome = items.reduce(function (sum, item) { return sum + (item.transaction_type === '수입' ? Number(item.amount || 0) : 0); }, 0);
-  var totalExpense = items.reduce(function (sum, item) { return sum + (item.transaction_type === '지출' ? Number(item.amount || 0) : 0); }, 0);
-  return { totalIncome: totalIncome, totalExpense: totalExpense, balance: totalIncome - totalExpense, incomeCount: items.filter(function (item) { return item.transaction_type === '수입'; }).length, expenseCount: items.filter(function (item) { return item.transaction_type === '지출'; }).length, evidenceCount: evidenceCount };
+  filter = filter || {};
+  var source = getSettlementSourceRows_(filter);
+  return buildSettlementSnapshotMetrics_(source.prior, source.period, listLedgerEvidenceRows_());
 }
 
 function getSettlementReportListData_(filter) {
@@ -32,5 +62,8 @@ function exportSettlementReport_(request) {
   request = request || {};
   var report = findSettlementReportRowById_(request.reportId);
   if (!report) throw new Error('결산 보고서를 찾을 수 없습니다.');
-  return { fileName: '결산보고서_' + report.startDate + '_' + report.endDate, report: report, ledgerItems: buildSettlementEligibleItems_({ startDate: report.startDate, endDate: report.endDate }) };
+  return {
+    fileName: '결산보고서_' + report.startDate + '_' + report.endDate,
+    report: report
+  };
 }

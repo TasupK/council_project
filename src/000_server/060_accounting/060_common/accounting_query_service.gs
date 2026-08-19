@@ -8,7 +8,7 @@ function getLedgerEntriesData_() {
   }, {});
 
   return listLedgerRows_().filter(function (item) {
-    return String(item.recordStatus || 'ACTIVE') !== 'DELETED';
+    return String(item.recordStatus || '활성') !== '무효';
   }).map(function (item) {
     var dto = mapLedgerEntryDto_(item);
     dto.event_name = eventsById[item.eventId] ? eventsById[item.eventId].name : '해당없음';
@@ -21,21 +21,24 @@ function getLedgerEntriesData_() {
 }
 
 function mapLedgerEntryDto_(item) {
-  var recordStatus = item.recordStatus || 'ACTIVE';
+  var recordStatus = item.recordStatus || '활성';
   return {
     transaction_id: item.id,
-    transaction_type: isTruthyValue_(item.expense) ? '지출' : '수입',
+    bank_transaction_id: item.bankTransactionId || '',
+    transaction_type: item.transactionType || '',
     transaction_date: formatDateTimeValue_(item.transactionAt),
     department_id: '',
     department_name: '',
     amount: Number(item.amount || 0),
-    balance_after: Number(item.balanceAfter || 0),
     counterparty: item.counterparty || '',
+    source: item.source || 'MANUAL',
     event_id: item.eventId || '',
     description: item.description || '',
+    business_type: item.businessType || '',
+    business_id: item.businessId || '',
     note: '',
     manager: item.managerId || '',
-    status: recordStatus === 'DRAFT' ? '임시저장' : (item.matchStatus || '미확인'),
+    status: item.matchStatus || '미확인',
     match_status: item.matchStatus || '미확인',
     record_status: recordStatus,
     has_evidence: false,
@@ -43,7 +46,7 @@ function mapLedgerEntryDto_(item) {
     alert: '',
     created_at: formatDateTimeValue_(item.createdAt),
     updated_at: formatDateTimeValue_(item.updatedAt),
-    is_deleted: recordStatus === 'DELETED'
+    is_deleted: recordStatus === '무효'
   };
 }
 
@@ -54,6 +57,8 @@ function mapEvidenceDto_(item) {
     file_name: item.fileName,
     file_id: item.driveFileId,
     file_path: item.driveFileId ? 'https://drive.google.com/open?id=' + item.driveFileId : '',
+    ocr_status: item.ocrStatus || '',
+    ocr_validation_result: item.ocrValidationResult || '',
     created_at: formatDateTimeValue_(item.createdAt),
     updated_at: formatDateTimeValue_(item.createdAt),
     is_deleted: false
@@ -111,7 +116,7 @@ function getLedgerDatabaseInfoData_() {
 }
 
 function getLedgerEventOptionsData_() {
-  var items = getLedgerEntriesData_().filter(function (item) { return item.record_status === 'ACTIVE'; });
+  var items = getLedgerEntriesData_().filter(function (item) { return item.record_status === '활성'; });
   return listAccountingEventRows_().map(function (event) {
     var balance = items.reduce(function (sum, item) {
       if (String(item.event_id) !== String(event.id)) return sum;
@@ -122,23 +127,22 @@ function getLedgerEventOptionsData_() {
 }
 
 function isActiveLedgerEntry_(item) {
-  return item && String(item.record_status || item.recordStatus || 'ACTIVE') !== 'DELETED';
+  return item && String(item.record_status || item.recordStatus || '활성') === '활성';
 }
 
 function isSettlementEligibleLedgerEntry_(item) {
-  var recordStatus = String(item.record_status || item.recordStatus || 'ACTIVE');
   var status = item.match_status || item.matchStatus || item.status;
-  return isActiveLedgerEntry_(item) && recordStatus !== 'DRAFT' && status === '정상';
+  return isActiveLedgerEntry_(item) && status === '정상';
 }
 
 function getLedgerSummaryData_(filter) {
   var items = filterLedgerEntries_(getLedgerEntriesData_(), filter || {});
-  var active = items.filter(function (item) { return item.record_status === 'ACTIVE'; });
+  var active = items.filter(function (item) { return item.record_status === '활성'; });
   return {
     totalIncome: active.reduce(function (sum, item) { return sum + (item.transaction_type === '수입' ? Number(item.amount || 0) : 0); }, 0),
     totalExpense: active.reduce(function (sum, item) { return sum + (item.transaction_type === '지출' ? Number(item.amount || 0) : 0); }, 0),
     pendingCount: active.filter(function (item) { return item.status === '미확인'; }).length,
     reviewCount: active.filter(function (item) { return item.status === '확인필요'; }).length,
-    draftCount: items.filter(function (item) { return item.record_status === 'DRAFT'; }).length
+    draftCount: 0
   };
 }

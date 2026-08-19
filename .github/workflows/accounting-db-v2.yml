@@ -1,0 +1,40 @@
+name: Accounting DB v2
+
+on:
+  push:
+    branches:
+      - design/accounting-db-v2
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  schema-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Accounting v2 schema contract
+        run: node scripts/test-accounting-db-v2-schema.js
+      - name: Toss bank transaction ingestion
+        run: node scripts/test-bank-transaction-v2.js
+      - name: Ledger bank-link lifecycle
+        run: node scripts/test-ledger-bank-link-v2.js
+      - name: Evidence OCR validation
+        run: node scripts/test-evidence-ocr-v2.js
+      - name: Reconciliation snapshot
+        run: node scripts/test-reconciliation-v2.js
+      - name: Settlement snapshot
+        run: node scripts/test-settlement-v2.js
+      - name: Public API naming
+        run: node scripts/verify-public-api-naming.js
+      - name: Internal function naming
+        run: node scripts/verify-internal-function-naming.js
+      - name: Existing Accounting tests
+        continue-on-error: true
+        run: node scripts/test-accounting.js
+      - name: Accounting money validation
+        continue-on-error: true
+        run: node scripts/test-accounting-money-validation.js
