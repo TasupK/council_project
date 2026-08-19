@@ -54,7 +54,9 @@ assert.strictEqual(baseString, sameString);
 
 ['transactionAt', 'description', 'bankType', 'institution', 'counterpartyAccountNumber', 'amount', 'balanceAfter', 'memo'].forEach(key => {
   const changed = { ...parsed[0] };
-  changed[key] = key === 'amount' ? -8801 : String(changed[key] || '') + 'x';
+  if (key === 'amount') changed[key] = -8801;
+  else if (key === 'balanceAfter') changed[key] = 4108044;
+  else changed[key] = String(changed[key] || '') + 'x';
   assert.notStrictEqual(context.buildBankTransactionSourceString_(changed), baseString, key + ' must affect source hash input');
 });
 
