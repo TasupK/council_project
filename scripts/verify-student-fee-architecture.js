@@ -164,7 +164,7 @@ function verifyApiFiles_(failures) {
     var block = source.slice(start, next < 0 ? source.length : next);
     if (block.indexOf('apiHandler_') < 0) failures.push(name + ' must use apiHandler_.');
     if (!/requireLogin\s*:\s*true/.test(block)) failures.push(name + ' must set requireLogin: true.');
-    if (/\b(sheetFindAll_|sheetFindById_|sheetInsert_|sheetUpdateById_|readOperationTableRows_|readOperationTableClientRows_|findOperationTableRowById_|appendOperationTableRow_|updateOperationTableRow_)\s*\(/.test(block)) {
+    if (/\b(listSheetCrudItems_|findSheetCrudItemById_|insertSheetCrudItem_|updateSheetCrudItemById_|readOperationTableRows_|readOperationTableClientRows_|findOperationTableRowById_|appendOperationTableRow_|updateOperationTableRow_)\s*\(/.test(block)) {
       failures.push(name + ' performs direct Sheet/data primitive access.');
     }
   });
@@ -175,7 +175,7 @@ function verifyQueryServices_(files, failures) {
     var relative = path.relative(DOMAIN_ROOT, file).replace(/\\/g, '/');
     if (relative.indexOf('_query_service.gs') < 0) return;
     var source = fs.readFileSync(file, 'utf8');
-    if (/\b(sheetInsert_|sheetUpdateById_|appendOperationTableRow_|updateOperationTableRow_|insert[A-Za-z0-9_]*Row_|update[A-Za-z0-9_]*RowById_)\s*\(/.test(source)) {
+    if (/\b(insertSheetCrudItem_|updateSheetCrudItemById_|appendOperationTableRow_|updateOperationTableRow_|insert[A-Za-z0-9_]*Row_|update[A-Za-z0-9_]*RowById_)\s*\(/.test(source)) {
       failures.push('Query Service performs write: ' + relative);
     }
   });

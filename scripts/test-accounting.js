@@ -118,7 +118,7 @@ function testLedgerSaveDefaults_() {
   var inserted = null;
   var forwarded = null;
   context.insertLedgerRow_ = function (item) { inserted = plain_(item); };
-  context.createEvidenceFiles_ = function (transactionId, files, timestamp) {
+  context.createEvidenceFilesData_ = function (transactionId, files, timestamp) {
     forwarded = { transactionId: transactionId, files: plain_(files), timestamp: timestamp };
     return { savedCount: files.length, errors: [] };
   };
@@ -151,7 +151,7 @@ function testEvidenceSaveBehavior_() {
   context.insertLedgerEvidenceRow_ = function (item) { inserted.push(plain_(item)); };
   context.createEvidenceDriveFile_ = function () { throw new Error('upload failed'); };
 
-  var result = context.createEvidenceFiles_('trx-1', [
+  var result = context.createEvidenceFilesData_('trx-1', [
     { file_name: '실패.pdf', content_base64: 'abc' },
     { file_name: '기존.pdf', file_id: 'drive-existing' }
   ], '2026-08-17T12:00:00+09:00');
@@ -222,9 +222,9 @@ function testLedgerLifecycle_() {
   var context = createContext_();
   var inserted = null, updated = null, audits = [];
   context.insertLedgerRow_ = function (row) { inserted = plain_(row); };
-  context.createEvidenceFiles_ = function () { return { savedCount: 0, errors: [] }; };
+  context.createEvidenceFilesData_ = function () { return { savedCount: 0, errors: [] }; };
   context.writeAccountingAudit_ = function () { audits.push(Array.prototype.slice.call(arguments)); };
-  context.findLedgerEntryDtoById_ = function () { return null; };
+  context.getLedgerDetailData_ = function () { return null; };
   context.createLedgerEntryData_({ transaction_type: '수입', amount: 1000 }, { user: { email: 'm@example.com' } }, 'ACTIVE');
   assert.strictEqual(inserted.recordStatus, 'ACTIVE');
   context.createLedgerDraftData_({ transaction_type: '지출', amount: 2000 }, { user: { email: 'm@example.com' } });

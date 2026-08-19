@@ -42,7 +42,7 @@ function mapRoleDto_(row) {
 }
 
 // 4. 로그인 사용자에게 필요한 역할 요약 정보 생성
-function summarizeRoleForUser_(role, fallbackId) {
+function buildRoleSummaryForUser_(role, fallbackId) {
   if (!role) return { id: fallbackId, name: fallbackId };
   return { id: role.id, name: role.name };
 }

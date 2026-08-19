@@ -96,11 +96,11 @@ function testEventData_() {
   };
 
   assert.deepStrictEqual(
-    JSON.parse(JSON.stringify(context.getEventData_({ id: 'event-1' }))),
+    JSON.parse(JSON.stringify(context.getEventForEditData_({ id: 'event-1' }))),
     { id: 'event-1', name: '행사' }
   );
   assert.throws(function () {
-    context.getEventData_({ id: 'missing' });
+    context.getEventForEditData_({ id: 'missing' });
   }, function (error) {
     return error.code === 'NOT_FOUND';
   });
@@ -138,7 +138,7 @@ function testEventList_() {
 
 function testEventDetail_() {
   var context = createQueryContext_();
-  context.getEventData_ = function () { return { id: 'event-1', name: '행사' }; };
+  context.getEventForEditData_ = function () { return { id: 'event-1', name: '행사' }; };
   context.listEventApplicationClientRows_ = function () {
     return [
       { id: 'app-1', eventId: 'event-1', status: '승인', appliedFee: 1000 },

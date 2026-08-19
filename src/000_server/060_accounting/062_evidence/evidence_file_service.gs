@@ -2,7 +2,7 @@
 
 var LEDGER_EVIDENCE_FOLDER_PROPERTY_KEY = 'COUNCIL_LEDGER_EVIDENCE_FOLDER_ID';
 
-function getEvidenceFileContent_(input) {
+function readEvidenceFileContent_(input) {
   var fileId;
   var file;
   var blob;
@@ -35,7 +35,7 @@ function sanitizeFileName_(fileName) {
 }
 
 function createEvidenceDriveFile_(transactionId, fileName, mimeType, contentBase64) {
-  var folder = getEvidenceFolder_();
+  var folder = resolveEvidenceFolder_();
   var base64 = String(contentBase64 || '').replace(/^data:[^,]+,/, '');
   var bytes = Utilities.base64Decode(base64);
   var safeName = transactionId + '_' + sanitizeFileName_(fileName);
@@ -43,7 +43,7 @@ function createEvidenceDriveFile_(transactionId, fileName, mimeType, contentBase
   return folder.createFile(blob);
 }
 
-function getEvidenceFolder_() {
+function resolveEvidenceFolder_() {
   var props = PropertiesService.getScriptProperties();
   var folderId = props.getProperty(LEDGER_EVIDENCE_FOLDER_PROPERTY_KEY);
   if (folderId) {

@@ -13,7 +13,7 @@ assert.ok(api.includes('function saveSettingsUserDepartment'), 'saveSettingsUser
 assert.ok(fs.existsSync(servicePath), 'department assignment service missing');
 var service = fs.existsSync(servicePath) ? read(servicePath) : '';
 assert.ok(service.includes('function updateSettingsUserDepartment_'), 'updateSettingsUserDepartment_ missing');
-assert.ok(service.includes("sheetUpdateById_('user', 'users'"), 'user department persistence must use sheet CRUD');
+assert.ok(service.includes("updateSheetCrudItemById_('user', 'users'"), 'user department persistence must use sheet CRUD');
 assert.ok(service.includes('invalidateLoginContextCache_'), 'login cache invalidation missing');
 assert.ok(service.includes('getAdminSettingsCurrent_'), 'admin authorization missing');
 assert.ok(query.includes('departmentMap') && query.includes('buildDepartmentsById_'), 'settings user query should reuse one department lookup');

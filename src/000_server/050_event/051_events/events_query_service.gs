@@ -52,7 +52,7 @@ function buildUniqueEventValues_(values) {
   }).sort();
 }
 
-function getEventData_(request) {
+function getEventForEditData_(request) {
   var event = findEventRowById_(requireEventRequestId_(request));
   if (!event) throwEventError_('NOT_FOUND', '행사를 찾을 수 없습니다.');
   return withoutInternalRowNumber_(event);
@@ -70,7 +70,7 @@ function buildEventFormSyncView_(eventForm) {
 }
 
 function getEventDetailData_(request) {
-  var event = getEventData_(request);
+  var event = getEventForEditData_(request);
   var applicants = listEventApplicationClientRows_().filter(function (row) {
     return String(row.eventId) === String(event.id);
   });

@@ -26,8 +26,8 @@ var context = vm.createContext({
   Object: Object,
   Array: Array,
   buildPermissionsById_: function () { return permissions; },
-  permissionScreenId_: function (permission) { return 'perm_' + permission.id; },
-  actionToPermissionKey_: function (action) {
+  resolvePermissionScreenId_: function (permission) { return 'perm_' + permission.id; },
+  mapActionToPermissionKey_: function (action) {
     if (String(action).indexOf('조회') >= 0) return 'view';
     if (String(action).indexOf('수정') >= 0 || String(action).indexOf('등록') >= 0) return 'edit';
     if (String(action).indexOf('승인') >= 0) return 'approve';

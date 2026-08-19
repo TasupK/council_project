@@ -90,7 +90,7 @@ function groupBy_(items, key) {
   }, {});
 }
 
-function findLedgerEntryDtoById_(transactionId) {
+function getLedgerDetailData_(transactionId) {
   return getLedgerEntriesData_().filter(function (item) {
     return String(item.transaction_id) === String(transactionId);
   })[0] || null;

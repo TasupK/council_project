@@ -116,7 +116,7 @@ var ownership = {
   updateEventData_: '051_events/events_service.gs',
   updateEventStatusData_: '051_events/events_service.gs',
   updateEventClosureData_: '051_events/events_service.gs',
-  getEventData_: '051_events/events_query_service.gs',
+  getEventForEditData_: '051_events/events_query_service.gs',
   getEventListData_: '051_events/events_query_service.gs',
   buildUniqueEventValues_: '051_events/events_query_service.gs',
   getEventDetailData_: '051_events/events_query_service.gs',
@@ -130,7 +130,7 @@ var ownership = {
   findEventAttendanceRowByApplicationId_: '054_attendance/attendance_sheet_dao.gs',
   getEventRefundListData_: '055_refunds/refunds_query_service.gs',
   uploadEventRelatedMaterial_: '056_files/event_file_service.gs',
-  getEventMaterialFolder_: '056_files/event_file_service.gs',
+  resolveEventMaterialFolder_: '056_files/event_file_service.gs',
   sanitizeEventDriveFileName_: '056_files/event_file_service.gs'
 };
 

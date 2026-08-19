@@ -56,10 +56,10 @@ var REQUIRED_PUBLIC_FUNCTIONS = [
   'api_confirmFeeRefund',
   'apiHandler_',
   'requirePermission_',
-  'sheetFindAll_',
-  'sheetFindById_',
-  'sheetInsert_',
-  'sheetUpdateById_'
+  'listSheetCrudItems_',
+  'findSheetCrudItemById_',
+  'insertSheetCrudItem_',
+  'updateSheetCrudItemById_'
 ];
 
 var REQUIRED_ROUTES = {

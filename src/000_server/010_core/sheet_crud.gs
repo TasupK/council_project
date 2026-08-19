@@ -1,17 +1,17 @@
 // 1. DB 종류와 테이블키로 시트 전체 행 조회
-function sheetFindAll_(database, tableKey) {
+function listSheetCrudItems_(database, tableKey) {
   var table = getSheetCrudTableSchema_(database, tableKey);
   var sheet = requireSheetCrudTableSheet_(database, tableKey);
   var values = sheet.getDataRange().getValues();
   if (!values || values.length < 2) return [];
-  return sheetCrudRowsToItems_(table, values);
+  return mapSheetCrudRowsToItems_(table, values);
 }
 
 // 2. DB 종류와 PK로 단일 행 조회
-function sheetFindById_(database, tableKey, id) {
+function findSheetCrudItemById_(database, tableKey, id) {
   var table = getSheetCrudTableSchema_(database, tableKey);
   var idField = table.primaryKey[0];
-  var rows = sheetFindAll_(database, tableKey);
+  var rows = listSheetCrudItems_(database, tableKey);
   for (var i = 0; i < rows.length; i += 1) {
     if (String(rows[i][idField]) === String(id)) return rows[i];
   }
@@ -19,7 +19,7 @@ function sheetFindById_(database, tableKey, id) {
 }
 
 // 3. DB 종류와 테이블키로 행 추가
-function sheetInsert_(database, tableKey, item) {
+function insertSheetCrudItem_(database, tableKey, item) {
   return withSheetCrudWriteLock_(function () {
     var table = getSheetCrudTableSchema_(database, tableKey);
     var sheet = requireSheetCrudTableSheet_(database, tableKey);
@@ -34,7 +34,7 @@ function sheetInsert_(database, tableKey, item) {
 }
 
 // 4. DB 종류와 PK로 행 수정
-function sheetUpdateById_(database, tableKey, id, changes) {
+function updateSheetCrudItemById_(database, tableKey, id, changes) {
   return withSheetCrudWriteLock_(function () {
     var table = getSheetCrudTableSchema_(database, tableKey);
     var sheet = requireSheetCrudTableSheet_(database, tableKey);
@@ -46,7 +46,7 @@ function sheetUpdateById_(database, tableKey, id, changes) {
 
     for (rowIndex = 1; rowIndex < values.length; rowIndex += 1) {
       if (String(values[rowIndex][idColumn]) !== String(id)) continue;
-      sheetCrudApplyChangesToRow_(table, headers, values[rowIndex], changes);
+      applySheetCrudChangesToRow_(table, headers, values[rowIndex], changes);
       sheet.getRange(rowIndex + 1, 1, 1, headers.length).setValues([values[rowIndex]]);
       SpreadsheetApp.flush();
       return true;
@@ -100,7 +100,7 @@ function readSheetCrudHeaderValues_(sheet) {
 }
 
 // 9. 시트 행을 스키마 필드키 객체로 변환
-function sheetCrudRowsToItems_(table, values) {
+function mapSheetCrudRowsToItems_(table, values) {
   var headers = values[0].map(function (header) {
     return String(header || '').trim();
   });
@@ -121,7 +121,7 @@ function sheetCrudRowsToItems_(table, values) {
 }
 
 // 10. 수정값을 메모리 행에 반영
-function sheetCrudApplyChangesToRow_(table, headers, row, changes) {
+function applySheetCrudChangesToRow_(table, headers, row, changes) {
   Object.keys(changes || {}).forEach(function (fieldKey) {
     var column = headers.indexOf(table.fields[fieldKey]);
     if (column > -1) row[column] = changes[fieldKey];

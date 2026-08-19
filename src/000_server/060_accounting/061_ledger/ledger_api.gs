@@ -19,7 +19,7 @@ function api_getLedgerSummary(filter) {
 }
 
 function api_getLedgerDetail(transactionId) {
-  return apiHandler_({ operation: 'getLedgerDetail', input: transactionId, requireLogin: true, access: accountingApiAccess_('view'), service: function (id) { return findLedgerEntryDtoById_(id); } });
+  return apiHandler_({ operation: 'getLedgerDetail', input: transactionId, requireLogin: true, access: accountingApiAccess_('view'), service: function (id) { return getLedgerDetailData_(id); } });
 }
 
 function api_getLedgerEventOptions() {

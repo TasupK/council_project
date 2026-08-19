@@ -21,7 +21,7 @@ function requirePermission_(context, permission) {
 function resolveRequiredPermissionScreenId_(permission) {
   if (!permission) return '';
   if (permission.screenId) return permission.screenId;
-  if (permission.id) return permissionScreenId_({ id: permission.id });
+  if (permission.id) return resolvePermissionScreenId_({ id: permission.id });
   return '';
 }
 
@@ -36,9 +36,9 @@ function resolvePermissionByAliases_(access, aliases) {
   Object.keys(permissionsById).forEach(function (permissionId) {
     var permission = permissionsById[permissionId];
     if (!permission || permission.status === 'inactive') return;
-    var screenId = permissionScreenId_(permission);
+    var screenId = resolvePermissionScreenId_(permission);
     if (explicitScreenId && screenId !== explicitScreenId) return;
-    if (actionToPermissionKey_(String(permission.action || '')) !== action) return;
+    if (mapActionToPermissionKey_(String(permission.action || '')) !== action) return;
     var token = normalizePermissionAccessToken_([permission.area, permission.name, permission.description].join(' '));
     var inDomain = normalizedAliases.some(function (alias) { return token.indexOf(alias) !== -1; });
     if (!inDomain) return;

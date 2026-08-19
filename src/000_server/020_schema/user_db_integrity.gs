@@ -1,7 +1,7 @@
 // 1. UserDB 무결성 검증 API
 function api_checkUserDbIntegrity() {
   try {
-    return okResponse_(checkUserDbIntegrity_());
+    return okResponse_(validateUserDbIntegrity_());
   } catch (e) {
     console.error('Failed to check UserDB integrity.', e);
     return failResponse_('USER_DB_INTEGRITY_ERROR', 'UserDB 무결성 검증에 실패했습니다.');
@@ -9,7 +9,7 @@ function api_checkUserDbIntegrity() {
 }
 
 // 2. UserDB 핵심 테이블 무결성 검증
-function checkUserDbIntegrity_() {
+function validateUserDbIntegrity_() {
   var schema = getUserDbSchema_();
   var tables = readUserDbIntegrityTables_(schema);
   var issues = [];
@@ -25,7 +25,7 @@ function checkUserDbIntegrity_() {
 }
 
 // 3. 로그인 사용자와 연결된 UserDB 참조 무결성 검증
-function checkLoginUserDbIntegrity_(email, roleIds) {
+function validateLoginUserDbIntegrity_(email, roleIds) {
   var schema = getUserDbSchema_();
   var tables = readUserDbIntegrityTables_(schema);
   var normalizedEmail = normalizeIntegrityValue_(email);
@@ -115,7 +115,7 @@ function validateRequiredValues_(tableName, rows, columns) {
   var issues = [];
   rows.forEach(function (row) {
     columns.forEach(function (column) {
-      if (!normalizeTextValue_(row[column])) issues.push(createIntegrityIssue_('REQUIRED_VALUE_MISSING', tableName, row, column, '필수값이 비어 있습니다.'));
+      if (!normalizeTextValue_(row[column])) issues.push(buildIntegrityIssue_('REQUIRED_VALUE_MISSING', tableName, row, column, '필수값이 비어 있습니다.'));
     });
   });
   return issues;
@@ -128,7 +128,7 @@ function validateDuplicateKeys_(tableName, rows, columns) {
     var key = buildIntegrityKey_(row, columns);
     if (!key) return;
     if (!seen[key]) { seen[key] = row; return; }
-    issues.push(createIntegrityIssue_('DUPLICATE_KEY', tableName, row, columns.join('+'), '중복된 키가 있습니다.', { key: key }));
+    issues.push(buildIntegrityIssue_('DUPLICATE_KEY', tableName, row, columns.join('+'), '중복된 키가 있습니다.', { key: key }));
   });
   return issues;
 }
@@ -139,7 +139,7 @@ function validateForeignKeys_(tableName, rows, column, refTableName, refRows, re
   rows.forEach(function (row) {
     var value = normalizeIntegrityValue_(row[column]);
     if (!value) return;
-    if (!refIndex[value]) issues.push(createIntegrityIssue_('FOREIGN_KEY_NOT_FOUND', tableName, row, column, '참조 대상이 없습니다.', { value: value, refTable: refTableName, refColumn: refColumn }));
+    if (!refIndex[value]) issues.push(buildIntegrityIssue_('FOREIGN_KEY_NOT_FOUND', tableName, row, column, '참조 대상이 없습니다.', { value: value, refTable: refTableName, refColumn: refColumn }));
   });
   return issues;
 }
@@ -158,6 +158,6 @@ function buildIntegrityKey_(row, columns) {
 
 function normalizeIntegrityValue_(value) { return normalizeTextValue_(value).toLowerCase(); }
 
-function createIntegrityIssue_(code, tableName, row, column, message, extra) {
+function buildIntegrityIssue_(code, tableName, row, column, message, extra) {
   return Object.assign({ code: code, table: tableName, rowNumber: row._rowNumber || '', column: column, message: message }, extra || {});
 }

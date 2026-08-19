@@ -48,7 +48,7 @@ function createLedgerEntryData_(request, context, recordStatus) {
     updatedAt: now
   };
   insertLedgerRow_(item);
-  var evidence = createEvidenceFiles_(item.id, request.evidence_files || request.evidence || [], now);
+  var evidence = createEvidenceFilesData_(item.id, request.evidence_files || request.evidence || [], now);
   writeAccountingAudit_(actor, 'CREATE', 'LEDGER', item.id, '', JSON.stringify(item), item.recordStatus === 'DRAFT' ? '임시저장' : '원장 등록');
   return { ok: true, evidence: evidence, item: mapLedgerEntryDto_(item) };
 }
@@ -83,7 +83,7 @@ function updateLedgerEntryData_(input, context) {
   updateLedgerRowById_(input.transaction_id, changes);
   var actor = resolveAccountingActorEmail_(context);
   writeAccountingAudit_(actor, 'UPDATE', 'LEDGER', input.transaction_id, JSON.stringify(before), JSON.stringify(changes), input.reason || '원장 수정');
-  return { ok: true, item: findLedgerEntryDtoById_(input.transaction_id) || mapLedgerEntryDto_(Object.assign({}, before, changes)) };
+  return { ok: true, item: getLedgerDetailData_(input.transaction_id) || mapLedgerEntryDto_(Object.assign({}, before, changes)) };
 }
 
 function deleteLedgerEntryData_(input, context) {
@@ -107,5 +107,5 @@ function processLedgerEntryData_(input, context) {
   var changes = { matchStatus: status, recordStatus: before.recordStatus || 'ACTIVE', updatedAt: getCurrentIsoDateTime_() };
   updateLedgerRowById_(input.transaction_id, changes);
   writeAccountingAudit_(resolveAccountingActorEmail_(context), 'PROCESS', 'LEDGER', input.transaction_id, JSON.stringify(before), JSON.stringify(changes), input.reason || status);
-  return { ok: true, transaction_id: input.transaction_id, status: status, item: findLedgerEntryDtoById_(input.transaction_id) };
+  return { ok: true, transaction_id: input.transaction_id, status: status, item: getLedgerDetailData_(input.transaction_id) };
 }

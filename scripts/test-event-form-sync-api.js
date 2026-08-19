@@ -28,8 +28,8 @@ var accessContext = vm.createContext({
       EE: { id: 'EE', area: '행사복지관리', action: '수정', name: '행사 수정', description: '', status: 'active' }
     };
   },
-  permissionScreenId_: function (permission) { return 'perm_' + permission.id; },
-  actionToPermissionKey_: function (action) {
+  resolvePermissionScreenId_: function (permission) { return 'perm_' + permission.id; },
+  mapActionToPermissionKey_: function (action) {
     if (String(action).indexOf('조회') >= 0) return 'view';
     if (String(action).indexOf('수정') >= 0 || String(action).indexOf('등록') >= 0) return 'edit';
     return 'view';

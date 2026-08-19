@@ -1,7 +1,7 @@
 // 1. 운영 DB 무결성 검증 API
 function api_checkOperationDbIntegrity() {
   try {
-    return okResponse_(checkOperationDbIntegrity_());
+    return okResponse_(validateOperationDbIntegrity_());
   } catch (e) {
     console.error('Failed to check operation DB integrity.', e);
     return failResponse_('OPERATION_DB_INTEGRITY_ERROR', '운영 DB 무결성 검증에 실패했습니다.');
@@ -9,7 +9,7 @@ function api_checkOperationDbIntegrity() {
 }
 
 // 2. 운영 DB 전체 검증 실행
-function checkOperationDbIntegrity_() {
+function validateOperationDbIntegrity_() {
   var schema = getOperationDbSchema_();
   var spreadsheet = openOperationSpreadsheet_();
   var result = readOperationDbIntegrityTables_(spreadsheet, schema);
@@ -42,7 +42,7 @@ function readOperationDbIntegrityTables_(spreadsheet, schema) {
     if (!sheet) {
       tables[tableKey] = [];
       headers[tableKey] = [];
-      issues.push(createIntegrityIssue_('SHEET_NOT_FOUND', table.name, {}, '', '시트 탭을 찾을 수 없습니다.'));
+      issues.push(buildIntegrityIssue_('SHEET_NOT_FOUND', table.name, {}, '', '시트 탭을 찾을 수 없습니다.'));
       return;
     }
 
@@ -66,7 +66,7 @@ function validateOperationDbHeaders_(schema, headers) {
       return table.fields[fieldKey];
     }).forEach(function (header) {
       if (actualHeaders.indexOf(header) === -1) {
-        issues.push(createIntegrityIssue_('HEADER_NOT_FOUND', table.name, {}, header, '명세서에 정의된 컬럼이 없습니다.'));
+        issues.push(buildIntegrityIssue_('HEADER_NOT_FOUND', table.name, {}, header, '명세서에 정의된 컬럼이 없습니다.'));
       }
     });
   });
@@ -96,7 +96,7 @@ function validateOperationDbForeignKeys_(schema, tables) {
 
   Object.keys(schema).forEach(function (tableKey) {
     schema[tableKey].foreignKeys.forEach(function (foreignKey) {
-      var reference = getOperationDbReference_(foreignKey, schema, tables, userSchema, userTables);
+      var reference = resolveOperationDbReference_(foreignKey, schema, tables, userSchema, userTables);
       issues = issues.concat(validateForeignKeys_(
         schema[tableKey].name,
         tables[tableKey],
@@ -155,7 +155,7 @@ function validateOperationDbBusinessKeys_(schema, tables) {
 }
 
 // 8. FK가 참조할 DB와 테이블 조회
-function getOperationDbReference_(foreignKey, schema, tables, userSchema, userTables) {
+function resolveOperationDbReference_(foreignKey, schema, tables, userSchema, userTables) {
   var table;
 
   if (foreignKey.refDatabase === 'user') {

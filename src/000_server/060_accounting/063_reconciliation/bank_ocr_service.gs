@@ -57,7 +57,7 @@ function processBankTransactionUploadData_(request, context) {
   });
   var saveResult = applyParsedBankTransactions_(parsedItems);
   var previewItems = typeof buildReconciliationResults_ === 'function'
-    ? buildReconciliationResults_(saveResult.savedItems, getReconciliationLedgerCandidates_({}))
+    ? buildReconciliationResults_(saveResult.savedItems, buildReconciliationLedgerCandidates_({}))
     : [];
   writeAccountingAudit_(resolveAccountingActorEmail_(context), 'OCR_UPLOAD', 'BANK_TRANSACTION', 'BATCH', '', JSON.stringify({ savedCount: saveResult.savedItems.length, duplicateCount: saveResult.duplicateItems.length }), '계좌 거래 OCR 업로드');
   return {

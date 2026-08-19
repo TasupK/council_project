@@ -29,7 +29,7 @@ if (!failures.length) {
   var pageSource = read_(page);
   var portSource = [readerSource, mapperSource, serviceSource, accessSource, apiSource, frontendSource].join('\n');
 
-  forbid_(readerSource, /appendOperationTableRow_|updateOperationTableRow_|withOperationWriteLock_|sheetInsert_|sheetUpdateById_/, 'Form reader must not write OperationDB');
+  forbid_(readerSource, /appendOperationTableRow_|updateOperationTableRow_|withOperationWriteLock_|insertSheetCrudItem_|updateSheetCrudItemById_/, 'Form reader must not write OperationDB');
   forbid_(mapperSource, /\bFormApp\b|\bSpreadsheetApp\b|appendOperationTableRow_|updateOperationTableRow_|withOperationWriteLock_/, 'Form mapper must be pure from Google/DB persistence');
   forbid_(serviceSource, /\bFormApp\b|\bSpreadsheetApp\b/, 'Sync service must delegate external reads to reader');
   forbid_(serviceSource, /eventPayments|insertEventPayment|appendOperationTableRow_\(['"]eventPayments['"]/, 'Forms sync must never write eventPayments');

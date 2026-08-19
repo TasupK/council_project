@@ -8,7 +8,7 @@ function getSettingsUsersData_() {
     var email = normalizeEmail_(row[fields.email]);
     var roleIds = userRoleMap[email] || [];
     var roles = roleIds.map(function (roleId) {
-      return summarizeRoleForUser_(roleMap[roleId], roleId);
+      return buildRoleSummaryForUser_(roleMap[roleId], roleId);
     });
     return mapUserDto_(row, roleIds, roles, departmentMap);
   });

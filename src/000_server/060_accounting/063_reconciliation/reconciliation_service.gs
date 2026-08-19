@@ -5,7 +5,7 @@ function processReconciliationData_(request, context) {
   if (!request.startDate || !request.endDate) throw new Error('startDate와 endDate가 필요합니다.');
   if (request.startDate > request.endDate) throw new Error('감사 시작일이 종료일보다 늦을 수 없습니다.');
   var banks = listBankTransactionRows_().filter(function (row) { return isAccountingDateInRange_(row.transactionAt, request.startDate, request.endDate); });
-  var ledgers = getReconciliationLedgerCandidates_({ startDate: request.startDate, endDate: request.endDate });
+  var ledgers = buildReconciliationLedgerCandidates_({ startDate: request.startDate, endDate: request.endDate });
   var results = buildReconciliationResults_(banks, ledgers);
   var claimed = {};
   results.forEach(function (item) { if (item.status === '정상' && item.ledgerId) claimed[item.ledgerId] = true; });
@@ -38,7 +38,7 @@ function applyReconciliationLinkData_(request, context) {
   var item = findReconciliationItemRowById_(request.reconciliationItemId);
   if (!item) throw new Error('대사 상세를 찾을 수 없습니다.');
   var bank = findBankTransactionRowById_(item.bankTransactionId);
-  var ledger = findLedgerEntryDtoById_(request.ledgerId);
+  var ledger = getLedgerDetailData_(request.ledgerId);
   if (!bank || !ledger) throw new Error('계좌 거래 또는 원장을 찾을 수 없습니다.');
   if (isTruthyValue_(bank.expense) !== (ledger.transaction_type === '지출')) throw new Error('수입/지출 방향이 일치하지 않습니다.');
   if (Math.abs(Number(bank.amount || 0)) !== Math.abs(Number(ledger.amount || 0))) throw new Error('거래금액이 일치하지 않습니다.');

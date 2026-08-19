@@ -63,8 +63,8 @@ var settingsOwnership = {
   getSettingsPermissionsData_: '070_settings/073_permissions/settings_permissions_query_service.gs'
 };
 var iamOwnership = {
-  actionToPermissionKey_: '040_iam/043_permissions/permissions_query_service.gs',
-  permissionScreenId_: '040_iam/043_permissions/permissions_query_service.gs',
+  mapActionToPermissionKey_: '040_iam/043_permissions/permissions_query_service.gs',
+  resolvePermissionScreenId_: '040_iam/043_permissions/permissions_query_service.gs',
   buildPermissionTreeFromDb_: '040_iam/043_permissions/permissions_query_service.gs',
   buildPermissionsByRoleFromDb_: '040_iam/043_permissions/permissions_query_service.gs',
   requirePermission_: '040_iam/043_permissions/permissions_access_service.gs',
@@ -81,7 +81,7 @@ Object.keys(functions).forEach(function (name) {
 listGsFiles_(SETTINGS_ROOT).forEach(function (file) {
   var source = fs.readFileSync(file, 'utf8');
   var relative = normalize_(path.relative(SETTINGS_ROOT, file));
-  if (/_query_service\.gs$/.test(relative) && /withOperationWriteLock_|appendOperationTableRow_|updateOperationTableRow_|sheetInsert_|sheetUpdateById_|DriveApp\.create|createFile\s*\(/.test(source)) {
+  if (/_query_service\.gs$/.test(relative) && /withOperationWriteLock_|appendOperationTableRow_|updateOperationTableRow_|insertSheetCrudItem_|updateSheetCrudItemById_|DriveApp\.create|createFile\s*\(/.test(source)) {
     failures.push('Settings Query Service must be read-only: ' + relative);
   }
   if (/readTableRows_|openUserSpreadsheet_|append[A-Za-z_$]*Row_|update[A-Za-z_$]*Row_/.test(source)) {

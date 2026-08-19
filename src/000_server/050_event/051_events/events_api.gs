@@ -13,7 +13,7 @@ function api_getEventForEdit(input) {
     operation: 'getEventForEdit', input: input, requireLogin: true,
     access: eventApiAccess_('view'),
     parse: parseEventRequest_,
-    service: function (parsed) { return getEventData_(parsed.request); }
+    service: function (parsed) { return getEventForEditData_(parsed.request); }
   });
 }
 

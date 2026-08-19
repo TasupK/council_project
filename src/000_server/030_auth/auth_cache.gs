@@ -1,5 +1,5 @@
 // 1. 로그인 컨텍스트 캐시 조회
-function getCachedLoginContext_(email) {
+function readCachedLoginContext_(email) {
   try {
     var value = CacheService.getScriptCache().get(buildLoginContextCacheKey_(email));
     return value ? JSON.parse(value) : null;
@@ -10,7 +10,7 @@ function getCachedLoginContext_(email) {
 }
 
 // 2. 로그인 컨텍스트 캐시 저장
-function cacheLoginContext_(email, context) {
+function writeLoginContextCache_(email, context) {
   try {
     CacheService.getScriptCache().put(
       buildLoginContextCacheKey_(email),

@@ -20,7 +20,7 @@ function updateSettingsUserDepartment_(input) {
   }
 
   var actorEmail = current.user && current.user.email ? current.user.email : current.email || '';
-  sheetUpdateById_('user', 'users', email, {
+  updateSheetCrudItemById_('user', 'users', email, {
     departmentId: departmentId,
     updatedAt: new Date(),
     updatedBy: actorEmail
@@ -31,7 +31,7 @@ function updateSettingsUserDepartment_(input) {
   var userRoleMap = buildActiveRoleIdsByEmail_();
   var roleIds = userRoleMap[email] || [];
   var roles = roleIds.map(function (roleId) {
-    return summarizeRoleForUser_(roleMap[roleId], roleId);
+    return buildRoleSummaryForUser_(roleMap[roleId], roleId);
   });
   var updatedRow = findUserRowByEmail_(email);
   return okResponse_({

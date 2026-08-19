@@ -1,6 +1,6 @@
 /** 거래증빙 metadata service */
 
-function createEvidenceFiles_(transactionId, files, timestamp) {
+function createEvidenceFilesData_(transactionId, files, timestamp) {
   files = files || [];
   if (!files.length) return { savedCount: 0, errors: [] };
 

@@ -16,12 +16,12 @@ function makeContext() {
     resolveAccountingActorEmail_: function () { return 'staff@example.com'; },
     generateAccountingId_: function () { return 'TRX-1'; },
     insertLedgerRow_: function (row) { inserted = row; return row; },
-    createEvidenceFiles_: function () { return []; },
+    createEvidenceFilesData_: function () { return []; },
     writeAccountingAudit_: function () {},
     mapLedgerEntryDto_: function (row) { return row; },
     findLedgerRowById_: function () { return { id: 'TRX-1', transactionAt: '2026-08-18', description: '', expense: false, amount: 1000, balanceAfter: 0, counterparty: '', eventId: '', businessType: '일반', businessId: '', matchStatus: '미확인', recordStatus: 'ACTIVE' }; },
     updateLedgerRowById_: function () {},
-    findLedgerEntryDtoById_: function () { return null; },
+    getLedgerDetailData_: function () { return null; },
     isTruthyValue_: function (value) { return !!value; }
   });
   vm.runInContext(fs.readFileSync(file, 'utf8'), context, { filename: file });

@@ -7,9 +7,9 @@ function normalizeReconciliationText_(value) {
   return text.replace(/\s+/g, ' ').trim();
 }
 
-function reconciliationTokens_(value) { return normalizeReconciliationText_(value).split(' ').filter(function (token) { return token.length >= 2; }); }
+function buildReconciliationTokens_(value) { return normalizeReconciliationText_(value).split(' ').filter(function (token) { return token.length >= 2; }); }
 
-function reconciliationDateDifference_(left, right) {
+function calculateReconciliationDateDifference_(left, right) {
   var a = String(left || '').slice(0, 10).split('-').map(Number), b = String(right || '').slice(0, 10).split('-').map(Number);
   if (a.length !== 3 || b.length !== 3 || a.some(isNaN) || b.some(isNaN)) return 999;
   return Math.abs(Math.round((Date.UTC(a[0], a[1] - 1, a[2]) - Date.UTC(b[0], b[1] - 1, b[2])) / 86400000));
@@ -21,15 +21,15 @@ function scoreReconciliationCandidate_(bank, ledger) {
   if (bankExpense !== ledgerExpense) return null;
   if (Math.abs(Number(bank.amount || 0)) !== Math.abs(Number(ledger.amount || 0))) return null;
   var ledgerDate = ledger.transaction_date || ledger.transactionAt;
-  var dateDifference = reconciliationDateDifference_(bank.transactionAt, ledgerDate);
+  var dateDifference = calculateReconciliationDateDifference_(bank.transactionAt, ledgerDate);
   if (dateDifference > 1) return null;
   var score = dateDifference === 0 ? 40 : 25;
   var bankCounterparty = normalizeReconciliationText_(bank.counterparty), ledgerCounterparty = normalizeReconciliationText_(ledger.counterparty);
   var exact = bankCounterparty.length >= 2 && bankCounterparty === ledgerCounterparty;
   var includes = !exact && bankCounterparty.length >= 2 && ledgerCounterparty.length >= 2 && (bankCounterparty.indexOf(ledgerCounterparty) > -1 || ledgerCounterparty.indexOf(bankCounterparty) > -1);
   if (exact) score += 40; else if (includes) score += 30;
-  var bankTokens = reconciliationTokens_([bank.counterparty, bank.description].join(' '));
-  var ledgerTokens = reconciliationTokens_([ledger.counterparty, ledger.description].join(' '));
+  var bankTokens = buildReconciliationTokens_([bank.counterparty, bank.description].join(' '));
+  var ledgerTokens = buildReconciliationTokens_([ledger.counterparty, ledger.description].join(' '));
   var common = bankTokens.filter(function (token) { return ledgerTokens.indexOf(token) > -1; });
   if (common.length) score += 15;
   return {
@@ -40,14 +40,14 @@ function scoreReconciliationCandidate_(bank, ledger) {
   };
 }
 
-function getReconciliationLedgerCandidates_(filter) {
+function buildReconciliationLedgerCandidates_(filter) {
   filter = filter || {};
   return getLedgerEntriesData_().filter(function (item) {
     return item.record_status === 'ACTIVE' && isAccountingDateInRange_(item.transaction_date, filter.startDate, filter.endDate);
   });
 }
 
-function getCandidateScoresForBank_(bank, ledgers) {
+function calculateReconciliationCandidateScores_(bank, ledgers) {
   return (ledgers || []).map(function (ledger) { return scoreReconciliationCandidate_(bank, ledger); }).filter(Boolean).sort(function (a, b) {
     return b.score - a.score || a.dateDifference - b.dateDifference || String(a.ledgerId).localeCompare(String(b.ledgerId));
   });
@@ -56,7 +56,7 @@ function getCandidateScoresForBank_(bank, ledgers) {
 function buildReconciliationResults_(banks, ledgers) {
   var claimed = {};
   var results = (banks || []).map(function (bank) {
-    var candidates = getCandidateScoresForBank_(bank, ledgers);
+    var candidates = calculateReconciliationCandidateScores_(bank, ledgers);
     if (!candidates.length) return { bankTransactionId: bank.id || '', status: '원장누락의심', ledgerId: '', differenceAmount: Number(bank.amount || 0), matchMethod: '', note: '동일 방향·금액·거래일 조건의 원장 후보가 없습니다.', candidates: [] };
     var best = candidates[0], unique = candidates.length === 1 || best.score > candidates[1].score;
     if (!best.textMatched || !unique) return { bankTransactionId: bank.id || '', status: '확인필요', ledgerId: '', differenceAmount: 0, matchMethod: '', note: !best.textMatched ? '금액과 날짜는 일치하지만 거래상대/적요 확인이 필요합니다.' : '동점 후보가 여러 개입니다.', candidates: candidates.slice(0, 5) };
@@ -100,5 +100,5 @@ function getReconciliationCandidatesData_(request) {
   var item = request.reconciliationItemId ? findReconciliationItemRowById_(request.reconciliationItemId) : null;
   var bank = item ? findBankTransactionRowById_(item.bankTransactionId) : (request.bankTransactionId ? findBankTransactionRowById_(request.bankTransactionId) : null);
   if (!bank) throw new Error('계좌 거래를 찾을 수 없습니다.');
-  return { items: getCandidateScoresForBank_(bank, getReconciliationLedgerCandidates_({ startDate: request.startDate, endDate: request.endDate })).slice(0, 10) };
+  return { items: calculateReconciliationCandidateScores_(bank, buildReconciliationLedgerCandidates_({ startDate: request.startDate, endDate: request.endDate })).slice(0, 10) };
 }

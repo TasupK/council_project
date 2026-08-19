@@ -40,7 +40,7 @@ function requireOperationTableSheet_(tableKey) {
 
 // 5. 운영 DB 행을 스키마 필드키 객체로 조회
 function readOperationTableRows_(tableKey) {
-  return sheetFindAll_('operation', tableKey);
+  return listSheetCrudItems_('operation', tableKey);
 }
 
 // 6. 운영 DB 행을 클라이언트 전달 가능한 값으로 조회
@@ -56,7 +56,7 @@ function readOperationTableClientRows_(tableKey) {
 
 // 7. 운영 DB PK 기준 행 조회
 function findOperationTableRowById_(tableKey, id) {
-  var row = sheetFindById_('operation', tableKey, id);
+  var row = findSheetCrudItemById_('operation', tableKey, id);
   if (!row) return null;
   var item = {};
   Object.keys(row).forEach(function (fieldKey) {
@@ -77,12 +77,12 @@ function withoutInternalRowNumber_(item) {
 
 // 9. 운영 DB 행 추가
 function appendOperationTableRow_(tableKey, item) {
-  return sheetInsert_('operation', tableKey, item);
+  return insertSheetCrudItem_('operation', tableKey, item);
 }
 
 // 10. 운영 DB PK 기준 행 수정
 function updateOperationTableRow_(tableKey, id, changes) {
-  return sheetUpdateById_('operation', tableKey, id, changes);
+  return updateSheetCrudItemById_('operation', tableKey, id, changes);
 }
 
 // 11. 운영 DB 행번호 기준 수정

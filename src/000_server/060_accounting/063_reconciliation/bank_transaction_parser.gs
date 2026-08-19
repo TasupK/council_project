@@ -47,7 +47,7 @@ function parseBankTransactionBlock_(block, baseYear) {
   var incomeMatch = text.match(/(?:입금(?:액)?|수입|이체입금|급여|환급)\s*[:：]?\s*\+?\s*(?:₩|￦)?\s*([\d,]+)\s*원?/i);
   if (expenseMatch && incomeMatch) return { reviewReason: '입금과 출금 방향이 동시에 인식되었습니다.' };
   if (!expenseMatch && !incomeMatch) return { reviewReason: '입금과 출금 중 어느 거래인지 확인할 수 없습니다.' };
-  var amount = bankAmountNumber_((expenseMatch || incomeMatch)[1]);
+  var amount = parseBankAmount_((expenseMatch || incomeMatch)[1]);
   if (!amount) return { reviewReason: '거래금액을 확인할 수 없습니다.' };
   var counterparty = extractBankCounterparty_(block);
   if (!counterparty) return { reviewReason: '거래상대명을 확인할 수 없습니다.' };
@@ -80,7 +80,7 @@ function extractBankDate_(value, baseYear) {
   return [year, String(month).padStart(2, '0'), String(day).padStart(2, '0')].join('-');
 }
 
-function bankAmountNumber_(value) { return Number(String(value || '').replace(/[^0-9]/g, '')) || 0; }
+function parseBankAmount_(value) { return Number(String(value || '').replace(/[^0-9]/g, '')) || 0; }
 
 function extractBankCounterparty_(block) {
   var ignored = /(?:20\d{2}|출금|입금|지출|수입|이체|카드|송금|ATM|적요|거래\s*내용|내용|잔액|원$)/i;

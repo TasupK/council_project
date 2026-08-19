@@ -26,10 +26,10 @@ var sidebar = read('src/100_common/App_Sidebar.html');
 var shell = read('src/100_common/app_shell_js.html');
 
 assert.ok(dao.includes("getUserDbTableSchema_('departments')"), 'Department DAO must own departments table');
-assert.ok(!/getSettings|api_getCurrentUser|sheetUpdateById_|sheetInsert_/.test(dao + departmentQuery), 'Department IAM read layer must not depend on Settings/Auth or write');
+assert.ok(!/getSettings|api_getCurrentUser|updateSheetCrudItemById_|insertSheetCrudItem_/.test(dao + departmentQuery), 'Department IAM read layer must not depend on Settings/Auth or write');
 assert.ok(assignment.includes('getAdminSettingsCurrent_'), 'Department assignment must remain admin mutation');
-assert.ok(assignment.includes("sheetUpdateById_('user', 'users'"), 'Department assignment must use user Sheet CRUD');
-assert.ok(!/sheetUpdateById_|sheetInsert_|openUserSpreadsheet_|readTableRows_/.test(chartQuery), 'Department chart query must not access Sheet primitives or mutate');
+assert.ok(assignment.includes("updateSheetCrudItemById_('user', 'users'"), 'Department assignment must use user Sheet CRUD');
+assert.ok(!/updateSheetCrudItemById_|insertSheetCrudItem_|openUserSpreadsheet_|readTableRows_/.test(chartQuery), 'Department chart query must not access Sheet primitives or mutate');
 assert.ok(!/executives|국장|차장|회장/.test(chartQuery), 'Phase 1 chart must not encode position hierarchy heuristics');
 assert.ok(!/부서 추가|부서 수정|부서 삭제/.test(chartView), 'Department page must remain read-only');
 assert.ok(authAccess.includes('function buildDomainAccess_') && authAccess.includes('function canAccessPage_'), 'Route access must be centralized in Auth');
