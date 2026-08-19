@@ -79,7 +79,7 @@ function getEventDetailData_(request) {
     attendanceById[String(row.applicationId)] = row;
   });
   var approved = applicants.filter(function (row) { return row.status === '승인'; });
-  var paymentTotals = getEventPaymentTotalsByApplicationId_();
+  var paymentTotals = buildEventPaymentTotalsByApplicationId_();
   var paid = applicants.filter(function (row) {
     return Number(paymentTotals[row.id] || 0) >= Number(row.appliedFee || 0);
   });
