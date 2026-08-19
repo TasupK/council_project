@@ -7,22 +7,22 @@ const read = filePath => fs.readFileSync(path.join(root, filePath), 'utf8');
 
 const header = read('src/100_common/App_Header.html');
 const sidebar = read('src/100_common/App_Sidebar.html');
-const styles = read('src/100_common/App_Styles.html');
+const shellStyles = read('src/100_common/App_Shell_Styles.html');
 const shellJs = read('src/100_common/app_shell_js.html');
 
 assert.match(header, /id=["']appSidebarToggle["']/);
 assert.match(header, /aria-controls=["']appSidebar["']/);
 assert.match(sidebar, /id=["']appSidebar["']/);
-assert.match(styles, /\.app\s*\{[\s\S]*height:\s*100vh/);
-assert.match(styles, /grid-template-rows:\s*var\(--header-h\)\s+minmax\(0,\s*1fr\)/);
-assert.match(styles, /\.main\s*\{[\s\S]*overflow:\s*auto/);
-assert.match(styles, /\.sidebar\s*\{[\s\S]*overflow-y:\s*auto/);
-assert.match(styles, /\.app\.sidebar-hidden\s+\.body/);
-assert.doesNotMatch(styles, /--status-h/);
-assert.doesNotMatch(styles, /\.status-bar\s*\{/);
+assert.match(shellStyles, /\.app\s*\{[\s\S]*height:\s*100vh/);
+assert.match(shellStyles, /grid-template-rows:\s*var\(--header-h\)\s+minmax\(0,\s*1fr\)/);
+assert.match(shellStyles, /\.main\s*\{[\s\S]*overflow:\s*auto/);
+assert.match(shellStyles, /\.sidebar\s*\{[\s\S]*overflow-y:\s*auto/);
+assert.match(shellStyles, /\.app\.sidebar-hidden\s+\.body/);
+assert.match(shellStyles, /body\.app-mode\s*\{[\s\S]*overflow:\s*hidden/);
 assert.match(shellJs, /localStorage/);
 assert.match(shellJs, /sidebar-hidden/);
 assert.match(shellJs, /aria-expanded/);
+assert.match(shellJs, /aria-hidden/);
 
 const templates = [
   'src/250_main/Main.html',
@@ -50,6 +50,7 @@ templates.forEach(file => {
   assert.doesNotMatch(source, /<footer\b[^>]*status-bar/);
   assert.match(source, /include\(['"]100_common\/App_Header['"]\)/);
   assert.match(source, /include\(['"]100_common\/App_Sidebar['"]\)/);
+  assert.match(source, /include\(['"]100_common\/App_Shell_Styles['"]\)/);
   assert.match(source, /include\(['"]100_common\/app_shell_js['"]\)/);
 });
 
