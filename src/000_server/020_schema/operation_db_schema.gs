@@ -57,13 +57,15 @@ function getOperationDbSchema_() {
       name: '납부신청',
       sheetName: OPERATION_TABLES.feeApplications,
       fields: {
-        id: '납부신청ID', studentId: '학번', name: '성명', affiliation: '소속',
-        paymentDate: '납입날짜', semesterNumber: '신청학기차수', appliedAt: '신청일시',
+        id: '납부신청ID', sourceResponseId: '원본응답ID', sourceResponseAt: '원본응답일시', importedAt: '가져온일시',
+        studentId: '학번', name: '성명', affiliation: '소속', paymentDate: '납입날짜',
+        startSemesterId: '적용시작학기ID', semesterCount: '적용학기수', appliedAt: '신청일시',
         status: '신청상태', managerEmail: '담당자이메일', processedAt: '처리일시',
         studentCardFileId: '학생카드캡쳐파일ID', depositFileId: '입금캡쳐파일ID'
       },
       primaryKey: ['id'],
       foreignKeys: [
+        { field: 'startSemesterId', refDatabase: 'operation', refTable: 'semesters', refField: 'id', optional: true },
         { field: 'managerEmail', refDatabase: 'user', refTable: 'users', refField: 'email' }
       ]
     },
