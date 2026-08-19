@@ -17,3 +17,25 @@ function getEventPaymentRowsByApplicationId_(applicationId) {
     return String(payment.applicationId || '').trim() === targetId;
   });
 }
+
+// Accounting이 Event 내부 Sheet 구조에 의존하지 않도록 제공하는 정규화 read boundary.
+function buildEventPaymentAccountingFacts_() {
+  var applicationsById = {};
+  listEventApplicationClientRows_().forEach(function (application) {
+    applicationsById[String(application.id || '').trim()] = application;
+  });
+  return listEventPaymentClientRows_().map(function (payment) {
+    var applicationId = String(payment.applicationId || '').trim();
+    var application = applicationsById[applicationId] || {};
+    return {
+      paymentId: String(payment.id || '').trim(),
+      applicationId: applicationId,
+      eventId: String(application.eventId || '').trim(),
+      paidAmount: Number(payment.paidAmount || 0),
+      paymentDate: String(payment.paymentDate || '').trim(),
+      depositorName: String(payment.depositorName || '').trim(),
+      moneyStatus: String(payment.moneyStatus || '').trim(),
+      confirmedAt: String(payment.confirmedAt || '').trim()
+    };
+  });
+}
