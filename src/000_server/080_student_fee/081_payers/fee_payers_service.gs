@@ -20,7 +20,7 @@ function createFeePayerData_(request, context) {
     updatedAt: getCurrentIsoDateTime_()
   };
   insertFeePayerRow_(row);
-  writeStudentFeeAudit_(actorEmail, '생성', 'feePayers', studentId, '', JSON.stringify(row), '');
+  writeStudentFeeAudit_(actorEmail, 'CREATE', 'feePayers', studentId, null, row, '');
   return row;
 }
 
@@ -51,8 +51,9 @@ function updateFeePayerData_(request, context) {
   var after = {};
   Object.keys(before).forEach(function (key) { after[key] = before[key]; });
   Object.keys(changes).forEach(function (key) { after[key] = changes[key]; });
+  delete before._rowNumber;
   delete after._rowNumber;
 
-  writeStudentFeeAudit_(actorEmail, '수정', 'feePayers', studentId, JSON.stringify(before), JSON.stringify(after), '');
+  writeStudentFeeAudit_(actorEmail, 'UPDATE', 'feePayers', studentId, before, after, '');
   return after;
 }
