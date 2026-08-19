@@ -72,7 +72,7 @@ var serviceFacts = [facts[0]];
 var serviceContext = vm.createContext({
   console: console, String: String, Number: Number, Object: Object, Array: Array,
   Math: Math, Date: Date, JSON: JSON, isFinite: isFinite,
-  findBankTransactionRowById_: function (id) { return id === 'BANK-1' ? banks[0] : null; },
+  findBankTransactionRowById_: function (id) { return banks.filter(function (bank) { return bank.id === id; })[0] || null; },
   buildEventPaymentAccountingFacts_: function () { return serviceFacts; },
   createLedgerEntryData_: function (request) {
     capturedLedgerRequest = Object.assign({}, request);
