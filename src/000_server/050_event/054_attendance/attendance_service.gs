@@ -5,6 +5,8 @@ function applyAttendanceChangesData_(request) {
     : (Array.isArray(request.items) ? request.items : []);
   if (!items.length) throwEventError_('VALIDATION_FAILED', '적용할 출석 변경사항이 없습니다.');
   var allowed = EVENT_ATTENDANCE_STATUSES;
+  var actorEmail = String(readActiveUserEmailFromSession_() || '').trim();
+  if (!actorEmail) throwEventError_('UNAUTHORIZED', '처리자 이메일을 확인할 수 없습니다.');
   return withOperationWriteLock_(function () {
     return items.map(function (item) {
       var applicationId = requireEventText_(item.applicationId, 'applicationId');
@@ -19,17 +21,30 @@ function applyAttendanceChangesData_(request) {
         applicationId: applicationId,
         confirmedAt: item.confirmedAt || getCurrentIsoDateTime_(),
         status: status,
-        managerEmail: readActiveUserEmailFromSession_(),
+        managerEmail: actorEmail,
         method: 'manual'
       };
       var current = findEventAttendanceRowByApplicationId_(applicationId);
+      var before = current ? withoutInternalRowNumber_(current) : null;
+      var after;
       if (current) {
         updateEventAttendanceRowById_(current.id, patch);
-        return withoutInternalRowNumber_(findEventAttendanceRowById_(current.id));
+        after = withoutInternalRowNumber_(findEventAttendanceRowById_(current.id));
+      } else {
+        patch.id = Utilities.getUuid();
+        insertEventAttendanceRow_(patch);
+        after = withoutInternalRowNumber_(patch);
       }
-      patch.id = Utilities.getUuid();
-      insertEventAttendanceRow_(patch);
-      return withoutInternalRowNumber_(patch);
+      writeBusinessAudit_({
+        actorEmail: actorEmail,
+        actionType: 'CONFIRM',
+        targetType: 'eventAttendance',
+        targetId: after.id,
+        beforeValue: before,
+        afterValue: after,
+        reason: '행사 출석 확인'
+      });
+      return after;
     });
   });
 }
