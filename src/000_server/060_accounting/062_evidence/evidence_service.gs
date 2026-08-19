@@ -71,10 +71,10 @@ function validateEvidenceOcrData_(request, context) {
   writeAccountingAudit_(
     resolveAccountingActorEmail_(context),
     'VALIDATE',
-    'EVIDENCE',
+    'ledgerEvidence',
     evidence.id,
-    JSON.stringify({ ocrStatus: evidence.ocrStatus || '', ocrValidationResult: evidence.ocrValidationResult || '' }),
-    JSON.stringify(changes),
+    { ocrStatus: evidence.ocrStatus || '', ocrValidationResult: evidence.ocrValidationResult || '' },
+    changes,
     '거래증빙 OCR 검증'
   );
   return {
