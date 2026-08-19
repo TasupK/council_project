@@ -21,7 +21,17 @@ function createEventData_(request, context) {
       uploadEventRelatedMaterial_(source.relatedMaterialFile, payload.id);
     }
     insertEventRow_(payload);
-    return withoutInternalRowNumber_(payload);
+    var after = withoutInternalRowNumber_(payload);
+    writeBusinessAudit_({
+      actorEmail: payload.managerEmail,
+      actionType: 'CREATE',
+      targetType: 'events',
+      targetId: payload.id,
+      beforeValue: null,
+      afterValue: after,
+      reason: '행사 생성'
+    });
+    return after;
   });
 }
 
@@ -42,8 +52,19 @@ function updateEventData_(request, context) {
     throwEventError_('VALIDATION_FAILED', '수정할 행사 정보가 없습니다.');
   }
   return withOperationWriteLock_(function () {
+    var before = withoutInternalRowNumber_(findEventRowById_(id));
     updateEventRowById_(id, patch);
-    return withoutInternalRowNumber_(findEventRowById_(id));
+    var after = withoutInternalRowNumber_(findEventRowById_(id));
+    writeBusinessAudit_({
+      actorEmail: patch.managerEmail,
+      actionType: 'UPDATE',
+      targetType: 'events',
+      targetId: id,
+      beforeValue: before,
+      afterValue: after,
+      reason: '행사 수정'
+    });
+    return after;
   });
 }
 
@@ -52,16 +73,46 @@ function updateEventStatusData_(request) {
   var payload = request.payload && typeof request.payload === 'object' ? request.payload : request;
   var status = requireEventText_(payload.status, 'status');
   validateEventChoice_(status, EVENT_STATUSES, 'status');
+  var actorEmail = String(readActiveUserEmailFromSession_() || '').trim();
+  if (!actorEmail) throwEventError_('UNAUTHORIZED', '처리자 이메일을 확인할 수 없습니다.');
   return withOperationWriteLock_(function () {
+    var beforeRow = findEventRowById_(id);
+    if (!beforeRow) throwEventError_('NOT_FOUND', '행사를 찾을 수 없습니다.');
+    var before = withoutInternalRowNumber_(beforeRow);
     updateEventRowById_(id, { status: status });
-    return withoutInternalRowNumber_(findEventRowById_(id));
+    var after = withoutInternalRowNumber_(findEventRowById_(id));
+    writeBusinessAudit_({
+      actorEmail: actorEmail,
+      actionType: 'UPDATE',
+      targetType: 'events',
+      targetId: id,
+      beforeValue: before,
+      afterValue: after,
+      reason: '행사 진행상태 변경'
+    });
+    return after;
   });
 }
 
 function updateEventClosureData_(request) {
   var id = requireEventRequestId_(request);
+  var actorEmail = String(readActiveUserEmailFromSession_() || '').trim();
+  if (!actorEmail) throwEventError_('UNAUTHORIZED', '처리자 이메일을 확인할 수 없습니다.');
   return withOperationWriteLock_(function () {
+    var beforeRow = findEventRowById_(id);
+    if (!beforeRow) throwEventError_('NOT_FOUND', '행사를 찾을 수 없습니다.');
+    var before = withoutInternalRowNumber_(beforeRow);
     updateEventRowById_(id, { status: '종료' });
-    return withoutInternalRowNumber_(findEventRowById_(id));
+    var after = withoutInternalRowNumber_(findEventRowById_(id));
+    writeBusinessAudit_({
+      actorEmail: actorEmail,
+      actionType: 'UPDATE',
+      targetType: 'events',
+      targetId: id,
+      beforeValue: before,
+      afterValue: after,
+      reason: '행사 종료'
+    });
+    return after;
   });
 }
