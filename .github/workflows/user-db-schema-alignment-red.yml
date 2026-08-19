@@ -1,0 +1,32 @@
+name: UserDB Schema Alignment RED
+
+on:
+  push:
+    branches:
+      - fix/userdb-schema-alignment
+    paths:
+      - '.github/workflows/user-db-schema-alignment-red.yml'
+
+jobs:
+  red:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/userdb-schema-alignment
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Confirm alignment test currently fails
+        shell: bash
+        run: |
+          set +e
+          node scripts/test-user-db-schema-alignment.js > /tmp/red.log 2>&1
+          status=$?
+          cat /tmp/red.log
+          if [ "$status" -eq 0 ]; then
+            echo 'Expected RED but test passed.'
+            exit 1
+          fi
+          grep -Eq 'users.active|활성여부|actual UserDB|undefined' /tmp/red.log
+          echo 'RED_CONFIRMED=PASS'
