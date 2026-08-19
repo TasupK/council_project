@@ -44,7 +44,7 @@ function testPaymentQueryServiceOwnsPaymentReadModel_() {
   load_(context, queryPath);
 
   assert.deepStrictEqual(
-    JSON.parse(JSON.stringify(context.getEventPaymentTotalsByApplicationId_())),
+    JSON.parse(JSON.stringify(context.buildEventPaymentTotalsByApplicationId_())),
     { 'app-1': 1500, 'app-2': 700 }
   );
   assert.deepStrictEqual(
@@ -65,14 +65,16 @@ function testPaymentDaoOwnsEventPaymentTableAccess_() {
 }
 
 function testConsumersUsePaymentQueryInterface_() {
+  var paymentService = read_('src/000_server/050_event/053_payment/payment_service.gs');
+  assert.ok(paymentService.indexOf('buildEventPaymentTotalsByApplicationId_') === -1, 'payment mutation service must not own payment totals');
+
   [
     'src/000_server/050_event/051_events/events_query_service.gs',
     'src/000_server/050_event/052_applicants/applicants_query_service.gs',
     'src/000_server/050_event/054_attendance/attendance_query_service.gs'
   ].forEach(function (relativePath) {
     var source = read_(relativePath);
-    assert.ok(source.indexOf('buildEventPaymentTotalsByApplicationId_') === -1, relativePath + ' must not call payment implementation helper');
-    assert.ok(source.indexOf('getEventPaymentTotalsByApplicationId_') >= 0, relativePath + ' must use payment query interface');
+    assert.ok(source.indexOf('buildEventPaymentTotalsByApplicationId_') >= 0, relativePath + ' must use payment query interface');
   });
 }
 
