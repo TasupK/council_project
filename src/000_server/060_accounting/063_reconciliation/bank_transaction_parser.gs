@@ -7,7 +7,7 @@ var TOSS_BANK_TRANSACTION_HEADERS_ = [
 function parseTossBankTransactionRows_(rows) {
   return (rows || []).map(function (row, index) {
     row = row || {};
-    var transactionAt = normalizeBankSourceText_(row['거래 일시']);
+    var transactionAt = normalizeBankTransactionAt_(row['거래 일시']);
     var description = normalizeBankSourceText_(row['적요']);
     var bankType = normalizeBankSourceText_(row['거래 유형']);
     var institution = normalizeBankSourceText_(row['거래 기관']);
@@ -36,7 +36,7 @@ function parseTossBankTransactionRows_(rows) {
 function buildBankTransactionSourceString_(item) {
   item = item || {};
   return [
-    normalizeBankSourceText_(item.transactionAt),
+    normalizeBankTransactionAt_(item.transactionAt),
     normalizeBankSourceText_(item.description),
     normalizeBankSourceText_(item.bankType),
     normalizeBankSourceText_(item.institution),
@@ -63,6 +63,14 @@ function buildBankTransactionSourceHash_(item) {
 function normalizeBankSourceText_(value) {
   if (value == null) return '';
   return String(value).replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function normalizeBankTransactionAt_(value) {
+  var text = normalizeBankSourceText_(value);
+  if (!text) return '';
+  return text.replace(/^(\d{4})[.\/-](\d{1,2})[.\/-](\d{1,2})(?=\s|$)/, function (_, year, month, day) {
+    return year + '-' + ('0' + month).slice(-2) + '-' + ('0' + day).slice(-2);
+  });
 }
 
 function normalizeBankSourceNumber_(value) {
