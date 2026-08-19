@@ -47,7 +47,7 @@ function processReconciliationData_(request, context) {
     unverifiedBankCount: results.filter(function (item) { return item.result === '계좌미확인'; }).length,
     reviewRequiredCount: results.filter(function (item) { return item.result === '확인필요'; }).length,
     status: results.some(function (item) { return item.result !== '정상'; }) ? '확인필요' : '정상',
-    managerId: actor,
+    managerEmail: actor,
     executedAt: now,
     confirmedAt: '',
     confirmation: ''
