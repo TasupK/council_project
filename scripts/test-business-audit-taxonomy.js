@@ -97,4 +97,8 @@ const formSyncServicePath = path.join(root, 'src/000_server/050_event/052_applic
 const formSyncServiceSource = fs.readFileSync(formSyncServicePath, 'utf8');
 assert.ok(functionSource(formSyncServiceSource, 'applyApplicantFormSyncData_').includes('writeBusinessAudit_('), 'missing Event form sync audit coverage');
 
+const attendanceServicePath = path.join(root, 'src/000_server/050_event/054_attendance/attendance_service.gs');
+const attendanceServiceSource = fs.readFileSync(attendanceServicePath, 'utf8');
+assert.ok(functionSource(attendanceServiceSource, 'applyAttendanceChangesData_').includes('writeBusinessAudit_('), 'missing Event attendance audit coverage');
+
 console.log('business audit taxonomy contract: PASS');
