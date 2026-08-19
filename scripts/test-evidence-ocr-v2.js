@@ -35,7 +35,7 @@ assert.strictEqual(context.evaluateEvidenceOcrCandidate_({ ...candidate, transac
 const result = context.validateEvidenceOcrData_({ evidence_id: 'EVD-1' }, {});
 assert.strictEqual(result.ocr_status, '완료');
 assert.strictEqual(result.ocr_validation_result, '정상');
-assert.deepStrictEqual(evidenceUpdate, { id: 'EVD-1', ocrStatus: '완료', ocrValidationResult: '정상' });
+assert.deepStrictEqual(evidenceUpdate, { id: 'EVD-1', ocrStatus: '완료', ocrValidationResult: '정상', managerEmail: 'tester@mju.ac.kr' });
 assert.strictEqual('ocrText' in evidenceUpdate, false);
 assert.strictEqual('amount' in evidenceUpdate, false);
 assert.strictEqual('transactionAt' in evidenceUpdate, false);

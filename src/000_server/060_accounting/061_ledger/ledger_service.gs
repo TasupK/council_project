@@ -64,7 +64,7 @@ function createLedgerEntryData_(request, context, recordStatus) {
       businessId: request.business_id || '',
       matchStatus: bankTransactionId ? matchStatus : '미확인',
       recordStatus: normalizeLedgerRecordStatus_(recordStatus),
-      managerId: actor,
+      managerEmail: actor,
       createdAt: now,
       updatedAt: now
     };
@@ -117,6 +117,7 @@ function updateLedgerEntryData_(input, context) {
       businessId: input.business_id == null ? before.businessId : input.business_id,
       matchStatus: bankTransactionId ? matchStatus : '미확인',
       recordStatus: normalizeLedgerRecordStatus_(before.recordStatus),
+      managerEmail: resolveAccountingActorEmail_(context),
       updatedAt: getCurrentIsoDateTime_()
     };
     updateLedgerRowById_(input.transaction_id, changes);
@@ -146,7 +147,7 @@ function deleteLedgerEntryData_(input, context) {
   if (!input.transaction_id) throw new Error('transaction_id is required.');
   var before = findLedgerRowById_(input.transaction_id);
   if (!before) throw new Error('원장 거래를 찾을 수 없습니다.');
-  var changes = { recordStatus: '무효', updatedAt: getCurrentIsoDateTime_() };
+  var changes = { recordStatus: '무효', managerEmail: resolveAccountingActorEmail_(context), updatedAt: getCurrentIsoDateTime_() };
   updateLedgerRowById_(input.transaction_id, changes);
   var actor = resolveAccountingActorEmail_(context);
   writeAccountingAudit_(actor, 'DELETE', 'LEDGER', input.transaction_id, JSON.stringify(before), JSON.stringify(changes), input.reason || '원장 무효 처리');
@@ -166,7 +167,7 @@ function processLedgerEntryData_(input, context) {
   } else {
     status = '확인필요';
   }
-  var changes = { matchStatus: status, recordStatus: '활성', updatedAt: getCurrentIsoDateTime_() };
+  var changes = { matchStatus: status, recordStatus: '활성', managerEmail: resolveAccountingActorEmail_(context), updatedAt: getCurrentIsoDateTime_() };
   updateLedgerRowById_(input.transaction_id, changes);
   writeAccountingAudit_(resolveAccountingActorEmail_(context), 'PROCESS', 'LEDGER', input.transaction_id, JSON.stringify(before), JSON.stringify(changes), input.reason || status);
   return { ok: true, transaction_id: input.transaction_id, status: status, item: getLedgerDetailData_(input.transaction_id) };

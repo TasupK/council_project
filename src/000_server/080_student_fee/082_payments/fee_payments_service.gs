@@ -43,7 +43,7 @@ function processFeeApplicationsData_(request, context) {
       var newStatus = action === 'APPROVE' ? '승인' : '반려';
       var applicationChanges = {
         status: newStatus,
-        managerId: actorEmail,
+        managerEmail: actorEmail,
         processedAt: processedAt
       };
       updateFeeApplicationRowById_(plan.applicationId, applicationChanges);
@@ -72,7 +72,7 @@ function processFeeApplicationsData_(request, context) {
           paymentDate: plan.before.paymentDate,
           depositorName: '',
           moneyStatus: '대기',
-          managerId: actorEmail,
+          managerEmail: actorEmail,
           confirmedAt: ''
         };
         insertFeePaymentRow_(payment);
@@ -98,7 +98,7 @@ function confirmFeePaymentData_(request, context) {
 
     var changes = {
       moneyStatus: result === 'DONE' ? '완료' : '불일치',
-      managerId: actorEmail,
+      managerEmail: actorEmail,
       confirmedAt: getCurrentIsoDateTime_()
     };
     if (request && Object.prototype.hasOwnProperty.call(request, 'depositorName')) {

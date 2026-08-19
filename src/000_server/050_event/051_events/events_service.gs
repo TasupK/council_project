@@ -1,7 +1,9 @@
 // 행사 생성, 수정, 상태 변경
-function createEventData_(request) {
+function createEventData_(request, context) {
   var source = request.payload && typeof request.payload === 'object' ? request.payload : {};
   var payload = buildEventPayload_(source, true);
+  payload.managerEmail = String(context && context.email || readActiveUserEmailFromSession_() || '').trim();
+  if (!payload.managerEmail) throwEventError_('UNAUTHORIZED', '담당자 이메일을 확인할 수 없습니다.');
   return withOperationWriteLock_(function () {
     // TODO(API 상세 계약): id 채번 규칙이 스키마에 없어 충돌 없는 UUID를 임시 사용한다.
     payload.id = Utilities.getUuid();
@@ -23,10 +25,12 @@ function createEventData_(request) {
   });
 }
 
-function updateEventData_(request) {
+function updateEventData_(request, context) {
   var id = requireEventRequestId_(request);
   var source = request.payload && typeof request.payload === 'object' ? request.payload : {};
   var patch = buildEventPayload_(source, false);
+  patch.managerEmail = String(context && context.email || readActiveUserEmailFromSession_() || '').trim();
+  if (!patch.managerEmail) throwEventError_('UNAUTHORIZED', '담당자 이메일을 확인할 수 없습니다.');
   patch.updatedAt = getCurrentIsoDateTime_();
   if (!findEventRowById_(id)) {
     throwEventError_('NOT_FOUND', '행사를 찾을 수 없습니다.');

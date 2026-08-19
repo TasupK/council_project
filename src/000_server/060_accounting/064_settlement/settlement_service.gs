@@ -19,13 +19,13 @@ function createSettlementReportData_(request, context) {
     missingEvidenceCount: summary.missingEvidenceCount,
     status: '작성중',
     reportDriveFileId: '',
-    managerId: resolveAccountingActorEmail_(context),
+    managerEmail: resolveAccountingActorEmail_(context),
     createdAt: getCurrentIsoDateTime_(),
     confirmedAt: '',
     note: request.note || ''
   };
   insertSettlementReportRow_(row);
-  writeAccountingAudit_(row.managerId, 'SETTLEMENT', 'SETTLEMENT_REPORT', row.id, '', JSON.stringify(row), '결산 snapshot 작성');
+  writeAccountingAudit_(row.managerEmail, 'SETTLEMENT', 'SETTLEMENT_REPORT', row.id, '', JSON.stringify(row), '결산 snapshot 작성');
   return row;
 }
 
@@ -37,6 +37,7 @@ function confirmSettlementReportData_(request, context) {
   if (before.status === '확정') return before;
   var changes = {
     status: '확정',
+    managerEmail: resolveAccountingActorEmail_(context),
     confirmedAt: getCurrentIsoDateTime_(),
     reportDriveFileId: request.reportDriveFileId || before.reportDriveFileId || '',
     note: request.note == null ? (before.note || '') : request.note

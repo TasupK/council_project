@@ -35,7 +35,7 @@ function getFeePayerListData_(request) {
       name: row.name,
       affiliation: row.affiliation,
       startSemesterId: row.startSemesterId,
-      managerId: row.managerId,
+      managerEmail: row.managerEmail,
       updatedAt: row.updatedAt
     };
   });

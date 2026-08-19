@@ -57,7 +57,7 @@ function processFeeRefundRequestsData_(request, context) {
       var newStatus = action === 'APPROVE' ? '승인' : '반려';
       var requestChanges = {
         status: newStatus,
-        managerId: actorEmail,
+        managerEmail: actorEmail,
         processedAt: processedAt
       };
       updateFeeRefundRequestRowById_(plan.requestId, requestChanges);
@@ -85,7 +85,7 @@ function processFeeRefundRequestsData_(request, context) {
           approvedAmount: plan.approvedAmount,
           transferDate: '',
           moneyStatus: '대기',
-          managerId: actorEmail,
+          managerEmail: actorEmail,
           transferEvidenceId: '',
           createdAt: getCurrentIsoDateTime_()
         };
@@ -115,7 +115,7 @@ function confirmFeeRefundData_(request, context) {
     var changes = {
       transferDate: transferDate,
       moneyStatus: result === 'DONE' ? '완료' : '실패',
-      managerId: actorEmail
+      managerEmail: actorEmail
     };
     if (request && Object.prototype.hasOwnProperty.call(request, 'transferEvidenceId')) {
       changes.transferEvidenceId = String(request.transferEvidenceId || '').trim();

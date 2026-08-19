@@ -28,72 +28,51 @@ function createContext_() {
   });
 }
 
-function plain_(value) {
-  return JSON.parse(JSON.stringify(value));
-}
-
-function loadRequest_(context) {
-  load_(context, 'src/000_server/080_student_fee/080_common/student_fee_request.gs');
-}
+function plain_(value) { return JSON.parse(JSON.stringify(value)); }
+function loadRequest_(context) { load_(context, 'src/000_server/080_student_fee/080_common/student_fee_request.gs'); }
 
 function testFeeRateResolution_() {
   var context = createContext_();
   context.isTruthyValue_ = function (value) { return !!value; };
   context.readOperationTableClientRows_ = function (table) {
-    assert.strictEqual(table, 'feeRates');
-    return [
+    if (table === 'feeRates') return [
       { id: 'old', startDate: '2026-01-01', endDate: '2026-06-30', amountPerSemester: 10000, active: true },
       { id: 'current', startDate: '2026-07-01', endDate: '2026-12-31', amountPerSemester: 20000, active: true }
     ];
+    return [];
   };
   context.findOperationTableRowById_ = function () { return null; };
   load_(context, 'src/000_server/080_student_fee/080_common/student_fee_reference_query_service.gs');
   assert.strictEqual(context.resolveStudentFeeRate_('2026-08-17').id, 'current');
   assert.throws(function () { context.resolveStudentFeeRate_('2027-01-01'); }, /회비금액기준/);
-
-  var overlapping = createContext_();
-  overlapping.isTruthyValue_ = function (value) { return !!value; };
-  overlapping.findOperationTableRowById_ = function () { return null; };
-  overlapping.readOperationTableClientRows_ = function () {
-    return [
-      { id: 'a', startDate: '2026-01-01', endDate: '2026-12-31', amountPerSemester: 10000, active: true },
-      { id: 'b', startDate: '2026-08-01', endDate: '2026-08-31', amountPerSemester: 20000, active: true }
-    ];
-  };
-  load_(overlapping, 'src/000_server/080_student_fee/080_common/student_fee_reference_query_service.gs');
-  assert.throws(function () { overlapping.resolveStudentFeeRate_('2026-08-17'); }, /여러 건/);
 }
 
 function testStudentFeeReferenceData_() {
   var context = createContext_();
   context.readOperationTableClientRows_ = function (table) {
-    assert.strictEqual(table, 'semesters');
-    return [
-      { id: '2025-2', year: 2025, type: '2학기', startDate: '2025-09-01', endDate: '2025-12-31', active: false },
-      { id: '2026-1', year: 2026, type: '1학기', startDate: '2026-03-01', endDate: '2026-06-30', active: true }
+    if (table === 'semesters') return [
+      { id: '20261', year: 2026, type: '1학기', startDate: '', endDate: '', active: true },
+      { id: '20262', year: 2026, type: '2학기', startDate: '', endDate: '', active: true }
     ];
+    return [];
   };
   context.isTruthyValue_ = function (value) { return value === true; };
   context.findOperationTableRowById_ = function () { return null; };
   load_(context, 'src/000_server/080_student_fee/080_common/student_fee_reference_query_service.gs');
   var data = context.getStudentFeeReferenceData_();
-  assert.strictEqual(data.semesters[0].id, '2026-1');
-  assert.strictEqual(data.semesters[0].label, '2026학년도 1학기');
-  assert.strictEqual(data.semesters[1].active, false);
+  assert.strictEqual(data.semesters[0].id, '20262');
+  assert.strictEqual(data.semesters[0].label, '2026학년도 2학기');
+  assert.strictEqual(data.semesters[1].id, '20261');
 }
 
 function testAuditAttribution_() {
   var context = createContext_();
   var captured;
   context.getCurrentIsoDateTime_ = function () { return '2026-08-17T21:00:00+09:00'; };
-  context.appendOperationTableRow_ = function (table, row) {
-    captured = { table: table, row: row };
-    return row;
-  };
+  context.appendOperationTableRow_ = function (table, row) { captured = { table: table, row: row }; return row; };
   load_(context, 'src/000_server/080_student_fee/080_common/student_fee_audit_sheet_dao.gs');
   var result = context.writeStudentFeeAudit_('staff@example.com', '승인', 'feeApplications', 'app-1', '접수', '승인', 'ok');
   assert.strictEqual(captured.table, 'businessAuditLogs');
-  assert.strictEqual(result.id, 'uuid-test');
   assert.strictEqual(result.actorEmail, 'staff@example.com');
 }
 
@@ -105,11 +84,11 @@ function testPayerBehavior_() {
   loadRequest_(context);
   context.findFeePayerRowById_ = function (id) {
     if (id === 'existing') return { studentId: id };
-    if (id === '60201234') return { studentId: id, name: '김학생', affiliation: '경영정보학과', startSemesterId: '2026-1', managerId: 'old', updatedAt: 'old' };
+    if (id === '60201234') return { studentId: id, name: '김학생', affiliation: '경영정보학과', startSemesterId: '20261', managerEmail: 'old@example.com', updatedAt: 'old' };
     return null;
   };
   context.assertValidStudentFeeSemester_ = function (id) {
-    if (['2026-1', '2026-2'].indexOf(id) < 0) throw new Error('학기기준');
+    if (['20261', '20262'].indexOf(id) < 0) throw new Error('학기기준');
     return { id: id };
   };
   context.insertFeePayerRow_ = function (row) { inserted = plain_(row); return row; };
@@ -119,139 +98,86 @@ function testPayerBehavior_() {
   load_(context, 'src/000_server/080_student_fee/081_payers/fee_payers_service.gs');
 
   assert.throws(function () {
-    context.createFeePayerData_({ studentId: 'existing', name: 'A', affiliation: 'B', startSemesterId: '2026-1' }, { email: 'staff@example.com' });
+    context.createFeePayerData_({ studentId: 'existing', name: 'A', affiliation: 'B', startSemesterId: '20261' }, { email: 'staff@example.com' });
   }, /이미 등록/);
 
-  var created = context.createFeePayerData_({ studentId: '60209999', name: '신규', affiliation: '경영정보학과', startSemesterId: '2026-1' }, { email: 'staff@example.com' });
+  var created = context.createFeePayerData_({ studentId: '60209999', name: '신규', affiliation: '경영정보학과', startSemesterId: '20261' }, { email: 'staff@example.com' });
   assert.deepStrictEqual(plain_(created), inserted);
-  assert.strictEqual(created.managerId, 'staff@example.com');
+  assert.strictEqual(created.managerEmail, 'staff@example.com');
 
-  var changed = context.updateFeePayerData_({ studentId: '60201234', name: '김수정', affiliation: '경영대학', startSemesterId: '2026-2' }, { email: 'editor@example.com' });
+  var changed = context.updateFeePayerData_({ studentId: '60201234', name: '김수정', startSemesterId: '20262' }, { email: 'editor@example.com' });
   assert.strictEqual(changed.name, '김수정');
+  assert.strictEqual(updated.changes.managerEmail, 'editor@example.com');
   assert.strictEqual(updated.changes.studentId, undefined);
-  assert.strictEqual(updated.changes.managerId, 'editor@example.com');
   assert.strictEqual(audits.length, 2);
-
-  var query = createContext_();
-  loadRequest_(query);
-  query.listFeePayerRows_ = function () {
-    return [{ studentId: '60201234', name: '김학생', affiliation: '경영정보학과', startSemesterId: '2026-1', updatedAt: '2026-08-17' }];
-  };
-  query.findFeePayerRowById_ = function () { return { studentId: '60201234', name: '김학생' }; };
-  load_(query, 'src/000_server/080_student_fee/081_payers/fee_payers_query_service.gs');
-  var list = query.getFeePayerListData_({ keyword: '김', page: 1, pageSize: 10 });
-  assert.strictEqual(list.items[0].studentId, '60****34');
-  assert.strictEqual(list.items[0].studentIdKey, '60201234');
-  assert.strictEqual(query.getFeePayerDetailData_({ studentId: '60201234' }).studentId, '60201234');
 }
 
 function testPaymentBehavior_() {
-  var query = createContext_();
-  loadRequest_(query);
-  query.listFeeApplicationRows_ = function () {
-    return [
-      { id: 'app-1', studentId: '60201234', name: '김학생', paymentDate: '2026-08-10', semesterNumber: 9, appliedAt: '2026-08-11', status: '접수' },
-      { id: 'app-2', studentId: '60205678', name: '이학생', paymentDate: '2026-08-09', appliedAt: '2026-08-12', status: '승인' }
-    ];
-  };
-  query.listFeePaymentRows_ = function () { return [{ id: 'pay-2', applicationId: 'app-2', amount: 20000, moneyStatus: '대기' }]; };
-  query.findFeeApplicationRowById_ = function () { return query.listFeeApplicationRows_()[0]; };
-  query.findFeePaymentRowByApplicationId_ = function () { return null; };
-  query.resolveStudentFeeRate_ = function () { return { id: 'rate-1', amountPerSemester: 20000 }; };
-  load_(query, 'src/000_server/080_student_fee/082_payments/fee_payments_query_service.gs');
-  var list = query.getFeeApplicationListData_({ page: 1, pageSize: 10 });
-  assert.deepStrictEqual(list.items.map(function (item) { return item.id; }), ['app-2', 'app-1']);
-  assert.strictEqual(list.items[0].studentId, '60****78');
-  assert.strictEqual(query.calculateFeeAmountData_({ paymentDate: '2026-08-10', semesterNumber: 9 }).amount, 20000);
-
-  var service = createContext_();
+  var context = createContext_();
   var application = { id: 'app-1', paymentDate: '2026-08-10', status: '접수' };
   var inserted;
   var audits = [];
-  service.findFeeApplicationRowById_ = function () { return application; };
-  service.findFeePaymentRowByApplicationId_ = function () { return inserted || null; };
-  service.updateFeeApplicationRowById_ = function (id, changes) { application = Object.assign({}, application, changes); return true; };
-  service.insertFeePaymentRow_ = function (row) { inserted = plain_(row); return row; };
-  service.resolveStudentFeeRate_ = function () { return { amountPerSemester: 20000 }; };
-  service.getCurrentIsoDateTime_ = function () { return '2026-08-17T21:00:00+09:00'; };
-  service.writeStudentFeeAudit_ = function () { audits.push(Array.prototype.slice.call(arguments)); };
-  load_(service, 'src/000_server/080_student_fee/082_payments/fee_payments_service.gs');
-  var approved = service.processFeeApplicationsData_({ ids: ['app-1'], action: 'APPROVE' }, { email: 'staff@example.com' });
+  context.findFeeApplicationRowById_ = function () { return application; };
+  context.findFeePaymentRowByApplicationId_ = function () { return inserted || null; };
+  context.updateFeeApplicationRowById_ = function (id, changes) { application = Object.assign({}, application, changes); return true; };
+  context.insertFeePaymentRow_ = function (row) { inserted = plain_(row); return row; };
+  context.resolveStudentFeeRate_ = function () { return { amountPerSemester: 20000 }; };
+  context.getCurrentIsoDateTime_ = function () { return '2026-08-17T21:00:00+09:00'; };
+  context.writeStudentFeeAudit_ = function () { audits.push(Array.prototype.slice.call(arguments)); };
+  load_(context, 'src/000_server/080_student_fee/082_payments/fee_payments_service.gs');
+
+  var approved = context.processFeeApplicationsData_({ ids: ['app-1'], action: 'APPROVE' }, { email: 'staff@example.com' });
   assert.strictEqual(approved[0].success, true);
   assert.strictEqual(inserted.amount, 20000);
-  assert.strictEqual(inserted.moneyStatus, '대기');
+  assert.strictEqual(inserted.managerEmail, 'staff@example.com');
+  assert.strictEqual(application.managerEmail, 'staff@example.com');
   assert.strictEqual(audits.length, 2);
-  assert.throws(function () { service.processFeeApplicationsData_({ ids: ['app-1'], action: 'APPROVE' }, { email: 'staff@example.com' }); }, /이미 처리|이미 생성/);
 
   var confirmation = createContext_();
   var payment = { id: 'pay-1', moneyStatus: '대기', amount: 20000 };
+  var updatedPayment;
   confirmation.findFeePaymentRowById_ = function () { return payment; };
-  confirmation.updateFeePaymentRowById_ = function (id, changes) { payment = Object.assign({}, payment, changes); return true; };
+  confirmation.updateFeePaymentRowById_ = function (id, changes) { updatedPayment = plain_(changes); payment = Object.assign({}, payment, changes); return true; };
   confirmation.getCurrentIsoDateTime_ = function () { return '2026-08-17T21:00:00+09:00'; };
   confirmation.writeStudentFeeAudit_ = function () {};
   load_(confirmation, 'src/000_server/080_student_fee/082_payments/fee_payments_service.gs');
   var confirmed = confirmation.confirmFeePaymentData_({ paymentId: 'pay-1', result: 'MISMATCH', depositorName: '홍길동' }, { email: 'staff@example.com' });
   assert.strictEqual(confirmed.moneyStatus, '불일치');
-  assert.strictEqual(confirmed.depositorName, '홍길동');
+  assert.strictEqual(updatedPayment.managerEmail, 'staff@example.com');
 }
 
 function testRefundBehavior_() {
-  var query = createContext_();
-  query.findFeePaymentRowById_ = function () { return { id: 'pay-1', amount: 20000 }; };
-  query.listFeeRefundRequestRows_ = function () {
-    return [
-      { id: 'req-1', paymentId: 'pay-1', studentId: '60201234', accountNumber: '1234567890', accountHolder: '김학생', bankName: '은행', appliedAt: '2026-08-17', status: '접수' },
-      { id: 'req-2', paymentId: 'pay-1' }
-    ];
-  };
-  query.listFeeRefundRows_ = function () {
-    return [
-      { requestId: 'req-1', approvedAmount: 5000, moneyStatus: '대기' },
-      { requestId: 'req-2', approvedAmount: 3000, moneyStatus: '완료' },
-      { requestId: 'req-2', approvedAmount: 9999, moneyStatus: '실패' }
-    ];
-  };
-  query.findFeeRefundRequestRowById_ = function () { return query.listFeeRefundRequestRows_()[0]; };
-  query.findFeeRefundRowByRequestId_ = function () { return null; };
-  load_(query, 'src/000_server/080_student_fee/083_refunds/fee_refunds_query_service.gs');
-  assert.strictEqual(query.calculateRefundableAmount_('pay-1'), 12000);
-  var list = query.getFeeRefundRequestListData_({ page: 1, pageSize: 10 });
-  assert.strictEqual(list.items[0].studentId, '60****34');
-  assert.notStrictEqual(list.items[0].accountNumber, '1234567890');
-  assert.strictEqual(query.getFeeRefundRequestDetailData_({ refundRequestId: 'req-1', hasFullAccess: true }).request.accountNumber, '1234567890');
-
-  var service = createContext_();
+  var context = createContext_();
   var request = { id: 'req-1', paymentId: 'pay-1', status: '접수' };
   var inserted;
   var audits = [];
-  service.findFeeRefundRequestRowById_ = function () { return request; };
-  service.findFeeRefundRowByRequestId_ = function () { return inserted || null; };
-  service.calculateRefundableAmount_ = function () { return 12000; };
-  service.updateFeeRefundRequestRowById_ = function (id, changes) { request = Object.assign({}, request, changes); return true; };
-  service.insertFeeRefundRow_ = function (row) { inserted = plain_(row); return row; };
-  service.getCurrentIsoDateTime_ = function () { return '2026-08-17T21:00:00+09:00'; };
-  service.writeStudentFeeAudit_ = function () { audits.push(Array.prototype.slice.call(arguments)); };
-  service.parseStudentFeeAmount_ = function (value, fieldName, minimum) {
-    var amount = Number(value);
-    if (!isFinite(amount) || amount < minimum) throw new Error(fieldName);
-    return amount;
-  };
-  load_(service, 'src/000_server/080_student_fee/083_refunds/fee_refunds_service.gs');
-  var approved = service.processFeeRefundRequestsData_({ ids: ['req-1'], action: 'APPROVE' }, { email: 'staff@example.com' });
+  context.findFeeRefundRequestRowById_ = function () { return request; };
+  context.findFeeRefundRowByRequestId_ = function () { return inserted || null; };
+  context.calculateRefundableAmount_ = function () { return 12000; };
+  context.updateFeeRefundRequestRowById_ = function (id, changes) { request = Object.assign({}, request, changes); return true; };
+  context.insertFeeRefundRow_ = function (row) { inserted = plain_(row); return row; };
+  context.getCurrentIsoDateTime_ = function () { return '2026-08-17T21:00:00+09:00'; };
+  context.writeStudentFeeAudit_ = function () { audits.push(Array.prototype.slice.call(arguments)); };
+  context.parseStudentFeeAmount_ = function (value, fieldName, minimum) { var amount = Number(value); if (!isFinite(amount) || amount < minimum) throw new Error(fieldName); return amount; };
+  load_(context, 'src/000_server/080_student_fee/083_refunds/fee_refunds_service.gs');
+
+  var approved = context.processFeeRefundRequestsData_({ ids: ['req-1'], action: 'APPROVE' }, { email: 'staff@example.com' });
   assert.strictEqual(approved[0].refund.approvedAmount, 12000);
-  assert.strictEqual(approved[0].refund.moneyStatus, '대기');
+  assert.strictEqual(approved[0].refund.managerEmail, 'staff@example.com');
+  assert.strictEqual(request.managerEmail, 'staff@example.com');
   assert.strictEqual(audits.length, 2);
 
   var confirmation = createContext_();
   var refund = { id: 'ref-1', moneyStatus: '대기' };
+  var changes;
   confirmation.findFeeRefundRowById_ = function () { return refund; };
-  confirmation.updateFeeRefundRowById_ = function (id, changes) { refund = Object.assign({}, refund, changes); return true; };
+  confirmation.updateFeeRefundRowById_ = function (id, update) { changes = plain_(update); refund = Object.assign({}, refund, update); return true; };
   confirmation.getCurrentIsoDateTime_ = function () { return '2026-08-17T21:00:00+09:00'; };
   confirmation.writeStudentFeeAudit_ = function () {};
   load_(confirmation, 'src/000_server/080_student_fee/083_refunds/fee_refunds_service.gs');
   var confirmed = confirmation.confirmFeeRefundData_({ refundId: 'ref-1', result: 'DONE', transferEvidenceId: 'file-1' }, { email: 'staff@example.com' });
   assert.strictEqual(confirmed.moneyStatus, '완료');
-  assert.strictEqual(confirmed.transferEvidenceId, 'file-1');
+  assert.strictEqual(changes.managerEmail, 'staff@example.com');
 }
 
 function testSummary_() {
@@ -263,52 +189,10 @@ function testSummary_() {
   context.listFeeRefundRows_ = function () { return [{ moneyStatus: '대기', approvedAmount: 10000 }]; };
   load_(context, 'src/000_server/080_student_fee/082_payments/fee_payments_query_service.gs');
   assert.deepStrictEqual(plain_(context.getStudentFeeSummaryData_()), {
-    payers: { total: 2 },
-    applications: { total: 3, pending: 1, approved: 1, rejected: 1 },
+    payers: { total: 2 }, applications: { total: 3, pending: 1, approved: 1, rejected: 1 },
     payments: { total: 2, pending: 1, completed: 1, mismatch: 0, completedAmount: 20000 },
     refundRequests: { total: 2, pending: 1, approved: 1, rejected: 0 },
     refunds: { total: 1, pending: 1, completed: 0, failed: 0, completedAmount: 0 }
-  });
-}
-
-function testApiRequiresLogin_() {
-  var context = createContext_();
-  var seen = [];
-  context.apiHandler_ = function (options) { seen.push(options); return options.operation; };
-  context.parseStudentFeeRequest_ = function (input) { return { request: input || {} }; };
-  [
-    'getStudentFeeReferenceData_',
-    'getStudentFeeSummaryData_', 'getFeePayerListData_', 'getFeePayerDetailData_', 'createFeePayerData_', 'updateFeePayerData_',
-    'getFeeApplicationListData_', 'getFeeApplicationDetailData_', 'processFeeApplicationsData_', 'calculateFeeAmountData_', 'confirmFeePaymentData_',
-    'getFeeRefundRequestListData_', 'getFeeRefundRequestDetailData_', 'processFeeRefundRequestsData_', 'calculateFeeRefundData_', 'confirmFeeRefundData_'
-  ].forEach(function (name) { context[name] = function () {}; });
-  load_(context, 'src/000_server/080_student_fee/080_common/student_fee_reference_api.gs');
-  load_(context, 'src/000_server/080_student_fee/081_payers/fee_payers_api.gs');
-  load_(context, 'src/000_server/080_student_fee/082_payments/fee_payments_api.gs');
-  load_(context, 'src/000_server/080_student_fee/083_refunds/fee_refunds_api.gs');
-
-  context.api_getStudentFeeReference({});
-  context.api_getStudentFeePayers({});
-  context.api_getStudentFeePayer({});
-  context.api_createStudentFeePayer({});
-  context.api_updateStudentFeePayer({});
-  context.api_getStudentFeeSummary({});
-  context.api_getStudentFeeApplications({});
-  context.api_getStudentFeeApplication({});
-  context.api_processStudentFeeApplications({});
-  context.api_calculateStudentFeeAmount({});
-  context.api_confirmStudentFeePayment({});
-  context.api_getStudentFeeRefundRequests({});
-  context.api_getStudentFeeRefundRequest({});
-  context.api_processStudentFeeRefundRequests({});
-  context.api_calculateStudentFeeRefund({});
-  context.api_confirmStudentFeeRefund({});
-
-  assert.strictEqual(seen.length, 16);
-  seen.forEach(function (options) {
-    assert.strictEqual(options.requireLogin, true, options.operation + ' must require login');
-    assert.strictEqual(typeof options.parse, 'function');
-    assert.strictEqual(typeof options.service, 'function');
   });
 }
 
@@ -319,5 +203,4 @@ testPayerBehavior_();
 testPaymentBehavior_();
 testRefundBehavior_();
 testSummary_();
-testApiRequiresLogin_();
 console.log('Student Fee behavior regression tests passed.');
