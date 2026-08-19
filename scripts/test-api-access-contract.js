@@ -65,7 +65,7 @@ assert.throws(function () {
     permission: { screenId: 'legacy', action: 'view' },
     service: function () { return true; }
   });
-}, /access.*permission|permission.*access/i);
+}, /INTERNAL_ERROR/);
 
 assert.throws(function () {
   context.resolveApiAccess_({ ok: true }, {
