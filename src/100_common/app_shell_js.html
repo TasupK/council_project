@@ -65,18 +65,16 @@ getAppElement('appNavStudentFee').addEventListener('click', function () {
 });
 
 function loadAppNavigationAccess_() {
-  google.script.run
-    .withSuccessHandler(function (current) {
-      if (!current || !current.ok) return;
-      var access = current.domainAccess || {};
+  appClient.getCurrentUser()
+    .then(function (current) {
+      var access = current && current.domainAccess ? current.domainAccess : {};
       setAppDomainVisible_('main', !!access.main);
       setAppDomainVisible_('accounting', !!access.accounting);
       setAppDomainVisible_('student_fee', !!access.student_fee);
       setAppDomainVisible_('event', !!access.event);
       setAppDomainVisible_('settings', !!access.settings);
     })
-    .withFailureHandler(function () {})
-    .api_getCurrentUser();
+    .catch(function () {});
 }
 
 function setAppDomainVisible_(domain, visible) {
