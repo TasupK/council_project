@@ -52,6 +52,13 @@ function collectFiles(dir) {
   });
 }
 
+function functionSource(source, name) {
+  const start = source.indexOf(`function ${name}(`);
+  assert.ok(start >= 0, `function not found: ${name}`);
+  const next = source.indexOf('\nfunction ', start + 1);
+  return source.slice(start, next >= 0 ? next : source.length);
+}
+
 const studentFeeDir = path.join(root, 'src/000_server/080_student_fee');
 const studentFeeFiles = collectFiles(studentFeeDir).filter((file) => file.endsWith('.gs'));
 const studentFeeSource = studentFeeFiles.map((file) => fs.readFileSync(file, 'utf8')).join('\n');
@@ -74,6 +81,12 @@ for (const legacyLiteral of ['PROCESS', 'SETTLEMENT', 'LEDGER', 'EVIDENCE', 'BAN
 for (const file of accountingFiles) {
   const source = fs.readFileSync(file, 'utf8');
   assert.ok(!source.includes("appendOperationTableRow_('businessAuditLogs'"), `direct businessAuditLogs append remains: ${path.relative(root, file)}`);
+}
+
+const eventsServicePath = path.join(root, 'src/000_server/050_event/051_events/events_service.gs');
+const eventsServiceSource = fs.readFileSync(eventsServicePath, 'utf8');
+for (const name of ['createEventData_', 'updateEventData_', 'updateEventStatusData_', 'updateEventClosureData_']) {
+  assert.ok(functionSource(eventsServiceSource, name).includes('writeBusinessAudit_('), `missing Event audit coverage: ${name}`);
 }
 
 console.log('business audit taxonomy contract: PASS');
