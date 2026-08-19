@@ -141,4 +141,108 @@ function createContext() {
   });
 })();
 
+function fakeItemResponse(title, response) {
+  return {
+    getItem: () => ({ getTitle: () => title }),
+    getResponse: () => response
+  };
+}
+
+function fakeFormResponse(overrides) {
+  const values = Object.assign({
+    id: 'FORM-RESPONSE-001',
+    timestamp: new Date('2026-08-19T12:30:00.000Z'),
+    items: [
+      fakeItemResponse('학번', '20261001'),
+      fakeItemResponse('성명', '김학생'),
+      fakeItemResponse('소속', '경영정보학과'),
+      fakeItemResponse('납입날짜', '2026-08-19'),
+      fakeItemResponse('현재학년', '2학년'),
+      fakeItemResponse('현재학기', '1학기'),
+      fakeItemResponse('납부유형', '일반 납부'),
+      fakeItemResponse('학생카드캡쳐', ['https://drive.google.com/open?id=STUDENT_CARD_FILE']),
+      fakeItemResponse('입금내역캡쳐', ['https://drive.google.com/file/d/DEPOSIT_FILE/view'])
+    ]
+  }, overrides || {});
+  return {
+    getId: () => values.id,
+    getTimestamp: () => values.timestamp,
+    getItemResponses: () => values.items
+  };
+}
+
+(function testFormMapperNormalizesAuthoritativeResponse() {
+  const context = createContext();
+  load(context, 'src/000_server/080_student_fee/082_payments/fee_form_mapper.gs');
+  const mapped = JSON.parse(JSON.stringify(context.mapStudentFeeFormResponse_(fakeFormResponse())));
+  assert.strictEqual(mapped.sourceResponseId, 'FORM-RESPONSE-001');
+  assert.strictEqual(mapped.sourceResponseAt, '2026-08-19T12:30:00.000Z');
+  assert.strictEqual(mapped.studentId, '20261001');
+  assert.strictEqual(mapped.name, '김학생');
+  assert.strictEqual(mapped.affiliation, '경영정보학과');
+  assert.strictEqual(mapped.paymentDate, '2026-08-19');
+  assert.strictEqual(mapped.academicYearLevel, 2);
+  assert.strictEqual(mapped.semesterWithinYear, 1);
+  assert.strictEqual(mapped.coverageMode, 'STANDARD_REMAINING');
+  assert.strictEqual(mapped.studentCardFileId, 'STUDENT_CARD_FILE');
+  assert.strictEqual(mapped.depositFileId, 'DEPOSIT_FILE');
+})();
+
+(function testFormMapperCoverageModes() {
+  const context = createContext();
+  load(context, 'src/000_server/080_student_fee/082_payments/fee_form_mapper.gs');
+  const broadFirst = fakeFormResponse({
+    id: 'BROAD-FIRST',
+    items: [
+      fakeItemResponse('학번', '20261002'), fakeItemResponse('성명', '광역학생'), fakeItemResponse('소속', '경영대학'),
+      fakeItemResponse('납입날짜', '2026-08-19'), fakeItemResponse('현재학년', '1학년'), fakeItemResponse('현재학기', '1학기'),
+      fakeItemResponse('납부유형', '광역 1학년 납부')
+    ]
+  });
+  assert.strictEqual(context.mapStudentFeeFormResponse_(broadFirst).coverageMode, 'BROAD_FIRST_YEAR');
+
+  const broadAfter = fakeFormResponse({
+    id: 'BROAD-AFTER',
+    items: [
+      fakeItemResponse('학번', '20261002'), fakeItemResponse('성명', '광역학생'), fakeItemResponse('소속', '경영정보학과'),
+      fakeItemResponse('납입날짜', '2027-03-02'), fakeItemResponse('현재학년', '2학년'), fakeItemResponse('현재학기', '1학기'),
+      fakeItemResponse('납부유형', '광역 학과확정 추가납부')
+    ]
+  });
+  assert.strictEqual(context.mapStudentFeeFormResponse_(broadAfter).coverageMode, 'BROAD_AFTER_ASSIGNMENT');
+})();
+
+(function testFormMapperRejectsMissingRequiredData() {
+  const context = createContext();
+  load(context, 'src/000_server/080_student_fee/082_payments/fee_form_mapper.gs');
+  assert.throws(() => context.mapStudentFeeFormResponse_(fakeFormResponse({ id: '' })), /원본응답ID|Response ID/);
+  assert.throws(() => context.mapStudentFeeFormResponse_(fakeFormResponse({
+    items: [fakeItemResponse('성명', '이름만 있음')]
+  })), /학번/);
+  assert.throws(() => context.mapStudentFeeFormResponse_(fakeFormResponse({
+    items: [
+      fakeItemResponse('학번', '20261001'), fakeItemResponse('성명', '김학생'), fakeItemResponse('소속', '경영정보학과'),
+      fakeItemResponse('납입날짜', '2026-08-19'), fakeItemResponse('현재학년', '5학년'), fakeItemResponse('현재학기', '1학기'),
+      fakeItemResponse('납부유형', '일반 납부')
+    ]
+  })), /현재학년/);
+})();
+
+(function testFormReaderIsReadOnly() {
+  const context = createContext();
+  const responses = [fakeFormResponse()];
+  let openedId = '';
+  context.FormApp = {
+    openById: (formId) => {
+      openedId = formId;
+      return { getResponses: () => responses };
+    }
+  };
+  load(context, 'src/000_server/080_student_fee/082_payments/fee_form_reader.gs');
+  const result = context.readStudentFeeFormResponses_('FORM-ID-001');
+  assert.strictEqual(openedId, 'FORM-ID-001');
+  assert.strictEqual(result.length, 1);
+  assert.strictEqual(result[0].getId(), 'FORM-RESPONSE-001');
+})();
+
 console.log('Student Fee Form source and coverage contract: PASS');
