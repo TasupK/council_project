@@ -5,6 +5,7 @@ const vm = require('vm');
 
 const root = path.resolve(__dirname, '..');
 const schemaPath = path.join(root, 'src/000_server/020_schema/operation_db_schema.gs');
+const userSchemaPath = path.join(root, 'src/000_server/020_schema/user_db_schema.gs');
 const integrityPath = path.join(root, 'src/000_server/020_schema/operation_db_integrity.gs');
 const context = {
   console,
@@ -23,6 +24,7 @@ const context = {
 };
 vm.createContext(context);
 vm.runInContext(fs.readFileSync(path.join(root, 'src/000_server/010_core/config.gs'), 'utf8'), context);
+vm.runInContext(fs.readFileSync(userSchemaPath, 'utf8'), context);
 vm.runInContext(fs.readFileSync(schemaPath, 'utf8'), context);
 vm.runInContext(fs.readFileSync(integrityPath, 'utf8'), context);
 
