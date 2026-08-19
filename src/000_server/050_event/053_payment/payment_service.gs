@@ -1,9 +1,2 @@
-﻿function buildEventPaymentTotalsByApplicationId_() {
-  var totals = {};
-  listEventPaymentClientRows_().forEach(function (payment) {
-    var applicationId = String(payment.applicationId || '');
-    if (!applicationId) return;
-    totals[applicationId] = Number(totals[applicationId] || 0) + Number(payment.paidAmount || 0);
-  });
-  return totals;
-}
+// 행사 입금 mutation 업무 규칙을 위한 서비스 경계.
+// 현재 1차 리팩터링 범위에는 신규 mutation 동작을 추가하지 않는다.
