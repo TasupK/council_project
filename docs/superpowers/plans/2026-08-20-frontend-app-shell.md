@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Standardize the authenticated frontend shell so the header and sidebar stay visible, the main content owns scrolling, the sidebar can be completely hidden/restored with persisted client preference, and the legacy footer/status bar is removed.
+**Goal:** Standardize the authenticated frontend shell so the header and sidebar stay visible, the main content owns scrolling, the sidebar can be completely hidden/restored with a persisted client preference, and the legacy footer/status bar is removed.
 
 **Architecture:** Keep the existing shared `100_common` shell and convert its geometry to a viewport-sized two-row CSS Grid (`header + body`). The body is a two-column grid (`sidebar + main`), with a single `sidebar-hidden` state on the app root and persistence owned by `app_shell_js.html`; authenticated entry templates keep their domain markup but remove the legacy footer.
 
@@ -26,42 +26,22 @@
 
 **Files:**
 - Create: `scripts/test-frontend-app-shell.js`
-- Modify: none
 
 **Interfaces:**
-- Consumes: shared shell files under `src/100_common` and authenticated entry templates listed below.
-- Produces: one Node contract test that guards shell markup, CSS geometry, persistence hooks, and footer removal.
-
-Authenticated entry templates to enumerate explicitly in the test:
-- `src/250_main/Main.html`
-- `src/270_mypage/MyPage.html`
-- `src/300_settings/300_home/Settings_Home.html`
-- `src/300_settings/310_users/Settings_Users.html`
-- `src/300_settings/320_roles/Settings_Roles.html`
-- `src/300_settings/330_permissions/Settings_Permissions.html`
-- `src/300_settings/340_departments/Settings_Departments.html`
-- `src/400_accounting/400_home/Accounting_Home.html`
-- `src/400_accounting/410_ledger/Accounting_Ledger.html`
-- `src/400_accounting/420_reconciliation/Accounting_Reconciliation.html`
-- `src/400_accounting/430_settlement/Accounting_Settlement.html`
-- `src/500_student_fee/500_home/Student_Fee_Home.html`
-- `src/500_student_fee/510_payers/Student_Fee_Payers.html`
-- `src/500_student_fee/520_payments/Student_Fee_Payments.html`
-- `src/500_student_fee/530_refunds/Student_Fee_Refunds.html`
-- `src/600_event/600_home/Event_Home.html`
-- `src/600_event/610_form/Event_Form.html`
-- `src/600_event/620_detail/Event_Detail.html`
+- Consumes: shared shell files under `src/100_common` and all authenticated entry templates.
+- Produces: a Node contract test guarding shell markup, CSS geometry, persistence hooks, and footer removal.
 
 - [ ] **Step 1: Write the failing shell contract**
 
-Create `scripts/test-frontend-app-shell.js` with assertions equivalent to:
+Create `scripts/test-frontend-app-shell.js`:
 
 ```js
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
+
 const root = path.resolve(__dirname, '..');
-const read = p => fs.readFileSync(path.join(root, p), 'utf8');
+const read = file => fs.readFileSync(path.join(root, file), 'utf8');
 
 const header = read('src/100_common/App_Header.html');
 const sidebar = read('src/100_common/App_Sidebar.html');
@@ -82,7 +62,27 @@ assert.match(shellJs, /localStorage/);
 assert.match(shellJs, /sidebar-hidden/);
 assert.match(shellJs, /aria-expanded/);
 
-const templates = [/* exact 18 paths above */];
+const templates = [
+  'src/250_main/Main.html',
+  'src/270_mypage/MyPage.html',
+  'src/300_settings/300_home/Settings_Home.html',
+  'src/300_settings/310_users/Settings_Users.html',
+  'src/300_settings/320_roles/Settings_Roles.html',
+  'src/300_settings/330_permissions/Settings_Permissions.html',
+  'src/300_settings/340_departments/Settings_Departments.html',
+  'src/400_accounting/400_home/Accounting_Home.html',
+  'src/400_accounting/410_ledger/Accounting_Ledger.html',
+  'src/400_accounting/420_reconciliation/Accounting_Reconciliation.html',
+  'src/400_accounting/430_settlement/Accounting_Settlement.html',
+  'src/500_student_fee/500_home/Student_Fee_Home.html',
+  'src/500_student_fee/510_payers/Student_Fee_Payers.html',
+  'src/500_student_fee/520_payments/Student_Fee_Payments.html',
+  'src/500_student_fee/530_refunds/Student_Fee_Refunds.html',
+  'src/600_event/600_home/Event_Home.html',
+  'src/600_event/610_form/Event_Form.html',
+  'src/600_event/620_detail/Event_Detail.html'
+];
+
 templates.forEach(file => {
   const source = read(file);
   assert.doesNotMatch(source, /<footer\b[^>]*status-bar/);
@@ -127,7 +127,7 @@ git commit -m "test: add frontend app shell contract"
 
 - [ ] **Step 1: Add stable shell IDs and accessible toggle markup**
 
-Add a button at the left edge of `App_Header.html`:
+Add this button at the left edge of `App_Header.html`:
 
 ```html
 <button
@@ -152,7 +152,7 @@ Do not change domain navigation IDs or access-control behavior.
 
 - [ ] **Step 2: Replace shell geometry in `App_Styles.html`**
 
-Remove `--status-h`. Make `html`, `body`, and the app shell viewport-bound and prevent competing body scroll:
+Remove `--status-h` and replace global shell geometry with:
 
 ```css
 html, body { height: 100%; }
@@ -196,32 +196,26 @@ body { overflow: hidden; }
   display: flex;
   flex-direction: column;
 }
-```
 
-Change `.workspace` from owning the page scroll to participating inside `.main`:
-
-```css
 .workspace {
   padding: 24px 32px 32px;
   flex: 1 0 auto;
 }
 ```
 
-Remove the `.status-bar` block and `.status-bar a` rule.
+Delete the global `.status-bar` and `.status-bar a` rules.
 
 - [ ] **Step 3: Style the toggle without redesigning the header**
 
-Update `.header` grid columns to include the new compact toggle before the brand and add a focused `.sidebar-toggle` rule that visually matches existing header controls. Keep the rest of the header controls unchanged.
+Update `.header` grid columns to reserve one compact column for the new toggle before the brand. Add `.sidebar-toggle` styles matching the existing header control height, neutral surface, border, focus affordance, and compact width. Do not change search, term selector, notification control, or user card behavior.
 
 - [ ] **Step 4: Run the focused contract**
-
-Run:
 
 ```bash
 node scripts/test-frontend-app-shell.js
 ```
 
-Expected: still FAIL only on persistence/footer assertions that belong to later tasks; header/sidebar/CSS geometry assertions should pass.
+Expected: FAIL only on persistence and footer assertions; header/sidebar/CSS geometry assertions pass.
 
 - [ ] **Step 5: Commit shared shell markup/CSS**
 
@@ -240,35 +234,31 @@ git commit -m "feat: standardize viewport app shell layout"
 - Test: `scripts/test-frontend-app-shell.js`
 
 **Interfaces:**
-- Consumes: `#appSidebarToggle`, `#appSidebar`, root `.app` element, `localStorage`.
-- Produces internal functions `readAppSidebarHidden_()`, `applyAppSidebarHidden_(hidden)`, `toggleAppSidebar_()`, and a namespaced storage key constant.
+- Consumes: `#appSidebarToggle`, `#appSidebar`, root `.app`, `window.localStorage`.
+- Produces: `readAppSidebarHidden_()`, `applyAppSidebarHidden_(hidden)`, `applyInitialAppSidebarState_()`, `toggleAppSidebar_()`.
 
 - [ ] **Step 1: Write a failing behavior harness**
 
-Create `scripts/test-frontend-app-shell-behavior.js` that strips the `<script>` wrapper, evaluates `app_shell_js.html` in a VM with a fake DOM/localStorage, and verifies:
+Create `scripts/test-frontend-app-shell-behavior.js`. Strip the outer `<script>` tags from `app_shell_js.html`, evaluate the JavaScript in a VM with fake DOM and storage objects, and assert:
 
 ```js
-// default when no stored preference
 assert.strictEqual(app.classList.contains('sidebar-hidden'), false);
 assert.strictEqual(toggle.getAttribute('aria-expanded'), 'true');
 
-// restore persisted hidden preference
 storage.setItem('council.appShell.sidebarHidden', 'true');
 context.applyInitialAppSidebarState_();
 assert.strictEqual(app.classList.contains('sidebar-hidden'), true);
 assert.strictEqual(toggle.getAttribute('aria-expanded'), 'false');
 
-// toggle hidden -> visible
 context.toggleAppSidebar_();
 assert.strictEqual(app.classList.contains('sidebar-hidden'), false);
 assert.strictEqual(storage.getItem('council.appShell.sidebarHidden'), 'false');
 
-// storage exception must not throw
 storage.setItem = () => { throw new Error('blocked'); };
 assert.doesNotThrow(() => context.toggleAppSidebar_());
 ```
 
-Stub existing shell dependencies (`google.script.run`, `WEB_APP_URL`, `APP_CURRENT_PAGE`, user constants, navigation elements) so the harness isolates the sidebar state behavior.
+The fake DOM must provide the existing navigation IDs used by `app_shell_js.html`, `document.getElementById`, `document.querySelector('.app')`, `classList.toggle/contains`, element `setAttribute/getAttribute/addEventListener`, and a stubbed `google.script.run` chain so unrelated navigation initialization does not fail.
 
 - [ ] **Step 2: Run behavior test and verify RED**
 
@@ -276,11 +266,11 @@ Stub existing shell dependencies (`google.script.run`, `WEB_APP_URL`, `APP_CURRE
 node scripts/test-frontend-app-shell-behavior.js
 ```
 
-Expected: FAIL because sidebar-state functions do not exist yet.
+Expected: FAIL because sidebar-state functions do not exist.
 
-- [ ] **Step 3: Implement sidebar persistence in `app_shell_js.html`**
+- [ ] **Step 3: Implement sidebar persistence**
 
-Add:
+Add to `app_shell_js.html`:
 
 ```js
 var APP_SIDEBAR_STORAGE_KEY_ = 'council.appShell.sidebarHidden';
@@ -318,7 +308,7 @@ function toggleAppSidebar_() {
 }
 ```
 
-Initialize the state before other nonessential shell work and register the toggle listener only when the element exists:
+Initialize safely:
 
 ```js
 applyInitialAppSidebarState_();
@@ -335,7 +325,7 @@ node scripts/test-frontend-app-shell-behavior.js
 node scripts/test-frontend-app-shell.js
 ```
 
-Expected: behavior test PASS; structural test still fails only if footer markup remains.
+Expected: behavior harness PASS; structural test still fails only while footer markup remains.
 
 - [ ] **Step 5: Commit sidebar behavior**
 
@@ -349,28 +339,16 @@ git commit -m "feat: persist sidebar visibility preference"
 ### Task 4: Remove Legacy Footer from Every Authenticated Entry Template
 
 **Files:**
-- Modify the 18 authenticated entry templates enumerated in Task 1.
+- Modify: all 18 authenticated entry templates listed in Task 1.
 - Test: `scripts/test-frontend-app-shell.js`
 
 **Interfaces:**
 - Consumes: the shared two-row shell from Task 2.
-- Produces: authenticated templates containing only header + body inside `.app`, with no footer/status-bar row.
+- Produces: authenticated templates containing only header + body inside `.app`.
 
 - [ ] **Step 1: Remove footer markup from all 18 templates**
 
-For each entry template, delete only the legacy block matching:
-
-```html
-<footer class="status-bar">...</footer>
-```
-
-or the settings variant:
-
-```html
-<footer class="status-bar" id="statusBar">...</footer>
-```
-
-Do not move that text elsewhere in this phase. Preserve each template's domain includes and `.main` modifier classes (`accounting-main`, `sf-main`, `event-main`, etc.).
+Delete the complete `<footer>` element whose class contains `status-bar` from each Task 1 template. For Settings templates, remove the element even when it also has `id="statusBar"`. Do not relocate its text. Preserve domain includes and `.main` modifier classes such as `accounting-main`, `sf-main`, and `event-main`.
 
 - [ ] **Step 2: Run shell contract**
 
@@ -391,7 +369,7 @@ node scripts/test-event-form-sync-frontend.js
 node scripts/verify-ui-system-migration.js
 ```
 
-Expected: PASS. If an existing test intentionally asserts footer markup, update that test to the approved no-footer contract rather than restoring footer code.
+Expected: PASS. If an existing test encodes the superseded footer contract, update the test to require the approved no-footer shell instead of restoring footer code.
 
 - [ ] **Step 4: Commit footer removal**
 
@@ -406,7 +384,7 @@ git commit -m "refactor: remove legacy app status footer"
 
 **Files:**
 - Modify only test harnesses that fail because they encode the superseded shell contract.
-- No production scope expansion.
+- Do not expand production scope.
 
 **Interfaces:**
 - Consumes: completed shared shell implementation.
@@ -441,28 +419,31 @@ node scripts/verify-system-consistency-architecture.js
 
 Expected: every verifier exits 0.
 
-- [ ] **Step 3: Review diff for scope**
+- [ ] **Step 3: Review the diff for scope**
 
-Confirm:
-- no server/API/DB files changed;
+Confirm all of the following before merge:
+- no `src/000_server` files changed;
+- no DB schema or physical spreadsheet changes exist;
 - no domain view redesign occurred;
-- the only production behavior changes are viewport shell geometry, sidebar toggle/persistence, and footer removal;
-- all 18 authenticated entry templates still include shared header/sidebar/shell JS.
+- production behavior changes are limited to viewport shell geometry, sidebar toggle/persistence, and footer removal;
+- all 18 authenticated entry templates still include `100_common/App_Header`, `100_common/App_Sidebar`, and `100_common/app_shell_js`.
 
-- [ ] **Step 4: Commit any necessary test-contract updates**
+- [ ] **Step 4: Commit necessary regression-harness updates**
+
+If any existing test was updated because it encoded the old footer/scroll contract:
 
 ```bash
 git add scripts
 git commit -m "test: align frontend regression with app shell contract"
 ```
 
-Skip this commit if no additional test files needed adjustment.
+If no existing test required adjustment, do not create an empty commit.
 
-- [ ] **Step 5: Open/update PR and require CI GREEN before merge**
+- [ ] **Step 5: Open or update the pull request and require CI GREEN**
 
-PR summary must state:
+The PR description must state:
 - fixed header/sidebar behavior is implemented through viewport CSS Grid, not independent `position: fixed` offsets;
 - `.main` is the primary content-scroll container;
 - sidebar can be completely hidden/restored and preference persists in `localStorage`;
-- legacy footer/status-bar is removed;
-- no backend or DB changes are included.
+- legacy footer/status-bar markup and global styles are removed;
+- no backend, API, permission, or DB changes are included.
