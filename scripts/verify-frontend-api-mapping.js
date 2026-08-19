@@ -15,23 +15,91 @@ function lineNumber(source, index) {
   return source.slice(0, index).split('\n').length;
 }
 
+function stripCommentsPreserveLines(source) {
+  var output = '';
+  var quote = '';
+  var escaped = false;
+  var lineComment = false;
+  var blockComment = false;
+
+  for (var index = 0; index < source.length; index += 1) {
+    var char = source[index];
+    var next = source[index + 1] || '';
+
+    if (lineComment) {
+      if (char === '\n') {
+        lineComment = false;
+        output += '\n';
+      } else {
+        output += ' ';
+      }
+      continue;
+    }
+
+    if (blockComment) {
+      if (char === '*' && next === '/') {
+        output += '  ';
+        index += 1;
+        blockComment = false;
+      } else {
+        output += char === '\n' ? '\n' : ' ';
+      }
+      continue;
+    }
+
+    if (quote) {
+      output += char;
+      if (escaped) escaped = false;
+      else if (char === '\\') escaped = true;
+      else if (char === quote) quote = '';
+      continue;
+    }
+
+    if (char === '\'' || char === '"' || char === '`') {
+      quote = char;
+      output += char;
+      continue;
+    }
+
+    if (char === '/' && next === '/') {
+      output += '  ';
+      index += 1;
+      lineComment = true;
+      continue;
+    }
+
+    if (char === '/' && next === '*') {
+      output += '  ';
+      index += 1;
+      blockComment = true;
+      continue;
+    }
+
+    output += char;
+  }
+
+  return output;
+}
+
 function collectServerApis(source, serverPath) {
+  var cleaned = stripCommentsPreserveLines(source);
   var pattern = /function\s+(api_[A-Za-z0-9_]+)\s*\(([^)]*)\)/g;
   var result = [];
   var match;
-  while ((match = pattern.exec(source)) !== null) {
+  while ((match = pattern.exec(cleaned)) !== null) {
     var params = match[2].trim() ? match[2].split(',').map(function (value) { return value.trim(); }) : [];
-    result.push({ name: match[1], params: params, path: serverPath, line: lineNumber(source, match.index) });
+    result.push({ name: match[1], params: params, path: serverPath, line: lineNumber(cleaned, match.index) });
   }
   return result;
 }
 
 function collectStaticApiReferences(source, frontendPath) {
+  var cleaned = stripCommentsPreserveLines(source);
   var pattern = /\bapi_[A-Za-z0-9_]+\b/g;
   var result = [];
   var match;
-  while ((match = pattern.exec(source)) !== null) {
-    result.push({ name: match[0], path: frontendPath, line: lineNumber(source, match.index) });
+  while ((match = pattern.exec(cleaned)) !== null) {
+    result.push({ name: match[0], path: frontendPath, line: lineNumber(cleaned, match.index) });
   }
   return result;
 }
@@ -61,39 +129,6 @@ function findMatching(source, openIndex, openChar, closeChar) {
   return -1;
 }
 
-function splitTopLevelArgs(source) {
-  var args = [];
-  var start = 0;
-  var round = 0;
-  var square = 0;
-  var curly = 0;
-  var quote = '';
-  var escaped = false;
-  for (var index = 0; index < source.length; index += 1) {
-    var char = source[index];
-    if (quote) {
-      if (escaped) escaped = false;
-      else if (char === '\\') escaped = true;
-      else if (char === quote) quote = '';
-      continue;
-    }
-    if (char === '\'' || char === '"' || char === '`') { quote = char; continue; }
-    if (char === '(') round += 1;
-    else if (char === ')') round -= 1;
-    else if (char === '[') square += 1;
-    else if (char === ']') square -= 1;
-    else if (char === '{') curly += 1;
-    else if (char === '}') curly -= 1;
-    else if (char === ',' && round === 0 && square === 0 && curly === 0) {
-      args.push(source.slice(start, index).trim());
-      start = index + 1;
-    }
-  }
-  var tail = source.slice(start).trim();
-  if (tail || source.trim()) args.push(tail);
-  return args;
-}
-
 function extractFunctionBodies(source) {
   var pattern = /function\s+([A-Za-z_$][\w$]*)\s*\(([^)]*)\)\s*\{/g;
   var result = [];
@@ -114,52 +149,23 @@ function extractFunctionBodies(source) {
   return result;
 }
 
-function collectDispatchers(source, frontendPath) {
-  return extractFunctionBodies(source).reduce(function (items, fn) {
-    fn.params.forEach(function (param, paramIndex) {
+function collectGasDispatchers(source, frontendPath) {
+  var cleaned = stripCommentsPreserveLines(source);
+  return extractFunctionBodies(cleaned).reduce(function (items, fn) {
+    if (!/(?:google|gas)\.script\.run|\brunner\b/.test(fn.body)) return items;
+    fn.params.forEach(function (param) {
       var escaped = param.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       var bracketPattern = new RegExp('\\[\\s*' + escaped + '\\s*\\]');
       if (bracketPattern.test(fn.body)) {
-        items.push({ name: fn.name, paramIndex: paramIndex, path: frontendPath, start: fn.start, end: fn.end });
+        items.push({ name: fn.name, param: param, path: frontendPath, start: fn.start, end: fn.end });
       }
     });
     return items;
   }, []);
 }
 
-function unquoteLiteral(value) {
-  var match = /^(['"])(api_[A-Za-z0-9_]+)\1$/.exec(value.trim());
-  return match ? match[2] : '';
-}
-
-function collectDispatcherCalls(source, frontendPath, dispatchers) {
-  var staticCalls = [];
-  var dynamicCalls = [];
-  dispatchers.forEach(function (dispatcher) {
-    var pattern = new RegExp('\\b' + dispatcher.name.replace(/[$]/g, '\\$&') + '\\s*\\(', 'g');
-    var match;
-    while ((match = pattern.exec(source)) !== null) {
-      var prefix = source.slice(Math.max(0, match.index - 20), match.index);
-      if (/function\s*$/.test(prefix)) continue;
-      if (match.index >= dispatcher.start && match.index < dispatcher.end && frontendPath === dispatcher.path) continue;
-      var open = source.indexOf('(', match.index);
-      var close = findMatching(source, open, '(', ')');
-      if (close < 0) continue;
-      var args = splitTopLevelArgs(source.slice(open + 1, close));
-      var targetArg = args[dispatcher.paramIndex] || '';
-      var apiName = unquoteLiteral(targetArg);
-      if (apiName) {
-        staticCalls.push({ name: apiName, path: frontendPath, line: lineNumber(source, match.index), via: dispatcher.name });
-      } else if (targetArg) {
-        dynamicCalls.push({ expression: targetArg, path: frontendPath, line: lineNumber(source, match.index), via: dispatcher.name });
-      }
-      pattern.lastIndex = close + 1;
-    }
-  });
-  return { staticCalls: staticCalls, dynamicCalls: dynamicCalls };
-}
-
 function collectDirectDynamicCalls(source, frontendPath, dispatcherRanges) {
+  var cleaned = stripCommentsPreserveLines(source);
   var result = [];
   var patterns = [
     /google\.script\.run[\s\S]{0,500}?\[\s*([A-Za-z_$][\w$]*)\s*\]/g,
@@ -167,12 +173,12 @@ function collectDirectDynamicCalls(source, frontendPath, dispatcherRanges) {
   ];
   patterns.forEach(function (pattern) {
     var match;
-    while ((match = pattern.exec(source)) !== null) {
+    while ((match = pattern.exec(cleaned)) !== null) {
       var insideDispatcher = dispatcherRanges.some(function (range) {
         return range.path === frontendPath && match.index >= range.start && match.index < range.end;
       });
       if (!insideDispatcher) {
-        result.push({ expression: match[1], path: frontendPath, line: lineNumber(source, match.index), via: 'direct' });
+        result.push({ expression: match[1], path: frontendPath, line: lineNumber(cleaned, match.index), via: 'direct' });
       }
     }
   });
@@ -189,16 +195,13 @@ function auditSources(frontendSources, serverSources) {
 
   var dispatchers = [];
   frontendSources.forEach(function (item) {
-    dispatchers = dispatchers.concat(collectDispatchers(item.source, item.path));
+    dispatchers = dispatchers.concat(collectGasDispatchers(item.source, item.path));
   });
 
   var references = [];
   var dynamicCalls = [];
   frontendSources.forEach(function (item) {
     references = references.concat(collectStaticApiReferences(item.source, item.path));
-    var dispatcherCalls = collectDispatcherCalls(item.source, item.path, dispatchers);
-    references = references.concat(dispatcherCalls.staticCalls);
-    dynamicCalls = dynamicCalls.concat(dispatcherCalls.dynamicCalls);
     dynamicCalls = dynamicCalls.concat(collectDirectDynamicCalls(item.source, item.path, dispatchers));
   });
 
@@ -207,7 +210,9 @@ function auditSources(frontendSources, serverSources) {
 
   var missingServerApis = references.filter(function (ref, index, items) {
     if (serverNames[ref.name]) return false;
-    return items.findIndex(function (candidate) { return candidate.name === ref.name && candidate.path === ref.path && candidate.line === ref.line; }) === index;
+    return items.findIndex(function (candidate) {
+      return candidate.name === ref.name && candidate.path === ref.path && candidate.line === ref.line;
+    }) === index;
   });
 
   var unusedServerApis = serverApis.filter(function (api) { return !seenReference[api.name]; });
@@ -217,6 +222,7 @@ function auditSources(frontendSources, serverSources) {
     frontendReferences: references,
     missingServerApis: missingServerApis,
     dynamicCalls: dynamicCalls,
+    dynamicDispatchers: dispatchers,
     unusedServerApis: unusedServerApis
   };
 }
@@ -251,7 +257,7 @@ function formatAuditFailures(result) {
     lines.push('Missing server API: ' + item.name + ' referenced at ' + item.path + ':' + item.line);
   });
   result.dynamicCalls.forEach(function (item) {
-    lines.push('Unresolved dynamic API dispatch: ' + item.expression + ' at ' + item.path + ':' + item.line + ' via ' + item.via);
+    lines.push('Unresolved dynamic API dispatch: ' + item.expression + ' at ' + item.path + ':' + item.line);
   });
   return lines.join('\n');
 }
@@ -260,7 +266,8 @@ module.exports = {
   auditSourcePair: auditSourcePair,
   auditRepository: auditRepository,
   formatAuditFailures: formatAuditFailures,
-  collectServerApis: collectServerApis
+  collectServerApis: collectServerApis,
+  stripCommentsPreserveLines: stripCommentsPreserveLines
 };
 
 if (require.main === module) {
@@ -272,6 +279,7 @@ if (require.main === module) {
   } else {
     console.log('Frontend API mapping verification passed.');
     console.log('Mapped frontend API references: ' + result.frontendReferences.length);
+    console.log('Recognized GAS dynamic dispatch wrappers: ' + result.dynamicDispatchers.length);
     console.log('Server public APIs not referenced by frontend: ' + result.unusedServerApis.length);
   }
 }
