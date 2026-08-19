@@ -5,6 +5,8 @@ var vm = require('vm');
 var ROOT = path.resolve(__dirname, '..');
 var DOMAIN_ROOT = path.join(ROOT, 'src', '000_server', '080_student_fee');
 var FORM_READER = '082_payments/fee_form_reader.gs';
+var FORM_SETTINGS_ADAPTER = '080_common/student_fee_form_settings_adapter.gs';
+var FORM_IMPORT_SERVICE = '082_payments/fee_form_import_service.gs';
 
 var REQUIRED_FILES = [
   '080_common/student_fee_request.gs',
@@ -12,6 +14,7 @@ var REQUIRED_FILES = [
   '080_common/student_fee_reference_api.gs',
   '080_common/student_fee_audit_sheet_dao.gs',
   '080_common/student_fee_coverage_policy.gs',
+  FORM_SETTINGS_ADAPTER,
   '081_payers/fee_payers_api.gs',
   '081_payers/fee_payers_service.gs',
   '081_payers/fee_payers_query_service.gs',
@@ -23,6 +26,7 @@ var REQUIRED_FILES = [
   '082_payments/fee_payments_sheet_dao.gs',
   '082_payments/fee_form_reader.gs',
   '082_payments/fee_form_mapper.gs',
+  FORM_IMPORT_SERVICE,
   '083_refunds/fee_refunds_api.gs',
   '083_refunds/fee_refunds_service.gs',
   '083_refunds/fee_refunds_query_service.gs',
@@ -35,6 +39,8 @@ var FUNCTION_OWNERS = {
   readStudentFeeSemesterRows_: '080_common/student_fee_reference_query_service.gs',
   getStudentFeeReferenceData_: '080_common/student_fee_reference_query_service.gs',
   calculateStudentFeeCoverage_: '080_common/student_fee_coverage_policy.gs',
+  getStudentFeeFormSettings_: FORM_SETTINGS_ADAPTER,
+  updateStudentFeeFormLastSyncedAt_: FORM_SETTINGS_ADAPTER,
   api_getStudentFeePayers: '081_payers/fee_payers_api.gs',
   api_getStudentFeePayer: '081_payers/fee_payers_api.gs',
   api_createStudentFeePayer: '081_payers/fee_payers_api.gs',
@@ -42,11 +48,13 @@ var FUNCTION_OWNERS = {
   api_getStudentFeeSummary: '082_payments/fee_payments_api.gs',
   api_getStudentFeeApplications: '082_payments/fee_payments_api.gs',
   api_getStudentFeeApplication: '082_payments/fee_payments_api.gs',
+  api_syncStudentFeeFormApplications: '082_payments/fee_payments_api.gs',
   api_processStudentFeeApplications: '082_payments/fee_payments_api.gs',
   api_calculateStudentFeeAmount: '082_payments/fee_payments_api.gs',
   api_confirmStudentFeePayment: '082_payments/fee_payments_api.gs',
   readStudentFeeFormResponses_: '082_payments/fee_form_reader.gs',
   mapStudentFeeFormResponse_: '082_payments/fee_form_mapper.gs',
+  syncStudentFeeFormApplicationsData_: FORM_IMPORT_SERVICE,
   api_getStudentFeeRefundRequests: '083_refunds/fee_refunds_api.gs',
   api_getStudentFeeRefundRequest: '083_refunds/fee_refunds_api.gs',
   api_processStudentFeeRefundRequests: '083_refunds/fee_refunds_api.gs',
@@ -174,6 +182,32 @@ function verifyFormReaderBoundary_(failures) {
   }
 }
 
+function verifyFormSettingsAdapter_(failures) {
+  if (!fs.existsSync(filePath_(FORM_SETTINGS_ADAPTER))) return;
+  var source = read_(FORM_SETTINGS_ADAPTER);
+  [
+    '학생회비GoogleFormID',
+    '학생회비Form연동활성여부',
+    '학생회비Form마지막동기화일시',
+    '학생회비현재학기ID'
+  ].forEach(function (key) {
+    if (source.indexOf(key) < 0) failures.push('Missing Student Fee Form setting key: ' + key);
+  });
+  if (source.indexOf("'settings'") < 0 && source.indexOf('"settings"') < 0) {
+    failures.push('Student Fee Form settings adapter must use OperationDB settings.');
+  }
+  if (/\bFormApp\b/.test(source)) failures.push('Student Fee Form settings adapter must not access FormApp.');
+}
+
+function verifyFormImportBoundary_(failures) {
+  if (!fs.existsSync(filePath_(FORM_IMPORT_SERVICE))) return;
+  var source = read_(FORM_IMPORT_SERVICE);
+  if (source.indexOf('findFeeApplicationRowBySourceResponseId_(') < 0) failures.push('Student Fee Form import must enforce source-response idempotency.');
+  if (source.indexOf("'IMPORT'") < 0 || source.indexOf("'feeApplications'") < 0) failures.push('Student Fee Form import must write IMPORT / feeApplications audit.');
+  if (source.indexOf('updateStudentFeeFormLastSyncedAt_(') < 0) failures.push('Student Fee Form import must update last sync time after successful sync.');
+  if (/\bFormApp\b/.test(source)) failures.push('Student Fee Form import service must use the reader boundary instead of FormApp.');
+}
+
 function verifyApiFiles_(failures) {
   Object.keys(API_OWNERS).forEach(function (name) {
     var relative = API_OWNERS[name];
@@ -240,6 +274,8 @@ function main_() {
   verifySyntaxAndDuplicates_(files, failures);
   verifyForbiddenPatterns_(files, failures);
   verifyFormReaderBoundary_(failures);
+  verifyFormSettingsAdapter_(failures);
+  verifyFormImportBoundary_(failures);
   verifyApiFiles_(failures);
   verifyQueryServices_(files, failures);
   verifyDaoOwnership_(failures);
