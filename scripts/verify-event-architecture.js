@@ -76,6 +76,7 @@ function forbidPatternIn_(relativePath, pattern, message) {
   '052_applicants/applicants_query_service.gs',
   '052_applicants/applicants_sheet_dao.gs',
   '053_payment/payment_service.gs',
+  '053_payment/payment_query_service.gs',
   '053_payment/payment_sheet_dao.gs',
   '054_attendance/attendance_api.gs',
   '054_attendance/attendance_service.gs',
@@ -123,8 +124,12 @@ var ownership = {
   processApplicantData_: '052_applicants/applicants_service.gs',
   getApplicantListData_: '052_applicants/applicants_query_service.gs',
   getApplicantDetailData_: '052_applicants/applicants_query_service.gs',
-  buildEventPaymentTotalsByApplicationId_: '053_payment/payment_service.gs',
+  buildEventPaymentTotalsByApplicationId_: '053_payment/payment_query_service.gs',
+  getEventPaymentRowsByApplicationId_: '053_payment/payment_query_service.gs',
   listEventPaymentClientRows_: '053_payment/payment_sheet_dao.gs',
+  findEventPaymentRowsByApplicationId_: '053_payment/payment_sheet_dao.gs',
+  insertEventPaymentRow_: '053_payment/payment_sheet_dao.gs',
+  updateEventPaymentRowById_: '053_payment/payment_sheet_dao.gs',
   applyAttendanceChangesData_: '054_attendance/attendance_service.gs',
   getAttendanceListData_: '054_attendance/attendance_query_service.gs',
   findEventAttendanceRowByApplicationId_: '054_attendance/attendance_sheet_dao.gs',
@@ -147,6 +152,7 @@ Object.keys(functions).forEach(function (name) {
 [
   '051_events/events_query_service.gs',
   '052_applicants/applicants_query_service.gs',
+  '053_payment/payment_query_service.gs',
   '054_attendance/attendance_query_service.gs',
   '055_refunds/refunds_query_service.gs'
 ].forEach(function (relativePath) {
