@@ -1,11 +1,52 @@
 <script>
-// 1. 공통 사용자 정보 표시
+var APP_SIDEBAR_STORAGE_KEY_ = 'council.appShell.sidebarHidden';
+
+function readAppSidebarHidden_() {
+  try {
+    return window.localStorage.getItem(APP_SIDEBAR_STORAGE_KEY_) === 'true';
+  } catch (error) {
+    return false;
+  }
+}
+
+function applyAppSidebarHidden_(hidden) {
+  var app = document.querySelector('.app');
+  var toggle = getAppElement('appSidebarToggle');
+  var sidebar = getAppElement('appSidebar');
+  if (!app || !toggle || !sidebar) return;
+
+  app.classList.toggle('sidebar-hidden', !!hidden);
+  toggle.setAttribute('aria-expanded', hidden ? 'false' : 'true');
+  toggle.setAttribute('aria-label', hidden ? '사이드바 열기' : '사이드바 숨기기');
+  sidebar.setAttribute('aria-hidden', hidden ? 'true' : 'false');
+}
+
+function applyInitialAppSidebarState_() {
+  applyAppSidebarHidden_(readAppSidebarHidden_());
+}
+
+function toggleAppSidebar_() {
+  var app = document.querySelector('.app');
+  if (!app) return;
+
+  var hidden = !app.classList.contains('sidebar-hidden');
+  applyAppSidebarHidden_(hidden);
+  try {
+    window.localStorage.setItem(APP_SIDEBAR_STORAGE_KEY_, hidden ? 'true' : 'false');
+  } catch (error) {}
+}
+
+applyInitialAppSidebarState_();
+var appSidebarToggle = getAppElement('appSidebarToggle');
+if (appSidebarToggle) {
+  appSidebarToggle.addEventListener('click', toggleAppSidebar_);
+}
+
 // 1. 공통 사용자 정보 표시 (서버에서 받은 유저 정보 바인딩)
 getAppElement('appUserName').textContent = APP_USER_NAME || '운영자';
 getAppElement('appUserTitle').textContent = APP_USER_TITLE || '사용자';
 getAppElement('appUserCard').href = buildAppPageUrl('mypage');
 
-// 2. 공통 페이지 링크 및 활성 메뉴 연결
 // 2. 공통 페이지 링크 및 활성 메뉴 연결 (메뉴 클릭 시 이동할 URL)
 getAppElement('appNavMain').href = buildAppPageUrl('main');
 getAppElement('appNavAccounting').href = buildAppPageUrl('accounting');
@@ -24,12 +65,10 @@ getAppElement('appNavStudentFee').addEventListener('click', function () {
 });
 
 function loadAppNavigationAccess_() {
-  // 서버(백그라운드)에서 유저의 접근 권한 목록을 가져옴
   google.script.run
     .withSuccessHandler(function (current) {
       if (!current || !current.ok) return;
       var access = current.domainAccess || {};
-      // 권한 유무에 따라 좌측 메뉴들의 화면 노출 여부 동적 처리
       setAppDomainVisible_('main', !!access.main);
       setAppDomainVisible_('accounting', !!access.accounting);
       setAppDomainVisible_('student_fee', !!access.student_fee);
@@ -64,7 +103,6 @@ function setStudentFeeSubmenuExpanded_(expanded) {
 }
 
 function setAppActiveNavigation(page) {
-  // 현재 접속 중인 탭 위치를 파악해 메뉴에 '활성화(active)' 디자인 적용
   var current = String(page || '');
   var mainLink = getAppElement('appNavMain');
   var accountingLink = getAppElement('appNavAccounting');
