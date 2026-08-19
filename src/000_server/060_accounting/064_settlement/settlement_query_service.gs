@@ -1,22 +1,22 @@
 /** 전체 결산 read-only query */
 
 function buildSettlementSnapshotMetrics_(priorRows, periodRows, evidenceRows) {
-  function active(rows) {
+  function active_(rows) {
     return (rows || []).filter(function (row) { return String(row.recordStatus || '활성') !== '무효'; });
   }
-  function signedTotal(rows) {
-    return active(rows).reduce(function (sum, row) {
+  function signedTotal_(rows) {
+    return active_(rows).reduce(function (sum, row) {
       return sum + (row.transactionType === '수입' ? Number(row.amount || 0) : -Number(row.amount || 0));
     }, 0);
   }
 
-  var prior = active(priorRows);
-  var period = active(periodRows);
+  var prior = active_(priorRows);
+  var period = active_(periodRows);
   var evidenceByTransaction = (evidenceRows || []).reduce(function (index, row) {
     index[String(row.transactionId || '')] = true;
     return index;
   }, {});
-  var openingBalance = signedTotal(prior);
+  var openingBalance = signedTotal_(prior);
   var totalIncome = period.reduce(function (sum, row) { return sum + (row.transactionType === '수입' ? Number(row.amount || 0) : 0); }, 0);
   var totalExpense = period.reduce(function (sum, row) { return sum + (row.transactionType === '지출' ? Number(row.amount || 0) : 0); }, 0);
   return {
