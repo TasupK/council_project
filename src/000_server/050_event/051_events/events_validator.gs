@@ -1,7 +1,7 @@
 ﻿function buildEventPayload_(payload, requireAll) {
   var source = payload && typeof payload === 'object' ? payload : {};
   var fields = [
-    'name', 'category', 'status', 'managerId',
+    'name', 'category', 'status',
     'applicationStartAt', 'applicationEndAt', 'eventStartAt', 'eventEndAt',
     'capacity', 'payerFee', 'nonPayerFee', 'description', 'evidenceFolderId'
   ];
