@@ -19,9 +19,7 @@ function renderStudentFeeSummary_(data) {
   var refunds = data.refunds || {};
   var content = studentFeeGetElement('sf-home-content');
   content.innerHTML = [
-    sfHomeSection_('가입자', [
-      sfHomeStatCard_('전체 가입자', (payers.total || 0) + '명', 'info', 'student_fee_payers')
-    ]),
+    sfHomeSection_('가입자', [sfHomeStatCard_('전체 가입자', (payers.total || 0) + '명', 'info', 'student_fee_payers')]),
     sfHomeSection_('납부신청', [
       sfHomeStatCard_('전체', (applications.total || 0) + '건', '', 'student_fee_payments'),
       sfHomeStatCard_('접수', (applications.pending || 0) + '건', 'warning', 'student_fee_payments'),
@@ -56,7 +54,7 @@ function loadStudentFeeSummary_() {
   var error = studentFeeGetElement('sf-home-error');
   loading.hidden = false;
   error.hidden = true;
-  studentFeeApi('api_getStudentFeeSummary', {})
+  studentFeeClient.getSummary()
     .then(function (data) {
       loading.hidden = true;
       renderStudentFeeSummary_(data || {});
