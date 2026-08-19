@@ -19,7 +19,7 @@ function applyAttendanceChangesData_(request) {
         applicationId: applicationId,
         confirmedAt: item.confirmedAt || getCurrentIsoDateTime_(),
         status: status,
-        managerId: readActiveUserEmailFromSession_(),
+        managerEmail: readActiveUserEmailFromSession_(),
         method: 'manual'
       };
       var current = findEventAttendanceRowByApplicationId_(applicationId);
