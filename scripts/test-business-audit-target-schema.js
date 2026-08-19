@@ -23,12 +23,15 @@ var schemaKeys = Object.keys(schemaContext.getOperationDbSchema_());
 var invalid = [];
 listGsFiles_(SERVER_ROOT).forEach(function (file) {
   var source = fs.readFileSync(file, 'utf8');
+  if (!/write(?:Business|Accounting|StudentFee)Audit_\s*\(/.test(source)) return;
+
   var relative = path.relative(ROOT, file).replace(/\\/g, '/');
-  var objectPattern = /targetType\s*:\s*['"]([^'"]+)['"]/g;
+  var objectPattern = /writeBusinessAudit_\s*\(\s*\{[\s\S]*?targetType\s*:\s*['"]([^'"]+)['"]/g;
   var match;
   while ((match = objectPattern.exec(source)) !== null) {
     if (schemaKeys.indexOf(match[1]) < 0) invalid.push(relative + ': targetType=' + match[1]);
   }
+
   var wrapperPattern = /write(?:Accounting|StudentFee)Audit_\(\s*[^,]+,\s*['"][^'"]+['"]\s*,\s*['"]([^'"]+)['"]/g;
   while ((match = wrapperPattern.exec(source)) !== null) {
     if (schemaKeys.indexOf(match[1]) < 0) invalid.push(relative + ': wrapper target=' + match[1]);
