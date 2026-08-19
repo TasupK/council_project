@@ -5,11 +5,11 @@ function getEventListData_(request) {
   var keyword = normalizeEventText_(filter.keyword).toLowerCase();
   var rows = listEventClientRows_().filter(function (item) {
     if (keyword) {
-      var haystack = [item.name, item.id, item.managerId]
+      var haystack = [item.name, item.id, item.managerEmail]
         .join(' ').toLowerCase();
       if (haystack.indexOf(keyword) < 0) return false;
     }
-    if (filter.managerId && String(item.managerId) !== String(filter.managerId)) return false;
+    if (filter.managerEmail && String(item.managerEmail) !== String(filter.managerEmail)) return false;
     if (filter.category && String(item.category) !== String(filter.category)) return false;
     if (filter.status && String(item.status) !== String(filter.status)) return false;
     if (filter.startDate && String(item.eventStartAt) < String(filter.startDate)) return false;
@@ -35,7 +35,7 @@ function getEventListData_(request) {
     closed: allRows.filter(function (row) { return row.status === '종료'; }).length
   };
   result.options = {
-    managers: buildUniqueEventValues_(allRows.map(function (row) { return row.managerId; })),
+    managers: buildUniqueEventValues_(allRows.map(function (row) { return row.managerEmail; })),
     eventTypes: buildUniqueEventValues_(allRows.map(function (row) { return row.category; })),
     eventStatuses: EVENT_STATUSES.slice()
   };
