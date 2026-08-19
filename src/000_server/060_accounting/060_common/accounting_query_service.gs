@@ -1,13 +1,13 @@
 /** Accounting 화면용 read-only 조합과 DTO 변환 */
 
 function getLedgerEntriesData_() {
-  var evidenceByTransaction = groupBy_(listLedgerEvidenceRows_(), 'transactionId');
+  var evidenceByTransaction = groupBy_(buildEvidenceAccountingFacts_(), 'transactionId');
   var eventsById = listAccountingEventRows_().reduce(function (index, event) {
     index[event.id] = event;
     return index;
   }, {});
 
-  return listLedgerRows_().filter(function (item) {
+  return buildLedgerAccountingFacts_().filter(function (item) {
     return String(item.recordStatus || '활성') !== '무효';
   }).map(function (item) {
     var dto = mapLedgerEntryDto_(item);
