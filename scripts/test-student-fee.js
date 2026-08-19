@@ -60,9 +60,9 @@ function testStudentFeeReferenceData_() {
   context.findOperationTableRowById_ = function () { return null; };
   load_(context, 'src/000_server/080_student_fee/080_common/student_fee_reference_query_service.gs');
   var data = context.getStudentFeeReferenceData_();
-  assert.strictEqual(data.semesters[0].id, '20261');
-  assert.strictEqual(data.semesters[0].label, '2026학년도 1학기');
-  assert.strictEqual(data.semesters[1].id, '20262');
+  assert.strictEqual(data.semesters[0].id, '20262');
+  assert.strictEqual(data.semesters[0].label, '2026학년도 2학기');
+  assert.strictEqual(data.semesters[1].id, '20261');
 }
 
 function testAuditAttribution_() {
