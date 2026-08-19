@@ -118,6 +118,32 @@ function readFilePayloads(files) {
   }));
 }
 
+function evidenceBase64ToBlob(contentBase64, mimeType) {
+  const binary = window.atob(String(contentBase64 || ''));
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
+  return new Blob([bytes], { type: mimeType || 'application/octet-stream' });
+}
+
+async function openEvidenceFile(button) {
+  const popup = window.open('about:blank', '_blank');
+  try {
+    const response = await callServer('api_getLedgerEvidenceFileContent', {
+      evidence_id: button.dataset.evidenceId || '',
+      file_id: button.dataset.fileId || ''
+    }, null, { strict: true });
+    if (!response || !response.ok || !response.content_base64) throw new Error('증빙 파일 응답이 올바르지 않습니다.');
+    const blob = evidenceBase64ToBlob(response.content_base64, response.mime_type);
+    const objectUrl = URL.createObjectURL(blob);
+    if (popup) popup.location.href = objectUrl;
+    else window.open(objectUrl, '_blank');
+    window.setTimeout(function () { URL.revokeObjectURL(objectUrl); }, 60000);
+  } catch (error) {
+    if (popup && !popup.closed) popup.close();
+    toast(error && error.message ? error.message : '증빙 파일을 열지 못했습니다.');
+  }
+}
+
 async function refreshLedger() {
   const results = await Promise.all([
     callServer('api_getLedgerEntries', {}, { items: state.items }),
@@ -225,6 +251,7 @@ document.querySelectorAll('.filters input, .filters select').forEach(function (e
 document.getElementById('prevLedgerPage').addEventListener('click', function () { goLedgerPage(state.ledgerPage - 1); });
 document.getElementById('nextLedgerPage').addEventListener('click', function () { goLedgerPage(state.ledgerPage + 1); });
 document.getElementById('rows').addEventListener('click', function (event) { const button = event.target.closest('[data-id]'); if (button) openDetail(button.dataset.id); });
+document.getElementById('detailEvidenceList').addEventListener('click', function (event) { const button = event.target.closest('[data-evidence-id]'); if (button) openEvidenceFile(button); });
 
 async function initializeLedgerPage() { await refreshLedger(); await updateDatabaseLink(); }
 initializeLedgerPage();
