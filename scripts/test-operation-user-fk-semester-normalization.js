@@ -5,10 +5,26 @@ const vm = require('vm');
 
 const root = path.resolve(__dirname, '..');
 const schemaPath = path.join(root, 'src/000_server/020_schema/operation_db_schema.gs');
-const context = { console };
+const integrityPath = path.join(root, 'src/000_server/020_schema/operation_db_integrity.gs');
+const context = {
+  console,
+  normalizeTextValue_: value => String(value == null ? '' : value).trim(),
+  normalizeIntegrityValue_: value => String(value == null ? '' : value).trim().toLowerCase(),
+  buildIntegrityIssue_: (code, table, row, column, message, extra) => ({ code, table, rowNumber: row._rowNumber || '', column, message, ...(extra || {}) }),
+  validateForeignKeys_: (tableName, rows, column, refTableName, refRows, refColumn) => {
+    const ref = new Set(refRows.map(row => String(row[refColumn] || '').trim().toLowerCase()).filter(Boolean));
+    return rows.flatMap(row => {
+      const value = String(row[column] || '').trim().toLowerCase();
+      return value && !ref.has(value)
+        ? [{ code: 'FOREIGN_KEY_NOT_FOUND', table: tableName, rowNumber: row._rowNumber || '', column, value }]
+        : [];
+    });
+  }
+};
 vm.createContext(context);
 vm.runInContext(fs.readFileSync(path.join(root, 'src/000_server/010_core/config.gs'), 'utf8'), context);
 vm.runInContext(fs.readFileSync(schemaPath, 'utf8'), context);
+vm.runInContext(fs.readFileSync(integrityPath, 'utf8'), context);
 
 const schema = context.getOperationDbSchema_();
 const managerTables = [
@@ -62,10 +78,25 @@ collectGsFiles(serverRoot).forEach((filePath) => {
   }
 });
 
-assert.deepStrictEqual(
-  staleManagerRefs,
-  [],
-  `stale server managerId references:\n${staleManagerRefs.join('\n')}`
-);
+assert.deepStrictEqual(staleManagerRefs, [], `stale server managerId references:\n${staleManagerRefs.join('\n')}`);
+assert.strictEqual(typeof context.validateOperationDbReferenceRules_, 'function');
+
+const referenceIssues = context.validateOperationDbReferenceRules_(schema, {
+  businessAuditLogs: [
+    { _rowNumber: 2, '처리자이메일': 'mihy5012@mju.ac.kr' },
+    { _rowNumber: 3, '처리자이메일': 'ghost@example.com' }
+  ],
+  semesters: [
+    { _rowNumber: 2, '학기ID': '20261', '학년도': 2026, '학기구분': '1학기' },
+    { _rowNumber: 3, '학기ID': '20262', '학년도': 2026, '학기구분': '2학기' },
+    { _rowNumber: 4, '학기ID': '20263', '학년도': 2026, '학기구분': '여름계절' }
+  ]
+}, [
+  { 'Google이메일': 'mihy5012@mju.ac.kr' }
+]);
+
+assert.ok(referenceIssues.some(issue => issue.code === 'FOREIGN_KEY_NOT_FOUND' && issue.table === '업무감사로그' && issue.rowNumber === 3));
+assert.ok(referenceIssues.some(issue => issue.code === 'INVALID_SEMESTER_TYPE' && issue.table === '학기기준' && issue.rowNumber === 4));
+assert.ok(!referenceIssues.some(issue => issue.rowNumber === 2 && issue.code === 'FOREIGN_KEY_NOT_FOUND'));
 
 console.log('Operation user FK and semester normalization contract: PASS');
