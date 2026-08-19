@@ -12,6 +12,7 @@ var eventClient = {
   processApplicant: function (request) { return runAppApi('api_processEventApplicant', request || {}); },
   getAttendances: function (request) { return runAppApi('api_getEventAttendances', request || {}); },
   applyAttendanceChanges: function (request) { return runAppApi('api_applyEventAttendanceChanges', request || {}); },
-  getRefunds: function (request) { return runAppApi('api_getEventRefunds', request || {}); }
+  getRefunds: function (request) { return runAppApi('api_getEventRefunds', request || {}); },
+  syncApplicantsFromForms: function (request) { return runAppApi('api_syncEventApplicantsFromForms', request || {}); }
 };
 </script>
