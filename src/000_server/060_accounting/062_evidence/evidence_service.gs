@@ -52,7 +52,7 @@ function validateEvidenceOcrData_(request, context) {
   var evidence = findLedgerEvidenceRowById_(request.evidence_id);
   if (!evidence) throw new Error('거래증빙을 찾을 수 없습니다.');
   if (!evidence.driveFileId) throw new Error('거래증빙 원본 파일이 없습니다.');
-  var ledger = findLedgerRowById_(evidence.transactionId);
+  var ledger = findLedgerAccountingFactById_(evidence.transactionId);
   if (!ledger || String(ledger.recordStatus || '활성') === '무효') throw new Error('증빙이 속한 원장을 찾을 수 없습니다.');
 
   var ocrStatus = '완료';
