@@ -1,8 +1,15 @@
   <main class="login-screen" id="loginScreen">
     <section class="login-box">
+      <!-- [기능명세 1.1] 시스템 타이틀 및 접근 안내 문구 노출 -->
       <h1>학생회 통합 업무관리</h1>
       <p>승인된 Google 계정으로 로그인하면 메인 화면으로 이동합니다.</p>
+      
+      <!-- [기능명세 1.1 & 1.2] 사용자의 Google 계정으로 접근 권한을 요청하는 기본 액션 버튼 
+           - 클릭 시 서버 측(auth_session.gs)에서 Session.getActiveUser().getEmail()을 호출하여 이메일 수집
+           - 수집된 이메일이 '사용자목록' DB에 있는지 대조하여 인가(Authorization) 절차 수행 -->
       <a class="btn btn-primary btn-lg" id="loginButton" target="_top">Google 계정으로 로그인</a>
+      
+      <!-- [기능명세 1.1 & 1.2] DB 미등록, 권한 없음 등의 에러 발생 시 메시지를 노출하는 경고창 영역 -->
       <div class="login-alert" id="loginAlert"></div>
     </section>
   </main>
