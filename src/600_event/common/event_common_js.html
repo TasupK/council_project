@@ -11,29 +11,15 @@ var loading = document.getElementById('ew-loading');
 var toast = document.getElementById('ew-toast');
 
 function api(functionName, request) {
-    setLoading(true);
-    return new Promise(function (resolve, reject) {
-      if (!window.google || !google.script || !google.script.run) {
-        setLoading(false);
-        reject(new Error('Google Apps Script 웹앱 환경에서 실행해주세요.'));
-        return;
-      }
-      var runner = google.script.run
-        .withSuccessHandler(function (response) {
-          setLoading(false);
-          resolve(response);
-        })
-        .withFailureHandler(function (serverError) {
-          setLoading(false);
-          reject(new Error(serverError && serverError.message
-            ? serverError.message
-            : '서버 호출에 실패했습니다.'));
-        });
-      runner[functionName]({
-        request: request || {}
-      });
-    });
-  }
+  setLoading(true);
+  return runAppApi(functionName, request || {}).then(function (response) {
+    setLoading(false);
+    return response;
+  }, function (error) {
+    setLoading(false);
+    throw error;
+  });
+}
 
 function setLoading(isLoading) {
     state.loadingCount = Math.max(0, state.loadingCount + (isLoading ? 1 : -1));
