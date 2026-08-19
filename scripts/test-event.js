@@ -70,7 +70,7 @@ function testPaymentTotals_() {
     ];
   };
   load_(context, 'src/000_server/050_event/053_payment/payment_query_service.gs');
-  assert.deepStrictEqual(JSON.parse(JSON.stringify(context.getEventPaymentTotalsByApplicationId_())), { 'app-1': 1500, 'app-2': 700 });
+  assert.deepStrictEqual(JSON.parse(JSON.stringify(context.buildEventPaymentTotalsByApplicationId_())), { 'app-1': 1500, 'app-2': 700 });
 }
 
 function testEventData_() {
