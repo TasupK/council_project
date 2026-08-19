@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - design/accounting-db-v2
+  pull_request:
+    branches:
+      - main
 
 jobs:
   schema-contract:
