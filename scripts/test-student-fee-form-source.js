@@ -21,7 +21,9 @@ function createContext() {
     Math,
     Date,
     JSON,
-    isFinite
+    isFinite,
+    Utilities: { getUuid: () => 'uuid-test' },
+    withOperationWriteLock_: (fn) => fn()
   });
   load(context, 'src/000_server/010_core/config.gs');
   return context;
@@ -101,6 +103,42 @@ function createContext() {
   assert.throws(() => context.calculateStudentFeeCoverage_({
     currentSemesterId: '20261', academicYearLevel: 1, semesterWithinYear: 1, coverageMode: 'UNKNOWN'
   }), /coverageMode/);
+})();
+
+(function testApprovalUsesFullCoverageAmount() {
+  const context = createContext();
+  let application = { id: 'app-1', paymentDate: '2026-08-10', semesterCount: 6, status: '접수' };
+  let inserted = null;
+  context.findFeeApplicationRowById_ = () => application;
+  context.findFeePaymentRowByApplicationId_ = () => inserted;
+  context.updateFeeApplicationRowById_ = (id, changes) => { application = Object.assign({}, application, changes); };
+  context.insertFeePaymentRow_ = (row) => { inserted = JSON.parse(JSON.stringify(row)); return row; };
+  context.resolveStudentFeeRate_ = () => ({ amountPerSemester: 20000 });
+  context.getCurrentIsoDateTime_ = () => '2026-08-19T23:00:00+09:00';
+  context.writeStudentFeeAudit_ = () => {};
+  load(context, 'src/000_server/080_student_fee/082_payments/fee_payments_service.gs');
+
+  context.processFeeApplicationsData_({ ids: ['app-1'], action: 'APPROVE' }, { email: 'staff@example.com' });
+  assert.strictEqual(inserted.amount, 120000, 'approval amount must be rate * semesterCount');
+})();
+
+(function testApprovalRejectsInvalidCoverageCount() {
+  [undefined, '', 0, 1.5, 9].forEach((semesterCount) => {
+    const context = createContext();
+    const application = { id: 'app-invalid', paymentDate: '2026-08-10', semesterCount, status: '접수' };
+    context.findFeeApplicationRowById_ = () => application;
+    context.findFeePaymentRowByApplicationId_ = () => null;
+    context.updateFeeApplicationRowById_ = () => {};
+    context.insertFeePaymentRow_ = () => { throw new Error('must not insert invalid payment'); };
+    context.resolveStudentFeeRate_ = () => ({ amountPerSemester: 20000 });
+    context.getCurrentIsoDateTime_ = () => '2026-08-19T23:00:00+09:00';
+    context.writeStudentFeeAudit_ = () => {};
+    load(context, 'src/000_server/080_student_fee/082_payments/fee_payments_service.gs');
+    assert.throws(
+      () => context.processFeeApplicationsData_({ ids: ['app-invalid'], action: 'APPROVE' }, { email: 'staff@example.com' }),
+      /적용학기수|semesterCount/
+    );
+  });
 })();
 
 console.log('Student Fee Form source and coverage contract: PASS');
