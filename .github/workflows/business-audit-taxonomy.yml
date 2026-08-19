@@ -1,0 +1,25 @@
+name: Business audit taxonomy
+
+on:
+  pull_request:
+    paths:
+      - 'src/000_server/**'
+      - 'scripts/test-business-audit-taxonomy.js'
+      - '.github/workflows/business-audit-taxonomy.yml'
+  push:
+    branches:
+      - design/business-audit-taxonomy
+    paths:
+      - 'src/000_server/**'
+      - 'scripts/test-business-audit-taxonomy.js'
+      - '.github/workflows/business-audit-taxonomy.yml'
+
+jobs:
+  audit-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: node scripts/test-business-audit-taxonomy.js
