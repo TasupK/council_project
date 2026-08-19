@@ -28,7 +28,8 @@ const eventClient = read('src/600_event/common/event_client_js.html');
 const eventPages = [
   'src/600_event/600_home/event_home_js.html',
   'src/600_event/610_form/event_form_js.html',
-  'src/600_event/620_detail/event_detail_js.html'
+  'src/600_event/620_detail/event_detail_js.html',
+  'src/600_event/620_detail/event_form_sync_js.html'
 ].map(read).join('\n');
 
 assert.doesNotMatch(eventCommon, /function\s+api\s*\(/, 'Event api compatibility wrapper must be removed');
