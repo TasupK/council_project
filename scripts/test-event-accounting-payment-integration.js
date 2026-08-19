@@ -5,6 +5,7 @@ var vm = require('vm');
 
 var ROOT = path.resolve(__dirname, '..');
 var reconciliationQueryPath = path.join(ROOT, 'src/000_server/060_accounting/063_reconciliation/reconciliation_query_service.gs');
+var ledgerServicePath = path.join(ROOT, 'src/000_server/060_accounting/061_ledger/ledger_service.gs');
 
 function load_(context, file) {
   vm.runInContext(fs.readFileSync(file, 'utf8'), context, { filename: file });
@@ -24,23 +25,16 @@ var ledgers = [
   { id: 'LEDGER-OLD', businessType: 'EVENT_PAYMENT', businessId: 'PAY-CLAIMED', recordStatus: '활성', bankTransactionId: 'BANK-OLD' }
 ];
 
-var context = vm.createContext({
-  console: console,
-  String: String,
-  Number: Number,
-  Object: Object,
-  Array: Array,
-  Math: Math,
-  Date: Date,
-  JSON: JSON,
-  isFinite: isFinite,
+var queryContext = vm.createContext({
+  console: console, String: String, Number: Number, Object: Object, Array: Array,
+  Math: Math, Date: Date, JSON: JSON, isFinite: isFinite,
   listBankTransactionRows_: function () { return banks; },
   buildEventPaymentAccountingFacts_: function () { return facts; },
   listLedgerRows_: function () { return ledgers; }
 });
-load_(context, reconciliationQueryPath);
+load_(queryContext, reconciliationQueryPath);
 
-var candidates = JSON.parse(JSON.stringify(context.buildEventPaymentReconciliationCandidates_({})));
+var candidates = JSON.parse(JSON.stringify(queryContext.buildEventPaymentReconciliationCandidates_({})));
 var strongest = candidates.filter(function (row) { return row.bankTransactionId === 'BANK-1' && row.eventPaymentId === 'PAY-1'; })[0];
 assert.ok(strongest, 'exact candidate must exist');
 assert.strictEqual(strongest.amountMatches, true);
@@ -54,8 +48,22 @@ assert.strictEqual(weaker.amountMatches, true);
 assert.strictEqual(weaker.depositorMatches, false);
 assert.ok(weaker.score < strongest.score);
 assert.strictEqual(weaker.result, '확인필요');
-
 assert.strictEqual(candidates.some(function (row) { return row.bankTransactionId === 'BANK-3'; }), false, 'mismatched amount must not be a normal candidate');
 assert.strictEqual(candidates.some(function (row) { return row.eventPaymentId === 'PAY-CLAIMED'; }), false, 'already ledger-claimed Event payment must be excluded');
 
-console.log('Event–Accounting payment reconciliation candidate contract passed.');
+var sourceLedgers = [
+  { id: 'L1', businessType: 'EVENT_PAYMENT', businessId: 'PAY-1', recordStatus: '활성' },
+  { id: 'L2', businessType: 'EVENT_PAYMENT', businessId: 'PAY-VOID', recordStatus: '무효' }
+];
+var ledgerContext = vm.createContext({
+  console: console, String: String, Number: Number, Object: Object, Array: Array,
+  Math: Math, Date: Date, JSON: JSON, isFinite: isFinite,
+  listLedgerRows_: function () { return sourceLedgers; }
+});
+load_(ledgerContext, ledgerServicePath);
+assert.throws(function () { ledgerContext.assertLedgerBusinessSourceAvailable_('EVENT_PAYMENT', 'PAY-1', ''); }, /이미 다른 원장/);
+assert.doesNotThrow(function () { ledgerContext.assertLedgerBusinessSourceAvailable_('EVENT_PAYMENT', 'PAY-VOID', ''); });
+assert.doesNotThrow(function () { ledgerContext.assertLedgerBusinessSourceAvailable_('EVENT_PAYMENT', 'PAY-1', 'L1'); });
+assert.doesNotThrow(function () { ledgerContext.assertLedgerBusinessSourceAvailable_('일반', 'PAY-1', ''); });
+
+console.log('Event–Accounting payment integration contract passed.');
