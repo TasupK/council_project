@@ -37,6 +37,20 @@ result = verifier.auditSourcePair(
 );
 assert.strictEqual(result.dynamicCalls.length, 1);
 
+result = verifier.auditSourcePair(
+  `// TODO: google.script.run.api_future({});\n/* api_future_two */\ngoogle.script.run.api_ping({});`,
+  validServer,
+  { frontendPath: 'fixture/comments.html', serverPath: 'fixture/api.gs' }
+);
+assert.deepStrictEqual(result.missingServerApis, []);
+
+result = verifier.auditSourcePair(
+  `function setVisible(key) { state[key] = true; }\nsetVisible('main');\ngoogle.script.run.api_ping({});`,
+  validServer,
+  { frontendPath: 'fixture/brackets.html', serverPath: 'fixture/api.gs' }
+);
+assert.deepStrictEqual(result.dynamicCalls, []);
+
 const repoResult = verifier.auditRepository(path.resolve(__dirname, '..'));
 if (repoResult.missingServerApis.length || repoResult.dynamicCalls.length) {
   console.error(verifier.formatAuditFailures(repoResult));
