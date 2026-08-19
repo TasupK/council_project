@@ -1,4 +1,4 @@
-name: UserDB Schema Alignment RED
+name: UserDB Schema Alignment GREEN
 
 on:
   pull_request:
@@ -6,23 +6,31 @@ on:
       - main
 
 jobs:
-  red:
+  green:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Confirm alignment test currently fails
+      - name: Verify UserDB schema alignment contract
+        run: node scripts/test-user-db-schema-alignment.js
+      - name: Compile UserDB schema
+        run: node -e "const fs=require('fs'),vm=require('vm'); new vm.Script(fs.readFileSync('src/000_server/020_schema/user_db_schema.gs','utf8')); console.log('user_db_schema.gs compile PASS')"
+      - name: Run UserDB related tests
         shell: bash
         run: |
-          set +e
-          node scripts/test-user-db-schema-alignment.js > /tmp/red.log 2>&1
-          status=$?
-          cat /tmp/red.log
-          if [ "$status" -eq 0 ]; then
-            echo 'Expected RED but test passed.'
-            exit 1
-          fi
-          grep -Eq 'users.active|활성여부|actual UserDB|undefined' /tmp/red.log
-          echo 'RED_CONFIRMED=PASS'
+          set -euo pipefail
+          for file in scripts/test-*user*.js scripts/test-*settings*.js; do
+            [ -e "$file" ] || continue
+            echo "== $file =="
+            node "$file"
+          done
+      - name: Run architecture verifiers
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in scripts/verify-*.js; do
+            echo "== $file =="
+            node "$file"
+          done
