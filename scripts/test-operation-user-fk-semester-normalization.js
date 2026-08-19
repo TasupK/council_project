@@ -38,4 +38,34 @@ const schemaSource = fs.readFileSync(schemaPath, 'utf8');
 assert.ok(!/managerId\s*:\s*['"]담당자ID['"]/.test(schemaSource), 'operation schema must not define managerId: 담당자ID');
 assert.ok(!schemaSource.includes("'담당자ID'"), 'physical 담당자ID must not remain in operation schema field definitions');
 
+function collectGsFiles(dir) {
+  if (!fs.existsSync(dir)) return [];
+  return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    const fullPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) return collectGsFiles(fullPath);
+    return entry.isFile() && entry.name.endsWith('.gs') ? [fullPath] : [];
+  });
+}
+
+const serverRoot = path.join(root, 'src/000_server');
+const staleManagerRefs = [];
+collectGsFiles(serverRoot).forEach((filePath) => {
+  if (filePath === schemaPath) return;
+  const source = fs.readFileSync(filePath, 'utf8');
+  const patterns = [
+    /fields\.managerId\b/,
+    /\bmanagerId\s*:/,
+    /\bmanagerId\b/
+  ];
+  if (patterns.some((pattern) => pattern.test(source))) {
+    staleManagerRefs.push(path.relative(root, filePath));
+  }
+});
+
+assert.deepStrictEqual(
+  staleManagerRefs,
+  [],
+  `stale server managerId references:\n${staleManagerRefs.join('\n')}`
+);
+
 console.log('Operation user FK and semester normalization contract: PASS');
