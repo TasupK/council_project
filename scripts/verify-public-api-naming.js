@@ -3,6 +3,7 @@ var path = require('path');
 
 var ROOT = path.resolve(__dirname, '..');
 var SERVER = path.join(ROOT, 'src', '000_server');
+var CODE_ROOTS = [path.join(ROOT, 'src'), path.join(ROOT, 'scripts')];
 var failures = [];
 
 var LEGACY_PUBLIC_SYMBOLS = [
@@ -29,11 +30,11 @@ var NON_API_PUBLIC_ALLOWLIST = {
   authorizeApp: true
 };
 
-function listFiles_(directory) {
+function listFiles_(directory, matcher) {
   return fs.readdirSync(directory, { withFileTypes: true }).reduce(function (files, entry) {
     var target = path.join(directory, entry.name);
-    if (entry.isDirectory()) return files.concat(listFiles_(target));
-    if (/\.gs$/.test(entry.name)) files.push(target);
+    if (entry.isDirectory()) return files.concat(listFiles_(target, matcher));
+    if (matcher(entry.name)) files.push(target);
     return files;
   }, []);
 }
@@ -46,15 +47,25 @@ function collectFunctions_(source) {
   return names;
 }
 
-listFiles_(SERVER).forEach(function (file) {
+var codeFiles = [];
+CODE_ROOTS.forEach(function (root) {
+  codeFiles = codeFiles.concat(listFiles_(root, function (name) { return /\.(gs|js|html)$/.test(name); }));
+});
+
+codeFiles.forEach(function (file) {
+  if (path.resolve(file) === path.resolve(__filename)) return;
   var relative = path.relative(ROOT, file).replace(/\\/g, '/');
   var source = fs.readFileSync(file, 'utf8');
-
   LEGACY_PUBLIC_SYMBOLS.forEach(function (name) {
     if (source.indexOf(name) >= 0) {
       failures.push('Legacy public API symbol remains: ' + name + ' in ' + relative);
     }
   });
+});
+
+listFiles_(SERVER, function (name) { return /\.gs$/.test(name); }).forEach(function (file) {
+  var relative = path.relative(ROOT, file).replace(/\\/g, '/');
+  var source = fs.readFileSync(file, 'utf8');
 
   collectFunctions_(source).forEach(function (name) {
     if (NON_API_PUBLIC_ALLOWLIST[name]) return;
