@@ -1,0 +1,20 @@
+name: Operation user FK semester normalization
+
+on:
+  push:
+    branches:
+      - design/operation-user-fk-semester-normalization
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Operation user FK and semester normalization contract
+        run: node scripts/test-operation-user-fk-semester-normalization.js
