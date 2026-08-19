@@ -1,0 +1,90 @@
+name: Internal Function Naming Final Verify
+
+on:
+  push:
+    branches:
+      - refactor/system-consistency-hardening
+    paths:
+      - '.github/workflows/internal-function-naming-final-verify.yml'
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: refactor/system-consistency-hardening
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Verify public API identifiers unchanged
+        run: |
+          node <<'NODE'
+          const cp = require('child_process');
+          const BASE = 'a30aca42c67c987e2bdcc8d793b65f3b802b59a2';
+          function exec(cmd) { return cp.execSync(cmd, {encoding:'utf8'}); }
+          function apiNames(ref) {
+            const raw = exec(`git ls-tree -r --name-only ${ref} src/000_server`);
+            const files = raw.split(/\r?\n/).filter(f => /\.gs$/.test(f));
+            const names = [];
+            for (const file of files) {
+              const src = exec(`git show ${ref}:${file}`);
+              const re = /function\s+(api_[A-Za-z_$][\w$]*)\s*\(/g;
+              let m;
+              while ((m = re.exec(src))) names.push(m[1]);
+            }
+            return [...new Set(names)].sort();
+          }
+          const before = apiNames(BASE);
+          const after = apiNames('HEAD');
+          const removed = before.filter(x => !after.includes(x));
+          const added = after.filter(x => !before.includes(x));
+          if (removed.length || added.length) {
+            console.error('Public API inventory changed.');
+            console.error('Removed:', removed);
+            console.error('Added:', added);
+            process.exit(1);
+          }
+          console.log(`Public API inventory unchanged: ${after.length} functions.`);
+          NODE
+
+      - name: Verify naming contract
+        run: node scripts/verify-internal-function-naming.js
+
+      - name: Compile every server gs file
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+          const vm = require('vm');
+          function walk(dir) {
+            return fs.readdirSync(dir, {withFileTypes:true}).flatMap(e => {
+              const p = path.join(dir, e.name);
+              return e.isDirectory() ? walk(p) : [p];
+            });
+          }
+          for (const file of walk('src/000_server').filter(f => /\.gs$/.test(f))) {
+            new vm.Script(fs.readFileSync(file, 'utf8'), {filename:file});
+          }
+          console.log('All server .gs files compile.');
+          NODE
+
+      - name: Run all behavior tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in scripts/test-*.js; do
+            echo "== $file =="
+            node "$file"
+          done
+
+      - name: Run all architecture verifiers
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in scripts/verify-*.js; do
+            echo "== $file =="
+            node "$file"
+          done
