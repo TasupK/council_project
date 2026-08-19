@@ -45,7 +45,7 @@ function renderMenus_(menus) {
   });
 }
 
-// [기능명세 2.2] 서버에서 받은 영문 boolean 권한 키(view, edit 등)를 사람이 읽을 수 있는 한글 라벨로 매핑
+// 권한 영문 키(view, edit 등)를 한글 라벨(조회, 수정 등)로 변환
 function grantLabels_(grants) {
   var labels = [];
   var names = { menu: '메뉴', view: '조회', edit: '등록·수정', approve: '승인·보관', export: '출력·다운로드' };
@@ -55,7 +55,7 @@ function grantLabels_(grants) {
   return labels;
 }
 
-// [기능명세 2.2] 세부 권한 배열(permissionDetails)을 순회하며 권한 태그(grant) 행(row)을 구성하여 DOM 삽입
+// 권한 목록 데이터를 화면에 그리기
 function renderPermissions_(permissionDetails) {
   var container = document.getElementById('mypagePermissions');
   container.innerHTML = '';
@@ -90,7 +90,7 @@ function renderPermissions_(permissionDetails) {
   });
 }
 
-// [기능명세 2.2] 기본 인적사항(current.user)을 해당하는 화면 DOM들의 textContent로 주입 및 아바타 초기화
+// 내 정보(이름, 소속 등) 데이터를 화면에 세팅
 function renderProfile_(current) {
   var user = current && current.user ? current.user : {};
   var name = user.name || '이름 미등록';
@@ -109,7 +109,7 @@ function showMyPageError_(error) {
   element.classList.remove('hidden');
 }
 
-// [기능명세 2.2] 페이지 로드 시 두 개의 API를 병렬(Promise.all) 호출하여 화면 데이터 동기화 최적화
+// 페이지 진입 시 '내 정보'와 '권한' API를 동시에 호출하여 속도 최적화
 async function initializeMyPage() {
   try {
     var results = await Promise.all([

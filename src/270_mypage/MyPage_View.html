@@ -6,10 +6,10 @@
     </div>
   </div>
 
-  <!-- [기능명세 2.2] 데이터 로드 실패 등 오류 발생 시 나타나는 에러 컨테이너 -->
+  <!-- 에러 창: 서버 통신 실패 시 나타남 -->
   <div class="mypage-error hidden" id="mypageError" role="alert"></div>
 
-  <!-- [기능명세 1.1] 내 정보 (Profile): 구글 계정, 소속, 직책 등 기본 인적사항 노출 영역 -->
+  <!-- 내 정보: 이름, 소속 등 기본 인적사항 -->
   <section class="card mypage-profile-card" aria-labelledby="mypageProfileTitle">
     <div class="mypage-section-head">
       <div>
@@ -32,7 +32,7 @@
   </section>
 
   <div class="mypage-grid">
-    <!-- [기능명세 1.2] 내 역할 (Roles): 현재 계정에 배정된 역할명을 칩 형태로 표시 -->
+    <!-- 내 역할: 현재 배정된 직책명 (예: 회장) -->
     <section class="card" aria-labelledby="mypageRolesTitle">
       <div class="mypage-section-head">
         <div>
@@ -43,7 +43,7 @@
       <div class="mypage-list" id="mypageRoles"><span class="muted">불러오는 중...</span></div>
     </section>
 
-    <!-- [기능명세 1.3] 접근 가능 업무영역 (Menus): 권한에 따라 접근할 수 있는 대분류 메뉴 나열 -->
+    <!-- 업무영역: 권한이 있는 대분류 메뉴 (예: 회계, 행사) -->
     <section class="card" aria-labelledby="mypageMenusTitle">
       <div class="mypage-section-head">
         <div>
@@ -55,7 +55,7 @@
     </section>
   </div>
 
-  <!-- [기능명세 1.4] 내 권한 (Granular Permissions): IAM에 저장된 세부 권한별 허용 액션 리스트 -->
+  <!-- 내 권한: 업무별 상세 허용 권한 (조회, 수정 등) -->
   <section class="card" aria-labelledby="mypagePermissionsTitle">
     <div class="mypage-section-head">
       <div>
