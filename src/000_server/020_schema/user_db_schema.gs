@@ -10,7 +10,7 @@ function getUserDbSchema_() {
         studentId: '학번',
         phone: '연락처',
         departmentId: '부서ID',
-        status: '계정상태',
+        active: '활성여부',
         updatedAt: '최종수정일시',
         updatedBy: '등록자이메일'
       },
@@ -25,8 +25,8 @@ function getUserDbSchema_() {
       fields: {
         id: '부서ID',
         name: '부서명',
-        type: '부서유형',
-        sortOrder: '정렬순서',
+        description: '부서설명',
+        sortOrder: '표시순서',
         active: '활성여부'
       },
       primaryKey: ['id'],
@@ -41,7 +41,6 @@ function getUserDbSchema_() {
         isSystem: '시스템역할여부',
         description: '역할설명',
         active: '활성여부',
-        assignedStatus: '배정상태',
         updatedAt: '수정일시',
         updatedBy: '등록자이메일'
       },
