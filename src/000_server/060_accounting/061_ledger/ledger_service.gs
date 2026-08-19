@@ -33,24 +33,6 @@ function assertLedgerBusinessSourceAvailable_(businessType, businessId, currentL
   if (claimed) throw new Error('해당 행사 입금은 이미 다른 원장에 연결되어 있습니다.');
 }
 
-function resolveLedgerBankMatchStatus_(bankTransactionId, transactionType, amount, currentLedgerId) {
-  if (!bankTransactionId) return '미확인';
-  var bank = findBankTransactionRowById_(bankTransactionId);
-  if (!bank) throw new Error('연결할 계좌거래를 찾을 수 없습니다.');
-  if (String(bank.recordStatus || '정상') === '무효') throw new Error('무효 처리된 계좌거래는 원장에 연결할 수 없습니다.');
-
-  var claimed = listLedgerRows_().some(function (row) {
-    if (currentLedgerId && String(row.id) === String(currentLedgerId)) return false;
-    return String(row.recordStatus || '활성') !== '무효' &&
-      String(row.bankTransactionId || '') === String(bankTransactionId);
-  });
-  if (claimed) throw new Error('해당 계좌거래는 이미 다른 원장에 연결되어 있습니다.');
-
-  var expectedType = Number(bank.amount) < 0 ? '지출' : '수입';
-  var amountMatches = Math.abs(Number(bank.amount || 0)) === Number(amount || 0);
-  return expectedType === transactionType && amountMatches ? '정상' : '확인필요';
-}
-
 function createLedgerEntryData_(request, context, recordStatus) {
   request = request || {};
   var now = getCurrentIsoDateTime_();
@@ -65,7 +47,7 @@ function createLedgerEntryData_(request, context, recordStatus) {
   var item;
   try {
     assertLedgerBusinessSourceAvailable_(businessType, businessId, '');
-    var matchStatus = resolveLedgerBankMatchStatus_(bankTransactionId, transactionType, amount, '');
+    var matchStatus = resolveReconciliationLedgerBankMatchStatus_(bankTransactionId, transactionType, amount, '');
     item = {
       id: request.transaction_id || generateAccountingId_('TRX'),
       bankTransactionId: bankTransactionId,
@@ -89,9 +71,8 @@ function createLedgerEntryData_(request, context, recordStatus) {
     lock.releaseLock();
   }
 
-  var evidence = createEvidenceFilesData_(item.id, request.evidence_files || request.evidence || [], now);
   writeAccountingAudit_(actor, 'CREATE', 'ledger', item.id, null, item, '원장 등록');
-  return { ok: true, evidence: evidence, item: mapLedgerEntryDto_(item) };
+  return { ok: true, item: mapLedgerEntryDto_(item) };
 }
 
 function createLedgerDraftData_(request, context) {
@@ -122,7 +103,7 @@ function updateLedgerEntryData_(input, context) {
     var businessType = input.business_type == null ? before.businessType : input.business_type;
     var businessId = input.business_id == null ? before.businessId : input.business_id;
     assertLedgerBusinessSourceAvailable_(businessType, businessId, input.transaction_id);
-    var matchStatus = resolveLedgerBankMatchStatus_(bankTransactionId, transactionType, amount, input.transaction_id);
+    var matchStatus = resolveReconciliationLedgerBankMatchStatus_(bankTransactionId, transactionType, amount, input.transaction_id);
 
     changes = {
       bankTransactionId: bankTransactionId,
@@ -188,7 +169,7 @@ function processLedgerEntryData_(input, context) {
   var status;
   if (input.action === 'approve') {
     if (!before.bankTransactionId) throw new Error('계좌거래가 연결되지 않은 원장은 정상 확정할 수 없습니다.');
-    status = resolveLedgerBankMatchStatus_(before.bankTransactionId, before.transactionType, Number(before.amount), before.id);
+    status = resolveReconciliationLedgerBankMatchStatus_(before.bankTransactionId, before.transactionType, Number(before.amount), before.id);
   } else {
     status = '확인필요';
   }
