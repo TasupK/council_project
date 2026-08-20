@@ -18,8 +18,8 @@ function api_getLedgerSummary(filter) {
   return apiHandler_({ operation: 'getLedgerSummary', input: filter, requireLogin: true, access: accountingApiAccess_('view'), service: function (request) { return getLedgerSummaryData_(request || {}); } });
 }
 
-function api_getLedgerEntry(transactionId) {
-  return apiHandler_({ operation: 'getLedgerDetail', input: transactionId, requireLogin: true, access: accountingApiAccess_('view'), service: function (id) { return getLedgerDetailData_(id); } });
+function api_getLedgerEntry(request) {
+  return apiHandler_({ operation: 'getLedgerDetail', input: request, requireLogin: true, access: accountingApiAccess_('view'), service: function (input) { return getLedgerDetailData_(input.id); } });
 }
 
 function api_getLedgerEventOptions() {

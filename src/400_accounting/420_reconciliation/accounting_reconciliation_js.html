@@ -37,7 +37,7 @@ async function refreshReconciliationHistory(selectId) {
   const select = document.getElementById('reconciliationHistory');
   select.innerHTML = state.reconciliationRuns.length ? state.reconciliationRuns.map(function (row) { return '<option value="' + escapeHtml(row.id) + '">' + escapeHtml(row.auditStartDate + ' ~ ' + row.auditEndDate + ' · ' + row.status) + '</option>'; }).join('') : '<option value="">대사 이력 없음</option>';
   const id = selectId || (state.reconciliationRuns[0] && state.reconciliationRuns[0].id);
-  if (id) { select.value = id; const detail = await accountingClient.getReconciliation(id); renderReconciliationDetail(detail); }
+  if (id) { select.value = id; const detail = await accountingClient.getReconciliation({ id: id }); renderReconciliationDetail(detail); }
   else renderReconciliationDetail(null);
 }
 
@@ -87,7 +87,7 @@ setupAccountingPageLinks();
 setupFileUpload({ key: 'reconciliation', zoneId: 'reconciliationDropzone', inputId: 'reconciliationFile', nameId: 'reconciliationFileName', multiple: true });
 document.getElementById('uploadBankTransactions').addEventListener('click', uploadBankFiles);
 document.getElementById('runReconcile').addEventListener('click', runOfficialReconciliation);
-document.getElementById('reconciliationHistory').addEventListener('change', async function (event) { if (event.target.value) renderReconciliationDetail(await accountingClient.getReconciliation(event.target.value)); });
+document.getElementById('reconciliationHistory').addEventListener('change', async function (event) { if (event.target.value) renderReconciliationDetail(await accountingClient.getReconciliation({ id: event.target.value })); });
 ['reconciliationSearch','reconciliationStatus'].forEach(function (id) { document.getElementById(id).addEventListener('input', function () { renderReconciliationDetail(state.reconciliationDetail); }); });
 document.getElementById('resetReconciliationFilters').addEventListener('click', function () { document.getElementById('reconciliationSearch').value = ''; document.getElementById('reconciliationStatus').value = '전체'; renderReconciliationDetail(state.reconciliationDetail); });
 document.getElementById('reconciliationRows').addEventListener('click', function (event) { const button = event.target.closest('[data-action]'); if (!button) return; if (button.dataset.action === 'link') manuallyLink(button.dataset.id); if (button.dataset.action === 'create') createLedgerForItem(button.dataset.id); });

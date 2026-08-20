@@ -21,7 +21,7 @@ async function refreshSettlementHistory(selectId) {
   const select = document.getElementById('settlementHistory');
   select.innerHTML = items.length ? items.map(function (row) { return '<option value="' + escapeHtml(row.id) + '">' + escapeHtml(row.startDate + ' ~ ' + row.endDate + ' · ' + row.status) + '</option>'; }).join('') : '<option value="">결산 이력 없음</option>';
   if (selectId) select.value = selectId;
-  if (select.value) { const report = await accountingClient.getSettlementReport(select.value); if (report) renderSettlement(report); }
+  if (select.value) { const report = await accountingClient.getSettlementReport({ id: select.value }); if (report) renderSettlement(report); }
 }
 async function generateSettlement() {
   const period = settlementPeriod();
@@ -38,7 +38,7 @@ async function exportSettlement() {
 setupAccountingPageLinks();
 document.getElementById('refreshSettlement').addEventListener('click', function () { refreshSettlementSummary().catch(function (error) { toast(error && error.message ? error.message : '결산 집계를 불러오지 못했습니다.'); }); });
 document.getElementById('generateSettlement').addEventListener('click', generateSettlement);
-document.getElementById('settlementHistory').addEventListener('change', async function (event) { if (!event.target.value) return; try { const report = await accountingClient.getSettlementReport(event.target.value); if (report) renderSettlement(report); } catch (error) { toast(error && error.message ? error.message : '결산 이력을 불러오지 못했습니다.'); } });
+document.getElementById('settlementHistory').addEventListener('change', async function (event) { if (!event.target.value) return; try { const report = await accountingClient.getSettlementReport({ id: event.target.value }); if (report) renderSettlement(report); } catch (error) { toast(error && error.message ? error.message : '결산 이력을 불러오지 못했습니다.'); } });
 document.getElementById('exportSettlement').addEventListener('click', exportSettlement);
 refreshSettlementHistory().catch(function (error) { toast(error && error.message ? error.message : '결산 이력을 불러오지 못했습니다.'); });
 </script>
