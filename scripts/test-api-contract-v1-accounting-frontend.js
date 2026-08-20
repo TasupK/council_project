@@ -13,8 +13,11 @@ assert.doesNotMatch(client, /runAppApi\(\s*['"]api_getReconciliation['"]\s*,\s*i
 assert.doesNotMatch(client, /runAppApi\(\s*['"]api_getSettlementReport['"]\s*,\s*id\b/, 'settlement detail must not send a scalar id');
 assert.match(client, /getReconciliation:\s*function\s*\(request\)[\s\S]*?runAppApi\(['"]api_getReconciliation['"],\s*request\s*\|\|\s*\{\}\)/, 'reconciliation detail client must accept an object request');
 assert.match(client, /getSettlementReport:\s*function\s*\(request\)[\s\S]*?runAppApi\(['"]api_getSettlementReport['"],\s*request\s*\|\|\s*\{\}\)/, 'settlement detail client must accept an object request');
+var ledgerApi = read_('src/000_server/060_accounting/061_ledger/ledger_api.gs');
 var reconciliationApi = read_('src/000_server/060_accounting/063_reconciliation/reconciliation_api.gs');
 var settlementApi = read_('src/000_server/060_accounting/064_settlement/settlement_api.gs');
+assert.match(ledgerApi, /function\s+api_getLedgerEntry\s*\(request\)/, 'ledger detail API must accept request object');
+assert.match(ledgerApi, /getLedgerDetailData_\(input\.id\)/, 'ledger detail API must unwrap id at the public boundary');
 assert.match(reconciliationApi, /function\s+api_getReconciliation\s*\(request\)/, 'reconciliation API must accept request object');
 assert.match(reconciliationApi, /getReconciliationDetailData_\(input\.id\)/, 'reconciliation API must unwrap id at the public boundary');
 assert.match(settlementApi, /function\s+api_getSettlementReport\s*\(request\)/, 'settlement API must accept request object');
