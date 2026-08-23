@@ -23,8 +23,15 @@ function insertSheetCrudItem_(database, tableKey, item) {
   return withSheetCrudWriteLock_(function () {
     var table = getSheetCrudTableSchema_(database, tableKey);
     var sheet = requireSheetCrudTableSheet_(database, tableKey);
-    var fields = Object.keys(table.fields);
-    var row = fields.map(function (fieldKey) {
+    ensureSheetCrudOptionalHeaders_(table, sheet);
+    var fieldByHeader = {};
+    Object.keys(table.fields).forEach(function (fieldKey) {
+      fieldByHeader[table.fields[fieldKey]] = fieldKey;
+    });
+    var headers = readSheetCrudHeaderValues_(sheet);
+    var row = headers.map(function (header) {
+      var fieldKey = fieldByHeader[header];
+      if (!fieldKey) return '';
       return Object.prototype.hasOwnProperty.call(item, fieldKey) ? item[fieldKey] : '';
     });
     sheet.getRange(sheet.getLastRow() + 1, 1, 1, row.length).setValues([row]);
@@ -38,6 +45,7 @@ function updateSheetCrudItemById_(database, tableKey, id, changes) {
   return withSheetCrudWriteLock_(function () {
     var table = getSheetCrudTableSchema_(database, tableKey);
     var sheet = requireSheetCrudTableSheet_(database, tableKey);
+    ensureSheetCrudOptionalHeaders_(table, sheet);
     var values = sheet.getDataRange().getValues();
     var headers = values[0] || [];
     var idField = table.primaryKey[0];
@@ -74,7 +82,10 @@ function openSheetCrudSpreadsheet_(database) {
 function requireSheetCrudTableSheet_(database, tableKey) {
   var table = getSheetCrudTableSchema_(database, tableKey);
   var sheet = openSheetCrudSpreadsheet_(database).getSheetByName(table.sheetName);
-  var expectedHeaders = Object.keys(table.fields).map(function (fieldKey) {
+  var optionalFields = table.optionalFields || [];
+  var expectedHeaders = Object.keys(table.fields).filter(function (fieldKey) {
+    return optionalFields.indexOf(fieldKey) < 0;
+  }).map(function (fieldKey) {
     return table.fields[fieldKey];
   });
   var actualHeaders;
@@ -90,7 +101,20 @@ function requireSheetCrudTableSheet_(database, tableKey) {
   return sheet;
 }
 
-// 8. 시트 헤더값 조회
+// 8. 선택 컬럼은 최초 등록·수정 시 기존 시트 끝에 안전하게 추가한다.
+function ensureSheetCrudOptionalHeaders_(table, sheet) {
+  var actualHeaders = readSheetCrudHeaderValues_(sheet);
+  var missingHeaders = (table.optionalFields || []).map(function (fieldKey) {
+    return table.fields[fieldKey];
+  }).filter(function (header) {
+    return header && actualHeaders.indexOf(header) < 0;
+  });
+  if (!missingHeaders.length) return;
+  sheet.getRange(1, sheet.getLastColumn() + 1, 1, missingHeaders.length).setValues([missingHeaders]);
+  SpreadsheetApp.flush();
+}
+
+// 9. 시트 헤더값 조회
 function readSheetCrudHeaderValues_(sheet) {
   var range = sheet.getRange(1, 1, 1, sheet.getLastColumn());
   var values = range.getDisplayValues ? range.getDisplayValues() : range.getValues();
@@ -99,7 +123,7 @@ function readSheetCrudHeaderValues_(sheet) {
   });
 }
 
-// 9. 시트 행을 스키마 필드키 객체로 변환
+// 10. 시트 행을 스키마 필드키 객체로 변환
 function mapSheetCrudRowsToItems_(table, values) {
   var headers = values[0].map(function (header) {
     return String(header || '').trim();
@@ -120,7 +144,7 @@ function mapSheetCrudRowsToItems_(table, values) {
   });
 }
 
-// 10. 수정값을 메모리 행에 반영
+// 11. 수정값을 메모리 행에 반영
 function applySheetCrudChangesToRow_(table, headers, row, changes) {
   Object.keys(changes || {}).forEach(function (fieldKey) {
     var column = headers.indexOf(table.fields[fieldKey]);
@@ -128,13 +152,14 @@ function applySheetCrudChangesToRow_(table, headers, row, changes) {
   });
 }
 
-// 11. 공통 쓰기 잠금 실행
+// 12. 공통 쓰기 잠금 실행
 function withSheetCrudWriteLock_(callback) {
   var lock = LockService.getScriptLock();
-  lock.waitLock(30000);
+  var ownsLock = typeof lock.hasLock !== 'function' || !lock.hasLock();
+  if (ownsLock) lock.waitLock(30000);
   try {
     return callback();
   } finally {
-    lock.releaseLock();
+    if (ownsLock) lock.releaseLock();
   }
 }

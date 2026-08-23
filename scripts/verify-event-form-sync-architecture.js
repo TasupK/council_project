@@ -3,8 +3,8 @@ var path = require('path');
 
 var ROOT = path.resolve(__dirname, '..');
 var EVENT = path.join(ROOT, 'src/000_server/050_event');
-var DETAIL = path.join(ROOT, 'src/600_event/620_detail');
-var CLIENT = path.join(ROOT, 'src/600_event/common/event_client_js.html');
+var DETAIL = path.join(ROOT, 'src/600_event/630_detail');
+var CLIENT = path.join(ROOT, 'src/600_event/600_common/event_client_js.html');
 var failures = [];
 
 function read_(file) { return fs.readFileSync(file, 'utf8'); }

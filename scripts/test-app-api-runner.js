@@ -80,6 +80,20 @@ function makeGas(mode, value, received) {
     }
   );
 
+  const wrappedTransported = new Error('Error: __APP_ERROR__:' + JSON.stringify({
+    code: 'FORBIDDEN',
+    message: '요청한 업무 권한을 찾을 수 없습니다.',
+    details: {}
+  }));
+  received = [];
+  context = loadRunner(makeGas('failure', wrappedTransported, received));
+  await assert.rejects(
+    context.runAppApi('api_ping', {}),
+    function (error) {
+      return error && error.code === 'FORBIDDEN' && error.message === '요청한 업무 권한을 찾을 수 없습니다.';
+    }
+  );
+
   const templates = [
     'src/250_main/Main.html',
     'src/270_mypage/MyPage.html',
@@ -96,9 +110,9 @@ function makeGas(mode, value, received) {
     'src/500_student_fee/510_payers/Student_Fee_Payers.html',
     'src/500_student_fee/520_payments/Student_Fee_Payments.html',
     'src/500_student_fee/530_refunds/Student_Fee_Refunds.html',
-    'src/600_event/600_home/Event_Home.html',
-    'src/600_event/610_form/Event_Form.html',
-    'src/600_event/620_detail/Event_Detail.html'
+    'src/600_event/610_home/Event_Home.html',
+    'src/600_event/620_form/Event_Form.html',
+    'src/600_event/630_detail/Event_Detail.html'
   ];
   templates.forEach(function (relativePath) {
     const html = fs.readFileSync(path.join(root, relativePath), 'utf8');
