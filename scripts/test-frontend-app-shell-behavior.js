@@ -27,7 +27,8 @@ function makeClassList(initial = []) {
 
 function makeElement(id) {
   const attrs = {};
-  return {
+  const listeners = {};
+  const element = {
     id,
     classList: makeClassList(),
     hidden: false,
@@ -35,12 +36,18 @@ function makeElement(id) {
     href: '',
     setAttribute(name, value) { attrs[name] = String(value); },
     getAttribute(name) { return attrs[name] || null; },
-    addEventListener() {}
+    addEventListener(name, handler) { listeners[name] = handler; },
+    dispatch(name, event = {}) {
+      if (listeners[name]) listeners[name](Object.assign({ target: element, preventDefault() {} }, event));
+    },
+    contains(target) { return target === element; }
   };
+  return element;
 }
 
 const ids = [
   'appSidebarToggle', 'appSidebar', 'appUserName', 'appUserTitle', 'appUserCard',
+  'appAvatar', 'profilePop', 'popAvatar', 'popName', 'popEmail', 'goMy',
   'appNavMain', 'appNavAccounting', 'appNavStudentFeeGroup', 'appNavStudentFee',
   'appStudentFeeSubmenu', 'appNavStudentFeeHome', 'appNavStudentFeePayers',
   'appNavStudentFeePayments', 'appNavStudentFeeRefunds', 'appNavEvent', 'appNavSettings'
@@ -52,6 +59,7 @@ const storage = {
   getItem(key) { return storageValues.has(key) ? storageValues.get(key) : null; },
   setItem(key, value) { storageValues.set(key, String(value)); }
 };
+const documentListeners = {};
 
 const context = {
   console,
@@ -61,14 +69,20 @@ const context = {
   APP_USER_TITLE: '사용자',
   APP_CURRENT_PAGE: 'main',
   WEB_APP_URL: 'https://example.com/app',
-  window: { localStorage: storage, location: { href: 'https://example.com/app' } },
+  window: {
+    localStorage: storage,
+    location: { href: 'https://example.com/app' },
+    top: { location: { href: 'https://example.com/app' } }
+  },
   document: {
     getElementById(id) { return elements[id] || null; },
-    querySelector(selector) { return selector === '.app' ? app : null; }
+    querySelector(selector) { return selector === '.app' ? app : null; },
+    addEventListener(name, handler) { documentListeners[name] = handler; }
   },
   appClient: {
     getCurrentUser() {
       return Promise.resolve({
+        user: { name: '테스트', email: 'test@example.com', title: '사용자' },
         domainAccess: { main: true, accounting: true, student_fee: true, event: true, settings: true }
       });
     }
@@ -99,5 +113,22 @@ assert.strictEqual(app.classList.contains('sidebar-hidden'), true);
 storage.getItem = () => { throw new Error('blocked'); };
 assert.doesNotThrow(() => context.applyInitialAppSidebarState_());
 assert.strictEqual(app.classList.contains('sidebar-hidden'), false);
+
+assert.strictEqual(elements.profilePop.classList.contains('open'), false);
+elements.appUserCard.dispatch('click');
+assert.strictEqual(elements.profilePop.classList.contains('open'), true);
+assert.strictEqual(elements.appUserCard.getAttribute('aria-expanded'), 'true');
+
+elements.appUserCard.dispatch('click');
+assert.strictEqual(elements.profilePop.classList.contains('open'), false);
+assert.strictEqual(elements.appUserCard.getAttribute('aria-expanded'), 'false');
+
+elements.appUserCard.dispatch('click');
+documentListeners.click({ target: elements.appNavMain });
+assert.strictEqual(elements.profilePop.classList.contains('open'), false);
+assert.strictEqual(elements.appUserCard.getAttribute('aria-expanded'), 'false');
+
+elements.goMy.dispatch('click');
+assert.strictEqual(context.window.top.location.href, 'https://example.com/app?page=mypage');
 
 console.log('Frontend app shell behavior: PASS');

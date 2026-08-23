@@ -83,6 +83,30 @@
     flex: 1 0 auto;
   }
 
+  /* App_Styles의 전역 .active 규칙이 공통 내비게이션 상태를 덮지 않도록 보호한다. */
+  .nav-item.active {
+    display: flex;
+    margin-top: 0;
+    color: var(--active-text);
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  .nav-subitem.active {
+    display: flex;
+    margin-top: 0;
+    color: var(--ui-info-fg);
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .page-panel.active {
+    margin-top: 0;
+    color: inherit;
+    font-size: inherit;
+    font-weight: inherit;
+  }
+
   @media (max-width: 1100px) {
     .header {
       grid-template-columns: 40px minmax(150px, 208px) minmax(180px, 1fr) auto auto 150px;
