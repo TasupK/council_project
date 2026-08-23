@@ -83,6 +83,41 @@ FORBIDDEN_UNSCOPED_SELECTORS.forEach(function (selector) {
   }
 });
 
+var REQUIRED_PRIMITIVES = [
+  ['.ui-btn'], ['.ui-field'], ['.ui-card'], ['.ui-stat-card'], ['.ui-badge'],
+  ['.ui-table-wrap'], ['table.ui-table'], ['.ui-modal'], ['.ui-tabs'], ['.ui-tab'],
+  ['.ui-pagination'], ['.ui-toast'], ['.ui-loading', '.ui-empty'], ['.ui-error']
+];
+
+REQUIRED_PRIMITIVES.forEach(function (selectors) {
+  selectors.forEach(function (selector) {
+    if (!hasSelectorBlock_(appStyles, selector) && appStyles.indexOf(selector + ',') === -1) {
+      fail_('Missing shared UI primitive: ' + selector);
+    }
+  });
+});
+
+[
+  '.ui-btn.primary', '.ui-btn.outline', '.ui-btn.ghost', '.ui-btn.danger',
+  '.ui-btn.small', '.ui-btn.large', '.ui-badge.success', '.ui-badge.warning',
+  '.ui-badge.danger', '.ui-badge.info', '.ui-badge.neutral'
+].forEach(function (selector) {
+  if (appStyles.indexOf(selector) === -1) fail_('Missing shared UI modifier: ' + selector);
+});
+
+if (appStyles.indexOf(':focus-visible') === -1) {
+  fail_('Shared UI primitives require focus-visible styles');
+}
+if (shellStyles.indexOf(':focus-visible') === -1) {
+  fail_('App shell controls require focus-visible styles');
+}
+if (appStyles.indexOf('.ui-control:disabled') === -1) {
+  fail_('Shared controls require disabled styling');
+}
+if (appStyles.indexOf('aria-invalid="true"') === -1) {
+  fail_('Shared controls require invalid styling');
+}
+
 var SHELL_TEMPLATES = [
   'src/250_main/Main.html',
   'src/270_mypage/MyPage.html',
