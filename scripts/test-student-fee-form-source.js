@@ -116,6 +116,8 @@ function createContext() {
   context.resolveStudentFeeRate_ = () => ({ amountPerSemester: 20000 });
   context.getCurrentIsoDateTime_ = () => '2026-08-19T23:00:00+09:00';
   context.writeStudentFeeAudit_ = () => {};
+  // feePayers upsert는 별도 테스트(test-student-fee.js)에서 검증하므로 여기서는 no-op으로 stub 처리한다.
+  context.upsertFeePayerFromApplication_ = () => null;
   load(context, 'src/000_server/080_student_fee/082_payments/fee_payments_service.gs');
 
   context.processFeeApplicationsData_({ ids: ['app-1'], action: 'APPROVE' }, { email: 'staff@example.com' });
@@ -133,6 +135,8 @@ function createContext() {
     context.resolveStudentFeeRate_ = () => ({ amountPerSemester: 20000 });
     context.getCurrentIsoDateTime_ = () => '2026-08-19T23:00:00+09:00';
     context.writeStudentFeeAudit_ = () => {};
+    // feePayers upsert는 별도 테스트(test-student-fee.js)에서 검증하므로 여기서는 no-op으로 stub 처리한다.
+    context.upsertFeePayerFromApplication_ = () => null;
     load(context, 'src/000_server/080_student_fee/082_payments/fee_payments_service.gs');
     assert.throws(
       () => context.processFeeApplicationsData_({ ids: ['app-invalid'], action: 'APPROVE' }, { email: 'staff@example.com' }),
@@ -161,7 +165,7 @@ function fakeFormResponse(overrides) {
       fakeItemResponse('현재학기', '1학기'),
       fakeItemResponse('납부유형', '일반 납부'),
       fakeItemResponse('학생카드캡쳐', ['https://drive.google.com/open?id=STUDENT_CARD_FILE']),
-      fakeItemResponse('입금내역캡쳐', ['https://drive.google.com/file/d/DEPOSIT_FILE/view'])
+      fakeItemResponse('학생카드캡쳐', ['https://drive.google.com/file/d/DEPOSIT_FILE/view'])
     ]
   }, overrides || {});
   return {
