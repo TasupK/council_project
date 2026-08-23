@@ -13,12 +13,18 @@ var REQUIRED_FILES = [
   '500_home/student_fee_home_js.html',
   '510_payers/Student_Fee_Payers.html',
   '510_payers/Student_Fee_Payers_View.html',
+  '510_payers/modals/Student_Fee_Payer_Edit_Modal.html',
   '510_payers/student_fee_payers_js.html',
   '520_payments/Student_Fee_Payments.html',
   '520_payments/Student_Fee_Payments_View.html',
+  '520_payments/modals/Student_Fee_Payment_Detail_Modal.html',
+  '520_payments/modals/Student_Fee_Payment_Confirm_Modal.html',
   '520_payments/student_fee_payments_js.html',
   '530_refunds/Student_Fee_Refunds.html',
   '530_refunds/Student_Fee_Refunds_View.html',
+  '530_refunds/modals/Student_Fee_Refund_Detail_Modal.html',
+  '530_refunds/modals/Student_Fee_Refund_Approval_Modal.html',
+  '530_refunds/modals/Student_Fee_Refund_Transfer_Modal.html',
   '530_refunds/student_fee_refunds_js.html'
 ];
 
@@ -135,11 +141,14 @@ if (fs.existsSync(FRONTEND_ROOT)) {
 }
 
 [
-  ['510_payers/Student_Fee_Payers_View.html', /modal/i, 'Payer modal structure missing'],
+  ['510_payers/modals/Student_Fee_Payer_Edit_Modal.html', /ui-modal-overlay/i, 'Payer modal structure missing'],
   ['520_payments/Student_Fee_Payments_View.html', /bulk/i, 'Payment bulk action structure missing'],
-  ['520_payments/Student_Fee_Payments_View.html', /modal/i, 'Payment modal structure missing'],
+  ['520_payments/modals/Student_Fee_Payment_Detail_Modal.html', /ui-modal-overlay/i, 'Payment detail modal structure missing'],
+  ['520_payments/modals/Student_Fee_Payment_Confirm_Modal.html', /ui-modal-overlay/i, 'Payment confirm modal structure missing'],
   ['530_refunds/Student_Fee_Refunds_View.html', /bulk/i, 'Refund bulk action structure missing'],
-  ['530_refunds/Student_Fee_Refunds_View.html', /modal/i, 'Refund modal structure missing']
+  ['530_refunds/modals/Student_Fee_Refund_Detail_Modal.html', /ui-modal-overlay/i, 'Refund detail modal structure missing'],
+  ['530_refunds/modals/Student_Fee_Refund_Approval_Modal.html', /ui-modal-overlay/i, 'Refund approval modal structure missing'],
+  ['530_refunds/modals/Student_Fee_Refund_Transfer_Modal.html', /ui-modal-overlay/i, 'Refund transfer modal structure missing']
 ].forEach(function (rule) {
   if (existsFrontend_(rule[0]) && !rule[1].test(readFrontend_(rule[0]))) failures.push(rule[2]);
 });
