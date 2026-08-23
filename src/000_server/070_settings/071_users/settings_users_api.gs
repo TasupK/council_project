@@ -24,3 +24,33 @@ function api_updateSettingsUserDepartment(input) {
     }
   });
 }
+
+function api_saveSettingsUserChanges(input) {
+  return apiHandler_({
+    operation: 'saveSettingsUserChanges',
+    input: input,
+    service: function (request) {
+      return unwrapSettingsServiceResult_(saveSettingsUserChanges_(request));
+    }
+  });
+}
+
+function api_createSettingsUser(input) {
+  return apiHandler_({
+    operation: 'createSettingsUser',
+    input: input,
+    service: function (request) {
+      return unwrapSettingsServiceResult_(createSettingsUser_(request));
+    }
+  });
+}
+
+function api_updateSettingsUser(input) {
+  return apiHandler_({
+    operation: 'updateSettingsUser',
+    input: input,
+    service: function (request) {
+      return unwrapSettingsServiceResult_(updateSettingsUser_(request));
+    }
+  });
+}

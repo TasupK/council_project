@@ -11,3 +11,33 @@ function api_getSettingsRoles(input) {
     }
   });
 }
+
+function api_saveSettingsRoleChanges(input) {
+  return apiHandler_({
+    operation: 'saveSettingsRoleChanges',
+    input: input,
+    service: function (request) {
+      return unwrapSettingsServiceResult_(saveSettingsRoleChanges_(request));
+    }
+  });
+}
+
+function api_createSettingsRole(input) {
+  return apiHandler_({
+    operation: 'createSettingsRole',
+    input: input,
+    service: function (request) {
+      return unwrapSettingsServiceResult_(createSettingsRole_(request));
+    }
+  });
+}
+
+function api_updateSettingsRole(input) {
+  return apiHandler_({
+    operation: 'updateSettingsRole',
+    input: input,
+    service: function (request) {
+      return unwrapSettingsServiceResult_(updateSettingsRole_(request));
+    }
+  });
+}

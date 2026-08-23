@@ -163,3 +163,42 @@ function withSheetCrudWriteLock_(callback) {
     if (ownsLock) lock.releaseLock();
   }
 }
+
+// 13. 행 번호로 시트 행 수정 (복합키 테이블용)
+function updateSheetCrudItemByRowNumber_(database, tableKey, rowNumber, changes) {
+  return withSheetCrudWriteLock_(function () {
+    var table = getSheetCrudTableSchema_(database, tableKey);
+    var sheet = requireSheetCrudTableSheet_(database, tableKey);
+    ensureSheetCrudOptionalHeaders_(table, sheet);
+    var headers = readSheetCrudHeaderValues_(sheet);
+    var targetRow = Number(rowNumber);
+    if (!isFinite(targetRow) || targetRow < 2 || targetRow > sheet.getLastRow()) {
+      throw new Error(table.name + ' 행 번호가 올바르지 않습니다: ' + rowNumber);
+    }
+    var range = sheet.getRange(targetRow, 1, 1, headers.length);
+    var row = range.getValues()[0];
+    applySheetCrudChangesToRow_(table, headers, row, changes);
+    range.setValues([row]);
+    SpreadsheetApp.flush();
+    return true;
+  });
+}
+
+// 14. 조건에 맞는 행 삭제 (아래에서 위로 삭제)
+function deleteSheetCrudRowsWhere_(database, tableKey, predicate) {
+  if (typeof predicate !== 'function') throw new Error('삭제 조건 함수가 필요합니다.');
+  return withSheetCrudWriteLock_(function () {
+    var items = listSheetCrudItems_(database, tableKey);
+    var sheet = requireSheetCrudTableSheet_(database, tableKey);
+    var targets = items.filter(function (item) {
+      return !!predicate(item);
+    }).sort(function (a, b) {
+      return Number(b._rowNumber) - Number(a._rowNumber);
+    });
+    targets.forEach(function (item) {
+      sheet.deleteRow(Number(item._rowNumber));
+    });
+    if (targets.length) SpreadsheetApp.flush();
+    return targets.length;
+  });
+}

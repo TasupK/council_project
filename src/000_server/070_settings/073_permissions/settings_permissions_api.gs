@@ -8,3 +8,13 @@ function api_getSettingsPermissions(input) {
     }
   });
 }
+
+function api_saveSettingsRolePermissions(input) {
+  return apiHandler_({
+    operation: 'saveSettingsRolePermissions',
+    input: input,
+    service: function (request) {
+      return unwrapSettingsServiceResult_(saveSettingsRolePermissions_(request));
+    }
+  });
+}
