@@ -54,6 +54,9 @@ var ledger = read_('410_ledger/Accounting_Ledger_View.html');
 ['ui-stat-card', 'ui-toolbar', 'ui-table', 'ui-pagination', 'ui-modal', 'ui-badge'].forEach(function (primitive) {
   if (ledger.indexOf(primitive) < 0) failures.push('Ledger must use shared primitive: ' + primitive);
 });
+if (hasExactClassToken_(ledger, ['field'])) {
+  failures.push('Ledger modal must not use legacy .field class because App_Styles gives it fixed height/border/padding and breaks ui-field layout.');
+}
 
 var reconciliation = read_('420_reconciliation/Accounting_Reconciliation_View.html');
 ['ui-card', 'ui-toolbar', 'ui-table'].forEach(function (primitive) {
