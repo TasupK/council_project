@@ -150,6 +150,16 @@ function testModalFailureKeepsDialogOpen_() {
   });
 }
 
+function testStudentFeeViewsDoNotOwnModalsAfterMigration_() {
+  [
+    'src/500_student_fee/510_payers/Student_Fee_Payers_View.html',
+    'src/500_student_fee/520_payments/Student_Fee_Payments_View.html',
+    'src/500_student_fee/530_refunds/Student_Fee_Refunds_View.html'
+  ].forEach(function (file) {
+    assert.doesNotMatch(read_(file), /ui-modal-overlay/);
+  });
+}
+
 Promise.resolve()
   .then(testStudentFeeSemanticClient_)
   .then(function () { testBusyGuardPreventsDoubleSubmit_(); })
@@ -159,6 +169,7 @@ Promise.resolve()
   .then(function () { testRefundApprovalCalculatesBeforeMutation_(); })
   .then(function () { testBulkRefundApprovalOmitsSharedApprovedAmount_(); })
   .then(function () { testModalFailureKeepsDialogOpen_(); })
+  .then(function () { testStudentFeeViewsDoNotOwnModalsAfterMigration_(); })
   .then(function () { console.log('Student Fee frontend regression tests passed.'); })
   .catch(function (error) {
     console.error(error && error.stack ? error.stack : error);
