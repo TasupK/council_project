@@ -11,6 +11,14 @@ function requireFeePaymentId_(request) {
   return id;
 }
 
+function requireFeeApplicationSemesterCount_(application) {
+  var count = Number(application && application.semesterCount);
+  if (!isFinite(count) || Math.floor(count) !== count || count < 1 || count > 8) {
+    throw new Error('적용학기수는 1~8 범위의 정수여야 합니다.');
+  }
+  return count;
+}
+
 // 2. 납부신청 승인/반려 처리
 function processFeeApplicationsData_(request, context) {
   var source = request && typeof request === 'object' ? request : {};
@@ -34,6 +42,7 @@ function processFeeApplicationsData_(request, context) {
       return {
         applicationId: applicationId,
         before: before,
+        semesterCount: action === 'APPROVE' ? requireFeeApplicationSemesterCount_(before) : null,
         rate: action === 'APPROVE' ? resolveStudentFeeRate_(before.paymentDate) : null
       };
     });
@@ -43,7 +52,7 @@ function processFeeApplicationsData_(request, context) {
       var newStatus = action === 'APPROVE' ? '승인' : '반려';
       var applicationChanges = {
         status: newStatus,
-        managerId: actorEmail,
+        managerEmail: actorEmail,
         processedAt: processedAt
       };
       updateFeeApplicationRowById_(plan.applicationId, applicationChanges);
@@ -55,11 +64,11 @@ function processFeeApplicationsData_(request, context) {
 
       writeStudentFeeAudit_(
         actorEmail,
-        action === 'APPROVE' ? '승인' : '반려',
+        action,
         'feeApplications',
         plan.applicationId,
-        String(plan.before.status || ''),
-        newStatus,
+        { status: String(plan.before.status || '') },
+        { status: newStatus },
         source.reason || ''
       );
 
@@ -68,15 +77,15 @@ function processFeeApplicationsData_(request, context) {
         payment = {
           id: Utilities.getUuid(),
           applicationId: plan.applicationId,
-          amount: Number(plan.rate.amountPerSemester),
+          amount: Number(plan.rate.amountPerSemester) * plan.semesterCount,
           paymentDate: plan.before.paymentDate,
           depositorName: '',
           moneyStatus: '대기',
-          managerId: actorEmail,
+          managerEmail: actorEmail,
           confirmedAt: ''
         };
         insertFeePaymentRow_(payment);
-        writeStudentFeeAudit_(actorEmail, '생성', 'feePayments', payment.id, '', JSON.stringify(payment), '납부신청 승인에 따른 자동 생성');
+        writeStudentFeeAudit_(actorEmail, 'CREATE', 'feePayments', payment.id, null, payment, '납부신청 승인에 따른 자동 생성');
       }
 
       return { id: plan.applicationId, success: true, application: afterApplication, payment: payment };
@@ -98,7 +107,7 @@ function confirmFeePaymentData_(request, context) {
 
     var changes = {
       moneyStatus: result === 'DONE' ? '완료' : '불일치',
-      managerId: actorEmail,
+      managerEmail: actorEmail,
       confirmedAt: getCurrentIsoDateTime_()
     };
     if (request && Object.prototype.hasOwnProperty.call(request, 'depositorName')) {
@@ -111,7 +120,7 @@ function confirmFeePaymentData_(request, context) {
     Object.keys(changes).forEach(function (key) { after[key] = changes[key]; });
     delete after._rowNumber;
 
-    writeStudentFeeAudit_(actorEmail, '입금확인', 'feePayments', paymentId, String(before.moneyStatus || ''), changes.moneyStatus, request && request.reason || '');
+    writeStudentFeeAudit_(actorEmail, 'CONFIRM', 'feePayments', paymentId, { moneyStatus: String(before.moneyStatus || '') }, { moneyStatus: changes.moneyStatus }, request && request.reason || '');
     return after;
   });
 }

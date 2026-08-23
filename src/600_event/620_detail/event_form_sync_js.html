@@ -59,16 +59,18 @@
   };
 
   function syncEventFormResponses_(payload) {
-    return api('api_syncEventApplicantsFromForms', {
-      id: state.currentEventId,
-      payload: payload || {}
-    }).then(function (result) {
-      showToast(
-        'Forms 동기화: 신규 ' + Number(result.importedCount || 0) +
-        '건 · 중복 ' + Number(result.duplicateCount || 0) +
-        '건 · 오류행 ' + Number(result.invalidCount || 0) + '건'
-      );
-      return api('api_getEventOverview', { id: state.currentEventId });
+    return runEventBusy(function () {
+      return eventClient.syncApplicantsFromForms({
+        id: state.currentEventId,
+        payload: payload || {}
+      }).then(function (result) {
+        showToast(
+          'Forms 동기화: 신규 ' + Number(result.importedCount || 0) +
+          '건 · 중복 ' + Number(result.duplicateCount || 0) +
+          '건 · 오류행 ' + Number(result.invalidCount || 0) + '건'
+        );
+        return eventClient.getOverview({ id: state.currentEventId });
+      });
     }).then(function (detail) {
       state.detail = detail;
       renderDetailShell();

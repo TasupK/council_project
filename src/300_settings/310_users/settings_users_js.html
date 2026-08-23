@@ -57,8 +57,7 @@
     select.disabled = true;
     setUserMutationStatus('부서 저장 중…');
     try {
-      var result = await callSettingsApi('api_updateSettingsUserDepartment', { email: email, departmentId: departmentId });
-      if (!result || !result.ok) throw new Error(result && result.message ? result.message : '부서를 저장하지 못했습니다.');
+      var result = await settingsClient.updateUserDepartment({ email: email, departmentId: departmentId });
       var updated = result.user || {};
       settingsUsers = settingsUsers.map(function (user) { return user.email === email ? Object.assign({}, user, updated) : user; });
       select.setAttribute('data-current-department', departmentId);
@@ -74,8 +73,7 @@
 
   async function loadSettingsUsers() {
     try {
-      var data = await callSettingsApi("api_getSettingsUsers");
-      if (!data || !data.ok) throw new Error(data && data.message ? data.message : "사용자 데이터를 불러오지 못했습니다.");
+      var data = await settingsClient.getUsers();
       applySettingsShell(data);
       settingsUsers = data.users || [];
       settingsRoles = data.roles || [];

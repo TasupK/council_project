@@ -32,6 +32,7 @@ function createContext_() {
   listGsFiles_(ACCOUNTING_ROOT).forEach(function (file) {
     vm.runInContext(fs.readFileSync(file, 'utf8'), context, { filename: file });
   });
+  context.writeBusinessAudit_ = function () { return true; };
   context.formatDateTimeValue_ = function (value) { return value || ''; };
   context.isTruthyValue_ = function (value) { return Boolean(value); };
   context.getCurrentIsoDateTime_ = function () { return '2026-08-17T13:00:00+09:00'; };
@@ -61,23 +62,23 @@ function plain_(value) {
 
 function testLedgerDto_() {
   var context = createContext_();
-  assert.strictEqual(context.mapLedgerEntryDto_({ expense: true }).transaction_type, '지출');
-  assert.strictEqual(context.mapLedgerEntryDto_({ expense: false }).transaction_type, '수입');
+  assert.strictEqual(context.mapLedgerEntryDto_({ transactionType: '지출' }).transaction_type, '지출');
+  assert.strictEqual(context.mapLedgerEntryDto_({ transactionType: '수입' }).transaction_type, '수입');
+  assert.strictEqual(context.mapLedgerEntryDto_({ managerEmail: 'manager@example.com' }).manager, 'manager@example.com');
 }
 
 function testLedgerComposition_() {
   var context = createContext_();
   context.listLedgerRows_ = function () {
     return [
-      { id: 'trx-1', transactionAt: '2026-08-01T10:00:00', expense: false, amount: 3000, eventId: 'evt-1', createdAt: '2026-08-01', updatedAt: '2026-08-01' },
-      { id: 'trx-2', transactionAt: '2026-08-02T10:00:00', expense: true, amount: 1200, eventId: '', createdAt: '2026-08-02', updatedAt: '2026-08-02' }
+      { id: 'trx-1', transactionAt: '2026-08-01T10:00:00', transactionType: '수입', amount: 3000, eventId: 'evt-1', matchStatus: '정상', recordStatus: '활성', createdAt: '2026-08-01', updatedAt: '2026-08-01' },
+      { id: 'trx-2', transactionAt: '2026-08-02T10:00:00', transactionType: '지출', amount: 1200, eventId: '', matchStatus: '미확인', recordStatus: '활성', createdAt: '2026-08-02', updatedAt: '2026-08-02' },
+      { id: 'trx-x', transactionAt: '2026-08-03T10:00:00', transactionType: '지출', amount: 999, recordStatus: '무효' }
     ];
   };
-  context.listAccountingEventRows_ = function () {
-    return [{ id: 'evt-1', name: '개강 행사' }];
-  };
+  context.listAccountingEventRows_ = function () { return [{ id: 'evt-1', name: '개강 행사' }]; };
   context.listLedgerEvidenceRows_ = function () {
-    return [{ id: 'evd-1', transactionId: 'trx-1', driveFileId: 'file-1', fileName: '영수증.pdf', createdAt: '2026-08-01' }];
+    return [{ id: 'evd-1', transactionId: 'trx-1', driveFileId: 'file-1', fileName: '영수증.pdf', ocrStatus: '', ocrValidationResult: '', createdAt: '2026-08-01' }];
   };
 
   var result = context.getLedgerEntriesData_();
@@ -87,14 +88,9 @@ function testLedgerComposition_() {
   assert.strictEqual(result[1].event_name, '개강 행사');
   assert.strictEqual(result[1].has_evidence, true);
   assert.deepStrictEqual(plain_(result[1].evidence), [{
-    evidence_id: 'evd-1',
-    transaction_id: 'trx-1',
-    file_name: '영수증.pdf',
-    file_id: 'file-1',
-    file_path: 'https://drive.google.com/open?id=file-1',
-    created_at: '2026-08-01',
-    updated_at: '2026-08-01',
-    is_deleted: false
+    evidence_id: 'evd-1', transaction_id: 'trx-1', file_name: '영수증.pdf', file_id: 'file-1',
+    file_path: 'https://drive.google.com/open?id=file-1', ocr_status: '', ocr_validation_result: '',
+    created_at: '2026-08-01', updated_at: '2026-08-01', is_deleted: false
   }]);
 }
 
@@ -104,12 +100,7 @@ function testLedgerFilter_() {
     { transaction_id: '1', transaction_type: '수입', event_name: '개강 행사', status: '정상', counterparty: '김학생', description: '회비', manager: 'staff-a' },
     { transaction_id: '2', transaction_type: '지출', event_name: 'MT', status: '확인필요', counterparty: '문구점', description: '물품 구매', manager: 'staff-b' }
   ];
-  var result = context.filterLedgerEntries_(items, {
-    keyword: '문구',
-    transaction_type: '지출',
-    event_name: 'MT',
-    status: '확인필요'
-  });
+  var result = context.filterLedgerEntries_(items, { keyword: '문구', transaction_type: '지출', event_name: 'MT', status: '확인필요' });
   assert.deepStrictEqual(result.map(function (item) { return item.transaction_id; }), ['2']);
 }
 
@@ -122,23 +113,16 @@ function testLedgerSaveDefaults_() {
     forwarded = { transactionId: transactionId, files: plain_(files), timestamp: timestamp };
     return { savedCount: files.length, errors: [] };
   };
+  context.listLedgerRows_ = function () { return []; };
 
-  var result = context.createLedgerEntryData_({
-    transaction_type: '수입',
-    amount: 5000,
-    evidence_files: [{ file_id: 'file-1' }]
-  }, { user: { email: 'manager@example.com' } });
-
+  var result = context.createLedgerEntryWithEvidenceData_({ transaction_type: '수입', amount: 5000, evidence_files: [{ file_id: 'file-1' }] }, { user: { email: 'manager@example.com' } }, '활성');
   assert.strictEqual(inserted.id, 'TRX-uuid-1');
-  assert.strictEqual(inserted.source, '수기등록');
+  assert.strictEqual(inserted.source, 'MANUAL');
   assert.strictEqual(inserted.businessType, '일반');
   assert.strictEqual(inserted.matchStatus, '미확인');
-  assert.strictEqual(inserted.managerId, 'manager@example.com');
-  assert.deepStrictEqual(forwarded, {
-    transactionId: 'TRX-uuid-1',
-    files: [{ file_id: 'file-1' }],
-    timestamp: '2026-08-17T13:00:00+09:00'
-  });
+  assert.strictEqual(inserted.recordStatus, '활성');
+  assert.strictEqual(inserted.managerEmail, 'manager@example.com');
+  assert.deepStrictEqual(forwarded, { transactionId: 'TRX-uuid-1', files: [{ file_id: 'file-1' }], timestamp: '2026-08-17T13:00:00+09:00' });
   assert.strictEqual(result.ok, true);
 }
 
@@ -156,45 +140,16 @@ function testEvidenceSaveBehavior_() {
     { file_name: '기존.pdf', file_id: 'drive-existing' }
   ], '2026-08-17T12:00:00+09:00');
 
-  assert.strictEqual(result.savedCount, 2);
-  assert.deepStrictEqual(plain_(result.errors), [{ file_name: '실패.pdf', message: 'upload failed' }]);
-  assert.strictEqual(inserted[0].category, '추가증빙');
-  assert.strictEqual(inserted[0].type, '기타');
-  assert.strictEqual(inserted[0].driveFileId, '');
+  assert.strictEqual(result.savedCount, 1);
+  assert.deepStrictEqual(plain_(result.errors), [
+    { file_name: '실패.pdf', message: 'upload failed' },
+    { file_name: '실패.pdf', message: '증빙 원본 파일이 저장되지 않았습니다.' }
+  ]);
+  assert.strictEqual(inserted.length, 1);
+  assert.strictEqual(inserted[0].driveFileId, 'drive-existing');
+  assert.strictEqual(inserted[0].managerEmail, 'evidence@example.com');
   assert.strictEqual(inserted[0].createdAt, '2026-08-17T12:00:00+09:00');
-  assert.strictEqual(inserted[1].driveFileId, 'drive-existing');
 }
-
-function testSettlementSummaryCompatibility_() {
-  var context = createContext_();
-  context.apiHandler_ = function (options) {
-    return options.service(options.input, { user: { email: 'manager@example.com' } });
-  };
-  context.getLedgerEntriesData_ = function () {
-    return [
-      { transaction_type: '수입', amount: 3000, counterparty: '', description: '', manager: '', event_name: '전체', status: '정상' },
-      { transaction_type: '지출', amount: 1200, counterparty: '', description: '', manager: '', event_name: '전체', status: '정상' }
-    ];
-  };
-  context.listAccountingEventRows_ = function () { return [{}, {}]; };
-  context.listLedgerEvidenceRows_ = function () { return [{}, {}, {}]; };
-
-  var summary = context.api_getSettlementSummary({});
-  assert.deepStrictEqual(plain_(summary), {
-    totalIncome: 3000,
-    totalExpense: 1200,
-    balance: 1800,
-    eventCount: 2,
-    evidenceCount: 3
-  });
-}
-
-testLedgerDto_();
-testLedgerComposition_();
-testLedgerFilter_();
-testLedgerSaveDefaults_();
-testEvidenceSaveBehavior_();
-
 
 function createSchemaContext_() {
   var context = vm.createContext({ console: console });
@@ -206,14 +161,15 @@ function createSchemaContext_() {
 function testAccountingOperationSchema_() {
   var context = createSchemaContext_();
   assert.strictEqual(context.OPERATION_TABLES.bankTransactions, '계좌거래');
-  assert.strictEqual(context.OPERATION_TABLES.bankOcrLogs, '계좌OCR로그');
+  assert.strictEqual(context.OPERATION_TABLES.bankOcrLogs, undefined);
   assert.strictEqual(context.OPERATION_TABLES.reconciliationItems, '감사대사상세');
   assert.strictEqual(context.OPERATION_TABLES.settlementReports, '결산보고서');
   var schema = context.getOperationDbSchema_();
   assert.strictEqual(schema.ledger.fields.recordStatus, '레코드상태');
+  assert.strictEqual(schema.ledger.fields.managerEmail, '담당자이메일');
   assert.deepStrictEqual(plain_(schema.reconciliationItems.foreignKeys), [
     { field: 'reconciliationId', refDatabase: 'operation', refTable: 'reconciliation', refField: 'id' },
-    { field: 'bankTransactionId', refDatabase: 'operation', refTable: 'bankTransactions', refField: 'id' },
+    { field: 'bankTransactionId', refDatabase: 'operation', refTable: 'bankTransactions', refField: 'id', optional: true },
     { field: 'ledgerId', refDatabase: 'operation', refTable: 'ledger', refField: 'id', optional: true }
   ]);
 }
@@ -225,29 +181,21 @@ function testLedgerLifecycle_() {
   context.createEvidenceFilesData_ = function () { return { savedCount: 0, errors: [] }; };
   context.writeAccountingAudit_ = function () { audits.push(Array.prototype.slice.call(arguments)); };
   context.getLedgerDetailData_ = function () { return null; };
-  context.createLedgerEntryData_({ transaction_type: '수입', amount: 1000 }, { user: { email: 'm@example.com' } }, 'ACTIVE');
-  assert.strictEqual(inserted.recordStatus, 'ACTIVE');
+  context.listLedgerRows_ = function () { return []; };
+
+  context.createLedgerEntryData_({ transaction_type: '수입', amount: 1000 }, { user: { email: 'm@example.com' } }, '활성');
+  assert.strictEqual(inserted.recordStatus, '활성');
+  assert.strictEqual(inserted.managerEmail, 'm@example.com');
+
   context.createLedgerDraftData_({ transaction_type: '지출', amount: 2000 }, { user: { email: 'm@example.com' } });
-  assert.strictEqual(inserted.recordStatus, 'DRAFT');
-  context.findLedgerRowById_ = function () { return { id: 'trx-1', transactionAt: '2026-08-01', expense: true, amount: 1000, recordStatus: 'ACTIVE', createdAt: 'old', matchStatus: '미확인' }; };
+  assert.strictEqual(inserted.recordStatus, '활성');
+  assert.strictEqual(inserted.matchStatus, '미확인');
+
+  context.findLedgerRowById_ = function () { return { id: 'trx-1', transactionAt: '2026-08-01', transactionType: '지출', amount: 1000, bankTransactionId: '', recordStatus: '활성', createdAt: 'old', matchStatus: '미확인' }; };
   context.updateLedgerRowById_ = function (id, changes) { updated = { id: id, changes: plain_(changes) }; };
   context.deleteLedgerEntryData_({ transaction_id: 'trx-1' }, { user: { email: 'm@example.com' } });
-  assert.strictEqual(updated.changes.recordStatus, 'DELETED');
+  assert.strictEqual(updated.changes.recordStatus, '무효');
   assert.ok(audits.length >= 3);
-}
-
-function testLedgerDeletedFiltering_() {
-  var context = createContext_();
-  context.listLedgerRows_ = function () { return [
-    { id: 'active', transactionAt: '2026-08-01', expense: false, amount: 1000, recordStatus: 'ACTIVE' },
-    { id: 'draft', transactionAt: '2026-08-02', expense: true, amount: 500, recordStatus: 'DRAFT' },
-    { id: 'deleted', transactionAt: '2026-08-03', expense: true, amount: 999, recordStatus: 'DELETED' }
-  ]; };
-  context.listAccountingEventRows_ = function () { return []; };
-  context.listLedgerEvidenceRows_ = function () { return []; };
-  var items = context.getLedgerEntriesData_();
-  assert.deepStrictEqual(items.map(function (x) { return x.transaction_id; }).sort(), ['active', 'draft']);
-  assert.strictEqual(items.filter(function (x) { return x.transaction_id === 'draft'; })[0].status, '임시저장');
 }
 
 function testEvidenceAuditQuery_() {
@@ -255,62 +203,41 @@ function testEvidenceAuditQuery_() {
   context.getLedgerEntriesData_ = function () { return [{ transaction_id: 'trx-1', transaction_date: '2026-08-01', transaction_type: '지출', amount: 12000 }]; };
   context.listLedgerEvidenceRows_ = function () { return [{ id: 'evd-1', transactionId: 'trx-1', fileName: 'receipt.pdf', driveFileId: 'drive-1', createdAt: '2026-08-01' }]; };
   assert.deepStrictEqual(plain_(context.getEvidenceAuditListData_({ startDate: '2026-08-01', endDate: '2026-08-31', transaction_type: '지출' }).items[0]), {
-    evidence_id: 'evd-1', transaction_id: 'trx-1', transaction_date: '2026-08-01', transaction_type: '지출', amount: 12000, file_name: 'receipt.pdf', file_id: 'drive-1', category: '', type: '', created_at: '2026-08-01'
+    evidence_id: 'evd-1', transaction_id: 'trx-1', transaction_date: '2026-08-01', transaction_type: '지출', amount: 12000,
+    file_name: 'receipt.pdf', file_id: 'drive-1', category: '', type: '', ocr_status: '', ocr_validation_result: '', created_at: '2026-08-01'
   });
 }
 
-function testBankParserIncomeExpense_() {
+function testSettlementMetrics_() {
   var context = createContext_();
-  var parsed = context.parseBankOcrTransactions_('2026-08-01\n출금 12,000원\n스타문구\n적요 문구 구매\n2026-08-02\n입금 50,000원\n김학생\n적요 회비 입금', 'bank.png', 2026);
-  assert.strictEqual(parsed.items.length, 2);
-  assert.deepStrictEqual(plain_(parsed.items[0]), { transactionAt: '2026-08-01', expense: true, counterparty: '스타문구', description: '문구 구매', amount: 12000, sourceFileName: 'bank.png' });
-  assert.strictEqual(parsed.items[1].expense, false);
-  assert.strictEqual(parsed.items[1].amount, 50000);
-  var ambiguous = context.parseBankOcrTransactions_('2026-08-03\n12,000원\n누군가', 'bad.png', 2026);
-  assert.strictEqual(ambiguous.items.length, 0);
-  assert.strictEqual(ambiguous.reviewRequiredItems.length, 1);
-}
-
-function testReconciliationMatching_() {
-  var context = createContext_();
-  var banks = [
-    { id: 'b1', transactionAt: '2026-08-01', expense: true, amount: 12000, counterparty: '스타문구', description: '문구 구매' },
-    { id: 'b2', transactionAt: '2026-08-02', expense: false, amount: 50000, counterparty: '김학생', description: '회비 입금' },
-    { id: 'b3', transactionAt: '2026-08-03', expense: true, amount: 7000, counterparty: '없는가게', description: '' }
-  ];
-  var ledgers = [
-    { transaction_id: 'l1', transaction_date: '2026-08-01', transaction_type: '지출', amount: 12000, counterparty: '스타문구', description: '문구 구매' },
-    { transaction_id: 'l2', transaction_date: '2026-08-02', transaction_type: '수입', amount: 50000, counterparty: '김학생', description: '회비 입금' }
-  ];
-  var results = context.buildReconciliationResults_(banks, ledgers);
-  assert.deepStrictEqual(results.map(function (x) { return x.status; }), ['정상', '정상', '원장누락의심']);
-  assert.strictEqual(context.scoreReconciliationCandidate_(banks[0], ledgers[1]), null);
-}
-
-function testSettlementEligibilityAndSnapshot_() {
-  var context = createContext_();
-  context.getLedgerEntriesData_ = function () { return [
-    { transaction_id: 'i1', transaction_date: '2026-08-01', transaction_type: '수입', amount: 3000, status: '정상', match_status: '정상', record_status: 'ACTIVE' },
-    { transaction_id: 'e1', transaction_date: '2026-08-02', transaction_type: '지출', amount: 1200, status: '정상', match_status: '정상', record_status: 'ACTIVE' },
-    { transaction_id: 'x1', transaction_date: '2026-08-03', transaction_type: '지출', amount: 999, status: '확인필요', match_status: '확인필요', record_status: 'ACTIVE' },
-    { transaction_id: 'd1', transaction_date: '2026-08-04', transaction_type: '수입', amount: 100, status: '임시저장', match_status: '정상', record_status: 'DRAFT' }
+  context.listLedgerRows_ = function () { return [
+    { id: 'prior', transactionAt: '2026-07-31', transactionType: '수입', amount: 500, recordStatus: '활성', bankTransactionId: 'b0', matchStatus: '정상' },
+    { id: 'i1', transactionAt: '2026-08-01', transactionType: '수입', amount: 3000, recordStatus: '활성', bankTransactionId: 'b1', matchStatus: '정상' },
+    { id: 'e1', transactionAt: '2026-08-02', transactionType: '지출', amount: 1200, recordStatus: '활성', bankTransactionId: 'b2', matchStatus: '정상' },
+    { id: 'x1', transactionAt: '2026-08-03', transactionType: '지출', amount: 999, recordStatus: '활성', bankTransactionId: '', matchStatus: '미확인' },
+    { id: 'void', transactionAt: '2026-08-04', transactionType: '수입', amount: 100, recordStatus: '무효' }
   ]; };
-  context.listLedgerEvidenceRows_ = function () { return [{ transactionId: 'i1' }, { transactionId: 'e1' }, { transactionId: 'x1' }]; };
+  context.listLedgerEvidenceRows_ = function () { return [{ transactionId: 'i1' }, { transactionId: 'e1' }]; };
   var summary = context.getSettlementSummaryData_({ startDate: '2026-08-01', endDate: '2026-08-31' });
-  assert.deepStrictEqual(plain_(summary), { totalIncome: 3000, totalExpense: 1200, balance: 1800, incomeCount: 1, expenseCount: 1, evidenceCount: 2 });
-  var inserted = null;
-  context.insertSettlementReportRow_ = function (row) { inserted = plain_(row); };
-  context.writeAccountingAudit_ = function () {};
-  var report = context.createSettlementReportData_({ startDate: '2026-08-01', endDate: '2026-08-31' }, { user: { email: 'm@example.com' } });
-  assert.strictEqual(report.status, '생성완료');
-  assert.strictEqual(inserted.totalIncome, 3000);
+  assert.deepStrictEqual(plain_(summary), {
+    openingBalance: 500,
+    totalIncome: 3000,
+    totalExpense: 2199,
+    closingBalance: 1301,
+    incomeCount: 1,
+    expenseCount: 2,
+    unreconciledCount: 1,
+    missingEvidenceCount: 1
+  });
 }
 
+testLedgerDto_();
+testLedgerComposition_();
+testLedgerFilter_();
+testLedgerSaveDefaults_();
+testEvidenceSaveBehavior_();
 testAccountingOperationSchema_();
 testLedgerLifecycle_();
-testLedgerDeletedFiltering_();
 testEvidenceAuditQuery_();
-testBankParserIncomeExpense_();
-testReconciliationMatching_();
-testSettlementEligibilityAndSnapshot_();
+testSettlementMetrics_();
 console.log('Accounting behavior regression tests passed.');

@@ -1,0 +1,22 @@
+<script>
+var settingsClient = {
+  getHome: function () {
+    return runAppApi('api_getSettingsHome');
+  },
+  getUsers: function () {
+    return runAppApi('api_getSettingsUsers');
+  },
+  updateUserDepartment: function (request) {
+    return runAppApi('api_updateSettingsUserDepartment', request || {});
+  },
+  getRoles: function () {
+    return runAppApi('api_getSettingsRoles');
+  },
+  getPermissions: function () {
+    return runAppApi('api_getSettingsPermissions');
+  },
+  getDepartments: function () {
+    return runAppApi('api_getSettingsDepartments');
+  }
+};
+</script>

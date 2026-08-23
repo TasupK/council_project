@@ -147,7 +147,7 @@ function buildEventFormCandidates_(source, event) {
       accountHolder: readEventFormCell_(row, mapping.byField.accountHolder),
       status: '대기',
       importedAt: getCurrentIsoDateTime_(),
-      managerId: '',
+      managerEmail: '',
       processedAt: '',
       studentCardFileId: '',
       depositFileId: ''

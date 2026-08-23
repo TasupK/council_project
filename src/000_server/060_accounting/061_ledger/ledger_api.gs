@@ -18,8 +18,8 @@ function api_getLedgerSummary(filter) {
   return apiHandler_({ operation: 'getLedgerSummary', input: filter, requireLogin: true, access: accountingApiAccess_('view'), service: function (request) { return getLedgerSummaryData_(request || {}); } });
 }
 
-function api_getLedgerEntry(transactionId) {
-  return apiHandler_({ operation: 'getLedgerDetail', input: transactionId, requireLogin: true, access: accountingApiAccess_('view'), service: function (id) { return getLedgerDetailData_(id); } });
+function api_getLedgerEntry(request) {
+  return apiHandler_({ operation: 'getLedgerDetail', input: request, requireLogin: true, access: accountingApiAccess_('view'), service: function (input) { return getLedgerDetailData_(input.id); } });
 }
 
 function api_getLedgerEventOptions() {
@@ -27,11 +27,11 @@ function api_getLedgerEventOptions() {
 }
 
 function api_createLedgerEntry(request) {
-  return apiHandler_({ operation: 'createLedgerEntry', input: request, requireLogin: true, access: accountingApiAccess_('edit'), service: function (input, context) { return createLedgerEntryData_(input || {}, context, 'ACTIVE'); } });
+  return apiHandler_({ operation: 'createLedgerEntry', input: request, requireLogin: true, access: accountingApiAccess_('edit'), service: function (input, context) { return createLedgerEntryWithEvidenceData_(input || {}, context, '활성'); } });
 }
 
 function api_createLedgerDraft(request) {
-  return apiHandler_({ operation: 'saveLedgerDraft', input: request, requireLogin: true, access: accountingApiAccess_('edit'), service: function (input, context) { return createLedgerDraftData_(input || {}, context); } });
+  return apiHandler_({ operation: 'saveLedgerDraft', input: request, requireLogin: true, access: accountingApiAccess_('edit'), service: function (input, context) { return createLedgerDraftWithEvidenceData_(input || {}, context); } });
 }
 
 function api_updateLedgerEntry(request) {

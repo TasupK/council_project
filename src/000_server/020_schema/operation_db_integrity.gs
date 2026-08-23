@@ -19,6 +19,7 @@ function validateOperationDbIntegrity_() {
   issues = issues.concat(validateOperationDbPrimaryKeys_(schema, result.tables));
   issues = issues.concat(validateOperationDbForeignKeys_(schema, result.tables));
   issues = issues.concat(validateOperationDbBusinessKeys_(schema, result.tables));
+  issues = issues.concat(validateOperationDbReferenceRules_(schema, result.tables));
 
   return {
     valid: issues.length === 0,
@@ -117,7 +118,9 @@ function validateOperationDbBusinessKeys_(schema, tables) {
     { tableKey: 'eventForms', fields: ['eventId'] },
     { tableKey: 'feePayments', fields: ['applicationId'] },
     { tableKey: 'feeRefunds', fields: ['requestId'] },
-    { tableKey: 'eventApplications', fields: ['sourceResponseId'] }
+    { tableKey: 'eventApplications', fields: ['sourceResponseId'] },
+    { tableKey: 'bankTransactions', fields: ['sourceHash'] },
+    { tableKey: 'ledger', fields: ['bankTransactionId'] }
   ];
   var issues = [];
 
@@ -154,7 +157,44 @@ function validateOperationDbBusinessKeys_(schema, tables) {
   return issues;
 }
 
-// 8. FK가 참조할 DB와 테이블 조회
+// 8. 감사로그 사용자와 학기 허용값 등 명시적 참조 규칙 검증
+function validateOperationDbReferenceRules_(schema, tables, userRows) {
+  var issues = [];
+  var auditTable = schema.businessAuditLogs;
+  var semesterTable = schema.semesters;
+  var users = userRows || readUserDbIntegrityTableRows_('users');
+  var userSchema = getUserDbSchema_();
+  var actorColumn = auditTable.fields.actorEmail;
+  var userEmailColumn = userSchema.users.fields.email;
+  var semesterTypeColumn = semesterTable.fields.type;
+  var allowedTypes = semesterTable.allowedTypes || [];
+
+  issues = issues.concat(validateForeignKeys_(
+    auditTable.name,
+    tables.businessAuditLogs || [],
+    actorColumn,
+    userSchema.users.name,
+    users,
+    userEmailColumn
+  ));
+
+  (tables.semesters || []).forEach(function (row) {
+    var type = String(row[semesterTypeColumn] == null ? '' : row[semesterTypeColumn]).trim();
+    if (!type || allowedTypes.indexOf(type) !== -1) return;
+    issues.push(buildIntegrityIssue_(
+      'INVALID_SEMESTER_TYPE',
+      semesterTable.name,
+      row,
+      semesterTypeColumn,
+      '학기구분은 1학기 또는 2학기여야 합니다.',
+      { value: type, allowedValues: allowedTypes.slice() }
+    ));
+  });
+
+  return issues;
+}
+
+// 9. FK가 참조할 DB와 테이블 조회
 function resolveOperationDbReference_(foreignKey, schema, tables, userSchema, userTables) {
   var table;
 
@@ -178,7 +218,7 @@ function resolveOperationDbReference_(foreignKey, schema, tables, userSchema, us
   };
 }
 
-// 9. 스키마 필드키를 운영 DB 시트 컬럼명으로 변환
+// 10. 스키마 필드키를 운영 DB 시트 컬럼명으로 변환
 function resolveOperationDbFieldColumns_(table, fieldKeys) {
   return fieldKeys.map(function (fieldKey) {
     return resolveOperationDbFieldColumn_(table, fieldKey);

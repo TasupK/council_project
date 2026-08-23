@@ -27,6 +27,15 @@ function api_getStudentFeeApplication(input) {
   });
 }
 
+function api_syncStudentFeeFormApplications(input) {
+  return apiHandler_({
+    operation: 'syncStudentFeeFormApplications', input: input, requireLogin: true,
+    access: studentFeeApiAccess_('edit'),
+    parse: parseStudentFeeRequest_,
+    service: function (parsed, context) { return syncStudentFeeFormApplicationsData_(parsed.request, context); }
+  });
+}
+
 // 3. 납부 처리 API
 function api_processStudentFeeApplications(input) {
   return apiHandler_({

@@ -2,7 +2,6 @@
 function apiHandler_(options) {
   var operation = options && options.operation ? options.operation : 'unknown';
   var context = null;
-  var request;
 
   try {
     if (options && options.access && options.permission) {
@@ -19,10 +18,12 @@ function apiHandler_(options) {
       requirePermission_(context, options.permission);
     }
 
-    request = options && options.parse ? options.parse(options.input) : options.input;
-    return options.service(request, context);
-  } catch (e) {
-    console.error('[' + operation + '] API execution failed.', e && e.stack ? e.stack : e);
-    throw e;
+    var request = unwrapApiRequest_(options && options.input);
+    var parsed = options && options.parse ? options.parse(request) : request;
+    var data = options.service(parsed, context);
+    return wrapApiSuccess_(data);
+  } catch (error) {
+    console.error('[' + operation + '] API execution failed.', error && error.stack ? error.stack : error);
+    throw normalizeApiException_(error);
   }
 }

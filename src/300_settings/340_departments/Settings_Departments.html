@@ -7,6 +7,10 @@
     <title>부서 조직도</title>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <?!= include('100_common/App_Styles'); ?>
+    <?!= include('100_common/App_Shell_Styles'); ?>
+    <?!= include('100_common/app_api_runner_js'); ?>
+    <?!= include('100_common/app_client_js'); ?>
+    <?!= include('300_settings/common/settings_client_js'); ?>
     <?!= include('300_settings/common/Settings_Styles'); ?>
     <?!= include('300_settings/340_departments/Settings_Departments_Styles'); ?>
     <script>
@@ -24,7 +28,6 @@
         <?!= include('100_common/App_Sidebar'); ?>
         <main class="main"><?!= include('300_settings/340_departments/Settings_Departments_View'); ?></main>
       </div>
-      <footer class="status-bar" id="statusBar">시스템 준비 중…</footer>
     </div>
     <?!= include('100_common/app_shell_js'); ?>
     <?!= include('300_settings/common/settings_common_js'); ?>

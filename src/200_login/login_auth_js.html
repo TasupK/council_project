@@ -1,5 +1,6 @@
 <script>
 // 1. 로그인 성공 시 이동할 메인 페이지 연결 로직
+// [기능명세 1.3] 로그인 버튼 클릭 시 URL 파라미터로 ?page=main 을 전달하여 메인화면 진입 시도
 // DOM에서 로그인 버튼 요소를 가져옵니다.
 var btn = getElement('loginButton');
 if (btn) {
@@ -16,6 +17,7 @@ if (btn) {
 }
 
 // 2. 로그인 실패 메시지 표시 로직
+// [기능명세 1.1 & 1.3] 서버 인증 실패 시 반환된 LOGIN_ERROR 문구를 경고창에 표시
 // 백엔드(서버)에서 인증 실패 시 렌더링 단계에서 LOGIN_ERROR 전역 변수가 세팅되어 내려옵니다.
 if (LOGIN_ERROR) {
   // 에러 메시지가 존재하면 setLoginAlert 함수를 호출하여 화면의 경고창에 에러를 표시합니다.
@@ -23,6 +25,7 @@ if (LOGIN_ERROR) {
 }
 
 // 3. 웹앱 페이지 URL 생성 함수
+// [기능명세 1.3] WEB_APP_URL 뒤에 page 쿼리를 동적으로 붙여주는 헬퍼 함수
 // 현재 Google Apps Script 웹앱 URL(WEB_APP_URL)을 기반으로 지정된 페이지 파라미터(?page=xxx)를 조합해주는 헬퍼 함수입니다.
 // 이 함수를 통해 각 화면간 라우팅이 정상적으로 작동합니다.
 function buildPageUrl(page) {

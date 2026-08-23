@@ -1,8 +1,12 @@
 // Settings 홈과 공통 shell 조회
-function api_getSettingsHome() {
-  var current = getSettingsCurrent_();
-  if (!current.ok) return current;
-  return okResponse_(buildSettingsBaseView_(current));
+function api_getSettingsHome(input) {
+  return apiHandler_({
+    operation: 'getSettingsHome',
+    input: input,
+    service: function () {
+      return buildSettingsBaseView_(requireSettingsCurrent_());
+    }
+  });
 }
 
 function buildSettingsBaseView_(current) {

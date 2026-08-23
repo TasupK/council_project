@@ -9,6 +9,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
   <?!= include('100_common/App_Styles'); ?>
+  <?!= include('100_common/App_Shell_Styles'); ?>
+  <?!= include('100_common/app_api_runner_js'); ?>
+  <?!= include('100_common/app_client_js'); ?>
   <?!= include('600_event/common/Event_Styles'); ?>
   <script>
     var WEB_APP_URL = '<?= getWebAppUrl() ?>';
@@ -28,9 +31,9 @@
         <?!= include('600_event/610_form/Event_Form_View'); ?>
       </main>
     </div>
-    <footer class="status-bar">시스템 v0.7 · Google Sheets DB 연결형</footer>
   </div>
   <?!= include('100_common/app_shell_js'); ?>
+  <?!= include('600_event/common/event_client_js'); ?>
   <?!= include('600_event/common/event_common_js'); ?>
   <?!= include('600_event/610_form/event_form_js'); ?>
 </body>

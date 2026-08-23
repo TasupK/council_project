@@ -27,29 +27,40 @@ function installValueStubs_(context) {
   context.isTruthyValue_ = function (value) { return value === true || value === 'TRUE' || value === 'true' || value === 1; };
   context.formatDateValue_ = function (value) { return String(value || ''); };
 }
+function installApiContract_(context) {
+  load_(context, 'src/000_server/010_core/api_request.gs');
+  load_(context, 'src/000_server/010_core/response.gs');
+  context.requireLoginContext_ = function () { return {}; };
+  context.requirePermission_ = function () {};
+  context.resolveApiAccess_ = function () {};
+  load_(context, 'src/000_server/010_core/api_handler.gs');
+}
 
 function testAdminSettingsAccess_() {
   var context = createContext_();
   context.failResponse_ = function (code, message) { return { ok: false, code: code, message: message }; };
-  context.api_getCurrentUser = function () { return { ok: true, isAdmin: true, user: { email: 'admin@example.com' } }; };
+  context.requireAuthenticatedUserData_ = function () { return { isAdmin: true, user: { email: 'admin@example.com' }, domainAccess: { settings: true } }; };
   load_(context, 'src/000_server/070_settings/070_common/settings_access.gs');
   assert.strictEqual(context.getAdminSettingsCurrent_().isAdmin, true);
-  context.api_getCurrentUser = function () { return { ok: true, isAdmin: false, user: { email: 'user@example.com' } }; };
+  context.requireAuthenticatedUserData_ = function () { return { isAdmin: false, user: { email: 'user@example.com' }, domainAccess: { settings: true } }; };
   assert.deepStrictEqual(plain_(context.getAdminSettingsCurrent_()), { ok: false, code: 'FORBIDDEN', message: '설정 화면은 시스템 관리자만 이용할 수 있습니다.' });
 }
 
 function testSettingsHomeData_() {
   var context = createContext_();
-  context.okResponse_ = function (payload) { return Object.assign({ ok: true }, payload); };
+  installApiContract_(context);
   context.failResponse_ = function (code, message) { return { ok: false, code: code, message: message }; };
-  context.api_getCurrentUser = function () { return { ok: true, isAdmin: true, user: { email: 'admin@example.com', name: '관리자' } }; };
+  context.requireAuthenticatedUserData_ = function () {
+    return { isAdmin: true, user: { email: 'admin@example.com', name: '관리자' }, domainAccess: { settings: true } };
+  };
   load_(context, 'src/000_server/070_settings/070_common/settings_access.gs');
   load_(context, 'src/000_server/070_settings/070_common/settings_shell_query_service.gs');
   var result = context.api_getSettingsHome();
-  assert.strictEqual(result.app.version, 'v0.7');
-  assert.strictEqual(result.app.term, '2026학년도');
-  assert.strictEqual(result.database.spreadsheetId, 'user-db-id');
-  assert.strictEqual(result.session.email, 'admin@example.com');
+  assert.strictEqual(result.ok, true);
+  assert.strictEqual(result.data.app.version, 'v0.7');
+  assert.strictEqual(result.data.app.term, '2026학년도');
+  assert.strictEqual(result.data.database.spreadsheetId, 'user-db-id');
+  assert.strictEqual(result.data.session.email, 'admin@example.com');
 }
 
 function testUsersSettingsComposition_() {
@@ -102,12 +113,10 @@ function testPermissionsIamAndSettingsComposition_() {
   context.buildSettingsBaseView_ = function (current) { return { currentUser: current.user, shell: true }; };
   context.getSettingsRolesData_ = function () { return [{ id: 'ROLE_ADMIN', name: '관리자' }]; };
   load_(context, 'src/000_server/070_settings/073_permissions/settings_permissions_query_service.gs');
-  load_(context, 'src/000_server/070_settings/073_permissions/settings_permissions_api.gs');
-  context.getAdminSettingsCurrent_ = function () { return { ok: true, user: { email: 'admin@example.com' } }; };
-  var result = context.api_getSettingsPermissions();
-  assert.strictEqual(result.ok, true);
-  assert.strictEqual(result.permissionTree[0].id, 'area_행사');
-  assert.strictEqual(result.permissionsByRole.ROLE_ADMIN.perm_EVENT_VIEW.view, true);
+  var serviceResult = context.getSettingsPermissionsData_({ user: { email: 'admin@example.com' } });
+  assert.strictEqual(serviceResult.ok, true);
+  assert.strictEqual(serviceResult.permissionTree[0].id, 'area_행사');
+  assert.strictEqual(serviceResult.permissionsByRole.ROLE_ADMIN.perm_EVENT_VIEW.view, true);
 }
 
 testAdminSettingsAccess_();

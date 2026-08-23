@@ -1,0 +1,38 @@
+name: Frontend API mapping
+
+on:
+  pull_request:
+    paths:
+      - 'src/**/*.html'
+      - 'src/**/*.js'
+      - 'src/000_server/**/*.gs'
+      - 'scripts/test-frontend-api-mapping.js'
+      - 'scripts/verify-frontend-api-mapping.js'
+      - 'scripts/verify-frontend-api-contract-v1.js'
+      - '.github/workflows/frontend-api-mapping.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/**/*.html'
+      - 'src/**/*.js'
+      - 'src/000_server/**/*.gs'
+      - 'scripts/test-frontend-api-mapping.js'
+      - 'scripts/verify-frontend-api-mapping.js'
+      - 'scripts/verify-frontend-api-contract-v1.js'
+      - '.github/workflows/frontend-api-mapping.yml'
+
+jobs:
+  mapping-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Frontend API mapping contract
+        run: node scripts/test-frontend-api-mapping.js
+      - name: Frontend API mapping verifier
+        run: node scripts/verify-frontend-api-mapping.js
+      - name: Frontend API Contract v1 verifier
+        run: node scripts/verify-frontend-api-contract-v1.js

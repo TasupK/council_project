@@ -27,7 +27,7 @@ function createFrontendContext_() {
       if (key in target) return target[key];
       return function (payload) {
         calls.push({ name: key, payload: payload });
-        if (target.success) target.success({ ok: true });
+        if (target.success) target.success({ ok: true, data: {} });
       };
     }
   });
@@ -43,6 +43,7 @@ function createFrontendContext_() {
       Math: Math,
       Date: Date,
       JSON: JSON,
+      Error: Error,
       isFinite: isFinite,
       URL: URL,
       WEB_APP_URL: 'https://example.test/app',
@@ -64,15 +65,17 @@ function createFrontendContext_() {
 }
 
 function loadCommon_(fixture) {
+  vm.runInContext(scriptBody_('src/100_common/app_api_runner_js.html'), fixture.context);
+  vm.runInContext(scriptBody_('src/500_student_fee/common/student_fee_client_js.html'), fixture.context);
   vm.runInContext(scriptBody_('src/500_student_fee/common/student_fee_common_js.html'), fixture.context);
 }
 
-function testStudentFeeApiWrapper_() {
+function testStudentFeeSemanticClient_() {
   var fixture = createFrontendContext_();
   loadCommon_(fixture);
-  return fixture.context.studentFeeApi('api_getStudentFeeSummary', { page: 1 }).then(function () {
+  return fixture.context.studentFeeClient.getApplications({ page: 1 }).then(function () {
     assert.strictEqual(fixture.calls.length, 1);
-    assert.strictEqual(fixture.calls[0].name, 'api_getStudentFeeSummary');
+    assert.strictEqual(fixture.calls[0].name, 'api_getStudentFeeApplications');
     assert.deepStrictEqual(JSON.parse(JSON.stringify(fixture.calls[0].payload)), { request: { page: 1 } });
   });
 }
@@ -105,22 +108,24 @@ function testStudentFeeRouteHelpers_() {
 
 function testPayerEditUsesLookupKey_() {
   var source = read_('src/500_student_fee/510_payers/student_fee_payers_js.html');
+  var client = read_('src/500_student_fee/common/student_fee_client_js.html');
   assert.match(source, /studentIdKey/);
-  assert.match(source, /api_getStudentFeePayer/);
+  assert.match(source, /studentFeeClient\.getPayer/);
+  assert.match(client, /api_getStudentFeePayer/);
   assert.doesNotMatch(source, /textContent\s*=\s*[^;]*studentIdKey/);
 }
 
 function testPaymentApprovalCalculatesBeforeMutation_() {
   var source = read_('src/500_student_fee/520_payments/student_fee_payments_js.html');
-  var calculateIndex = source.indexOf("'api_calculateStudentFeeAmount'");
-  var processIndex = source.indexOf("'api_processStudentFeeApplications'");
+  var calculateIndex = source.indexOf('studentFeeClient.calculateAmount');
+  var processIndex = source.indexOf('studentFeeClient.processApplications');
   assert.ok(calculateIndex >= 0 && processIndex > calculateIndex);
 }
 
 function testRefundApprovalCalculatesBeforeMutation_() {
   var source = read_('src/500_student_fee/530_refunds/student_fee_refunds_js.html');
-  var calculateIndex = source.indexOf("'api_calculateStudentFeeRefund'");
-  var processIndex = source.indexOf("'api_processStudentFeeRefundRequests'");
+  var calculateIndex = source.indexOf('studentFeeClient.calculateRefund');
+  var processIndex = source.indexOf('studentFeeClient.processRefundRequests');
   assert.ok(calculateIndex >= 0 && processIndex > calculateIndex);
 }
 
@@ -132,7 +137,7 @@ function testBulkRefundApprovalOmitsSharedApprovedAmount_() {
   var block = source.slice(start, end);
   assert.ok(start >= 0 && end > start);
   assert.doesNotMatch(block, /approvedAmount\s*:/);
-  assert.match(block, /api_processStudentFeeRefundRequests/);
+  assert.match(block, /studentFeeClient\.processRefundRequests/);
 }
 
 function testModalFailureKeepsDialogOpen_() {
@@ -146,7 +151,7 @@ function testModalFailureKeepsDialogOpen_() {
 }
 
 Promise.resolve()
-  .then(testStudentFeeApiWrapper_)
+  .then(testStudentFeeSemanticClient_)
   .then(function () { testBusyGuardPreventsDoubleSubmit_(); })
   .then(function () { testStudentFeeRouteHelpers_(); })
   .then(function () { testPayerEditUsesLookupKey_(); })

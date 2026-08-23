@@ -23,7 +23,7 @@ function getAttendanceListData_(request) {
       paidAmount: paymentTotals[applicant.id] || 0,
       confirmedAt: attendance.confirmedAt || '',
       status: attendance.status || '',
-      managerId: attendance.managerId || ''
+      managerEmail: attendance.managerEmail || ''
     };
   }).filter(function (row) {
     if (keyword && [row.name, row.studentId, row.phone].join(' ').toLowerCase().indexOf(keyword) < 0) return false;

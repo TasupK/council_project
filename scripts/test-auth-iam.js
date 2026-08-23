@@ -42,6 +42,7 @@ function installValueStubs_(context) {
   context.isTruthyValue_ = function (value) { return value === true || value === 'TRUE' || value === 'true' || value === 1; };
   context.formatDateValue_ = function (value) { return String(value || ''); };
   context.okResponse_ = function (payload) { return Object.assign({ ok: true }, payload || {}); };
+  context.wrapApiSuccess_ = function (payload) { return { ok: true, data: payload == null ? null : payload }; };
   context.failResponse_ = function (code, message, data) { return Object.assign({ ok: false, code: code, message: message }, data || {}); };
 }
 
@@ -182,8 +183,8 @@ function testRequireLoginAndAuthApis_() {
   };
   context.getSessionUserContext_ = function () { return full; };
   assert.strictEqual(context.api_checkLogin().email, 'admin@example.com');
-  assert.strictEqual(context.api_getCurrentUser().user.title, '시스템 관리자');
-  assert.strictEqual(context.api_getMyPermissions().permissions.byScreen.perm_EVENT_VIEW.view, true);
+  assert.strictEqual(context.api_getCurrentUser().data.user.title, '시스템 관리자');
+  assert.strictEqual(context.api_getMyPermissions().data.permissions.byScreen.perm_EVENT_VIEW.view, true);
 }
 
 testAdminRoleInterpretation_();

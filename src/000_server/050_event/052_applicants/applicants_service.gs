@@ -5,6 +5,8 @@ function processApplicantData_(request) {
   if (allowed.indexOf(action) < 0) {
     throwEventError_('VALIDATION_FAILED', '지원하지 않는 신청자 처리 action입니다.', { allowed: allowed });
   }
+  var actorEmail = String(readActiveUserEmailFromSession_() || '').trim();
+  if (!actorEmail) throwEventError_('UNAUTHORIZED', '처리자 이메일을 확인할 수 없습니다.');
   return withOperationWriteLock_(function () {
     var applicant = findEventApplicationRowById_(id);
     if (!applicant) throwEventError_('NOT_FOUND', '신청자를 찾을 수 없습니다.');
@@ -18,7 +20,18 @@ function processApplicantData_(request) {
       patch.status = '반려';
       patch.processedAt = getCurrentIsoDateTime_();
     }
+    patch.managerEmail = actorEmail;
     updateEventApplicationRowById_(id, patch);
-    return withoutInternalRowNumber_(findEventApplicationRowById_(id));
+    var after = withoutInternalRowNumber_(findEventApplicationRowById_(id));
+    writeBusinessAudit_({
+      actorEmail: actorEmail,
+      actionType: action === 'approve' ? 'APPROVE' : 'REJECT',
+      targetType: 'eventApplications',
+      targetId: id,
+      beforeValue: { status: String(applicant.status || '') },
+      afterValue: { status: String(after.status || ''), processedAt: after.processedAt || '' },
+      reason: action === 'approve' ? '행사 신청 승인' : '행사 신청 반려'
+    });
+    return after;
   });
 }

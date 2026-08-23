@@ -1,0 +1,28 @@
+<script>
+var accountingClient = {
+  getLedgerEntries: function (request) { return runAppApi('api_getLedgerEntries', request || {}); },
+  getLedgerSummary: function (request) { return runAppApi('api_getLedgerSummary', request || {}); },
+  getLedgerEventOptions: function (request) { return runAppApi('api_getLedgerEventOptions', request || {}); },
+  getLedgerEvidenceFileContent: function (request) { return runAppApi('api_getLedgerEvidenceFileContent', request || {}); },
+  createLedgerEntry: function (request) { return runAppApi('api_createLedgerEntry', request || {}); },
+  createLedgerDraft: function (request) { return runAppApi('api_createLedgerDraft', request || {}); },
+  updateLedgerEntry: function (request) { return runAppApi('api_updateLedgerEntry', request || {}); },
+  processLedgerEntry: function (request) { return runAppApi('api_processLedgerEntry', request || {}); },
+  removeLedgerEntry: function (request) { return runAppApi('api_deleteLedgerEntry', request || {}); },
+  getLedgerDatabaseInfo: function () { return runAppApi('api_getLedgerDatabaseInfo', {}); },
+
+  getReconciliations: function () { return runAppApi('api_getReconciliations', {}); },
+  getReconciliation: function (request) { return runAppApi('api_getReconciliation', request || {}); },
+  processBankTransactionUpload: function (request) { return runAppApi('api_processBankTransactionUpload', request || {}); },
+  processReconciliation: function (request) { return runAppApi('api_processReconciliation', request || {}); },
+  getReconciliationCandidates: function (request) { return runAppApi('api_getReconciliationCandidates', request || {}); },
+  applyReconciliationLink: function (request) { return runAppApi('api_applyReconciliationLink', request || {}); },
+  createLedgerEntryFromReconciliation: function (request) { return runAppApi('api_createLedgerEntryFromReconciliation', request || {}); },
+
+  getSettlementSummary: function (request) { return runAppApi('api_getSettlementSummary', request || {}); },
+  getSettlementReports: function () { return runAppApi('api_getSettlementReports', {}); },
+  getSettlementReport: function (request) { return runAppApi('api_getSettlementReport', request || {}); },
+  createSettlementReport: function (request) { return runAppApi('api_createSettlementReport', request || {}); },
+  exportSettlementReport: function (request) { return runAppApi('api_exportSettlementReport', request || {}); }
+};
+</script>

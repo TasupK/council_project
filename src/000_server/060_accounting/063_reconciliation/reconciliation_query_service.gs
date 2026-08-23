@@ -1,77 +1,52 @@
-/** 계좌-원장 대조 read-only query/matching */
+/** 계좌-원장 대조 read-only query/snapshot */
 
-function normalizeReconciliationText_(value) {
-  var stopWords = ['주식회사', '유한회사', '체크카드', '신용카드', '카드', '출금', '결제', '이체', '송금', '입금', '승인', '취소', '페이', '원'];
-  var text = String(value || '').toLowerCase().replace(/\(주\)|㈜/g, ' ').replace(/[^0-9a-z가-힣]+/g, ' ');
-  stopWords.forEach(function (word) { text = text.replace(new RegExp('(^|\\s)' + word + '(?=\\s|$)', 'g'), ' '); });
-  return text.replace(/\s+/g, ' ').trim();
-}
+function buildReconciliationSnapshotItems_(banks, ledgers) {
+  var ledgerByBankId = {};
+  (ledgers || []).forEach(function (ledger) {
+    if (String(ledger.recordStatus || '활성') === '무효' || !ledger.bankTransactionId) return;
+    ledgerByBankId[String(ledger.bankTransactionId)] = ledger;
+  });
 
-function buildReconciliationTokens_(value) { return normalizeReconciliationText_(value).split(' ').filter(function (token) { return token.length >= 2; }); }
+  var items = (banks || []).filter(function (bank) {
+    return String(bank.recordStatus || '정상') !== '무효';
+  }).map(function (bank) {
+    var ledger = ledgerByBankId[String(bank.id || '')];
+    if (!ledger) {
+      return {
+        bankTransactionId: bank.id || '', ledgerId: '', result: '원장누락',
+        differenceAmount: Math.abs(Number(bank.amount || 0)),
+        validationNote: '계좌거래에 연결된 활성 원장이 없습니다.'
+      };
+    }
+    var expectedType = Number(bank.amount || 0) < 0 ? '지출' : '수입';
+    var typeMatches = String(ledger.transactionType || '') === expectedType;
+    var amountDifference = Math.abs(Math.abs(Number(bank.amount || 0)) - Number(ledger.amount || 0));
+    var result = typeMatches && amountDifference === 0 ? '정상' : '확인필요';
+    return {
+      bankTransactionId: bank.id || '', ledgerId: ledger.id || '', result: result,
+      differenceAmount: amountDifference,
+      validationNote: result === '정상' ? '계좌거래와 원장의 금액/방향이 일치합니다.' : '계좌거래와 원장의 금액 또는 방향을 확인해야 합니다.'
+    };
+  });
 
-function calculateReconciliationDateDifference_(left, right) {
-  var a = String(left || '').slice(0, 10).split('-').map(Number), b = String(right || '').slice(0, 10).split('-').map(Number);
-  if (a.length !== 3 || b.length !== 3 || a.some(isNaN) || b.some(isNaN)) return 999;
-  return Math.abs(Math.round((Date.UTC(a[0], a[1] - 1, a[2]) - Date.UTC(b[0], b[1] - 1, b[2])) / 86400000));
-}
-
-function scoreReconciliationCandidate_(bank, ledger) {
-  var bankExpense = isTruthyValue_(bank.expense);
-  var ledgerExpense = ledger.transaction_type ? ledger.transaction_type === '지출' : isTruthyValue_(ledger.expense);
-  if (bankExpense !== ledgerExpense) return null;
-  if (Math.abs(Number(bank.amount || 0)) !== Math.abs(Number(ledger.amount || 0))) return null;
-  var ledgerDate = ledger.transaction_date || ledger.transactionAt;
-  var dateDifference = calculateReconciliationDateDifference_(bank.transactionAt, ledgerDate);
-  if (dateDifference > 1) return null;
-  var score = dateDifference === 0 ? 40 : 25;
-  var bankCounterparty = normalizeReconciliationText_(bank.counterparty), ledgerCounterparty = normalizeReconciliationText_(ledger.counterparty);
-  var exact = bankCounterparty.length >= 2 && bankCounterparty === ledgerCounterparty;
-  var includes = !exact && bankCounterparty.length >= 2 && ledgerCounterparty.length >= 2 && (bankCounterparty.indexOf(ledgerCounterparty) > -1 || ledgerCounterparty.indexOf(bankCounterparty) > -1);
-  if (exact) score += 40; else if (includes) score += 30;
-  var bankTokens = buildReconciliationTokens_([bank.counterparty, bank.description].join(' '));
-  var ledgerTokens = buildReconciliationTokens_([ledger.counterparty, ledger.description].join(' '));
-  var common = bankTokens.filter(function (token) { return ledgerTokens.indexOf(token) > -1; });
-  if (common.length) score += 15;
-  return {
-    ledgerId: ledger.transaction_id || ledger.id, transactionAt: ledgerDate, expense: ledgerExpense,
-    amount: Number(ledger.amount || 0), counterparty: ledger.counterparty || '', description: ledger.description || '',
-    score: score, dateDifference: dateDifference, textMatched: exact || includes || common.length > 0,
-    matchDetail: exact ? '거래상대명 일치' : includes ? '거래상대명 일부 일치' : common.length ? '적요 공통어 일치' : '문자열 일치 없음'
-  };
+  (ledgers || []).filter(function (ledger) {
+    return String(ledger.recordStatus || '활성') !== '무효' && !ledger.bankTransactionId;
+  }).forEach(function (ledger) {
+    items.push({
+      bankTransactionId: '', ledgerId: ledger.id || '', result: '계좌미확인',
+      differenceAmount: Number(ledger.amount || 0),
+      validationNote: '원장에 연결된 계좌거래가 없습니다.'
+    });
+  });
+  return items;
 }
 
 function buildReconciliationLedgerCandidates_(filter) {
   filter = filter || {};
-  return getLedgerEntriesData_().filter(function (item) {
-    return item.record_status === 'ACTIVE' && isAccountingDateInRange_(item.transaction_date, filter.startDate, filter.endDate);
+  return buildLedgerAccountingFacts_().filter(function (row) {
+    return String(row.recordStatus || '활성') !== '무효' &&
+      isAccountingDateInRange_(row.transactionAt, filter.startDate, filter.endDate);
   });
-}
-
-function calculateReconciliationCandidateScores_(bank, ledgers) {
-  return (ledgers || []).map(function (ledger) { return scoreReconciliationCandidate_(bank, ledger); }).filter(Boolean).sort(function (a, b) {
-    return b.score - a.score || a.dateDifference - b.dateDifference || String(a.ledgerId).localeCompare(String(b.ledgerId));
-  });
-}
-
-function buildReconciliationResults_(banks, ledgers) {
-  var claimed = {};
-  var results = (banks || []).map(function (bank) {
-    var candidates = calculateReconciliationCandidateScores_(bank, ledgers);
-    if (!candidates.length) return { bankTransactionId: bank.id || '', status: '원장누락의심', ledgerId: '', differenceAmount: Number(bank.amount || 0), matchMethod: '', note: '동일 방향·금액·거래일 조건의 원장 후보가 없습니다.', candidates: [] };
-    var best = candidates[0], unique = candidates.length === 1 || best.score > candidates[1].score;
-    if (!best.textMatched || !unique) return { bankTransactionId: bank.id || '', status: '확인필요', ledgerId: '', differenceAmount: 0, matchMethod: '', note: !best.textMatched ? '금액과 날짜는 일치하지만 거래상대/적요 확인이 필요합니다.' : '동점 후보가 여러 개입니다.', candidates: candidates.slice(0, 5) };
-    return { bankTransactionId: bank.id || '', status: '정상', ledgerId: best.ledgerId, differenceAmount: Math.abs(Number(bank.amount || 0) - Number(best.amount || 0)), matchMethod: 'auto', note: '자동 대조 조건이 충족되었습니다.', candidates: candidates.slice(0, 5) };
-  });
-  results.forEach(function (result) {
-    if (result.status !== '정상') return;
-    if (!claimed[result.ledgerId]) claimed[result.ledgerId] = [];
-    claimed[result.ledgerId].push(result);
-  });
-  Object.keys(claimed).forEach(function (ledgerId) {
-    if (claimed[ledgerId].length < 2) return;
-    claimed[ledgerId].forEach(function (result) { result.status = '확인필요'; result.ledgerId = ''; result.matchMethod = ''; result.note = '여러 계좌 거래가 같은 원장을 최우선 후보로 선택했습니다.'; });
-  });
-  return results;
 }
 
 function getReconciliationListData_(filter) {
@@ -80,7 +55,7 @@ function getReconciliationListData_(filter) {
     if (filter.startDate && String(row.auditEndDate || '') < filter.startDate) return false;
     if (filter.endDate && String(row.auditStartDate || '') > filter.endDate) return false;
     return true;
-  }).sort(function (a, b) { return String(b.confirmedAt || '').localeCompare(String(a.confirmedAt || '')); });
+  }).sort(function (a, b) { return String(b.executedAt || '').localeCompare(String(a.executedAt || '')); });
   return { items: items, totalCount: items.length };
 }
 
@@ -88,9 +63,24 @@ function getReconciliationDetailData_(reconciliationId) {
   var header = findReconciliationRowById_(reconciliationId);
   if (!header) return null;
   var bankById = listBankTransactionRows_().reduce(function (index, row) { index[row.id] = row; return index; }, {});
-  var ledgerById = getLedgerEntriesData_().reduce(function (index, row) { index[row.transaction_id] = row; return index; }, {});
-  var items = listReconciliationItemRows_().filter(function (row) { return String(row.reconciliationId) === String(reconciliationId); }).map(function (row) {
-    return { id: row.id, reconciliationId: row.reconciliationId, bankTransactionId: row.bankTransactionId, ledgerId: row.ledgerId || '', status: row.status, differenceAmount: Number(row.differenceAmount || 0), matchMethod: row.matchMethod || '', note: row.note || '', createdAt: formatDateTimeValue_(row.createdAt), updatedAt: formatDateTimeValue_(row.updatedAt), bank: bankById[row.bankTransactionId] || null, ledger: row.ledgerId ? (ledgerById[row.ledgerId] || null) : null };
+  var ledgerById = buildLedgerAccountingFacts_().reduce(function (index, row) { index[row.id] = row; return index; }, {});
+  var items = listReconciliationItemRows_().filter(function (row) {
+    return String(row.reconciliationId) === String(reconciliationId);
+  }).map(function (row) {
+    return {
+      id: row.id,
+      reconciliationId: row.reconciliationId,
+      bankTransactionId: row.bankTransactionId || '',
+      ledgerId: row.ledgerId || '',
+      status: row.result,
+      result: row.result,
+      differenceAmount: Number(row.differenceAmount || 0),
+      note: row.validationNote || '',
+      validationNote: row.validationNote || '',
+      createdAt: formatDateTimeValue_(row.createdAt),
+      bank: row.bankTransactionId ? (bankById[row.bankTransactionId] || null) : null,
+      ledger: row.ledgerId ? (ledgerById[row.ledgerId] || null) : null
+    };
   });
   return { header: header, items: items };
 }
@@ -98,7 +88,99 @@ function getReconciliationDetailData_(reconciliationId) {
 function getReconciliationCandidatesData_(request) {
   request = request || {};
   var item = request.reconciliationItemId ? findReconciliationItemRowById_(request.reconciliationItemId) : null;
-  var bank = item ? findBankTransactionRowById_(item.bankTransactionId) : (request.bankTransactionId ? findBankTransactionRowById_(request.bankTransactionId) : null);
+  var bankId = item ? item.bankTransactionId : request.bankTransactionId;
+  var bank = bankId ? findBankTransactionRowById_(bankId) : null;
   if (!bank) throw new Error('계좌 거래를 찾을 수 없습니다.');
-  return { items: calculateReconciliationCandidateScores_(bank, buildReconciliationLedgerCandidates_({ startDate: request.startDate, endDate: request.endDate })).slice(0, 10) };
+  var expectedType = Number(bank.amount || 0) < 0 ? '지출' : '수입';
+  var expectedAmount = Math.abs(Number(bank.amount || 0));
+  var items = buildReconciliationLedgerCandidates_({ startDate: request.startDate, endDate: request.endDate }).filter(function (ledger) {
+    return !ledger.bankTransactionId && ledger.transactionType === expectedType && Number(ledger.amount || 0) === expectedAmount;
+  }).map(function (ledger) {
+    return {
+      ledgerId: ledger.id,
+      transactionAt: ledger.transactionAt,
+      amount: Number(ledger.amount || 0),
+      counterparty: ledger.counterparty || '',
+      description: ledger.description || '',
+      matchDetail: '미연결 원장 · 금액/방향 일치'
+    };
+  });
+  return { items: items.slice(0, 10) };
+}
+
+function normalizeReconciliationMatchText_(value) {
+  return String(value || '').replace(/\s+/g, '').toLowerCase();
+}
+
+function reconciliationDateDistanceDays_(left, right) {
+  var leftTime = Date.parse(String(left || '').slice(0, 10) + 'T00:00:00Z');
+  var rightTime = Date.parse(String(right || '').slice(0, 10) + 'T00:00:00Z');
+  if (!isFinite(leftTime) || !isFinite(rightTime)) return 999999;
+  return Math.round(Math.abs(leftTime - rightTime) / 86400000);
+}
+
+function buildEventPaymentReconciliationCandidates_(request) {
+  request = request || {};
+  var claimedPaymentIds = {};
+  buildLedgerAccountingFacts_().forEach(function (ledger) {
+    if (String(ledger.recordStatus || '활성') === '무효') return;
+    if (String(ledger.businessType || '') !== 'EVENT_PAYMENT') return;
+    var businessId = String(ledger.businessId || '').trim();
+    if (businessId) claimedPaymentIds[businessId] = true;
+  });
+
+  var facts = buildEventPaymentAccountingFacts_().filter(function (fact) {
+    return fact.paymentId && !claimedPaymentIds[String(fact.paymentId)] && String(fact.moneyStatus || '') !== '무효';
+  });
+  var banks = listBankTransactionRows_().filter(function (bank) {
+    if (String(bank.recordStatus || '정상') === '무효') return false;
+    if (Number(bank.amount || 0) <= 0) return false;
+    if (request.startDate && String(bank.transactionAt || '') < String(request.startDate)) return false;
+    if (request.endDate && String(bank.transactionAt || '') > String(request.endDate) + 'T23:59:59') return false;
+    return true;
+  });
+
+  var candidates = [];
+  banks.forEach(function (bank) {
+    facts.forEach(function (fact) {
+      var bankAmount = Math.abs(Number(bank.amount || 0));
+      var paidAmount = Number(fact.paidAmount || 0);
+      var amountMatches = bankAmount === paidAmount;
+      if (!amountMatches) return;
+      var dateDistanceDays = reconciliationDateDistanceDays_(bank.transactionAt, fact.paymentDate);
+      var bankText = normalizeReconciliationMatchText_(bank.counterparty || bank.description || '');
+      var depositorText = normalizeReconciliationMatchText_(fact.depositorName || '');
+      var depositorMatches = !!depositorText && !!bankText && (bankText.indexOf(depositorText) >= 0 || depositorText.indexOf(bankText) >= 0);
+      var score = 60;
+      if (dateDistanceDays === 0) score += 25;
+      else if (dateDistanceDays <= 3) score += 10;
+      if (depositorMatches) score += 15;
+      candidates.push({
+        bankTransactionId: String(bank.id || ''),
+        eventPaymentId: String(fact.paymentId || ''),
+        eventId: String(fact.eventId || ''),
+        applicationId: String(fact.applicationId || ''),
+        bankAmount: bankAmount,
+        paidAmount: paidAmount,
+        amountMatches: amountMatches,
+        dateDistanceDays: dateDistanceDays,
+        depositorMatches: depositorMatches,
+        score: score,
+        result: dateDistanceDays === 0 && depositorMatches ? '정상' : '확인필요'
+      });
+    });
+  });
+
+  var byBank = {};
+  candidates.forEach(function (candidate) {
+    if (!byBank[candidate.bankTransactionId]) byBank[candidate.bankTransactionId] = [];
+    byBank[candidate.bankTransactionId].push(candidate);
+  });
+  Object.keys(byBank).forEach(function (bankId) {
+    var rows = byBank[bankId];
+    var maxScore = rows.reduce(function (max, row) { return Math.max(max, row.score); }, -1);
+    var tied = rows.filter(function (row) { return row.score === maxScore; });
+    if (tied.length > 1) tied.forEach(function (row) { row.result = '확인필요'; });
+  });
+  return candidates.sort(function (a, b) { return b.score - a.score; });
 }

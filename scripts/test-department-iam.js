@@ -13,8 +13,9 @@ assert.ok(schema.includes("departmentId: '부서ID'"), 'users.departmentId schem
 assert.ok(schema.includes("departments:"), 'departments table missing');
 assert.ok(schema.includes("id: '부서ID'"), 'department id missing');
 assert.ok(schema.includes("name: '부서명'"), 'department name missing');
-assert.ok(schema.includes("type: '부서유형'"), 'department type missing');
-assert.ok(schema.includes("sortOrder: '정렬순서'"), 'department sortOrder missing');
+assert.ok(schema.includes("description: '부서설명'"), 'department description missing');
+assert.ok(!schema.includes("type: '부서유형'"), 'nonexistent department type must not return');
+assert.ok(schema.includes("sortOrder: '표시순서'"), 'department sortOrder missing');
 assert.ok(schema.includes("active: '활성여부'"), 'department active missing');
 assert.ok(schema.includes("{ field: 'departmentId', refTable: 'departments', refField: 'id' }"), 'department FK missing');
 assert.ok(fs.existsSync(daoPath), 'department DAO missing');

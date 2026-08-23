@@ -9,6 +9,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
   <?!= include('100_common/App_Styles'); ?>
+  <?!= include('100_common/App_Shell_Styles'); ?>
+  <?!= include('100_common/app_api_runner_js'); ?>
+  <?!= include('100_common/app_client_js'); ?>
+  <?!= include('500_student_fee/common/student_fee_client_js'); ?>
   <?!= include('500_student_fee/common/Student_Fee_Styles'); ?>
   <script>
     var WEB_APP_URL = '<?= getWebAppUrl() ?>';
@@ -27,7 +31,6 @@
         <?!= include('500_student_fee/510_payers/Student_Fee_Payers_View'); ?>
       </main>
     </div>
-    <footer class="status-bar">시스템 v0.7 · Google Sheets DB 연결형</footer>
   </div>
   <?!= include('100_common/app_shell_js'); ?>
   <?!= include('500_student_fee/common/student_fee_common_js'); ?>

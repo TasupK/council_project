@@ -1,24 +1,4 @@
 <script>
-function studentFeeApi(functionName, request) {
-  return new Promise(function (resolve, reject) {
-    if (!window.google && typeof google === 'undefined') {
-      reject(new Error('Google Apps Script 웹앱 환경에서 실행해주세요.'));
-      return;
-    }
-    var gas = typeof google !== 'undefined' ? google : window.google;
-    if (!gas || !gas.script || !gas.script.run) {
-      reject(new Error('Google Apps Script 웹앱 환경에서 실행해주세요.'));
-      return;
-    }
-    var runner = gas.script.run
-      .withSuccessHandler(function (response) { resolve(response); })
-      .withFailureHandler(function (serverError) {
-        reject(new Error(serverError && serverError.message ? serverError.message : '서버 호출에 실패했습니다.'));
-      });
-    runner[functionName]({ request: request || {} });
-  });
-}
-
 function studentFeeSetBusy(element, busy) {
   if (!element) return true;
   if (busy) {
