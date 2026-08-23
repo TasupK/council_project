@@ -8,6 +8,6 @@
     <div class="ew-tabs ui-tabs"><button type="button" class="ew-tab active ui-tab" data-action="detail-tab" data-tab="basic">기본정보</button><button type="button" class="ew-tab ui-tab" data-action="detail-tab" data-tab="applicants">신청자</button><button type="button" class="ew-tab ui-tab" data-action="detail-tab" data-tab="attendance">참가비·출석</button><button type="button" class="ew-tab ui-tab" data-action="detail-tab" data-tab="ledger">결산</button><button type="button" class="ew-tab ui-tab" data-action="detail-tab" data-tab="refund">환불</button></div>
     <div id="ew-tab-panel" class="ew-detail-body"></div>
   </div>
-  <!-- 공통 비동기 처리, 모달, 토스트 출력 루트 -->
-  <div id="ew-loading" class="ew-loading ui-loading" hidden><span></span><p>불러오는 중입니다.</p></div><div id="ew-modal-root"></div><div id="ew-toast" class="ew-toast ui-toast" role="status" hidden></div>
+  <!-- 공통 비동기 처리와 토스트 출력 루트. 페이지 전용 모달은 별도 partial이 소유합니다. -->
+  <div id="ew-loading" class="ew-loading ui-loading" hidden><span></span><p>불러오는 중입니다.</p></div><div id="ew-toast" class="ew-toast ui-toast" role="status" hidden></div>
 </div>
