@@ -20,13 +20,13 @@
   <button class="icon-btn" type="button" aria-label="알림">
     알림<span class="dot"></span>
   </button>
-  <a class="user-trigger" id="appUserCard" href="#">
+  <button class="user-trigger" id="appUserCard" type="button" aria-haspopup="true" aria-expanded="false">
     <div class="user-avatar" id="appAvatar" aria-hidden="true"></div>
     <div>
       <strong id="appUserName">운영자</strong>
       <small id="appUserTitle">사용자</small>
     </div>
-  </a>
+  </button>
   
   <aside class="pop" id="profilePop">
     <div class="pop-head">
@@ -38,8 +38,7 @@
       <span class="online">접속 중</span>
     </div>
     <hr>
-    <button class="pop-menu" id="goMy"><b>M</b>마이페이지 <span style="float:right">›</span></button>
-    <button class="pop-menu logout" id="logout"><b>O</b>로그아웃</button>
+    <button class="pop-menu" id="goMy" type="button"><b>M</b>마이페이지 <span style="float:right">›</span></button>
     <hr>
     <p class="pop-foot">로그인 계정 기준으로 정보와 권한이 표시됩니다.</p>
   </aside>
