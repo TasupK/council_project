@@ -1,4 +1,47 @@
-// 1. 회비납부자 생성
+// 1. 납부신청 승인에 따른 회비납부자 자동 upsert (없으면 생성, 있으면 최신 정보로 갱신)
+function upsertFeePayerFromApplication_(application, actorEmail) {
+  var studentId = requireStudentFeeText_(application && application.studentId, 'studentId');
+  var name = requireStudentFeeText_(application && application.name, 'name');
+  var affiliation = requireStudentFeeText_(application && application.affiliation, 'affiliation');
+  var startSemesterId = requireStudentFeeText_(application && application.startSemesterId, 'startSemesterId');
+  var email = requireStudentFeeText_(actorEmail, 'actorEmail');
+
+  var before = findFeePayerRowById_(studentId);
+  var now = getCurrentIsoDateTime_();
+
+  if (!before) {
+    var row = {
+      studentId: studentId,
+      name: name,
+      affiliation: affiliation,
+      startSemesterId: startSemesterId,
+      managerEmail: email,
+      updatedAt: now
+    };
+    insertFeePayerRow_(row);
+    writeStudentFeeAudit_(email, 'CREATE', 'feePayers', studentId, null, row, '납부신청 승인에 따른 자동 등록');
+    return row;
+  }
+
+  var changes = {
+    name: name,
+    affiliation: affiliation,
+    startSemesterId: startSemesterId,
+    managerEmail: email,
+    updatedAt: now
+  };
+  updateFeePayerRowById_(studentId, changes);
+
+  var after = {};
+  Object.keys(before).forEach(function (key) { after[key] = before[key]; });
+  Object.keys(changes).forEach(function (key) { after[key] = changes[key]; });
+  delete after._rowNumber;
+
+  writeStudentFeeAudit_(email, 'UPDATE', 'feePayers', studentId, before, after, '납부신청 승인에 따른 자동 갱신');
+  return after;
+}
+
+// 2. 회비납부자 생성
 function createFeePayerData_(request, context) {
   var studentId = requireStudentFeeText_(request && request.studentId, 'studentId');
   var name = requireStudentFeeText_(request && request.name, 'name');
@@ -24,7 +67,7 @@ function createFeePayerData_(request, context) {
   return row;
 }
 
-// 2. 회비납부자 수정
+// 3. 회비납부자 수정
 function updateFeePayerData_(request, context) {
   var studentId = requireStudentFeeId_(request, ['studentId', 'id']);
   var actorEmail = requireStudentFeeText_(context && context.email, 'actorEmail');
