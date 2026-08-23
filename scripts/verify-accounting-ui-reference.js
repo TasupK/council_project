@@ -9,6 +9,15 @@ function read_(relativePath) {
   return fs.readFileSync(path.join(FRONTEND_ROOT, relativePath), 'utf8');
 }
 
+function readOptional_(relativePath) {
+  var target = path.join(FRONTEND_ROOT, relativePath);
+  if (!fs.existsSync(target)) {
+    failures.push('Missing Accounting UI partial: ' + relativePath);
+    return '';
+  }
+  return fs.readFileSync(target, 'utf8');
+}
+
 function hasExactClassToken_(source, forbiddenTokens) {
   var classPattern = /class=["']([^"']*)["']/g;
   var match;
@@ -28,6 +37,18 @@ function hasLegacyDynamicPrimitive_(source) {
     if (classes.indexOf('small') >= 0 && classes.indexOf('ui-btn') < 0) return true;
   }
   return false;
+}
+
+function requireIds_(source, label, ids) {
+  ids.forEach(function (id) {
+    if (!new RegExp('id=["\']' + id + '["\']').test(source)) failures.push(label + ' missing id=' + id);
+  });
+}
+
+function requireNames_(source, label, names) {
+  names.forEach(function (name) {
+    if (!new RegExp('name=["\']' + name + '["\']').test(source)) failures.push(label + ' missing name=' + name);
+  });
 }
 
 var views = [
@@ -51,8 +72,37 @@ views.forEach(function (file) {
 });
 
 var ledger = read_('410_ledger/Accounting_Ledger_View.html');
+var ledgerShell = fs.readFileSync(path.join(FRONTEND_ROOT, '410_ledger', 'Accounting_Ledger.html'), 'utf8');
+var registerModal = readOptional_('410_ledger/modals/Accounting_Ledger_Register_Modal.html');
+var detailModal = readOptional_('410_ledger/modals/Accounting_Ledger_Detail_Modal.html');
+var ledgerComposed = [ledger, registerModal, detailModal].join('\n');
+
+if (/ui-modal-overlay|id=["'](?:registerModal|detailModal)["']/.test(ledger)) {
+  failures.push('Ledger View must not own modal markup; page-specific modals belong in modals/*.html partials.');
+}
+if (ledgerShell.indexOf("include('400_accounting/410_ledger/modals/Accounting_Ledger_Register_Modal')") < 0) {
+  failures.push('Ledger shell must include the register modal partial.');
+}
+if (ledgerShell.indexOf("include('400_accounting/410_ledger/modals/Accounting_Ledger_Detail_Modal')") < 0) {
+  failures.push('Ledger shell must include the detail modal partial.');
+}
+if (registerModal && hasExactClassToken_(registerModal, ['field'])) {
+  failures.push('Ledger register modal must not use legacy .field because App_Styles gives it fixed height/border/padding.');
+}
+requireIds_(registerModal, 'Ledger register modal', [
+  'registerModal', 'entryForm', 'expenseBtn', 'incomeBtn', 'formDepartment', 'formEvent', 'eventBalance',
+  'entryEvidenceDropzone', 'entryEvidenceFile', 'entryEvidenceFileName', 'draft', 'create'
+]);
+requireNames_(registerModal, 'Ledger register modal', [
+  'transaction_date', 'department_name', 'amount', 'counterparty', 'event_name', 'description', 'note'
+]);
+requireIds_(detailModal, 'Ledger detail modal', [
+  'detailModal', 'detailTitle', 'detailStatus', 'detailAlert', 'detailRows', 'detailEvidenceList',
+  'editLedger', 'deleteLedger', 'approve'
+]);
+
 ['ui-stat-card', 'ui-toolbar', 'ui-table', 'ui-pagination', 'ui-modal', 'ui-badge'].forEach(function (primitive) {
-  if (ledger.indexOf(primitive) < 0) failures.push('Ledger must use shared primitive: ' + primitive);
+  if (ledgerComposed.indexOf(primitive) < 0) failures.push('Ledger must use shared primitive: ' + primitive);
 });
 
 var reconciliation = read_('420_reconciliation/Accounting_Reconciliation_View.html');
