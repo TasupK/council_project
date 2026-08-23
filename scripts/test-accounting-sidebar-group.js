@@ -18,8 +18,8 @@ assert.match(sidebar, /id=["']appAccountingSubmenu["'][^>]*class=["'][^"']*nav-s
   ['appNavAccountingReconciliation', '대사 관리'],
   ['appNavAccountingSettlement', '결산 관리']
 ].forEach(function (item) {
-  assert.match(sidebar, new RegExp('id=["\\']' + item[0] + '["\\'][^>]*>\\s*' + item[1] + '\\s*</a>'),
-    item[1] + ' 하위 메뉴가 필요합니다.');
+  const pattern = new RegExp(`id=["']${item[0]}["'][^>]*>\\s*${item[1]}\\s*</a>`);
+  assert.match(sidebar, pattern, item[1] + ' 하위 메뉴가 필요합니다.');
 });
 assert.doesNotMatch(sidebar, /appNavAccountingHome|>\s*전체 현황\s*<\/a>/,
   '장부관리 submenu에는 전체 현황을 노출하지 않습니다.');
