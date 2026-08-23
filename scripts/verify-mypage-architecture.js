@@ -36,8 +36,9 @@ if (code.indexOf("mypage: '270_mypage/MyPage'") === -1) failures.push('MyPage ro
 if (code.indexOf("page === 'mypage'") === -1) failures.push('MyPage route is not protected by the login guard.');
 if (permissionService.indexOf('function buildEffectivePermissionDetails_(') === -1) failures.push('IAM must own buildEffectivePermissionDetails_.');
 if (authApi.indexOf('buildEffectivePermissionDetails_(current.permissions || {})') === -1) failures.push('Auth API must expose IAM-owned effective permission details.');
-if (!/<a[^>]*id="appUserCard"/.test(header)) failures.push('Header user card must be an accessible anchor.');
-if (shell.indexOf("getAppElement('appUserCard').href = buildAppPageUrl('mypage')") === -1) failures.push('Shared shell must link the user card to MyPage.');
+if (!/<button[^>]*id="appUserCard"[^>]*aria-haspopup="true"/.test(header)) failures.push('Header user card must be an accessible profile popup button.');
+if (header.indexOf('id="goMy"') === -1) failures.push('Profile popup must expose a MyPage navigation action.');
+if (shell.indexOf("var goMy = getAppElement('goMy')") === -1 || shell.indexOf("window.top.location.href = buildAppPageUrl('mypage')") === -1) failures.push('Shared shell must route the profile popup MyPage action to MyPage.');
 
 ['100_common/App_Styles', '100_common/App_Header', '100_common/App_Sidebar', '100_common/app_api_runner_js', '100_common/app_client_js', '100_common/app_shell_js'].forEach(function (includePath) {
   if (page.indexOf(includePath) === -1) failures.push('MyPage must reuse shared shell/client include: ' + includePath);
