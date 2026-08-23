@@ -6,11 +6,21 @@ const ROOT = path.resolve(__dirname, '..');
 const sidebar = fs.readFileSync(path.join(ROOT, 'src/100_common/App_Sidebar.html'), 'utf8');
 const shell = fs.readFileSync(path.join(ROOT, 'src/100_common/app_shell_js.html'), 'utf8');
 
-assert.match(sidebar, /id=["']appNavAccountingGroup["'][^>]*class=["'][^"']*nav-group/,
+function tagById(source, id) {
+  const match = source.match(new RegExp(`<[^>]+id=["']${id}["'][^>]*>`));
+  return match ? match[0] : '';
+}
+
+const accountingGroupTag = tagById(sidebar, 'appNavAccountingGroup');
+assert.ok(accountingGroupTag && /class=["'][^"']*nav-group/.test(accountingGroupTag),
   '장부관리는 nav-group 컨테이너여야 합니다.');
-assert.match(sidebar, /<button[^>]+id=["']appNavAccounting["'][^>]+aria-controls=["']appAccountingSubmenu["']/,
+
+const accountingToggleTag = tagById(sidebar, 'appNavAccounting');
+assert.ok(/^<button/.test(accountingToggleTag) && /aria-controls=["']appAccountingSubmenu["']/.test(accountingToggleTag),
   '장부관리 상위 메뉴는 이동 링크가 아니라 submenu toggle 버튼이어야 합니다.');
-assert.match(sidebar, /id=["']appAccountingSubmenu["'][^>]*class=["'][^"']*nav-submenu/,
+
+const accountingSubmenuTag = tagById(sidebar, 'appAccountingSubmenu');
+assert.ok(accountingSubmenuTag && /class=["'][^"']*nav-submenu/.test(accountingSubmenuTag),
   '장부관리 submenu가 필요합니다.');
 
 [
