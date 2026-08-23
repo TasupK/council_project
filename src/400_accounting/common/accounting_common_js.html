@@ -16,13 +16,6 @@ function toast(message) {
     }, 1700);
 }
 
-function setupAccountingPageLinks() {
-    document.querySelectorAll('[data-accounting-page]').forEach(function (link) {
-        link.href = WEB_APP_URL + '?page=' + link.dataset.accountingPage;
-        link.target = '_top';
-    });
-}
-
 function fileLabel(files, emptyText) {
     if (!files.length)
         return emptyText;
