@@ -1,43 +1,40 @@
 # Page-Owned Modal Architecture Design
 
 ## Status
-This document defines the project-wide frontend architecture for modal ownership and composition. It supersedes the earlier Accounting-Ledger-only version of this document.
+This document defines the frontend architecture for page-owned modal markup.
 
-The first reference implementation remains Accounting Ledger in PR #27. Other domains migrate in later PRs after that reference implementation is validated in the browser.
+The first reference implementation is Accounting Ledger in PR #27. Student Fee and Event migrate in later independent PRs.
+
+**Settings is explicitly excluded from this modal migration.** Existing Settings modal structure must not be changed as part of this architecture rollout unless the user separately approves a Settings-specific change later.
 
 ## Context
-The project currently has several different modal ownership patterns:
+The project currently has mixed modal ownership patterns:
 
 - Accounting Ledger historically kept page body, register modal, detail modal, and toast in one `Accounting_Ledger_View.html`.
 - Student Fee payer/payment/refund pages keep one or more complete modal trees directly inside their `*_View.html` files.
 - Event Detail builds some complete modal shells as JavaScript strings and assigns them to `modalRoot.innerHTML`.
-- Shared UI primitives such as `ui-modal`, `ui-modal-overlay`, `ui-field`, and `ui-btn` now live in the common UI system.
+- Shared UI primitives such as `ui-modal`, `ui-modal-overlay`, `ui-field`, and `ui-btn` live in the common UI system.
 
-These mixed patterns make page files harder to review, blur the boundary between markup and behavior, and make UI regressions easier to introduce. The Accounting Ledger regression exposed one concrete example: the modal form retained the legacy `field` class together with `ui-field`; `App_Styles.html` still gave `.field` a fixed height/border/padding, which collapsed the wrapper and caused visible overlap.
-
-The modal bug should be fixed locally, but the ownership problem should be solved consistently across the frontend.
+The Accounting Ledger regression exposed a concrete ownership problem: the register modal retained the legacy `field` class together with `ui-field`, and the legacy fixed-height styling collapsed the form rows.
 
 ## Goals
-- Give every page-specific modal a clear file owner.
-- Keep `*_View.html` focused on the visible page body rather than hidden modal trees.
-- Keep JavaScript responsible for behavior/data binding rather than large HTML shell strings.
-- Preserve all existing route, API, DOM ID, form-name, and business behavior contracts during migration.
-- Make modal structure testable as a composed page contract.
-- Establish one reusable folder/naming convention for future pages.
+- Give migrated page-specific modals a clear page owner.
+- Keep migrated `*_View.html` files focused on visible page content.
+- Keep JavaScript responsible for behavior/data binding rather than large modal-shell strings.
+- Preserve route, API, DOM ID, form-name, data-action, and business behavior contracts.
+- Make modal structure verifiable as a composed page contract.
+- Establish one reusable file/folder convention for future migrated pages.
 
 ## Non-Goals
-- This architecture change does not redesign business flows.
-- It does not move business-specific modals into `100_common` merely to reduce file count.
-- It does not require all modal internals to be static; repeatable/dynamic content may still be rendered by JavaScript inside explicit content containers.
-- It does not change Apps Script routing or server APIs.
-- It does not migrate every domain in PR #27.
+- No business-flow redesign.
+- No route/API/schema change.
+- No forced movement of business-specific modals into `100_common`.
+- Dynamic repeated content may still be rendered by JavaScript inside explicit containers.
+- PR #27 does not migrate Student Fee or Event production code.
+- **Settings is not migrated or scanned for modal restructuring in this rollout.**
 
 ## Core Decision
-Page-specific modal markup is owned by the page domain and stored in separate modal partial files under that page directory.
-
-The page's top-level `Page.html` is the composition root. It includes the visible View and all page-owned modal partials as sibling includes.
-
-Canonical page structure:
+A migrated page-specific modal is stored under that page directory:
 
 ```text
 <domain>/<page>/
@@ -48,6 +45,8 @@ Canonical page structure:
 │  └─ <Feature>_Modal.html
 └─ <page>_js.html
 ```
+
+The top-level `<Page>.html` is the composition root and includes the View and modal partials as siblings. Modal partials do not contain nested `include()` calls.
 
 Example:
 
@@ -61,76 +60,38 @@ src/400_accounting/410_ledger/
 └─ accounting_ledger_js.html
 ```
 
-## Composition Rule
-The top-level page shell owns the domain/page root wrapper and composes siblings:
+## Ownership Rules
 
-```html
-<main class="main accounting-main">
-  <div class="accounting-page">
-    <?!= include('400_accounting/410_ledger/Accounting_Ledger_View'); ?>
-    <?!= include('400_accounting/410_ledger/modals/Accounting_Ledger_Register_Modal'); ?>
-    <?!= include('400_accounting/410_ledger/modals/Accounting_Ledger_Detail_Modal'); ?>
-  </div>
-</main>
-```
-
-Modal partials must not include other files.
-
-The current Apps Script helper uses `HtmlService.createHtmlOutputFromFile(filename).getContent()`. Keeping composition at the top-level template avoids relying on nested partial evaluation and makes the final page structure explicit.
-
-## File Ownership Rules
 ### `<Page>.html`
 - Owns page composition.
-- Includes shared styles/shell assets.
-- Includes `<Page>_View.html`.
-- Includes every page-owned modal partial as a sibling.
-- Includes page JavaScript.
-- Owns the domain/page root wrapper when that wrapper must contain both View and modal siblings.
+- Includes shared shell/styles, View, page-owned modal partials, and page JavaScript.
+- Owns a root wrapper when View and modals must share that root.
 
 ### `<Page>_View.html`
-- Contains visible page body UI.
-- May contain loading, empty-state, toast, and page-level content regions.
-- Must not contain a page-specific modal overlay/dialog tree after that page is migrated.
-- Must not act as a hidden component registry.
+- Contains visible page-body UI and normal page states such as loading/error/toast when appropriate.
+- After migration, contains no page-specific modal overlay/dialog tree.
 
 ### `modals/*_Modal.html`
 - One modal responsibility per file.
 - Contains the stable modal shell and stable controls.
-- Preserves IDs, names, data-actions, accessibility attributes, and other hooks required by existing JavaScript/tests.
-- Uses canonical `ui-*` primitives for shared presentation.
-- May expose dedicated dynamic content containers for repeated or conditional content.
+- Preserves IDs, names, data-actions, accessibility hooks, and defaults used by existing JavaScript/tests.
+- Uses canonical `ui-*` primitives.
+- May expose dynamic content containers.
 - Must not contain `<script>` blocks or nested `include()` calls.
 
-### `<page>_js.html` and page JS modules
-- Open/close modals.
-- Bind data to stable modal fields.
-- Enable/disable controls and update states.
-- Render repeated/variable content inside designated content containers.
-- Must not own a complete page-specific modal shell as a long HTML string once that modal has migrated.
+### Page JavaScript
+- Opens/closes modals.
+- Binds data to stable controls.
+- Updates states and renders variable internal fragments.
+- After migration, does not construct a complete page-specific modal shell as a long HTML string.
 
-### `100_common/App_Styles.html`
-Owns shared modal/form primitives only, including:
-- `ui-modal-overlay`
-- `ui-modal`
-- `ui-modal-desc`
-- `ui-modal-actions`
-- `ui-field`
-- `ui-control`
-- `ui-btn`
-- semantic shared variants
+### Shared styles
+`100_common/App_Styles.html` owns shared primitives such as `ui-modal-overlay`, `ui-modal`, `ui-modal-actions`, `ui-field`, `ui-control`, and `ui-btn`.
 
-### Domain CSS
-Owns only domain/page-specific composition, for example:
-- modal width overrides
-- domain-specific grids
-- evidence/upload regions
-- detail row composition
-- business-specific visual groupings
+Domain CSS owns only domain/page composition such as modal width, grids, upload areas, and detail layouts.
 
-Domain CSS must not reimplement the shared modal primitive itself.
-
-## Naming Rules
-Use a page/domain-qualified filename so files remain understandable in Apps Script and GitHub searches:
+## Naming
+Use page/domain-qualified names:
 
 ```text
 modals/<DomainOrPage>_<Purpose>_Modal.html
@@ -147,150 +108,103 @@ Examples:
 - `Student_Fee_Refund_Transfer_Modal.html`
 - `Event_Applicant_Detail_Modal.html`
 
-A modal is not placed in `100_common` simply because multiple pages have a button labeled confirm/cancel. It is common only when its markup, semantics, and interaction contract are genuinely domain-independent and reused.
+A modal becomes common only when its markup, semantics, and interaction contract are genuinely shared and domain-independent.
 
-## Static and Dynamic Modal Content
-The modal shell should be static whenever possible.
+## Static vs Dynamic Content
+HTML owns the stable dialog structure; JavaScript owns data and behavior.
 
-JavaScript may still render variable content inside a dedicated container:
+JavaScript may render targeted dynamic fragments such as table rows, detail rows, uploaded-file items, or extra question/answer lists into dedicated containers.
 
-```html
-<div id="event-applicant-extra-answers"></div>
-```
-
-Good JS responsibility:
-
-```js
-setText('event-applicant-name', item.name);
-renderExtraAnswers(document.getElementById('event-applicant-extra-answers'), item.extraAnswers);
-openModal('event-applicant-detail-modal');
-```
-
-Targeted dynamic fragments such as table rows, definition-list rows, uploaded-file entries, or variable question/answer lists are allowed.
-
-After migration, JavaScript should not construct the whole page-specific shell like:
+After a modal is migrated, code like this is forbidden for the complete shell:
 
 ```js
 modalRoot.innerHTML = '<div class="ui-modal-overlay"><section class="ui-modal"> ... </section></div>';
 ```
 
-The architectural boundary is: **HTML owns the stable dialog structure; JS owns data and behavior.**
-
-## Accessibility Contract
-Each migrated modal should preserve or add the normal dialog contract:
+## Accessibility
+Migrated modals preserve or add:
 - `role="dialog"` when appropriate.
 - `aria-modal="true"`.
-- `aria-labelledby` pointing at a stable modal title ID.
-- close controls with an accessible label when the visible label is only an icon.
+- stable `aria-labelledby` references.
+- accessible labels for icon-only close controls.
 
-Focus trapping/restoration is outside this architecture migration unless already implemented, but the markup split must not make existing accessibility behavior worse.
+Focus trapping/restoration is outside this architecture migration unless already implemented.
 
 ## Reference Implementation: Accounting Ledger
-PR #27 remains the first implementation of this architecture.
+PR #27 is the first reference implementation.
 
-The register modal preserves:
-- IDs: `registerModal`, `entryForm`, `expenseBtn`, `incomeBtn`, `formDepartment`, `formEvent`, `eventBalance`, `entryEvidenceDropzone`, `entryEvidenceFile`, `entryEvidenceFileName`, `draft`, `create`.
-- form names: `transaction_date`, `department_name`, `amount`, `counterparty`, `event_name`, `description`, `note`.
+The register modal preserves IDs `registerModal`, `entryForm`, `expenseBtn`, `incomeBtn`, `formDepartment`, `formEvent`, `eventBalance`, `entryEvidenceDropzone`, `entryEvidenceFile`, `entryEvidenceFileName`, `draft`, `create`, plus form names `transaction_date`, `department_name`, `amount`, `counterparty`, `event_name`, `description`, `note`.
 
-The detail modal preserves:
-- IDs: `detailModal`, `detailTitle`, `detailStatus`, `detailAlert`, `detailRows`, `detailEvidenceList`, `editLedger`, `deleteLedger`, `approve`.
+The detail modal preserves IDs `detailModal`, `detailTitle`, `detailStatus`, `detailAlert`, `detailRows`, `detailEvidenceList`, `editLedger`, `deleteLedger`, `approve`.
 
-Both modal partials use canonical `ui-*` primitives and do not use the legacy standalone `field` class.
-
-The register form uses `feature-view` as a vertical composition container. Transaction date/department and amount/counterparty remain in the two-column `.grid`; event, description, note, and evidence fields remain full-width outside that grid. No fixed height is applied to field wrappers.
+Both partials use canonical `ui-*` primitives and avoid the legacy standalone `field` class.
 
 ## Current Migration Inventory
-Known static modal trees currently embedded in View files include at least:
-- Student Fee Payers: payer create/edit modal.
-- Student Fee Payments: payment detail modal, payment confirm modal.
-- Student Fee Refunds: refund detail modal, refund approval modal, refund transfer modal.
+Known Student Fee static modal trees:
+- Payers: payer create/edit modal.
+- Payments: detail modal, confirmation modal.
+- Refunds: detail modal, approval modal, transfer modal.
 
-Known dynamically generated modal shells include at least:
-- Event Detail applicant detail modal, currently assembled in JavaScript and written to `modalRoot.innerHTML`.
+Known Event dynamic modal shell:
+- Event Detail applicant detail modal currently assembled in JavaScript.
 
-The implementation plan for each domain must perform a fresh inventory before editing; this list is a known starting point, not an excuse to skip repository scanning.
+Each implementation PR still performs a fresh inventory before editing.
 
 ## Migration Sequence
-Migration is intentionally split into independently reviewable PRs.
 
-### PR #27 — Accounting Ledger reference implementation
-- Fix the reported legacy `.field` collision.
+### PR #27 — Accounting Ledger reference
+- Fix legacy `.field` collision.
 - Split register/detail modals into `410_ledger/modals/`.
 - Make `Accounting_Ledger.html` the composition root.
-- Update Accounting/composed UI verifiers.
-- Require browser QA before merge because this PR addresses a visual regression.
+- Update composed UI verifiers.
 
 ### Student Fee modal migration PR
-- Migrate Payers modal.
-- Migrate Payment detail and confirmation modals.
-- Migrate Refund detail, approval, and transfer modals.
-- Preserve all existing Student Fee IDs, form names, data-actions, mutation sequencing, and busy/error behavior.
-- Update Student Fee frontend tests/verifiers to validate the composed page rather than assuming all hooks live in `*_View.html`.
+- Migrate the six known static modals.
+- Preserve existing IDs, form names, data-actions, mutation sequencing, busy guards, and error behavior.
+- Update Student Fee verifiers/tests to inspect composed pages.
 
 ### Event modal migration PR
-- Inventory all Event modal shells, including dynamically generated ones.
-- Move stable modal shells into page-owned `modals/` partials.
-- Replace whole-modal `innerHTML` construction with data binding and targeted dynamic fragment rendering.
-- Preserve applicant approval/rejection and other existing Event behavior contracts.
+- Inventory Event modal shells.
+- Move stable shells to page-owned partials.
+- Replace whole-modal `innerHTML` construction with data binding and targeted fragment rendering.
+- Preserve Event behavior contracts.
 
-### Final architecture enforcement PR
-After migrated domains are complete:
-- Scan Settings, MyPage, Main, Login, and any remaining frontend pages.
-- Migrate any remaining page-specific modal shells.
-- Add a project-wide verifier preventing migrated `*_View.html` files from owning modal shells.
-- Add a verifier preventing migrated JS from constructing full page-specific `ui-modal-overlay`/`ui-modal` shells as strings.
-- Keep an explicit allow-list only for genuinely shared/common modal infrastructure if one exists.
+### Final enforcement PR
+After Accounting, Student Fee, and Event migration:
+- Scan MyPage, Main, Login, and other non-Settings frontend pages for remaining page-specific modal-shell ownership.
+- Migrate any remaining approved targets.
+- Add project-wide verifier rules for migrated pages and migrated JS.
+- **Do not touch or enforce this modal-partial rule against Settings. Settings remains an explicit exception.**
 
 ## Verification Strategy
-Tests must validate the **composed page**, not a single View file.
-
-A verifier may compose sources conceptually as:
+Tests validate composed pages rather than assuming every hook lives in the View:
 
 ```text
 Page shell + View partial + modal partials
 ```
 
-It should then verify the stable DOM hooks required by the page JavaScript.
-
-### Page-level architecture checks
-For a migrated page:
-- `*_View.html` contains no page-specific modal shell.
-- `<Page>.html` includes the required modal partials.
-- required `modals/*_Modal.html` files exist.
-- modal partials contain expected stable IDs/form names/data-actions.
+For each migrated page, verify:
+- View does not own modal shell markup.
+- Page includes required modal partials.
+- modal partials exist and contain required hooks.
 - modal partials use shared `ui-*` primitives.
-- domain CSS does not own shared modal primitives.
+- no nested include/script exists in modal partials.
+- full modal-shell strings are not constructed in migrated page JS.
+- targeted dynamic internal rendering remains allowed.
 
-### JavaScript architecture checks
-For a migrated modal:
-- full modal shell strings are not assembled in page JS.
-- targeted rendering of variable internal fragments remains allowed.
-- existing business behavior tests continue to pass.
-
-### Regression requirements
-Every migration PR must keep:
-- route contracts unchanged unless separately approved.
-- server/API contracts unchanged unless separately approved.
-- existing mutation behavior tests green.
-- full Node regression suite green.
-- architecture/naming verifiers green.
-- fresh GitHub Actions green on the current base/head combination.
+Every migration PR must keep existing behavior tests, full Node regression, architecture/naming verifiers, and fresh GitHub Actions green.
 
 ## Rollout Safety
-Do not migrate all domains in a single PR.
+Do not migrate all domains in one PR. Accounting, Student Fee, and Event are separate review/merge units because their modal contracts and rendering styles differ.
 
-Reasons:
-- modal DOM IDs are tightly coupled to page JavaScript.
-- some Event modals are generated dynamically and require a different migration technique from static Student Fee modals.
-- smaller PRs make visual regressions and contract mistakes easier to isolate.
-
-Each migration PR should preserve DOM semantics first; visual redesign belongs to the ongoing UI-system migration and should not be bundled unless required to fix a concrete regression.
+Preserve DOM semantics first. Visual redesign should remain separate unless needed to fix a concrete regression.
 
 ## Success Criteria
-This architecture migration is complete when:
-- every page-specific modal has an explicit page owner.
-- migrated `*_View.html` files contain visible page content only, not hidden modal trees.
-- migrated page JS no longer builds complete page-specific modal shells as strings.
-- all stable JS hooks remain preserved through partial composition.
-- shared modal presentation comes from the common UI system.
-- project-wide verifiers prevent regression back to mixed ownership patterns.
+The rollout is complete when:
+- Accounting, Student Fee, Event, and any separately approved non-Settings targets follow page-owned modal composition.
+- migrated Views contain visible page content rather than hidden modal trees.
+- migrated page JS no longer constructs complete page-specific modal shells as strings.
+- stable JS hooks are preserved through composition.
+- shared presentation remains in the common UI system.
+- verifiers prevent regression for migrated targets.
+- **Settings remains unchanged unless separately approved later.**
