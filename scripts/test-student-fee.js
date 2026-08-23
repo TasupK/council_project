@@ -106,6 +106,10 @@ function testPayerBehavior_() {
     context.createFeePayerData_({ studentId: 'existing', name: 'A', affiliation: 'B', startSemesterId: '20261' }, { email: 'staff@example.com' });
   }, /이미 등록/);
 
+  assert.throws(function () {
+    context.upsertFeePayerFromApplication_({ studentId: '60208888', name: '검증', affiliation: '경영정보학과', startSemesterId: '20999' }, 'staff@example.com');
+  }, /학기기준/);
+
   var created = context.createFeePayerData_({ studentId: '60209999', name: '신규', affiliation: '경영정보학과', startSemesterId: '20261' }, { email: 'staff@example.com' });
   assert.deepStrictEqual(plain_(created), inserted);
   assert.strictEqual(created.managerEmail, 'staff@example.com');
@@ -119,9 +123,21 @@ function testPayerBehavior_() {
 
 function testPaymentBehavior_() {
   var context = createContext_();
-  var application = { id: 'app-1', paymentDate: '2026-08-10', semesterCount: 1, status: '접수' };
+  var application = {
+    id: 'app-1', paymentDate: '2026-08-10', semesterCount: 1, status: '접수',
+    studentId: '60201234', name: '김철수', affiliation: '경영정보학과', startSemesterId: '20261'
+  };
   var inserted;
+  var payerRow;
+  var payerUpdated;
+  var existingPayer = null;
   var audits = [];
+
+  loadRequest_(context);
+  context.assertValidStudentFeeSemester_ = function (id) {
+    if (id !== '20261') throw new Error('학기기준');
+    return { id: id };
+  };
   context.findFeeApplicationRowById_ = function () { return application; };
   context.findFeePaymentRowByApplicationId_ = function () { return inserted || null; };
   context.updateFeeApplicationRowById_ = function (id, changes) { application = Object.assign({}, application, changes); return true; };
@@ -129,6 +145,13 @@ function testPaymentBehavior_() {
   context.resolveStudentFeeRate_ = function () { return { amountPerSemester: 20000 }; };
   context.getCurrentIsoDateTime_ = function () { return '2026-08-17T21:00:00+09:00'; };
   context.writeStudentFeeAudit_ = function () { audits.push(Array.prototype.slice.call(arguments)); };
+
+  // 승인에 따른 feePayers upsert를 검증하기 위한 mock
+  context.findFeePayerRowById_ = function () { return existingPayer; };
+  context.insertFeePayerRow_ = function (row) { payerRow = plain_(row); existingPayer = payerRow; return row; };
+  context.updateFeePayerRowById_ = function (id, changes) { payerUpdated = { id: id, changes: plain_(changes) }; existingPayer = Object.assign({}, existingPayer, changes); return true; };
+
+  load_(context, 'src/000_server/080_student_fee/081_payers/fee_payers_service.gs');
   load_(context, 'src/000_server/080_student_fee/082_payments/fee_payments_service.gs');
 
   var approved = context.processFeeApplicationsData_({ ids: ['app-1'], action: 'APPROVE' }, { email: 'staff@example.com' });
@@ -136,7 +159,22 @@ function testPaymentBehavior_() {
   assert.strictEqual(inserted.amount, 20000);
   assert.strictEqual(inserted.managerEmail, 'staff@example.com');
   assert.strictEqual(application.managerEmail, 'staff@example.com');
-  assert.strictEqual(audits.length, 2);
+  assert.strictEqual(approved[0].payer.studentId, '60201234');
+  assert.strictEqual(payerRow.name, '김철수');
+  assert.strictEqual(payerRow.managerEmail, 'staff@example.com');
+  assert.strictEqual(audits.length, 3);
+
+  // 동일 학번으로 재승인 시 회비납부자 정보가 갱신되는지 검증
+  application = {
+    id: 'app-2', paymentDate: '2026-08-11', semesterCount: 1, status: '접수',
+    studentId: '60201234', name: '김철수', affiliation: '경영대학', startSemesterId: '20261'
+  };
+  inserted = null;
+  var approved2 = context.processFeeApplicationsData_({ ids: ['app-2'], action: 'APPROVE' }, { email: 'staff2@example.com' });
+  assert.strictEqual(approved2[0].success, true);
+  assert.strictEqual(payerUpdated.id, '60201234');
+  assert.strictEqual(payerUpdated.changes.affiliation, '경영대학');
+  assert.strictEqual(payerUpdated.changes.managerEmail, 'staff2@example.com');
 
   var confirmation = createContext_();
   var payment = { id: 'pay-1', moneyStatus: '대기', amount: 20000 };
