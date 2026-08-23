@@ -35,6 +35,7 @@ async function exportSettlement() {
   try { const data = await accountingClient.exportSettlementReport({ reportId: id }); document.getElementById('settlementExportPreview').textContent = JSON.stringify(data, null, 2); toast('Export용 데이터를 불러왔습니다.'); }
   catch (error) { toast(error && error.message ? error.message : 'Export 데이터를 불러오지 못했습니다.'); }
 }
+setupAccountingPageLinks();
 document.getElementById('refreshSettlement').addEventListener('click', function () { refreshSettlementSummary().catch(function (error) { toast(error && error.message ? error.message : '결산 집계를 불러오지 못했습니다.'); }); });
 document.getElementById('generateSettlement').addEventListener('click', generateSettlement);
 document.getElementById('settlementHistory').addEventListener('change', async function (event) { if (!event.target.value) return; try { const report = await accountingClient.getSettlementReport({ id: event.target.value }); if (report) renderSettlement(report); } catch (error) { toast(error && error.message ? error.message : '결산 이력을 불러오지 못했습니다.'); } });

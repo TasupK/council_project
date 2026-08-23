@@ -15,8 +15,6 @@ function resolveApiAccess_(context, access) {
   if (typeof access.resolve !== 'function') {
     throwApiAccessConfigError_('API access resolver가 필요합니다: ' + domain + '/' + action);
   }
-  // 관리자는 개별 권한 카탈로그가 아직 구성되지 않은 도메인도 관리할 수 있어야 한다.
-  if (context && context.isAdmin) return true;
 
   var resolved = access.resolve(access);
   if (!resolved || !resolved.screenId) {

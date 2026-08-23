@@ -3,131 +3,103 @@
   var permissionTree = [];
   var permissionsByRole = {};
   var permissionColumns = [];
-  var permissionDraft = null;
-  var permissionBaseline = null;
-  var permissionGroupExpanded = {};
 
-  function selectedPermissionRole_() {
-    var roleId = getSettingsElement('permissionRole').value;
-    return permissionRoles.filter(function (role) { return role.id === roleId; })[0] || permissionRoles[0] || {};
-  }
-  function clonePermissionGrants_(source) {
-    var out = {};
-    Object.keys(source || {}).forEach(function (screenId) {
-      out[screenId] = Object.assign({ menu: false, view: false, edit: false, approve: false, export: false }, source[screenId] || {});
-    });
-    return out;
-  }
-  function ensurePermissionDraft_() {
-    var role = selectedPermissionRole_();
-    if (!role.id) return;
-    if (permissionDraft && permissionDraft.roleId === role.id) return;
-    var grants = clonePermissionGrants_(permissionsByRole[role.id] || {});
-    permissionDraft = { roleId: role.id, grants: grants };
-    permissionBaseline = clonePermissionGrants_(grants);
-  }
-  function permissionChangeCount_() {
-    if (!permissionDraft || !permissionBaseline) return 0;
-    var ids = {};
-    Object.keys(permissionDraft.grants).forEach(function (id) { ids[id] = true; });
-    Object.keys(permissionBaseline).forEach(function (id) { ids[id] = true; });
-    var count = 0;
-    Object.keys(ids).forEach(function (id) {
-      permissionColumns.forEach(function (column) {
-        if (!!((permissionDraft.grants[id] || {})[column.key]) !== !!((permissionBaseline[id] || {})[column.key])) count += 1;
-      });
-    });
-    return count;
-  }
-  function updatePermissionDirtyBar_() {
-    var count = permissionChangeCount_();
-    getSettingsElement('permissionDirtyLabel').textContent = count + '개 변경됨';
-    getSettingsElement('btnSavePermissions').textContent = '변경사항 저장 (' + count + ')';
-    getSettingsElement('permissionDirtyBar').classList.toggle('show', count > 0);
-    getSettingsElement('btnSavePermissions').disabled = !SETTINGS_CAN_ADMIN || count === 0;
-  }
-  function permissionGroupOpen_(id) { return permissionGroupExpanded[id] !== false; }
-  function permissionCellHtml_(node, column) {
-    var values = permissionDraft && permissionDraft.grants[node.id] || {};
-    var available = !node.availableKeys || node.availableKeys[column.key] === true;
-    var changed = !!values[column.key] !== !!((permissionBaseline && permissionBaseline[node.id] || {})[column.key]);
-    return '<td class="perm-cell' + (changed && available ? ' is-changed' : '') + '"><div class="perm-cell-inner"><span class="perm-change-badge' + (changed && available ? '' : ' is-empty') + '">' + (changed && available ? '변경' : '') + '</span><input class="check" type="checkbox" data-perm-screen="' + escapeSettingsHtml(node.id) + '" data-perm-key="' + escapeSettingsHtml(column.key) + '"' + (values[column.key] ? ' checked' : '') + ((!SETTINGS_CAN_ADMIN || !available) ? ' disabled' : '') + '></div></td>';
+  function getSelectedPermissionRole() {
+    var roleId = getSettingsElement("permissionRole").value;
+    for (var index = 0; index < permissionRoles.length; index += 1) {
+      if (permissionRoles[index].id === roleId) return permissionRoles[index];
+    }
+    return permissionRoles[0] || {};
   }
 
   function renderSettingsPermissions() {
-    ensurePermissionDraft_();
-    var role = selectedPermissionRole_();
+    var role = getSelectedPermissionRole();
+    var rolePermissions = permissionsByRole[role.id] || {};
     var rows = [];
     permissionTree.forEach(function (group) {
-      var expanded = permissionGroupOpen_(group.id);
-      rows.push('<tr class="perm-group" data-perm-group="' + escapeSettingsHtml(group.id) + '"><td><div class="perm-group-label"><button type="button" class="perm-expand">' + (expanded ? '▼' : '▶') + '</button><span class="perm-group-name">' + escapeSettingsHtml(group.name) + '</span><span class="perm-count">' + (group.children || []).length + '개 화면</span></div></td>' + permissionColumns.map(function () { return '<td class="perm-group-empty"></td>'; }).join('') + '</tr>');
-      if (!expanded) return;
+      rows.push(
+        '<tr class="perm-group"><td>' +
+          escapeSettingsHtml(group.name) +
+          '<span class="meta-sub">' +
+          (group.children || []).length +
+          "개 화면</span></td>" +
+          renderPermissionCells(rolePermissions[group.id], group.applicable) +
+          "</tr>",
+      );
       (group.children || []).forEach(function (child) {
-        rows.push('<tr class="perm-child"><td><span class="perm-elbow">└</span>' + escapeSettingsHtml(child.name) + '</td>' + permissionColumns.map(function (column) { return permissionCellHtml_(child, column); }).join('') + '</tr>');
+        rows.push(
+          '<tr class="perm-child"><td>└ ' +
+            escapeSettingsHtml(child.name) +
+            "</td>" +
+            renderPermissionCells(rolePermissions[child.id], child.applicable) +
+            "</tr>",
+        );
       });
     });
-    getSettingsElement('permissionTbody').innerHTML = rows.join('') || '<tr><td colspan="6">권한 대상이 없습니다.</td></tr>';
-    getSettingsElement('permissionRoleType').textContent = role.typeLabel || role.type || '-';
-    getSettingsElement('permissionRoleStatus').textContent = role.status === 'active' ? '● 활성' : '○ 비활성';
-    getSettingsElement('permissionAssigned').textContent = (role.assignedCount || 0) + '명';
-    getSettingsElement('permissionSaved').textContent = role.updatedAt || '-';
-    getSettingsElement('permissionRoleName').textContent = role.name || '';
-    getSettingsElement('permissionTotal').textContent = '총 ' + permissionTree.reduce(function (sum, group) { return sum + (group.children || []).length; }, 0) + '개 권한 대상';
-    getSettingsElement('permissionMutationStatus').textContent = SETTINGS_CAN_ADMIN ? '' : '권한 변경은 시스템 관리자만 가능합니다.';
-    updatePermissionDirtyBar_();
+    getSettingsElement("permissionTbody").innerHTML =
+      rows.join("") || '<tr><td colspan="6">권한 대상이 없습니다.</td></tr>';
+    getSettingsElement("permissionRoleType").textContent =
+      role.typeLabel || role.type || "-";
+    getSettingsElement("permissionRoleStatus").textContent =
+      role.status === "active" ? "활성" : "비활성";
+    getSettingsElement("permissionAssigned").textContent =
+      (role.assignedCount || 0) + "명";
+    getSettingsElement("permissionSaved").textContent = role.updatedAt || "-";
+    getSettingsElement("permissionRoleName").textContent = role.name || "";
+    getSettingsElement("permissionTotal").textContent =
+      "총 " + countPermissionTargets() + "개 권한 대상";
   }
 
-  function openPermissionSaveModal_() {
-    var count = permissionChangeCount_(); if (!count) return;
-    var role = selectedPermissionRole_();
-    getSettingsElement('permissionSaveModalSub').textContent = '"' + (role.name || '') + '" 역할의 권한 ' + count + '개 변경사항을 저장하시겠습니까?';
-    getSettingsElement('permissionSaveRoleName').textContent = role.name || role.id || '-';
-    getSettingsElement('permissionSaveMeta').textContent = count + '개 셀이 변경되었습니다. UserDB 역할권한 시트에 반영합니다.';
-    getSettingsElement('permissionSaveModal').classList.add('show');
+  function renderPermissionCells(values, applicable) {
+    return permissionColumns
+      .map(function (column) {
+        if (applicable && applicable[column.key] === false)
+          return '<td class="na">해당 없음</td>';
+        var checked = values && values[column.key] ? " checked" : "";
+        return (
+          '<td><input class="check" type="checkbox" disabled' +
+          checked +
+          "></td>"
+        );
+      })
+      .join("");
   }
-  function closePermissionSaveModal_() { getSettingsElement('permissionSaveModal').classList.remove('show'); }
-  async function commitPermissionChanges_() {
-    if (!permissionDraft) return;
-    closePermissionSaveModal_(); getSettingsElement('permissionMutationStatus').textContent = '저장 중…';
-    try {
-      var result = await settingsClient.saveRolePermissions({ roleId: permissionDraft.roleId, grants: permissionDraft.grants });
-      permissionsByRole = result.permissionsByRole || permissionsByRole;
-      if (result.roles) permissionRoles = result.roles;
-      permissionDraft = null; permissionBaseline = null; renderSettingsPermissions();
-      getSettingsElement('permissionMutationStatus').textContent = '저장되었습니다.';
-    } catch (error) { getSettingsElement('permissionMutationStatus').textContent = error && error.message ? error.message : '저장 중 오류가 발생했습니다.'; }
+
+  function countPermissionTargets() {
+    var count = 0;
+    permissionTree.forEach(function (group) {
+      count += 1 + (group.children || []).length;
+    });
+    return count;
   }
-  function discardPermissionChanges_() {
-    if (!permissionDraft) return;
-    permissionDraft.grants = clonePermissionGrants_(permissionBaseline); renderSettingsPermissions();
-    getSettingsElement('permissionMutationStatus').textContent = '변경사항을 취소했습니다.';
-  }
+
   async function loadSettingsPermissions() {
     try {
       var data = await settingsClient.getPermissions();
       applySettingsShell(data);
-      permissionRoles = data.roles || []; permissionTree = data.permissionTree || []; permissionsByRole = data.permissionsByRole || {}; permissionColumns = data.columns || [];
-      getSettingsElement('permissionRole').innerHTML = permissionRoles.map(function (role) { return '<option value="' + escapeSettingsHtml(role.id) + '">' + escapeSettingsHtml(role.name) + '</option>'; }).join('');
-      if (typeof buildAppPageUrl === 'function') { getSettingsElement('permissionRolesLink').href = buildAppPageUrl('settings_roles'); getSettingsElement('permissionAssigned').href = buildAppPageUrl('settings_users'); }
-      renderSettingsPermissions(); showSettingsContent();
-    } catch (error) { showSettingsError(error); }
+      permissionRoles = data.roles || [];
+      permissionTree = data.permissionTree || [];
+      permissionsByRole = data.permissionsByRole || {};
+      permissionColumns = data.columns || [];
+      getSettingsElement("permissionRole").innerHTML = permissionRoles
+        .map(function (role) {
+          return (
+            '<option value="' +
+            escapeSettingsHtml(role.id) +
+            '">' +
+            escapeSettingsHtml(role.name) +
+            "</option>"
+          );
+        })
+        .join("");
+      renderSettingsPermissions();
+      showSettingsContent();
+    } catch (error) {
+      showSettingsError(error);
+    }
   }
 
-  getSettingsElement('permissionRole').onchange = function () { permissionDraft = null; permissionBaseline = null; renderSettingsPermissions(); };
-  getSettingsElement('btnSavePermissions').onclick = openPermissionSaveModal_;
-  getSettingsElement('btnDiscardPermissions').onclick = discardPermissionChanges_;
-  getSettingsElement('permissionSaveModalClose').onclick = closePermissionSaveModal_;
-  getSettingsElement('permissionSaveModalCancel').onclick = closePermissionSaveModal_;
-  getSettingsElement('permissionSaveModalConfirm').onclick = commitPermissionChanges_;
-  getSettingsElement('permissionTbody').addEventListener('click', function (event) {
-    var row = event.target.closest('tr.perm-group[data-perm-group]'); if (!row) return;
-    var id = row.getAttribute('data-perm-group'); permissionGroupExpanded[id] = !permissionGroupOpen_(id); renderSettingsPermissions();
-  });
-  getSettingsElement('permissionTbody').addEventListener('change', function (event) {
-    var target = event.target; if (!target || !target.matches('input.check[data-perm-screen]')) return;
-    ensurePermissionDraft_(); var screenId = target.getAttribute('data-perm-screen'), key = target.getAttribute('data-perm-key');
-    if (!permissionDraft.grants[screenId]) permissionDraft.grants[screenId] = { menu: false, view: false, edit: false, approve: false, export: false };
-    permissionDraft.grants[screenId][key] = !!target.checked; renderSettingsPermissions();
-  });
+  getSettingsElement("permissionRole").onchange = renderSettingsPermissions;
+  // TODO: savePermissionChanges 서버 함수 구현 후 권한 저장 기능 연결
   loadSettingsPermissions();
 </script>

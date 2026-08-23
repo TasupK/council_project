@@ -1,14 +1,16 @@
 // 행사 출석 조회와 화면용 조합을 담당한다.
 
-function buildEventAttendanceSectionRows_(eventId) {
-  var targetEventId = String(eventId || '');
+function getAttendanceListData_(request) {
+  var eventId = requireEventRequestId_(request);
+  var filter = request.filter && typeof request.filter === 'object' ? request.filter : {};
+  var keyword = normalizeEventText_(filter.keyword).toLowerCase();
   var attendanceById = {};
   listEventAttendanceClientRows_().forEach(function (row) {
     attendanceById[String(row.applicationId)] = row;
   });
   var paymentTotals = buildEventPaymentTotalsByApplicationId_();
-  return listEventApplicationClientRows_().filter(function (row) {
-    return String(row.eventId) === targetEventId;
+  var rows = listEventApplicationClientRows_().filter(function (row) {
+    return String(row.eventId) === String(eventId);
   }).map(function (applicant) {
     var attendance = attendanceById[String(applicant.id)] || {};
     return {
@@ -23,14 +25,7 @@ function buildEventAttendanceSectionRows_(eventId) {
       status: attendance.status || '',
       managerEmail: attendance.managerEmail || ''
     };
-  });
-}
-
-function getAttendanceListData_(request) {
-  var eventId = requireEventRequestId_(request);
-  var filter = request.filter && typeof request.filter === 'object' ? request.filter : {};
-  var keyword = normalizeEventText_(filter.keyword).toLowerCase();
-  var rows = buildEventAttendanceSectionRows_(eventId).filter(function (row) {
+  }).filter(function (row) {
     if (keyword && [row.name, row.studentId, row.phone].join(' ').toLowerCase().indexOf(keyword) < 0) return false;
     // TODO(API 상세 계약): fee_status는 paidAmount/appliedFee 비교로 파생한다.
     var isPaid = Number(row.paidAmount || 0) >= Number(row.appliedFee || 0);

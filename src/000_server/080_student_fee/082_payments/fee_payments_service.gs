@@ -73,7 +73,6 @@ function processFeeApplicationsData_(request, context) {
       );
 
       var payment = null;
-      var payer = null;
       if (action === 'APPROVE') {
         payment = {
           id: Utilities.getUuid(),
@@ -87,12 +86,9 @@ function processFeeApplicationsData_(request, context) {
         };
         insertFeePaymentRow_(payment);
         writeStudentFeeAudit_(actorEmail, 'CREATE', 'feePayments', payment.id, null, payment, '납부신청 승인에 따른 자동 생성');
-
-        // 승인된 납부신청 정보를 기준으로 회비납부자(feePayers)를 자동 등록/갱신한다.
-        payer = upsertFeePayerFromApplication_(afterApplication, actorEmail);
       }
 
-      return { id: plan.applicationId, success: true, application: afterApplication, payment: payment, payer: payer };
+      return { id: plan.applicationId, success: true, application: afterApplication, payment: payment };
     });
   });
 }

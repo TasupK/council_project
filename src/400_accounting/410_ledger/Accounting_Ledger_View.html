@@ -1,56 +1,15 @@
-<div class="workspace">
-  <section class="ui-page-head">
-    <div>
-      <small>장부관리 / 원장 관리</small>
-      <h1>수입·지출 내역</h1>
-      <p class="ui-page-desc">수입·지출을 검색·필터하고 등록·상세로 이동합니다.</p>
-    </div>
-    <div class="accounting-page-actions ui-page-actions">
-      <a class="ui-btn outline" id="ledgerDbLink" target="_blank" rel="noopener">DB 시트 확인</a>
-      <button class="ui-btn" id="openRegister" type="button"><span>＋</span><span>등록</span></button>
-    </div>
+<div class="accounting-page">
+  <section class="page-head ui-page-head">
+    <div><p class="breadcrumb">장부관리 / 수입·지출 관리</p><h1>수입·지출 내역</h1><p class="desc">수입·지출을 검색·필터하고 등록·상세로 이동합니다.</p></div>
+    <div class="accounting-page-actions ui-page-actions"><a class="secondary ui-btn outline" id="ledgerDbLink" target="_blank" rel="noopener">DB 시트 확인</a><button class="primary ui-btn primary" id="openRegister" type="button"><span>＋</span><span>등록</span></button></div>
   </section>
-
-  <section class="accounting-summary-grid ui-stat-grid">
-    <article class="ui-stat-card success"><span>이번 달 총 수입</span><strong id="sumIncome">₩0</strong></article>
-    <article class="ui-stat-card danger"><span>이번 달 총 지출</span><strong id="sumExpense">₩0</strong></article>
-    <article class="ui-stat-card warning"><span>승인 대기</span><strong id="sumPending">0건</strong></article>
-    <article class="ui-stat-card info"><span>확인 요청</span><strong id="sumReview">0건</strong></article>
-  </section>
-
-  <section class="accounting-ledger-filters ui-toolbar">
-    <div class="ui-field grow"><input class="ui-control" id="keyword" type="search" placeholder="거래처·적요 검색"></div>
-    <div class="ui-field"><select class="ui-control"><option>날짜</option></select></div>
-    <div class="ui-field"><select class="ui-control" id="type"><option value="전체">구분</option><option>수입</option><option>지출</option></select></div>
-    <div class="ui-field"><select class="ui-control" id="department"><option value="전체">부서</option></select></div>
-    <div class="ui-field"><select class="ui-control" id="event"><option value="전체">행사</option></select></div>
-    <div class="ui-field"><select class="ui-control" id="status"><option value="전체">상태</option><option>미확인</option><option>정상</option><option>확인필요</option><option>임시저장</option></select></div>
-  </section>
-
-  <section class="accounting-ledger-table ui-table-wrap">
-    <table class="ui-table">
-      <colgroup>
-        <col class="ledger-col-date">
-        <col class="ledger-col-type">
-        <col class="ledger-col-department">
-        <col class="ledger-col-counterparty">
-        <col class="ledger-col-income">
-        <col class="ledger-col-expense">
-        <col class="ledger-col-event">
-        <col class="ledger-col-evidence">
-        <col class="ledger-col-status">
-        <col class="ledger-col-manager">
-        <col class="ledger-col-action">
-      </colgroup>
-      <thead><tr><th>날짜</th><th>구분</th><th>부서</th><th>거래처</th><th>수입</th><th>지출</th><th>행사</th><th>증빙</th><th>상태</th><th>담당자</th><th></th></tr></thead>
-      <tbody id="rows"></tbody>
-    </table>
-    <div class="accounting-ledger-pagination ui-pagination" id="ledgerPagination">
-      <button class="ui-page-btn" id="prevLedgerPage" type="button" aria-label="이전 페이지">‹</button>
-      <span class="page-count" id="ledgerPageInfo">1 / 1</span>
-      <button class="ui-page-btn" id="nextLedgerPage" type="button" aria-label="다음 페이지">›</button>
-    </div>
-  </section>
+  <nav class="accounting-tabs ui-tabs" aria-label="회계관리 화면"><a class="active ui-tab" data-accounting-page="accounting_ledger">수입·지출 관리</a><a class="ui-tab" data-accounting-page="accounting_reconciliation">계좌·장부 대조</a><a class="ui-tab" data-accounting-page="accounting_settlement">결산 보고서</a></nav>
+  <div class="workspace">
+    <section class="cards"><article class="card wait count ui-stat-card success"><p>이번 달 총 수입</p><strong id="sumIncome">₩0</strong></article><article class="card count ui-stat-card danger"><p>이번 달 총 지출</p><strong id="sumExpense">₩0</strong></article><article class="card wait count ui-stat-card warning"><p>승인 대기</p><strong id="sumPending">0건</strong></article><article class="card review count ui-stat-card info"><p>확인 요청</p><strong id="sumReview">0건</strong></article></section>
+    <section class="filters ui-toolbar"><div class="ui-field grow"><input class="ui-control" id="keyword" type="search" placeholder="거래처·적요 검색"></div><div class="ui-field"><select class="ui-control"><option>날짜</option></select></div><div class="ui-field"><select class="ui-control" id="type"><option value="전체">구분</option><option>수입</option><option>지출</option></select></div><div class="ui-field"><select class="ui-control" id="department"><option value="전체">부서</option></select></div><div class="ui-field"><select class="ui-control" id="event"><option value="전체">행사</option></select></div><div class="ui-field"><select class="ui-control" id="status"><option value="전체">승인 상태</option><option>승인대기</option><option>승인</option><option>반려</option></select></div></section>
+    <section class="table-wrap ui-table-wrap"><table class="ui-table"><colgroup><col style="width:84px"><col style="width:60px"><col style="width:80px"><col style="width:120px"><col style="width:100px"><col style="width:100px"><col style="width:160px"><col style="width:80px"><col style="width:100px"><col style="width:80px"><col style="width:92px"></colgroup><thead><tr><th>날짜</th><th>구분</th><th>부서</th><th>거래처</th><th>수입</th><th>지출</th><th>행사</th><th>증빙</th><th>승인상태</th><th>담당자</th><th></th></tr></thead><tbody id="rows"></tbody></table><div class="pagination ui-pagination" id="ledgerPagination"><button class="page-icon ui-page-btn" id="prevLedgerPage" type="button" aria-label="이전 페이지">‹</button><span class="page-count" id="ledgerPageInfo">1 / 1</span><button class="page-icon ui-page-btn" id="nextLedgerPage" type="button" aria-label="다음 페이지">›</button></div></section>
+  </div>
+  <div class="backdrop ui-modal-overlay" id="registerModal"><section class="modal register ui-modal"><div class="modal-head"><h2>수입·지출 등록</h2><button class="close ui-btn ghost small" data-close="registerModal" type="button">×</button></div><div class="modal-body"><form id="entryForm"><div class="field full ui-field"><label>구분 *</label><div class="segments"><button class="segment expense-on" id="expenseBtn" type="button">지출</button><button class="segment" id="incomeBtn" type="button">수입</button></div></div><div class="grid"><div class="field ui-field"><label>거래일자 *</label><input name="transaction_date" placeholder="연도-월-일" required></div><div class="field ui-field"><label>부서명</label><select id="formDepartment" name="department_name" disabled><option value="">미사용</option></select></div><div class="field ui-field"><label>금액 *</label><input name="amount" type="number" min="0" placeholder="금액 입력" required></div><div class="field ui-field"><label>거래처/입금자명 *</label><input name="counterparty" placeholder="거래처/입금자명 입력" required></div><div class="field full ui-field"><label>행사 항목 연결</label><select id="formEvent" name="event_name"></select><div class="balance" id="eventBalance">선택한 행사 잔액: ₩0</div></div><div class="field full ui-field"><label>적요</label><input name="description" placeholder="예: MT 간식 구매"></div><div class="field full ui-field"><label>비고</label><textarea name="note" placeholder="추가 설명 (선택)"></textarea></div><div class="field full ui-field"><span class="upload-label">증빙자료</span><label class="upload clickable" id="entryEvidenceDropzone" for="entryEvidenceFile"><input id="entryEvidenceFile" type="file" accept=".png,.jpg,.jpeg,.pdf,.xlsx,.xls,.csv" multiple><div><strong>파일을 드래그하거나 클릭해서 업로드</strong><span id="entryEvidenceFileName">선택된 파일 없음</span></div></label></div></div></form></div><div class="actions ui-modal-actions"><button class="secondary ui-btn outline" id="draft" type="button">임시저장</button><button class="primary ui-btn primary" id="create" type="button">등록하기</button></div></section></div>
+  <div class="backdrop ui-modal-overlay" id="detailModal"><section class="modal detail ui-modal"><div class="modal-head"><h2 id="detailTitle">지출 상세</h2><div class="title-row"><span class="badge pending ui-badge warning" id="detailStatus">승인대기</span><button class="close ui-btn ghost small" data-close="detailModal" type="button">×</button></div></div><div class="danger-alert" id="detailAlert">계좌 거래내역과 차이가 확인되었습니다.</div><div class="detail-body"><div id="detailRows"></div><div class="detail-upload"><span class="upload-label">증빙자료</span><div class="evidence-list" id="detailEvidenceList"></div></div></div><div class="actions ui-modal-actions"><button class="secondary ui-btn outline" id="editLedger" type="button">수정</button><button class="secondary ui-btn danger" id="deleteLedger" type="button">삭제</button><button class="approve ui-btn success" id="approve" type="button">승인</button></div></section></div>
+  <div class="toast ui-toast" id="toast">처리되었습니다.</div>
 </div>
-
-<div class="accounting-toast ui-toast" id="toast">처리되었습니다.</div>

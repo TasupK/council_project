@@ -4,18 +4,16 @@
   <base target="_top">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>행사관리</title>
+  <title>행사 상세</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <!-- 공통 UI/API 기반을 먼저 불러온 뒤 행사 전용 스타일을 덮어씁니다. -->
   <?!= include('100_common/App_Styles'); ?>
   <?!= include('100_common/App_Shell_Styles'); ?>
   <?!= include('100_common/app_api_runner_js'); ?>
   <?!= include('100_common/app_client_js'); ?>
-  <?!= include('600_event/600_common/Event_Styles'); ?>
+  <?!= include('600_event/common/Event_Styles'); ?>
   <script>
-    // 서버 템플릿 값을 브라우저 스크립트가 사용하는 읽기 전용 초기값으로 전달합니다.
     var WEB_APP_URL = '<?= getWebAppUrl() ?>';
     var APP_USER_NAME = <?!= JSON.stringify(mainUserName || '') ?>;
     var APP_USER_TITLE = <?!= JSON.stringify(mainUserTitle || '') ?>;
@@ -30,15 +28,14 @@
     <div class="body">
       <?!= include('100_common/App_Sidebar'); ?>
       <main class="main event-main">
-        <!-- 행사 목록의 고정 DOM 구조는 View 파일이 담당합니다. -->
-        <?!= include('600_event/610_home/Event_Home_View'); ?>
+        <?!= include('600_event/620_detail/Event_Detail_View'); ?>
       </main>
     </div>
   </div>
-  <!-- 의존 순서: 공통 Shell → 600_common → 610_home 목록 로직 -->
   <?!= include('100_common/app_shell_js'); ?>
-  <?!= include('600_event/600_common/event_client_js'); ?>
-  <?!= include('600_event/600_common/event_common_js'); ?>
-  <?!= include('600_event/610_home/event_home_js'); ?>
+  <?!= include('600_event/common/event_client_js'); ?>
+  <?!= include('600_event/common/event_common_js'); ?>
+  <?!= include('600_event/620_detail/event_detail_js'); ?>
+  <?!= include('600_event/620_detail/event_form_sync_js'); ?>
 </body>
 </html>

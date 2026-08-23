@@ -4,18 +4,16 @@
   <base target="_top">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>행사 상세</title>
+  <title>행사관리</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <!-- 공통 UI/API 기반을 먼저 불러온 뒤 행사 전용 스타일을 덮어씁니다. -->
   <?!= include('100_common/App_Styles'); ?>
   <?!= include('100_common/App_Shell_Styles'); ?>
   <?!= include('100_common/app_api_runner_js'); ?>
   <?!= include('100_common/app_client_js'); ?>
-  <?!= include('600_event/600_common/Event_Styles'); ?>
+  <?!= include('600_event/common/Event_Styles'); ?>
   <script>
-    // 상세 로직은 APP_RESOURCE_ID를 사용해 overview 응답과 섹션 캐시를 초기화합니다.
     var WEB_APP_URL = '<?= getWebAppUrl() ?>';
     var APP_USER_NAME = <?!= JSON.stringify(mainUserName || '') ?>;
     var APP_USER_TITLE = <?!= JSON.stringify(mainUserTitle || '') ?>;
@@ -30,22 +28,13 @@
     <div class="body">
       <?!= include('100_common/App_Sidebar'); ?>
       <main class="main event-main">
-        <!-- 상세 헤더·KPI·탭의 고정 DOM 구조는 View 파일이 담당합니다. -->
-        <?!= include('600_event/630_detail/Event_Detail_View'); ?>
-        <!-- 페이지 전용 신청자 상세 모달은 별도 partial이 안정적인 dialog shell을 소유합니다. -->
-        <?!= include('600_event/630_detail/modals/Event_Applicant_Detail_Modal'); ?>
+        <?!= include('600_event/600_home/Event_Home_View'); ?>
       </main>
     </div>
   </div>
-  <!-- 630_detail 모듈은 core → 기능별 렌더 → Forms 확장 → bootstrap 순서로 로드합니다. -->
   <?!= include('100_common/app_shell_js'); ?>
-  <?!= include('600_event/600_common/event_client_js'); ?>
-  <?!= include('600_event/600_common/event_common_js'); ?>
-  <?!= include('600_event/630_detail/event_detail_core_js'); ?>
-  <?!= include('600_event/630_detail/event_detail_applicants_js'); ?>
-  <?!= include('600_event/630_detail/event_detail_attendance_js'); ?>
-  <?!= include('600_event/630_detail/event_detail_refunds_js'); ?>
-  <?!= include('600_event/630_detail/event_form_sync_js'); ?>
-  <?!= include('600_event/630_detail/event_detail_bootstrap_js'); ?>
+  <?!= include('600_event/common/event_client_js'); ?>
+  <?!= include('600_event/common/event_common_js'); ?>
+  <?!= include('600_event/600_home/event_home_js'); ?>
 </body>
 </html>

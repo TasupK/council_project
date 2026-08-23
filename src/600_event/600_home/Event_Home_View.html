@@ -1,12 +1,10 @@
 <div id="ew-app" class="ew-app">
-  <!-- 610_home: 페이지 제목과 최상위 생성 액션 -->
-  <section class="ew-page-head ui-page-head"><div><small>행사복지관리 / 행사 목록·생성</small><div class="ew-page-title-row"><button type="button" class="ew-back-btn ui-btn ghost" data-action="go-back" aria-label="이전 페이지로 이동" title="뒤로가기">←</button><h1>행사 목록</h1></div><p>행사를 검색·필터하고 생성·상세로 이동합니다.</p></div><div class="ew-page-actions ui-page-actions"><button type="button" class="ew-btn ew-btn-primary ew-btn-icon ui-btn primary" data-action="go-create">＋ 행사 생성</button></div></section>
+  <section class="ew-page-head ui-page-head"><div><small>행사복지관리 / 행사 목록·생성</small><h1>행사 목록</h1><p>행사를 검색·필터하고 생성·상세로 이동합니다.</p></div><div class="ew-page-actions ui-page-actions"><button type="button" class="ew-btn ew-btn-primary ew-btn-icon ui-btn primary" data-action="go-create">＋ 행사 생성</button></div></section>
   <div class="ew-page-body">
-    <!-- 제출 시 eventFilters를 갱신하며, 선택지는 목록 API 응답으로 동적 구성됩니다. -->
     <form id="ew-event-search" class="ew-card ew-filter-card ui-card">
       <div class="ew-filter-top"><div class="ew-field ew-keyword ui-field"><label>행사명·키워드 검색</label><input class="ui-control" name="keyword" type="search" placeholder="행사명·키워드 검색"></div><div class="ew-filter-buttons"><button class="ew-btn ui-btn outline" type="button" data-action="reset-event-filters">초기화</button><button class="ew-btn ew-btn-primary ew-btn-icon ui-btn primary" type="submit">검색</button></div></div>
       <div class="ew-filter-grid ew-filter-grid-secondary">
-        <div class="ew-field ui-field"><label>담당자</label><select class="ui-control" name="managerEmail" id="ew-managerEmail-filter"><option value="">전체 담당자</option></select></div>
+        <div class="ew-field ui-field"><label>담당자</label><select class="ui-control" name="managerId" id="ew-managerId-filter"><option value="">전체 담당자</option></select></div>
         <div class="ew-field ui-field"><label>진행 일자</label><div class="ew-date-range"><input class="ui-control" name="startDate" type="date"><span>~</span><input class="ui-control" name="endDate" type="date"></div></div>
         <div class="ew-field ui-field"><label>유형</label><select class="ui-control" name="category" id="ew-type-filter"><option value="">전체 유형</option></select></div>
         <div class="ew-field ui-field"><label>행사 상태</label><select class="ui-control" name="status" id="ew-status-filter"><option value="">전체</option></select></div>
@@ -14,11 +12,9 @@
         <div class="ew-filter-toggle"><label class="ew-switch-label"><input type="checkbox" name="includeClosed"><span>종료 행사 포함<small class="ew-contract-note">status에서 파생</small></span></label></div>
       </div>
     </form>
-    <!-- 목록 JS가 요약 KPI와 행사 테이블/페이지네이션을 채우는 영역입니다. -->
     <div id="ew-event-summary" class="ew-card ew-summary ui-card"></div>
     <div id="ew-event-table" class="ew-card ew-table-card ui-card"></div>
   </div>
-  <!-- 공통 비동기 처리, 모달, 토스트 출력 루트 -->
   <div id="ew-loading" class="ew-loading ui-loading" hidden><span></span><p>불러오는 중입니다.</p></div>
   <div id="ew-modal-root"></div><div id="ew-toast" class="ew-toast ui-toast" role="status" hidden></div>
 </div>

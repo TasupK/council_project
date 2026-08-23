@@ -11,7 +11,6 @@ function getUserDbSchema_() {
         phone: '연락처',
         departmentId: '부서ID',
         active: '활성여부',
-        notifications: '알림설정',
         updatedAt: '최종수정일시',
         updatedBy: '등록자이메일'
       },

@@ -126,9 +126,8 @@ function getOperationDbSchema_() {
         balanceDistributionEnabled: '결산잔액분배여부', applicationStartAt: '신청시작일시',
         applicationEndAt: '신청종료일시', eventStartAt: '행사시작일시', eventEndAt: '행사종료일시',
         capacity: '신청정원', description: '설명', createdAt: '등록일시', updatedAt: '수정일시',
-        evidenceFolderId: '증빙폴더ID', department: '담당부서', location: '장소', note: '기타사항'
+        evidenceFolderId: '증빙폴더ID'
       },
-      optionalFields: ['department', 'location', 'note'],
       primaryKey: ['id'],
       foreignKeys: [
         { field: 'managerEmail', refDatabase: 'user', refTable: 'users', refField: 'email' }
@@ -238,7 +237,8 @@ function getOperationDbSchema_() {
         id: '거래ID', bankTransactionId: '계좌거래ID', transactionAt: '거래일시', description: '거래내용',
         transactionType: '거래구분', amount: '거래금액', counterparty: '거래상대명', source: '유입경로',
         eventId: '행사ID', businessType: '업무구분', businessId: '업무ID', matchStatus: '일치상태',
-        recordStatus: '레코드상태', managerEmail: '담당자이메일', createdAt: '등록일시', updatedAt: '수정일시'
+        recordStatus: '레코드상태', managerEmail: '담당자이메일', createdAt: '등록일시', updatedAt: '수정일시',
+        approvalStatus: '승인상태', approvedByEmail: '승인자이메일', approvedAt: '승인일시', rejectionReason: '반려사유'
       },
       primaryKey: ['id'],
       foreignKeys: [

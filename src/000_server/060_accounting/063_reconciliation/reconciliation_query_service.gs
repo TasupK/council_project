@@ -2,6 +2,7 @@
 
 function buildReconciliationSnapshotItems_(banks, ledgers) {
   var ledgerByBankId = {};
+  var usedLedgerIds = {};
   (ledgers || []).forEach(function (ledger) {
     if (String(ledger.recordStatus || '활성') === '무효' || !ledger.bankTransactionId) return;
     ledgerByBankId[String(ledger.bankTransactionId)] = ledger;
@@ -11,6 +12,7 @@ function buildReconciliationSnapshotItems_(banks, ledgers) {
     return String(bank.recordStatus || '정상') !== '무효';
   }).map(function (bank) {
     var ledger = ledgerByBankId[String(bank.id || '')];
+    if (!ledger) ledger = findUploadedBankLedgerCandidate_(bank, ledgers, usedLedgerIds);
     if (!ledger) {
       return {
         bankTransactionId: bank.id || '', ledgerId: '', result: '원장누락',
@@ -18,34 +20,74 @@ function buildReconciliationSnapshotItems_(banks, ledgers) {
         validationNote: '계좌거래에 연결된 활성 원장이 없습니다.'
       };
     }
+    usedLedgerIds[String(ledger.id || '')] = true;
     var expectedType = Number(bank.amount || 0) < 0 ? '지출' : '수입';
     var typeMatches = String(ledger.transactionType || '') === expectedType;
     var amountDifference = Math.abs(Math.abs(Number(bank.amount || 0)) - Number(ledger.amount || 0));
-    var result = typeMatches && amountDifference === 0 ? '정상' : '확인필요';
+    var dateDistance = reconciliationDateDistanceDays_(bank.transactionAt, ledger.transactionAt);
+    var exactCandidateCount = countExactUploadedBankLedgerCandidates_(bank, ledgers, usedLedgerIds, ledger.id);
+    var result = typeMatches && amountDifference === 0 && dateDistance === 0 && exactCandidateCount <= 1 ? '정상' : '확인필요';
     return {
       bankTransactionId: bank.id || '', ledgerId: ledger.id || '', result: result,
       differenceAmount: amountDifference,
-      validationNote: result === '정상' ? '계좌거래와 원장의 금액/방향이 일치합니다.' : '계좌거래와 원장의 금액 또는 방향을 확인해야 합니다.'
+      validationNote: result === '정상'
+        ? '현재 업로드 거래와 승인 장부의 날짜/금액/방향이 일치합니다.'
+        : '현재 업로드 거래와 가장 가까운 승인 장부 후보를 확인해야 합니다.'
     };
-  });
-
-  (ledgers || []).filter(function (ledger) {
-    return String(ledger.recordStatus || '활성') !== '무효' && !ledger.bankTransactionId;
-  }).forEach(function (ledger) {
-    items.push({
-      bankTransactionId: '', ledgerId: ledger.id || '', result: '계좌미확인',
-      differenceAmount: Number(ledger.amount || 0),
-      validationNote: '원장에 연결된 계좌거래가 없습니다.'
-    });
   });
   return items;
 }
 
+function isUploadedBankLedgerAmountTypeMatch_(bank, ledger) {
+  var expectedType = Number(bank.amount || 0) < 0 ? '지출' : '수입';
+  return String(ledger.transactionType || '') === expectedType &&
+    Math.abs(Number(bank.amount || 0)) === Number(ledger.amount || 0);
+}
+
+function uploadedBankLedgerTextScore_(bank, ledger) {
+  var bankText = normalizeReconciliationMatchText_([bank.counterparty, bank.description, bank.memo].join(' '));
+  var ledgerText = normalizeReconciliationMatchText_([ledger.counterparty, ledger.description].join(' '));
+  if (!bankText || !ledgerText) return 0;
+  if (bankText === ledgerText) return 30;
+  if (bankText.indexOf(ledgerText) > -1 || ledgerText.indexOf(bankText) > -1) return 20;
+  return 0;
+}
+
+function scoreUploadedBankLedgerCandidate_(bank, ledger) {
+  var dateDistance = reconciliationDateDistanceDays_(bank.transactionAt, ledger.transactionAt);
+  var dateScore = dateDistance === 0 ? 100 : dateDistance <= 3 ? 40 - dateDistance : -1000;
+  return dateScore + uploadedBankLedgerTextScore_(bank, ledger);
+}
+
+function findUploadedBankLedgerCandidate_(bank, ledgers, usedLedgerIds) {
+  var candidates = (ledgers || []).filter(function (ledger) {
+    if (String(ledger.recordStatus || '활성') === '무효') return false;
+    if (usedLedgerIds[String(ledger.id || '')]) return false;
+    if (ledger.bankTransactionId && String(ledger.bankTransactionId) !== String(bank.id || '')) return false;
+    return isUploadedBankLedgerAmountTypeMatch_(bank, ledger) &&
+      reconciliationDateDistanceDays_(bank.transactionAt, ledger.transactionAt) <= 3;
+  }).map(function (ledger) {
+    return { ledger: ledger, score: scoreUploadedBankLedgerCandidate_(bank, ledger) };
+  }).sort(function (left, right) {
+    return right.score - left.score;
+  });
+  return candidates.length ? candidates[0].ledger : null;
+}
+
+function countExactUploadedBankLedgerCandidates_(bank, ledgers, usedLedgerIds, selectedLedgerId) {
+  return (ledgers || []).filter(function (ledger) {
+    if (String(ledger.id || '') === String(selectedLedgerId || '')) return true;
+    if (usedLedgerIds[String(ledger.id || '')]) return false;
+    if (ledger.bankTransactionId && String(ledger.bankTransactionId) !== String(bank.id || '')) return false;
+    return isUploadedBankLedgerAmountTypeMatch_(bank, ledger) &&
+      reconciliationDateDistanceDays_(bank.transactionAt, ledger.transactionAt) === 0;
+  }).length;
+}
+
 function buildReconciliationLedgerCandidates_(filter) {
   filter = filter || {};
-  return buildLedgerAccountingFacts_().filter(function (row) {
-    return String(row.recordStatus || '활성') !== '무효' &&
-      isAccountingDateInRange_(row.transactionAt, filter.startDate, filter.endDate);
+  return buildApprovedLedgerAccountingFacts_().filter(function (row) {
+    return isAccountingDateInRange_(row.transactionAt, filter.startDate, filter.endDate);
   });
 }
 

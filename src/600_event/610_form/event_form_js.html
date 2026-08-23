@@ -1,36 +1,15 @@
 <script>
-/**
- * 620_form 행사 등록·수정 화면 로직입니다.
- * APP_RESOURCE_ID가 있으면 기존 행사 조회 후 수정 모드로, 없으면 기본값을 가진 생성 모드로 동작합니다.
- */
-
-// 생성 모드의 기본 관리 옵션을 정하고 공통 폼 채우기 함수로 전달합니다.
 function renderEventForm(event) {
     var isEdit = Boolean(event);
-    var value = event || {
-      status: '예정',
-      applicationEnabled: true,
-      feeEnabled: false,
-      attendanceEnabled: true,
-      balanceDistributionEnabled: false,
-      payerFee: 0,
-      nonPayerFee: 0
-    };
+    var value = event || { status: '예정' };
     populateEventForm(document.getElementById('ew-event-form'), value, isEdit);
   }
 
-// API DTO를 실제 input/checkbox/radio와 기존 자료 영역에 반영합니다.
 function populateEventForm(form, value, isEdit) {
-    var fields = ['name', 'category', 'department', 'description', 'applicationStartAt', 'applicationEndAt', 'eventStartAt', 'eventEndAt', 'location', 'capacity', 'payerFee', 'nonPayerFee', 'note'];
-    var optionFields = ['applicationEnabled', 'feeEnabled', 'attendanceEnabled', 'balanceDistributionEnabled'];
+    var fields = ['name', 'category', 'description', 'applicationStartAt', 'applicationEndAt', 'eventStartAt', 'eventEndAt', 'capacity', 'managerId', 'payerFee', 'nonPayerFee'];
     fields.forEach(function (name) {
       if (form.elements[name]) form.elements[name].value = value[name] == null ? '' : value[name];
     });
-    optionFields.forEach(function (name) {
-      if (form.elements[name]) form.elements[name].checked = isEventOptionEnabled(value[name]);
-    });
-    var managerDisplay = document.getElementById('ew-manager-display');
-    if (managerDisplay) managerDisplay.value = APP_USER_NAME || '-';
     form.dataset.id = value.id || '';
     document.getElementById('ew-form-title').textContent = isEdit ? '행사 수정' : '행사 생성';
     var selectedStatus = value.status || '예정';
@@ -41,28 +20,15 @@ function populateEventForm(form, value, isEdit) {
     var materialLink = safeRelatedMaterialLink(value.evidenceFolderId);
     existingMaterial.hidden = !materialLink;
     existingMaterial.innerHTML = materialLink ? '기존 자료: ' + materialLink : '';
-    syncEventFeeFields(form);
   }
 
-// Google Sheets에서 boolean이 문자열/숫자로 전달되는 경우까지 체크 상태로 정규화합니다.
-function isEventOptionEnabled(value) {
-    var normalized = String(value === null || typeof value === 'undefined' ? '' : value).trim().toLowerCase();
-    return value === true || value === 1 || normalized === 'true' || normalized === '1';
+function safeRelatedMaterialLink(url) {
+    var text = String(url || '').trim();
+    if (!text) return '';
+    if (!/^https:\/\/(drive|docs)\.google\.com\//i.test(text)) return escapeHtml(text);
+    return '<a href="' + escapeHtml(text) + '" target="_blank" rel="noopener noreferrer">관련자료 열기</a>';
   }
 
-// 참가비 관리 여부에 따라 두 참가비 입력란의 표시·필수·전송 여부를 함께 맞춥니다.
-function syncEventFeeFields(form) {
-    var feeEnabled = Boolean(form.elements.feeEnabled && form.elements.feeEnabled.checked);
-    var feeRow = document.getElementById('ew-fee-row');
-    var feeInputs = [form.elements.payerFee, form.elements.nonPayerFee];
-    feeRow.hidden = !feeEnabled;
-    feeInputs.forEach(function (input) {
-      input.disabled = !feeEnabled;
-      input.required = feeEnabled;
-    });
-  }
-
-// Apps Script 요청에 담을 수 있도록 5MB 이하 파일을 Base64 payload로 변환합니다.
 function readRelatedMaterialFile(form) {
     var input = form.querySelector('#ew-related-material-file');
     var file = input && input.files ? input.files[0] : null;
@@ -91,7 +57,6 @@ function readRelatedMaterialFile(form) {
     });
   }
 
-// dataset.id 유무로 생성/수정 API를 선택하고 중복 제출을 막습니다.
 document.getElementById('ew-event-form').addEventListener('submit', function (event) {
   event.preventDefault();
   var form = event.target, payload = readForm(form), id = form.dataset.id, saveButton = form.querySelector('button[type="submit"]');
@@ -106,20 +71,11 @@ document.getElementById('ew-event-form').addEventListener('submit', function (ev
   }).then(function (saved) { showToast('행사 정보가 저장되었습니다.'); goDetail(saved.id, 'basic'); })
     .catch(handleError).finally(function () { if (document.contains(saveButton)) saveButton.disabled = false; });
 });
-
-// 동적으로 그려지는 목록 이동 버튼을 이벤트 위임으로 처리합니다.
 document.addEventListener('click', function (event) { var button = event.target.closest('[data-action="go-list"]'); if (button) goList(); });
-
-// 선택한 파일명과 대략적인 크기를 업로드 전에 사용자에게 보여줍니다.
 document.getElementById('ew-related-material-file').addEventListener('change', function (event) {
   var file = event.target.files && event.target.files[0];
   document.getElementById('ew-related-material-name').textContent = file ? file.name + ' (' + Math.ceil(file.size / 1024) + 'KB)' : '선택된 파일 없음';
 });
-document.querySelector('[name="feeEnabled"]').addEventListener('change', function () {
-  syncEventFeeFields(document.getElementById('ew-event-form'));
-});
-
-// 페이지 진입 시 URL의 행사 ID를 기준으로 생성/수정 모드를 결정합니다.
 if (APP_RESOURCE_ID) runEventBusy(function () { return eventClient.getEvent({ id: APP_RESOURCE_ID }); }).then(renderEventForm).catch(handleError);
 else renderEventForm(null);
 </script>

@@ -63,10 +63,7 @@ function validateOperationDbHeaders_(schema, headers) {
     var table = schema[tableKey];
     var actualHeaders = headers[tableKey] || [];
 
-    var optionalFields = table.optionalFields || [];
-    Object.keys(table.fields).filter(function (fieldKey) {
-      return optionalFields.indexOf(fieldKey) < 0;
-    }).map(function (fieldKey) {
+    Object.keys(table.fields).map(function (fieldKey) {
       return table.fields[fieldKey];
     }).forEach(function (header) {
       if (actualHeaders.indexOf(header) === -1) {

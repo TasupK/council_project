@@ -18,26 +18,6 @@ function getEventPaymentRowsByApplicationId_(applicationId) {
   });
 }
 
-function buildEventPaymentSectionRows_(applicants) {
-  var applicantsById = {};
-  (applicants || []).forEach(function (applicant) {
-    applicantsById[String(applicant.id || '')] = applicant;
-  });
-  var rows = listEventPaymentClientRows_().filter(function (payment) {
-    return Boolean(applicantsById[String(payment.applicationId || '')]);
-  }).map(function (payment) {
-    var applicant = applicantsById[String(payment.applicationId || '')];
-    return Object.assign({}, withoutInternalRowNumber_(payment), {
-      name: applicant.name || '',
-      studentId: applicant.studentId || ''
-    });
-  });
-  rows.sort(function (a, b) {
-    return String(b.paymentDate || b.confirmedAt).localeCompare(String(a.paymentDate || a.confirmedAt));
-  });
-  return rows;
-}
-
 // Accounting이 Event 내부 Sheet 구조에 의존하지 않도록 제공하는 정규화 read boundary.
 function buildEventPaymentAccountingFacts_() {
   var applicationsById = {};

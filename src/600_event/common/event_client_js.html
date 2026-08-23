@@ -1,23 +1,15 @@
 <script>
-/**
- * 행사 페이지 전용 API 파사드입니다.
- * 화면은 Apps Script 공개 함수명을 직접 사용하지 않고 이 객체를 통해 호출하여,
- * 요청 규격이나 API 이름이 변경될 때 수정 지점을 한 곳으로 제한합니다.
- */
 var eventClient = {
-  // 행사 기본정보 조회·생성·수정
   getEvents: function (request) { return runAppApi('api_getEvents', request || {}); },
   closeEvent: function (request) { return runAppApi('api_closeEvent', request || {}); },
   updateEventStatus: function (request) { return runAppApi('api_updateEventStatus', request || {}); },
   getEvent: function (request) { return runAppApi('api_getEvent', request || {}); },
   createEvent: function (request) { return runAppApi('api_createEvent', request || {}); },
   updateEvent: function (request) { return runAppApi('api_updateEvent', request || {}); },
-  // 상세 화면의 섹션 데이터와 신청자 처리
   getOverview: function (request) { return runAppApi('api_getEventOverview', request || {}); },
   getApplicants: function (request) { return runAppApi('api_getEventApplicants', request || {}); },
   getApplicant: function (request) { return runAppApi('api_getEventApplicant', request || {}); },
   processApplicant: function (request) { return runAppApi('api_processEventApplicant', request || {}); },
-  // 출석·환불·Google Forms 연동
   getAttendances: function (request) { return runAppApi('api_getEventAttendances', request || {}); },
   applyAttendanceChanges: function (request) { return runAppApi('api_applyEventAttendanceChanges', request || {}); },
   getRefunds: function (request) { return runAppApi('api_getEventRefunds', request || {}); },

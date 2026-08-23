@@ -23,19 +23,19 @@ function insertSheetCrudItem_(database, tableKey, item) {
   return withSheetCrudWriteLock_(function () {
     var table = getSheetCrudTableSchema_(database, tableKey);
     var sheet = requireSheetCrudTableSheet_(database, tableKey);
-    ensureSheetCrudOptionalHeaders_(table, sheet);
-    var fieldByHeader = {};
-    Object.keys(table.fields).forEach(function (fieldKey) {
-      fieldByHeader[table.fields[fieldKey]] = fieldKey;
-    });
-    var headers = readSheetCrudHeaderValues_(sheet);
-    var row = headers.map(function (header) {
-      var fieldKey = fieldByHeader[header];
-      if (!fieldKey) return '';
+    var fields = Object.keys(table.fields);
+    var row = fields.map(function (fieldKey) {
       return Object.prototype.hasOwnProperty.call(item, fieldKey) ? item[fieldKey] : '';
     });
-    sheet.getRange(sheet.getLastRow() + 1, 1, 1, row.length).setValues([row]);
-    SpreadsheetApp.flush();
+    var targetRange = sheet.getRange(sheet.getLastRow() + 1, 1, 1, row.length);
+    try {
+      targetRange.setValues([row]);
+      SpreadsheetApp.flush();
+    } catch (error) {
+      targetRange.clearContent();
+      SpreadsheetApp.flush();
+      throw error;
+    }
     return item;
   });
 }
@@ -45,7 +45,6 @@ function updateSheetCrudItemById_(database, tableKey, id, changes) {
   return withSheetCrudWriteLock_(function () {
     var table = getSheetCrudTableSchema_(database, tableKey);
     var sheet = requireSheetCrudTableSheet_(database, tableKey);
-    ensureSheetCrudOptionalHeaders_(table, sheet);
     var values = sheet.getDataRange().getValues();
     var headers = values[0] || [];
     var idField = table.primaryKey[0];
@@ -64,28 +63,45 @@ function updateSheetCrudItemById_(database, tableKey, id, changes) {
   });
 }
 
-// 5. 공통 CRUD 테이블 스키마 조회
+// 5. DB 종류와 PK로 행 내용 제거
+function deleteSheetCrudItemById_(database, tableKey, id) {
+  return withSheetCrudWriteLock_(function () {
+    var table = getSheetCrudTableSchema_(database, tableKey);
+    var sheet = requireSheetCrudTableSheet_(database, tableKey);
+    var values = sheet.getDataRange().getValues();
+    var headers = values[0] || [];
+    var idField = table.primaryKey[0];
+    var idColumn = headers.indexOf(table.fields[idField]);
+
+    for (var rowIndex = 1; rowIndex < values.length; rowIndex += 1) {
+      if (String(values[rowIndex][idColumn]) !== String(id)) continue;
+      sheet.getRange(rowIndex + 1, 1, 1, headers.length).clearContent();
+      SpreadsheetApp.flush();
+      return true;
+    }
+    return false;
+  });
+}
+
+// 6. 공통 CRUD 테이블 스키마 조회
 function getSheetCrudTableSchema_(database, tableKey) {
   if (database === 'user') return getUserDbTableSchema_(tableKey);
   if (database === 'operation') return getOperationDbTableSchema_(tableKey);
   throw new Error('알 수 없는 DB 종류입니다: ' + database);
 }
 
-// 6. 공통 CRUD 스프레드시트 조회
+// 7. 공통 CRUD 스프레드시트 조회
 function openSheetCrudSpreadsheet_(database) {
   if (database === 'user') return openUserSpreadsheet_();
   if (database === 'operation') return openOperationSpreadsheet_();
   throw new Error('알 수 없는 DB 종류입니다: ' + database);
 }
 
-// 7. 시트와 헤더 검증
+// 8. 시트와 헤더 검증
 function requireSheetCrudTableSheet_(database, tableKey) {
   var table = getSheetCrudTableSchema_(database, tableKey);
   var sheet = openSheetCrudSpreadsheet_(database).getSheetByName(table.sheetName);
-  var optionalFields = table.optionalFields || [];
-  var expectedHeaders = Object.keys(table.fields).filter(function (fieldKey) {
-    return optionalFields.indexOf(fieldKey) < 0;
-  }).map(function (fieldKey) {
+  var expectedHeaders = Object.keys(table.fields).map(function (fieldKey) {
     return table.fields[fieldKey];
   });
   var actualHeaders;
@@ -99,19 +115,6 @@ function requireSheetCrudTableSheet_(database, tableKey) {
     }
   });
   return sheet;
-}
-
-// 8. 선택 컬럼은 최초 등록·수정 시 기존 시트 끝에 안전하게 추가한다.
-function ensureSheetCrudOptionalHeaders_(table, sheet) {
-  var actualHeaders = readSheetCrudHeaderValues_(sheet);
-  var missingHeaders = (table.optionalFields || []).map(function (fieldKey) {
-    return table.fields[fieldKey];
-  }).filter(function (header) {
-    return header && actualHeaders.indexOf(header) < 0;
-  });
-  if (!missingHeaders.length) return;
-  sheet.getRange(1, sheet.getLastColumn() + 1, 1, missingHeaders.length).setValues([missingHeaders]);
-  SpreadsheetApp.flush();
 }
 
 // 9. 시트 헤더값 조회
@@ -155,50 +158,10 @@ function applySheetCrudChangesToRow_(table, headers, row, changes) {
 // 12. 공통 쓰기 잠금 실행
 function withSheetCrudWriteLock_(callback) {
   var lock = LockService.getScriptLock();
-  var ownsLock = typeof lock.hasLock !== 'function' || !lock.hasLock();
-  if (ownsLock) lock.waitLock(30000);
+  lock.waitLock(30000);
   try {
     return callback();
   } finally {
-    if (ownsLock) lock.releaseLock();
+    lock.releaseLock();
   }
-}
-
-// 13. 행 번호로 시트 행 수정 (복합키 테이블용)
-function updateSheetCrudItemByRowNumber_(database, tableKey, rowNumber, changes) {
-  return withSheetCrudWriteLock_(function () {
-    var table = getSheetCrudTableSchema_(database, tableKey);
-    var sheet = requireSheetCrudTableSheet_(database, tableKey);
-    ensureSheetCrudOptionalHeaders_(table, sheet);
-    var headers = readSheetCrudHeaderValues_(sheet);
-    var targetRow = Number(rowNumber);
-    if (!isFinite(targetRow) || targetRow < 2 || targetRow > sheet.getLastRow()) {
-      throw new Error(table.name + ' 행 번호가 올바르지 않습니다: ' + rowNumber);
-    }
-    var range = sheet.getRange(targetRow, 1, 1, headers.length);
-    var row = range.getValues()[0];
-    applySheetCrudChangesToRow_(table, headers, row, changes);
-    range.setValues([row]);
-    SpreadsheetApp.flush();
-    return true;
-  });
-}
-
-// 14. 조건에 맞는 행 삭제 (아래에서 위로 삭제)
-function deleteSheetCrudRowsWhere_(database, tableKey, predicate) {
-  if (typeof predicate !== 'function') throw new Error('삭제 조건 함수가 필요합니다.');
-  return withSheetCrudWriteLock_(function () {
-    var items = listSheetCrudItems_(database, tableKey);
-    var sheet = requireSheetCrudTableSheet_(database, tableKey);
-    var targets = items.filter(function (item) {
-      return !!predicate(item);
-    }).sort(function (a, b) {
-      return Number(b._rowNumber) - Number(a._rowNumber);
-    });
-    targets.forEach(function (item) {
-      sheet.deleteRow(Number(item._rowNumber));
-    });
-    if (targets.length) SpreadsheetApp.flush();
-    return targets.length;
-  });
 }

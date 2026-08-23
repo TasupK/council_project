@@ -1,111 +1,62 @@
 <script>
   var settingsRoles = [];
-  var roleDrafts = {};
-  var selectedRoleKey = '';
-  var roleNewSeq = 0;
-
-  function roleKey_(role) { return role.isNew ? role.tempId : role.id; }
-  function snapshotRole_(role) {
-    return { isNew: !!role.isNew, tempId: role.tempId || '', id: role.id || '', name: role.name || '', type: role.type || 'custom', typeLabel: role.typeLabel || '사용자 정의', description: role.description || '', status: role.status || 'active', protected: !!role.protected, assignedCount: role.assignedCount || 0, updatedAt: role.updatedAt || '-' };
-  }
-  function workingRole_(role) { return roleDrafts[roleKey_(role)] || snapshotRole_(role); }
-  function changedRoleKeys_() { return Object.keys(roleDrafts).filter(function (key) { return !!roleDrafts[key]; }); }
-  function updateRoleDirtyBar_() {
-    var count = changedRoleKeys_().length;
-    getSettingsElement('roleDirtyLabel').textContent = count + '개 변경됨';
-    getSettingsElement('btnSaveRoles').textContent = '변경사항 저장 (' + count + ')';
-    getSettingsElement('roleDirtyBar').classList.toggle('show', count > 0);
-  }
-  function markRoleDraft_(key, patch) {
-    var base = settingsRoles.filter(function (role) { return roleKey_(role) === key; })[0];
-    var current = base ? workingRole_(base) : { isNew: true, tempId: key, status: 'active', protected: false };
-    roleDrafts[key] = Object.assign({}, current, patch);
-    updateRoleDirtyBar_();
-  }
-  function roleStatusToggle_(role, key) {
-    var disabled = role.protected ? ' disabled' : '';
-    return '<label class="settings-toggle" onclick="event.stopPropagation()"><input type="checkbox" data-role-field="status" data-role-key="' + escapeSettingsHtml(key) + '"' + (role.status === 'active' ? ' checked' : '') + disabled + '><span class="settings-toggle-track"></span><span class="settings-toggle-label">' + (role.status === 'active' ? '활성' : '비활성') + '</span></label>';
-  }
-
   function renderSettingsRoles() {
-    var query = getSettingsElement('roleQ').value.trim().toLowerCase();
-    var type = getSettingsElement('roleType').value;
-    var status = getSettingsElement('roleStatus').value;
-    var filtered = settingsRoles.map(workingRole_).filter(function (role) {
-      var text = (String(role.name || '') + ' ' + String(role.description || '')).toLowerCase();
-      return (!query || text.indexOf(query) !== -1) && (!type || role.type === type) && (!status || role.status === status);
+    var query = getSettingsElement("roleQ").value.trim().toLowerCase();
+    var type = getSettingsElement("roleType").value;
+    var status = getSettingsElement("roleStatus").value;
+    var filtered = settingsRoles.filter(function (role) {
+      var text = String(role.name || "") + " " + String(role.description || "");
+      return (
+        (!query || text.toLowerCase().indexOf(query) !== -1) &&
+        (!type || role.type === type) &&
+        (!status || role.status === status)
+      );
     });
-    getSettingsElement('roleTbody').innerHTML = filtered.map(function (role) {
-      var key = roleKey_(role);
-      var editing = SETTINGS_CAN_ADMIN && (role.isNew || selectedRoleKey === key || !!roleDrafts[key]);
-      var classes = [];
-      if (role.isNew) classes.push('settings-row-new'); else if (roleDrafts[key]) classes.push('settings-row-changed');
-      if (selectedRoleKey === key) classes.push('settings-row-selected');
-      var typeTag = '<span class="settings-type-tag' + (role.type === 'default' ? ' default' : '') + '">' + escapeSettingsHtml(role.typeLabel || role.type) + '</span>' + (role.protected ? '<span class="settings-protected">보호됨</span>' : '');
-      if (!editing) {
-        return '<tr class="' + classes.join(' ') + '" data-role-key="' + escapeSettingsHtml(key) + '"><td>' + escapeSettingsHtml(role.name || '-') + '</td><td>' + typeTag + '</td><td>' + escapeSettingsHtml(role.description || '-') + '</td><td><span class="settings-link">' + escapeSettingsHtml(role.assignedCount || 0) + '명</span></td><td><span class="settings-status-pill' + (role.status === 'active' ? ' is-active' : '') + '">' + (role.status === 'active' ? '활성' : '비활성') + '</span></td><td>' + escapeSettingsHtml(role.updatedAt || '-') + '</td></tr>';
-      }
-      return '<tr class="' + classes.join(' ') + '" data-role-key="' + escapeSettingsHtml(key) + '"><td><input class="ui-control compact" data-role-field="name" data-role-key="' + escapeSettingsHtml(key) + '" value="' + escapeSettingsHtml(role.name) + '"></td><td>' + typeTag + '</td><td><input class="ui-control compact" data-role-field="description" data-role-key="' + escapeSettingsHtml(key) + '" value="' + escapeSettingsHtml(role.description) + '"></td><td><span class="settings-link">' + escapeSettingsHtml(role.assignedCount || 0) + '명</span></td><td>' + roleStatusToggle_(role, key) + '</td><td>' + escapeSettingsHtml(role.updatedAt || '신규') + '</td></tr>';
-    }).join('') || '<tr><td colspan="6">역할이 없습니다.</td></tr>';
-    getSettingsElement('roleCountLabel').textContent = '역할 ' + filtered.length + '개';
-    getSettingsElement('roleFooterTotal').textContent = '총 ' + filtered.length + '개';
-    getSettingsElement('btnAddRole').disabled = !SETTINGS_CAN_ADMIN;
-  }
-
-  function addNewRole_() {
-    if (!SETTINGS_CAN_ADMIN) return;
-    roleNewSeq += 1;
-    var tempId = '__new__:' + roleNewSeq;
-    var draft = snapshotRole_({ isNew: true, tempId: tempId, id: '', name: '', type: 'custom', typeLabel: '사용자 정의', description: '', status: 'active', protected: false, assignedCount: 0, updatedAt: '신규' });
-    settingsRoles.unshift(draft); roleDrafts[tempId] = draft; selectedRoleKey = tempId; updateRoleDirtyBar_(); renderSettingsRoles();
-  }
-  function rolePayload_() {
-    return changedRoleKeys_().map(function (key) { var draft = roleDrafts[key]; return { isNew: !!draft.isNew, id: draft.id || '', name: String(draft.name || '').trim(), description: draft.description || '', status: draft.status || 'active' }; });
-  }
-  function openRoleSaveModal_() {
-    var changes = rolePayload_(); if (!changes.length) return;
-    getSettingsElement('roleSaveModalSub').textContent = '역할 ' + changes.length + '개의 변경사항을 저장하시겠습니까?';
-    getSettingsElement('roleSaveModalBody').innerHTML = changes.map(function (item) { return '<div class="summary-card ' + (item.isNew ? 'is-new' : 'is-changed') + '"><strong>' + escapeSettingsHtml(item.name || '새 역할') + '</strong><div class="meta">' + escapeSettingsHtml(item.description || '') + '</div></div>'; }).join('');
-    getSettingsElement('roleSaveModal').classList.add('show');
-  }
-  function closeRoleSaveModal_() { getSettingsElement('roleSaveModal').classList.remove('show'); }
-  async function commitRoleChanges_() {
-    var changes = rolePayload_(); closeRoleSaveModal_(); getSettingsElement('roleMutationStatus').textContent = '저장 중…';
-    try {
-      var result = await settingsClient.saveRoleChanges({ changes: changes });
-      settingsRoles = result.roles || []; roleDrafts = {}; selectedRoleKey = ''; updateRoleDirtyBar_(); renderSettingsRoles();
-      getSettingsElement('roleMutationStatus').textContent = '저장되었습니다.';
-    } catch (error) { getSettingsElement('roleMutationStatus').textContent = error && error.message ? error.message : '저장 중 오류가 발생했습니다.'; }
-  }
-  function discardRoleChanges_() {
-    settingsRoles = settingsRoles.filter(function (role) { return !role.isNew; }); roleDrafts = {}; selectedRoleKey = ''; updateRoleDirtyBar_(); renderSettingsRoles();
-    getSettingsElement('roleMutationStatus').textContent = '변경사항을 취소했습니다.';
+    getSettingsElement("roleTbody").innerHTML =
+      filtered
+        .map(function (role) {
+          return (
+            "<tr><td>" +
+            escapeSettingsHtml(role.name) +
+            "</td><td>" +
+            escapeSettingsHtml(role.typeLabel || role.type) +
+            "</td><td>" +
+            escapeSettingsHtml(role.description) +
+            "</td><td>" +
+            escapeSettingsHtml(role.assignedCount || 0) +
+            "명</td><td>" +
+            escapeSettingsHtml(role.status === "active" ? "활성" : "비활성") +
+            "</td><td>" +
+            escapeSettingsHtml(role.updatedAt || "-") +
+            "</td></tr>"
+          );
+        })
+        .join("") || '<tr><td colspan="6">역할이 없습니다.</td></tr>';
+    getSettingsElement("roleCountLabel").textContent =
+      "역할 " + filtered.length + "개";
+    getSettingsElement("roleFooterTotal").textContent =
+      "총 " + filtered.length + "개";
   }
   async function loadSettingsRoles() {
-    try { var data = await settingsClient.getRoles(); applySettingsShell(data); settingsRoles = data.roles || []; updateRoleDirtyBar_(); renderSettingsRoles(); showSettingsContent(); }
-    catch (error) { showSettingsError(error); }
+    try {
+      var data = await settingsClient.getRoles();
+      applySettingsShell(data);
+      settingsRoles = data.roles || [];
+      renderSettingsRoles();
+      showSettingsContent();
+    } catch (error) {
+      showSettingsError(error);
+    }
   }
-
-  getSettingsElement('roleQ').oninput = renderSettingsRoles;
-  getSettingsElement('roleType').onchange = renderSettingsRoles;
-  getSettingsElement('roleStatus').onchange = renderSettingsRoles;
-  getSettingsElement('roleReset').onclick = function () { getSettingsElement('roleQ').value = ''; getSettingsElement('roleType').value = ''; getSettingsElement('roleStatus').value = ''; renderSettingsRoles(); };
-  getSettingsElement('btnAddRole').onclick = addNewRole_;
-  getSettingsElement('btnSaveRoles').onclick = openRoleSaveModal_;
-  getSettingsElement('btnDiscardRoles').onclick = discardRoleChanges_;
-  getSettingsElement('roleSaveModalClose').onclick = closeRoleSaveModal_;
-  getSettingsElement('roleSaveModalCancel').onclick = closeRoleSaveModal_;
-  getSettingsElement('roleSaveModalConfirm').onclick = commitRoleChanges_;
-  getSettingsElement('roleTbody').addEventListener('click', function (event) {
-    if (event.target.closest('input,select,label,button,a')) return;
-    var row = event.target.closest('tr[data-role-key]'); if (!row || !SETTINGS_CAN_ADMIN) return;
-    selectedRoleKey = row.getAttribute('data-role-key'); renderSettingsRoles();
-  });
-  function handleRoleInput_(event) {
-    var target = event.target, key = target && target.getAttribute('data-role-key'), field = target && target.getAttribute('data-role-field');
-    if (!key || !field) return; var patch = {}; patch[field] = target.type === 'checkbox' ? (target.checked ? 'active' : 'inactive') : target.value; markRoleDraft_(key, patch);
-  }
-  getSettingsElement('roleTbody').addEventListener('input', handleRoleInput_);
-  getSettingsElement('roleTbody').addEventListener('change', handleRoleInput_);
+  getSettingsElement("roleQ").oninput = renderSettingsRoles;
+  getSettingsElement("roleType").onchange = renderSettingsRoles;
+  getSettingsElement("roleStatus").onchange = renderSettingsRoles;
+  getSettingsElement("roleReset").onclick = function () {
+    getSettingsElement("roleQ").value = "";
+    getSettingsElement("roleType").value = "";
+    getSettingsElement("roleStatus").value = "";
+    renderSettingsRoles();
+  };
+  // TODO: saveRoleChanges 서버 함수 구현 후 역할 저장 기능 연결
   loadSettingsRoles();
 </script>

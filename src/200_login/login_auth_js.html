@@ -1,33 +1,16 @@
 <script>
-// 1. 로그인 성공 시 이동할 메인 페이지 연결 로직
+// 1. 로그인 성공 시 이동할 메인 페이지 연결
 // [기능명세 1.3] 로그인 버튼 클릭 시 URL 파라미터로 ?page=main 을 전달하여 메인화면 진입 시도
-// DOM에서 로그인 버튼 요소를 가져옵니다.
-var btn = getElement('loginButton');
-if (btn) {
-  // 로그인 버튼 클릭 시 발생하는 이벤트 리스너를 등록합니다.
-  btn.addEventListener('click', function() {
-    // 중복 클릭을 방지하기 위해 버튼을 비활성화하고 텍스트를 변경합니다.
-    btn.disabled = true;
-    btn.textContent = 'Google 계정 확인 중...';
-    
-    // buildPageUrl 함수를 연계 호출하여 메인 페이지(?page=main) 진입 URL을 생성하고,
-    // window.top.location.href를 변경하여 실제 화면 이동(리다이렉트)을 수행합니다.
-    window.top.location.href = buildPageUrl('main');
-  });
-}
+getElement('loginButton').href = buildPageUrl('main');
 
-// 2. 로그인 실패 메시지 표시 로직
+// 2. 로그인 실패 메시지 표시
 // [기능명세 1.1 & 1.3] 서버 인증 실패 시 반환된 LOGIN_ERROR 문구를 경고창에 표시
-// 백엔드(서버)에서 인증 실패 시 렌더링 단계에서 LOGIN_ERROR 전역 변수가 세팅되어 내려옵니다.
 if (LOGIN_ERROR) {
-  // 에러 메시지가 존재하면 setLoginAlert 함수를 호출하여 화면의 경고창에 에러를 표시합니다.
   setLoginAlert(LOGIN_ERROR);
 }
 
-// 3. 웹앱 페이지 URL 생성 함수
+// 3. 웹앱 페이지 URL 생성
 // [기능명세 1.3] WEB_APP_URL 뒤에 page 쿼리를 동적으로 붙여주는 헬퍼 함수
-// 현재 Google Apps Script 웹앱 URL(WEB_APP_URL)을 기반으로 지정된 페이지 파라미터(?page=xxx)를 조합해주는 헬퍼 함수입니다.
-// 이 함수를 통해 각 화면간 라우팅이 정상적으로 작동합니다.
 function buildPageUrl(page) {
   var appUrl = WEB_APP_URL || window.location.href;
   var url = new URL(appUrl);
@@ -35,16 +18,13 @@ function buildPageUrl(page) {
   return url.toString();
 }
 
-// 4. 경고창 표시 UI 제어 함수
-// 에러 메시지를 전달받아 HTML 요소(loginAlert)에 텍스트를 주입하고 가시성을 변경합니다.
 function setLoginAlert(message) {
   var alert = getElement('loginAlert');
   alert.textContent = message;
   alert.classList.add('show');
 }
 
-// 5. DOM 조회 헬퍼 함수
-// document.getElementById를 짧게 쓰기 위한 유틸리티 함수입니다.
+// 5. DOM 조회
 function getElement(id) {
   return document.getElementById(id);
 }

@@ -13,10 +13,6 @@ function listEventApplicationSourceResponseIds_() {
   }).filter(function (value) { return !!value; });
 }
 
-function listEventExtraAnswerClientRows_() {
-  return readOperationTableClientRows_('eventExtraAnswers');
-}
-
 function findEventFormByEventId_(eventId) {
   return readOperationTableClientRows_('eventForms').find(function (row) {
     return String(row.eventId) === String(eventId);
