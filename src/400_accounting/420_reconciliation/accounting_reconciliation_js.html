@@ -12,7 +12,7 @@ function fileToBankPayload(file) {
 }
 
 function reconcileType(bank) { return bank && bank.expense ? '지출' : '수입'; }
-function reconcileStatusClass(status) { return status === '정상' ? 'match-ok' : status === '원장누락의심' ? 'match-bad' : 'match-check'; }
+function reconcileStatusClass(status) { return status === '정상' ? 'success' : status === '원장누락의심' ? 'danger' : 'warning'; }
 
 function renderReconciliationDetail(detail) {
   state.reconciliationDetail = detail || { header: null, items: [] };
@@ -26,9 +26,9 @@ function renderReconciliationDetail(detail) {
   document.getElementById('reconciliationRows').innerHTML = items.length ? items.map(function (item) {
     const bank = item.bank || {};
     const ledger = item.ledger || {};
-    const action = item.status === '확인필요' ? '<button class="small" data-action="link" data-id="' + item.id + '">수동 연결</button>' : item.status === '원장누락의심' ? '<button class="small" data-action="create" data-id="' + item.id + '">원장 생성</button>' : '-';
-    return '<tr><td>' + escapeHtml(String(bank.transactionAt || '').slice(0,10)) + '</td><td>' + reconcileType(bank) + '</td><td>' + escapeHtml([bank.counterparty, bank.description].filter(Boolean).join(' · ')) + '</td><td>' + currency(bank.amount || 0) + '</td><td>' + escapeHtml(ledger.transaction_id ? [ledger.counterparty, ledger.description].filter(Boolean).join(' · ') : '-') + '</td><td><span class="match-pill ' + reconcileStatusClass(item.status) + '">' + escapeHtml(item.status) + '</span></td><td>' + escapeHtml(item.matchMethod || '-') + '</td><td>' + action + '</td></tr>';
-  }).join('') : '<tr><td colspan="8" class="muted">대사 결과가 없습니다.</td></tr>';
+    const action = item.status === '확인필요' ? '<button class="ui-btn outline small" data-action="link" data-id="' + item.id + '">수동 연결</button>' : item.status === '원장누락의심' ? '<button class="ui-btn outline small" data-action="create" data-id="' + item.id + '">원장 생성</button>' : '-';
+    return '<tr><td>' + escapeHtml(String(bank.transactionAt || '').slice(0,10)) + '</td><td>' + reconcileType(bank) + '</td><td>' + escapeHtml([bank.counterparty, bank.description].filter(Boolean).join(' · ')) + '</td><td>' + currency(bank.amount || 0) + '</td><td>' + escapeHtml(ledger.transaction_id ? [ledger.counterparty, ledger.description].filter(Boolean).join(' · ') : '-') + '</td><td><span class="ui-badge ' + reconcileStatusClass(item.status) + '">' + escapeHtml(item.status) + '</span></td><td>' + escapeHtml(item.matchMethod || '-') + '</td><td>' + action + '</td></tr>';
+  }).join('') : '<tr><td colspan="8" class="ui-empty">대사 결과가 없습니다.</td></tr>';
 }
 
 async function refreshReconciliationHistory(selectId) {
@@ -83,7 +83,6 @@ async function createLedgerForItem(itemId) {
   } catch (error) { toast(error && error.message ? error.message : '원장 생성에 실패했습니다.'); }
 }
 
-setupAccountingPageLinks();
 setupFileUpload({ key: 'reconciliation', zoneId: 'reconciliationDropzone', inputId: 'reconciliationFile', nameId: 'reconciliationFileName', multiple: true });
 document.getElementById('uploadBankTransactions').addEventListener('click', uploadBankFiles);
 document.getElementById('runReconcile').addEventListener('click', runOfficialReconciliation);
