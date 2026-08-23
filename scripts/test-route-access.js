@@ -13,6 +13,10 @@ assert.ok(helper.includes('function resolvePageDomain_'), 'resolvePageDomain_ mi
 assert.ok(helper.includes('function buildDomainAccess_'), 'buildDomainAccess_ missing');
 assert.ok(helper.includes('function canAccessPage_'), 'canAccessPage_ missing');
 assert.ok(code.includes("settings_departments: '300_settings/340_departments/Settings_Departments'"), 'settings_departments route missing');
+assert.ok(!code.includes("accounting: '400_accounting/400_home/Accounting_Home'"), 'accounting overview route must be removed');
+assert.ok(code.includes("accounting_ledger: '400_accounting/410_ledger/Accounting_Ledger'"), 'accounting_ledger route missing');
+assert.ok(code.includes("accounting_reconciliation: '400_accounting/420_reconciliation/Accounting_Reconciliation'"), 'accounting_reconciliation route missing');
+assert.ok(code.includes("accounting_settlement: '400_accounting/430_settlement/Accounting_Settlement'"), 'accounting_settlement route missing');
 assert.ok(code.includes('canAccessPage_(page, login)'), 'router access guard missing');
 assert.ok(code.includes("file = '100_common/Access_Denied'"), 'access denied route missing');
 assert.ok(api.includes('domainAccess:'), 'auth API domainAccess missing');

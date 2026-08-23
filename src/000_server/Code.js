@@ -5,7 +5,6 @@ function doGet(e) {
     login: '200_login/Login',
     main: '250_main/Main',
     mypage: '270_mypage/MyPage',
-    accounting: '400_accounting/400_home/Accounting_Home',
     accounting_ledger: '400_accounting/410_ledger/Accounting_Ledger',
     accounting_reconciliation: '400_accounting/420_reconciliation/Accounting_Reconciliation',
     accounting_settlement: '400_accounting/430_settlement/Accounting_Settlement',

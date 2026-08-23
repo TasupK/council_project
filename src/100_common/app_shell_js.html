@@ -81,7 +81,9 @@ if (goMy) {
 
 // 3. 공통 페이지 링크 및 활성 메뉴 연결
 getAppElement('appNavMain').href = buildAppPageUrl('main');
-getAppElement('appNavAccounting').href = buildAppPageUrl('accounting');
+getAppElement('appNavAccountingLedger').href = buildAppPageUrl('accounting_ledger');
+getAppElement('appNavAccountingReconciliation').href = buildAppPageUrl('accounting_reconciliation');
+getAppElement('appNavAccountingSettlement').href = buildAppPageUrl('accounting_settlement');
 getAppElement('appNavStudentFeeHome').href = buildAppPageUrl('student_fee');
 getAppElement('appNavStudentFeePayers').href = buildAppPageUrl('student_fee_payers');
 getAppElement('appNavStudentFeePayments').href = buildAppPageUrl('student_fee_payments');
@@ -90,6 +92,11 @@ getAppElement('appNavEvent').href = buildAppPageUrl('event');
 getAppElement('appNavSettings').href = buildAppPageUrl('settings');
 setAppActiveNavigation(APP_CURRENT_PAGE);
 loadAppNavigationAccess_();
+
+getAppElement('appNavAccounting').addEventListener('click', function () {
+  var expanded = getAppElement('appNavAccounting').getAttribute('aria-expanded') === 'true';
+  setAccountingSubmenuExpanded_(!expanded);
+});
 
 getAppElement('appNavStudentFee').addEventListener('click', function () {
   var expanded = getAppElement('appNavStudentFee').getAttribute('aria-expanded') === 'true';
@@ -128,13 +135,24 @@ function loadAppNavigationAccess_() {
 function setAppDomainVisible_(domain, visible) {
   var target = {
     main: 'appNavMain',
-    accounting: 'appNavAccounting',
+    accounting: 'appNavAccountingGroup',
     student_fee: 'appNavStudentFeeGroup',
     event: 'appNavEvent',
     settings: 'appNavSettings'
   }[domain];
   if (!target) return;
   getAppElement(target).classList.toggle('hidden', !visible);
+}
+
+function isAccountingPage_(page) {
+  return String(page || '').indexOf('accounting') === 0;
+}
+
+function setAccountingSubmenuExpanded_(expanded) {
+  var toggle = getAppElement('appNavAccounting');
+  var submenu = getAppElement('appAccountingSubmenu');
+  toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+  submenu.hidden = !expanded;
 }
 
 function isStudentFeePage_(page) {
@@ -151,7 +169,10 @@ function setStudentFeeSubmenuExpanded_(expanded) {
 function setAppActiveNavigation(page) {
   var current = String(page || '');
   var mainLink = getAppElement('appNavMain');
-  var accountingLink = getAppElement('appNavAccounting');
+  var accountingParent = getAppElement('appNavAccounting');
+  var accountingLedger = getAppElement('appNavAccountingLedger');
+  var accountingReconciliation = getAppElement('appNavAccountingReconciliation');
+  var accountingSettlement = getAppElement('appNavAccountingSettlement');
   var studentFeeParent = getAppElement('appNavStudentFee');
   var studentFeeHome = getAppElement('appNavStudentFeeHome');
   var studentFeePayers = getAppElement('appNavStudentFeePayers');
@@ -161,7 +182,10 @@ function setAppActiveNavigation(page) {
   var settingsLink = getAppElement('appNavSettings');
 
   mainLink.classList.toggle('active', current === 'main');
-  accountingLink.classList.toggle('active', current.indexOf('accounting') === 0);
+  accountingParent.classList.toggle('active', isAccountingPage_(current));
+  accountingLedger.classList.toggle('active', current === 'accounting_ledger');
+  accountingReconciliation.classList.toggle('active', current === 'accounting_reconciliation');
+  accountingSettlement.classList.toggle('active', current === 'accounting_settlement');
   studentFeeParent.classList.toggle('active', isStudentFeePage_(current));
   studentFeeHome.classList.toggle('active', current === 'student_fee');
   studentFeePayers.classList.toggle('active', current === 'student_fee_payers');
@@ -169,6 +193,7 @@ function setAppActiveNavigation(page) {
   studentFeeRefunds.classList.toggle('active', current === 'student_fee_refunds');
   eventLink.classList.toggle('active', current.indexOf('event') === 0);
   settingsLink.classList.toggle('active', current.indexOf('settings') === 0);
+  setAccountingSubmenuExpanded_(isAccountingPage_(current));
   setStudentFeeSubmenuExpanded_(isStudentFeePage_(current));
 }
 

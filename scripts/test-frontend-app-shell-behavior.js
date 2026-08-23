@@ -48,9 +48,11 @@ function makeElement(id) {
 const ids = [
   'appSidebarToggle', 'appSidebar', 'appUserName', 'appUserTitle', 'appUserCard',
   'appAvatar', 'profilePop', 'popAvatar', 'popName', 'popEmail', 'goMy',
-  'appNavMain', 'appNavAccounting', 'appNavStudentFeeGroup', 'appNavStudentFee',
-  'appStudentFeeSubmenu', 'appNavStudentFeeHome', 'appNavStudentFeePayers',
-  'appNavStudentFeePayments', 'appNavStudentFeeRefunds', 'appNavEvent', 'appNavSettings'
+  'appNavMain', 'appNavAccountingGroup', 'appNavAccounting', 'appAccountingSubmenu',
+  'appNavAccountingLedger', 'appNavAccountingReconciliation', 'appNavAccountingSettlement',
+  'appNavStudentFeeGroup', 'appNavStudentFee', 'appStudentFeeSubmenu',
+  'appNavStudentFeeHome', 'appNavStudentFeePayers', 'appNavStudentFeePayments',
+  'appNavStudentFeeRefunds', 'appNavEvent', 'appNavSettings'
 ];
 const elements = Object.fromEntries(ids.map(id => [id, makeElement(id)]));
 const app = { classList: makeClassList() };
@@ -90,6 +92,32 @@ const context = {
 };
 vm.createContext(context);
 vm.runInContext(source, context);
+
+assert.strictEqual(elements.appNavAccountingLedger.href, 'https://example.com/app?page=accounting_ledger');
+assert.strictEqual(elements.appNavAccountingReconciliation.href, 'https://example.com/app?page=accounting_reconciliation');
+assert.strictEqual(elements.appNavAccountingSettlement.href, 'https://example.com/app?page=accounting_settlement');
+assert.strictEqual(elements.appAccountingSubmenu.hidden, true);
+assert.strictEqual(elements.appNavAccounting.getAttribute('aria-expanded'), 'false');
+
+elements.appNavAccounting.dispatch('click');
+assert.strictEqual(elements.appAccountingSubmenu.hidden, false);
+assert.strictEqual(elements.appNavAccounting.getAttribute('aria-expanded'), 'true');
+
+elements.appNavAccounting.dispatch('click');
+assert.strictEqual(elements.appAccountingSubmenu.hidden, true);
+assert.strictEqual(elements.appNavAccounting.getAttribute('aria-expanded'), 'false');
+
+context.setAppActiveNavigation('accounting_reconciliation');
+assert.strictEqual(elements.appNavAccounting.classList.contains('active'), true);
+assert.strictEqual(elements.appNavAccountingLedger.classList.contains('active'), false);
+assert.strictEqual(elements.appNavAccountingReconciliation.classList.contains('active'), true);
+assert.strictEqual(elements.appNavAccountingSettlement.classList.contains('active'), false);
+assert.strictEqual(elements.appAccountingSubmenu.hidden, false);
+assert.strictEqual(elements.appNavAccounting.getAttribute('aria-expanded'), 'true');
+
+context.setAppActiveNavigation('main');
+assert.strictEqual(elements.appNavAccounting.classList.contains('active'), false);
+assert.strictEqual(elements.appAccountingSubmenu.hidden, true);
 
 assert.strictEqual(app.classList.contains('sidebar-hidden'), false);
 assert.strictEqual(elements.appSidebarToggle.getAttribute('aria-expanded'), 'true');
