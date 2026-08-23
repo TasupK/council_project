@@ -28,8 +28,8 @@ function filteredItems() {
 }
 
 function badgeClass(status) {
-  if (status === '정상') return 'success';
-  if (status === '확인필요') return 'danger';
+  if (status === '승인') return 'success';
+  if (status === '반려') return 'danger';
   return 'warning';
 }
 
@@ -69,7 +69,10 @@ function render() {
 
 function goLedgerPage(page) { state.ledgerPage = page; render(); }
 function openModal(id) { document.getElementById(id).classList.add('open'); }
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+  if (id === 'detailModal') clearEvidencePreviewUrls();
+}
 function setType(type) {
   state.selectedType = type;
   document.getElementById('expenseBtn').className = type === '지출' ? 'segment expense-on' : 'segment';
@@ -125,8 +128,49 @@ function evidenceBase64ToBlob(contentBase64, mimeType) {
   return new Blob([bytes], { type: mimeType || 'application/octet-stream' });
 }
 
-async function openEvidenceFile(button) {
-  const popup = window.open('about:blank', '_blank');
+function isImageEvidence(file) {
+  const mimeType = String((file && (file.mime_type || file.file_type)) || '');
+  const fileName = String((file && file.file_name) || '');
+  return mimeType.indexOf('image/') === 0 || /\.(png|jpe?g|gif|webp|bmp)$/i.test(fileName);
+}
+
+function clearEvidencePreviewUrls() {
+  (state.evidencePreviewUrls || []).forEach(function (url) { URL.revokeObjectURL(url); });
+  state.evidencePreviewUrls = [];
+  state.evidencePreviewRequest = Number(state.evidencePreviewRequest || 0) + 1;
+}
+
+async function loadEvidencePreview(file, index, requestId) {
+  const target = document.getElementById('evidencePreview' + index);
+  if (!target || !file.file_id || !isImageEvidence(file)) return;
+  try {
+    const response = await accountingClient.getLedgerEvidenceFileContent({
+      evidence_id: file.evidence_id || '',
+      file_id: file.file_id || ''
+    });
+    if (!response || !response.content_base64) throw new Error('이미지 응답이 올바르지 않습니다.');
+    if (requestId !== state.evidencePreviewRequest || !document.getElementById('evidencePreview' + index)) return;
+
+    const mimeType = response.mime_type || 'application/octet-stream';
+    if (String(mimeType).indexOf('image/') !== 0) throw new Error('미리보기를 지원하지 않는 파일입니다.');
+    const objectUrl = URL.createObjectURL(evidenceBase64ToBlob(response.content_base64, mimeType));
+    state.evidencePreviewUrls.push(objectUrl);
+
+    const image = document.createElement('img');
+    image.src = objectUrl;
+    image.alt = file.file_name || '증빙자료 이미지';
+    target.replaceChildren(image);
+    target.classList.remove('evidence-preview-loading');
+  } catch (error) {
+    if (requestId !== state.evidencePreviewRequest) return;
+    target.textContent = error && error.message ? error.message : '이미지를 불러오지 못했습니다.';
+  }
+}
+
+async function downloadEvidenceFile(button) {
+  const originalLabel = button.textContent;
+  button.disabled = true;
+  button.textContent = '다운로드 중...';
   try {
     const response = await accountingClient.getLedgerEvidenceFileContent({
       evidence_id: button.dataset.evidenceId || '',
@@ -135,12 +179,19 @@ async function openEvidenceFile(button) {
     if (!response || !response.content_base64) throw new Error('증빙 파일 응답이 올바르지 않습니다.');
     const blob = evidenceBase64ToBlob(response.content_base64, response.mime_type);
     const objectUrl = URL.createObjectURL(blob);
-    if (popup) popup.location.href = objectUrl;
-    else window.open(objectUrl, '_blank');
-    window.setTimeout(function () { URL.revokeObjectURL(objectUrl); }, 60000);
+    const link = document.createElement('a');
+    link.href = objectUrl;
+    link.download = response.file_name || button.dataset.fileName || '증빙자료';
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(function () { URL.revokeObjectURL(objectUrl); }, 10000);
   } catch (error) {
-    if (popup && !popup.closed) popup.close();
-    toast(error && error.message ? error.message : '증빙 파일을 열지 못했습니다.');
+    toast(error && error.message ? error.message : '증빙 파일을 다운로드하지 못했습니다.');
+  } finally {
+    button.disabled = false;
+    button.textContent = originalLabel;
   }
 }
 
@@ -158,8 +209,17 @@ async function refreshLedger() {
 }
 
 async function saveEntry(draft) {
+  if (state.ledgerSaving) return;
   const item = readForm();
   if (!draft && (!item.transaction_date || !item.amount || !item.counterparty)) return toast('필수 항목을 입력해 주세요.');
+  const createButton = document.getElementById('create');
+  const draftButton = document.getElementById('draft');
+  const submitButton = draft ? draftButton : createButton;
+  const submitLabel = submitButton.textContent;
+  state.ledgerSaving = true;
+  createButton.disabled = true;
+  draftButton.disabled = true;
+  submitButton.textContent = '저장 중...';
   try {
     if (!state.editingLedgerId) item.evidence_files = await readFilePayloads(state.uploadFiles.ledgerEntry);
     if (state.editingLedgerId) await accountingClient.updateLedgerEntry(item);
@@ -172,7 +232,14 @@ async function saveEntry(draft) {
     closeModal('registerModal');
     await refreshLedger();
     toast(draft ? '임시저장되었습니다.' : '저장되었습니다.');
-  } catch (error) { toast(error && error.message ? error.message : '저장 중 오류가 발생했습니다.'); }
+  } catch (error) {
+    toast(error && error.message ? error.message : '저장 중 오류가 발생했습니다.');
+  } finally {
+    state.ledgerSaving = false;
+    createButton.disabled = false;
+    draftButton.disabled = false;
+    submitButton.textContent = draft ? submitLabel : (state.editingLedgerId ? '수정 저장' : '등록하기');
+  }
 }
 
 function openDetail(id) {
@@ -182,10 +249,15 @@ function openDetail(id) {
   document.getElementById('detailTitle').textContent = item.transaction_type + ' 상세';
   document.getElementById('detailStatus').className = 'ui-badge ' + badgeClass(item.status);
   document.getElementById('detailStatus').textContent = item.status;
+  const approveButton = document.getElementById('approve');
+  approveButton.disabled = item.approval_status === '승인';
+  approveButton.textContent = item.approval_status === '승인' ? '승인 완료' : '승인';
   document.getElementById('detailAlert').style.display = 'none';
   document.getElementById('detailRows').innerHTML = [
     ['거래일자', String(item.transaction_date || '').slice(0, 10)], ['금액', currency(item.amount)], ['거래처/입금자명', item.counterparty || '-'],
-    ['행사 연결', item.event_name || '해당없음'], ['적요', item.description || '-'], ['담당자', item.manager || '-']
+    ['행사 연결', item.event_name || '해당없음'], ['적요', item.description || '-'],
+    ['승인 상태', item.approval_status || '승인대기'], ['대조 상태', item.match_status || '미확인'],
+    ['승인자', item.approved_by || '-'], ['승인일시', item.approved_at || '-'], ['담당자', item.manager || '-']
   ].map(function (row) { return '<div class="detail-row"><span class="detail-label">' + escapeHtml(row[0]) + '</span><span class="detail-value">' + escapeHtml(row[1]) + '</span></div>'; }).join('');
   renderDetailEvidence(item);
   openModal('detailModal');
@@ -193,18 +265,36 @@ function openDetail(id) {
 
 function renderDetailEvidence(item) {
   const files = item.evidence || [];
-  document.getElementById('detailEvidenceList').innerHTML = files.length ? files.map(function (file) {
-    return '<div class="evidence-file"><span class="evidence-name">' + escapeHtml(file.file_name || '증빙자료') + '</span>' +
-      (file.file_id ? '<button class="ui-btn outline small" type="button" data-evidence-id="' + escapeHtml(file.evidence_id || '') + '" data-file-id="' + escapeHtml(file.file_id) + '">파일 열기</button>' : '') + '</div>';
+  clearEvidencePreviewUrls();
+  const requestId = state.evidencePreviewRequest;
+  document.getElementById('detailEvidenceList').innerHTML = files.length ? files.map(function (file, index) {
+    const fileName = escapeHtml(file.file_name || '증빙자료');
+    const downloadButton = file.file_id ? '<button class="ui-btn outline small" type="button" data-evidence-id="' + escapeHtml(file.evidence_id || '') + '" data-file-id="' + escapeHtml(file.file_id) + '" data-file-name="' + fileName + '">다운로드</button>' : '';
+    if (file.file_id && isImageEvidence(file)) {
+      return '<div class="evidence-preview"><div class="evidence-preview-loading" id="evidencePreview' + index + '">이미지 불러오는 중...</div>' +
+        '<div class="evidence-preview-meta"><span class="evidence-name">' + fileName + '</span>' + downloadButton + '</div></div>';
+    }
+    return '<div class="evidence-file"><span class="evidence-name">' + fileName + '</span>' + downloadButton + '</div>';
   }).join('') : '<div class="evidence-empty">첨부된 증빙자료가 없습니다.</div>';
+  files.forEach(function (file, index) { loadEvidencePreview(file, index, requestId); });
 }
 
 async function approve() {
   if (!state.selectedId) return;
-  await accountingClient.processLedgerEntry({ transaction_id: state.selectedId, action: 'approve' });
-  closeModal('detailModal');
-  await refreshLedger();
-  toast('정상 처리되었습니다.');
+  const button = document.getElementById('approve');
+  button.disabled = true;
+  const label = button.textContent;
+  button.textContent = '승인 중...';
+  try {
+    await accountingClient.processLedgerEntry({ transaction_id: state.selectedId, action: 'approve' });
+    closeModal('detailModal');
+    await refreshLedger();
+    toast('승인되었습니다.');
+  } catch (error) {
+    button.disabled = false;
+    button.textContent = label;
+    toast(error && error.message ? error.message : '승인 처리에 실패했습니다.');
+  }
 }
 
 function editSelectedLedger() {
@@ -255,7 +345,8 @@ document.querySelectorAll('.accounting-ledger-filters input, .accounting-ledger-
 document.getElementById('prevLedgerPage').addEventListener('click', function () { goLedgerPage(state.ledgerPage - 1); });
 document.getElementById('nextLedgerPage').addEventListener('click', function () { goLedgerPage(state.ledgerPage + 1); });
 document.getElementById('rows').addEventListener('click', function (event) { const button = event.target.closest('[data-id]'); if (button) openDetail(button.dataset.id); });
-document.getElementById('detailEvidenceList').addEventListener('click', function (event) { const button = event.target.closest('[data-evidence-id]'); if (button) openEvidenceFile(button); });
+document.getElementById('detailEvidenceList').addEventListener('click', function (event) { const button = event.target.closest('[data-evidence-id]'); if (button) downloadEvidenceFile(button); });
+
 async function initializeLedgerPage() {
   try { await refreshLedger(); } catch (error) { toast(error && error.message ? error.message : '원장 정보를 불러오지 못했습니다.'); }
   await updateDatabaseLink();

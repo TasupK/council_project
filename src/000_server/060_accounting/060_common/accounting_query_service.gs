@@ -38,7 +38,11 @@ function mapLedgerEntryDto_(item) {
     business_id: item.businessId || '',
     note: '',
     manager: item.managerEmail || '',
-    status: item.matchStatus || '미확인',
+    status: item.approvalStatus || '승인대기',
+    approval_status: item.approvalStatus || '승인대기',
+    approved_by: item.approvedByEmail || '',
+    approved_at: formatDateTimeValue_(item.approvedAt),
+    rejection_reason: item.rejectionReason || '',
     match_status: item.matchStatus || '미확인',
     record_status: recordStatus,
     has_evidence: false,
@@ -116,7 +120,9 @@ function getLedgerDatabaseInfoData_() {
 }
 
 function getLedgerEventOptionsData_() {
-  var items = getLedgerEntriesData_().filter(function (item) { return item.record_status === '활성'; });
+  var items = getLedgerEntriesData_().filter(function (item) {
+    return item.record_status === '활성' && item.approval_status === '승인';
+  });
   return listAccountingEventRows_().map(function (event) {
     var balance = items.reduce(function (sum, item) {
       if (String(item.event_id) !== String(event.id)) return sum;
@@ -131,8 +137,8 @@ function isActiveLedgerEntry_(item) {
 }
 
 function isSettlementEligibleLedgerEntry_(item) {
-  var status = item.match_status || item.matchStatus || item.status;
-  return isActiveLedgerEntry_(item) && status === '정상';
+  var approvalStatus = item.approval_status || item.approvalStatus || item.status;
+  return isActiveLedgerEntry_(item) && approvalStatus === '승인';
 }
 
 function getLedgerSummaryData_(filter) {
@@ -141,8 +147,8 @@ function getLedgerSummaryData_(filter) {
   return {
     totalIncome: active.reduce(function (sum, item) { return sum + (item.transaction_type === '수입' ? Number(item.amount || 0) : 0); }, 0),
     totalExpense: active.reduce(function (sum, item) { return sum + (item.transaction_type === '지출' ? Number(item.amount || 0) : 0); }, 0),
-    pendingCount: active.filter(function (item) { return item.status === '미확인'; }).length,
-    reviewCount: active.filter(function (item) { return item.status === '확인필요'; }).length,
+    pendingCount: active.filter(function (item) { return item.approval_status === '승인대기'; }).length,
+    reviewCount: active.filter(function (item) { return item.match_status === '확인필요'; }).length,
     draftCount: 0
   };
 }

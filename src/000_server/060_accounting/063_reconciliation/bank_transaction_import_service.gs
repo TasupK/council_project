@@ -5,17 +5,19 @@ function applyBankTransactions_(items, context) {
   lock.waitLock(30000);
   try {
     var existing = listBankTransactionRows_();
-    var sourceHashes = existing.reduce(function (index, row) {
-      if (row.sourceHash) index[String(row.sourceHash)] = true;
+    var rowsBySourceHash = existing.reduce(function (index, row) {
+      if (row.sourceHash) index[String(row.sourceHash)] = row;
       return index;
     }, {});
     var saved = [];
+    var scoped = [];
     var duplicateCount = 0;
 
     (items || []).forEach(function (item) {
       var sourceHash = buildBankTransactionSourceHash_(item);
-      if (sourceHashes[sourceHash]) {
+      if (rowsBySourceHash[sourceHash]) {
         duplicateCount += 1;
+        scoped.push(rowsBySourceHash[sourceHash]);
         return;
       }
       var row = {
@@ -33,11 +35,12 @@ function applyBankTransactions_(items, context) {
         createdAt: getCurrentIsoDateTime_()
       };
       insertBankTransactionRow_(row);
-      sourceHashes[sourceHash] = true;
+      rowsBySourceHash[sourceHash] = row;
       saved.push(row);
+      scoped.push(row);
     });
 
-    return { savedCount: saved.length, duplicateCount: duplicateCount, items: saved };
+    return { savedCount: saved.length, duplicateCount: duplicateCount, items: scoped, savedItems: saved };
   } finally {
     lock.releaseLock();
   }
@@ -70,6 +73,9 @@ function processBankTransactionUploadData_(request, context) {
   }
 
   var result = applyBankTransactions_(normalizedRows, context);
+  var transactionDates = normalizedRows.map(function (item) {
+    return String(item.transactionAt || '').slice(0, 10);
+  }).filter(Boolean).sort();
   var actor = resolveAccountingActorEmail_(context);
   writeAccountingAudit_(
     actor,
@@ -87,6 +93,8 @@ function processBankTransactionUploadData_(request, context) {
     extractedCount: normalizedRows.length,
     savedCount: result.savedCount,
     duplicateCount: result.duplicateCount,
+    startDate: transactionDates.length ? transactionDates[0] : '',
+    endDate: transactionDates.length ? transactionDates[transactionDates.length - 1] : '',
     failedFiles: failedFiles,
     items: result.items
   };

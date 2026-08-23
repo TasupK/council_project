@@ -53,6 +53,8 @@ function setupFileUpload(config) {
         const selected = config.multiple ? Array.from(files) : Array.from(files).slice(0, 1);
         state.uploadFiles[config.key] = selected;
         name.textContent = fileLabel(selected, '선택된 파일 없음');
+        if (typeof config.onChange === 'function')
+            config.onChange(selected);
         if (selected.length)
             toast('파일이 첨부되었습니다.');
     };

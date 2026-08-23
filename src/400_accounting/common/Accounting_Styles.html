@@ -129,11 +129,19 @@
   .accounting-page .reconcile-dropzone input { display: none; }
   .accounting-page .upload-icon { color: var(--ui-info-fg); font-size: 36px; line-height: 1; }
   .accounting-page .upload-main { font-size: 14px; font-weight: 700; }
+  .accounting-page .reconcile-upload-actions {
+    display: flex;
+    align-items: center;
+  }
+  .accounting-page .reconcile-upload-actions .ui-btn {
+    width: 100%;
+    height: 44px;
+  }
   .accounting-page .upload-note { margin-top: var(--ui-space-3); color: var(--ui-muted); font-size: 12px; font-weight: 600; }
 
   .accounting-page .reconcile-filterbar {
     display: grid;
-    grid-template-columns: minmax(270px, 1.5fr) 148px 170px minmax(220px, 1fr) 120px;
+    grid-template-columns: minmax(300px, 1.35fr) 170px minmax(240px, 1fr) 120px;
     gap: var(--ui-space-3);
     align-items: end;
   }
@@ -321,6 +329,37 @@
   .accounting-page .upload strong { display: block; margin-bottom: var(--ui-space-2); font-size: 13px; }
   .accounting-page .upload span { color: var(--ui-muted); font-size: 11px; }
   .accounting-page .evidence-list { display: grid; gap: var(--ui-space-2); margin-top: 10px; }
+  .accounting-page .evidence-preview {
+    overflow: hidden;
+    border: 1px solid var(--ui-border);
+    border-radius: var(--ui-radius-md);
+    background: var(--ui-bg);
+  }
+  .accounting-page .evidence-preview img {
+    width: 100%;
+    max-height: 260px;
+    display: block;
+    object-fit: contain;
+    background: var(--ui-surface);
+  }
+  .accounting-page .evidence-preview-loading {
+    min-height: 220px;
+    display: grid;
+    place-items: center;
+    padding: var(--ui-space-4);
+    color: var(--ui-muted);
+    font-size: 13px;
+    font-weight: 600;
+    text-align: center;
+  }
+  .accounting-page .evidence-preview-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--ui-space-3);
+    padding: 10px 12px;
+    border-top: 1px solid var(--ui-border);
+  }
   .accounting-page .evidence-empty,
   .accounting-page .evidence-file {
     min-height: 42px;

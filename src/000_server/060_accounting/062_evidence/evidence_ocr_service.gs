@@ -3,11 +3,14 @@
 function extractEvidenceOcrText_(evidence) {
   if (!evidence || !evidence.driveFileId) throw new Error('OCR할 증빙 파일이 없습니다.');
   var file = DriveApp.getFileById(evidence.driveFileId);
-  var blob = file.getBlob();
+  return extractEvidenceOcrTextFromBlob_(file.getBlob(), file.getName());
+}
+
+function extractEvidenceOcrTextFromBlob_(blob, fileName) {
   var documentId = '';
   try {
     var created = Drive.Files.create({
-      name: 'OCR_' + file.getName(),
+      name: 'OCR_' + String(fileName || 'evidence'),
       mimeType: 'application/vnd.google-apps.document'
     }, blob, { ocrLanguage: 'ko', fields: 'id' });
     documentId = created.id;
