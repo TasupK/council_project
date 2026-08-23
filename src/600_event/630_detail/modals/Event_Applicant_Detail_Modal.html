@@ -1,0 +1,41 @@
+<div id="ew-modal-root">
+  <div id="ew-applicant-detail-modal" class="ew-modal-backdrop ui-modal-overlay" data-action="close-modal" hidden>
+    <section class="ew-modal ui-modal" role="dialog" aria-modal="true" aria-labelledby="ew-applicant-modal-title" data-modal-stop>
+      <header class="ew-modal-head">
+        <h2 id="ew-applicant-modal-title">신청자 상세</h2>
+        <button class="ew-modal-close ui-btn ghost small" type="button" data-action="close-modal" aria-label="닫기">×</button>
+      </header>
+
+      <div class="ew-modal-body">
+        <dl class="ew-modal-info">
+          <dt>이름</dt><dd id="ew-applicant-name">-</dd>
+          <dt>학번</dt><dd id="ew-applicant-student-id">-</dd>
+          <dt>연락처</dt><dd id="ew-applicant-phone">-</dd>
+        </dl>
+
+        <div class="ew-modal-divider"></div>
+
+        <dl class="ew-modal-info">
+          <dt>학생회비 상태</dt><dd id="ew-applicant-fee-status">-</dd>
+          <dt>참가비 입금 상태</dt><dd id="ew-applicant-payment-status">-</dd>
+          <dt>승인 상태</dt><dd id="ew-applicant-approval-status">-</dd>
+          <dt>처리 담당자</dt><dd id="ew-applicant-manager">-</dd>
+          <dt>처리 일시</dt><dd id="ew-applicant-processed-at">-</dd>
+        </dl>
+
+        <div id="ew-applicant-extra-answers"></div>
+
+        <div class="ew-modal-divider"></div>
+        <label>송금 내역 캡처</label>
+        <div class="ew-upload-placeholder">
+          <div>▦<strong>송금 내역 파일 API 확인 필요</strong><small>설계 확정 전 업로드 비활성</small></div>
+        </div>
+      </div>
+
+      <footer class="ew-modal-actions">
+        <button type="button" class="ew-btn ew-btn-danger ui-btn danger" id="ew-applicant-reject" data-action="process-applicant" data-process="reject">반려</button>
+        <button type="button" class="ew-btn ew-btn-primary ui-btn primary" id="ew-applicant-approve" data-action="process-applicant" data-process="approve">승인</button>
+      </footer>
+    </section>
+  </div>
+</div>

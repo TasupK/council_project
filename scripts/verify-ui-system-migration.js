@@ -42,6 +42,8 @@ const ACCOUNTING_LEDGER_PARTIALS = [
   'src/400_accounting/410_ledger/modals/Accounting_Ledger_Detail_Modal.html'
 ];
 
+const EVENT_DETAIL_MODAL = 'src/600_event/630_detail/modals/Event_Applicant_Detail_Modal.html';
+
 const REQUIRED_IDS = {
   settings: {
     'src/300_settings/310_users/Settings_Users_View.html': [
@@ -76,7 +78,14 @@ const REQUIRED_IDS = {
     'src/600_event/630_detail/Event_Detail_View.html': [
       'ew-app', 'ew-edit-event', 'ew-detail-name', 'ew-detail-status', 'ew-detail-meta',
       'ew-kpi-total', 'ew-kpi-approved', 'ew-kpi-paid', 'ew-kpi-attended', 'ew-kpi-balance',
-      'ew-tab-panel', 'ew-loading', 'ew-modal-root', 'ew-toast'
+      'ew-tab-panel', 'ew-loading', 'ew-toast'
+    ],
+    'src/600_event/630_detail/modals/Event_Applicant_Detail_Modal.html': [
+      'ew-modal-root', 'ew-applicant-detail-modal', 'ew-applicant-modal-title',
+      'ew-applicant-name', 'ew-applicant-student-id', 'ew-applicant-phone',
+      'ew-applicant-fee-status', 'ew-applicant-payment-status', 'ew-applicant-approval-status',
+      'ew-applicant-manager', 'ew-applicant-processed-at', 'ew-applicant-extra-answers',
+      'ew-applicant-reject', 'ew-applicant-approve'
     ]
   }
 };
@@ -100,7 +109,8 @@ const REQUIRED_DATA_ACTIONS = {
   event: {
     'src/600_event/610_home/Event_Home_View.html': ['go-create', 'reset-event-filters'],
     'src/600_event/620_form/Event_Form_View.html': ['go-list'],
-    'src/600_event/630_detail/Event_Detail_View.html': ['go-list', 'edit-event', 'detail-tab']
+    'src/600_event/630_detail/Event_Detail_View.html': ['go-list', 'edit-event', 'detail-tab'],
+    'src/600_event/630_detail/modals/Event_Applicant_Detail_Modal.html': ['close-modal', 'process-applicant']
   }
 };
 
@@ -236,7 +246,8 @@ function verifyEvent() {
   requireClasses('src/600_event/610_home/event_home_js.html', ['ui-table', 'ui-btn', 'ui-empty']);
   requireClasses('src/600_event/600_common/event_common_js.html', ['ui-badge', 'ui-pagination', 'ui-page-btn']);
   requireClasses('src/600_event/630_detail/event_detail_core_js.html', ['ui-card', 'ui-btn', 'ui-badge']);
-  requireClasses('src/600_event/630_detail/event_detail_applicants_js.html', ['ui-table', 'ui-modal-overlay', 'ui-modal', 'ui-btn']);
+  requireClasses('src/600_event/630_detail/event_detail_applicants_js.html', ['ui-table', 'ui-btn']);
+  requireClasses(EVENT_DETAIL_MODAL, ['ui-modal-overlay', 'ui-modal', 'ui-btn']);
 }
 
 verifySharedSystem();
