@@ -106,6 +106,10 @@ function testPayerBehavior_() {
     context.createFeePayerData_({ studentId: 'existing', name: 'A', affiliation: 'B', startSemesterId: '20261' }, { email: 'staff@example.com' });
   }, /이미 등록/);
 
+  assert.throws(function () {
+    context.upsertFeePayerFromApplication_({ studentId: '60208888', name: '검증', affiliation: '경영정보학과', startSemesterId: '20999' }, 'staff@example.com');
+  }, /학기기준/);
+
   var created = context.createFeePayerData_({ studentId: '60209999', name: '신규', affiliation: '경영정보학과', startSemesterId: '20261' }, { email: 'staff@example.com' });
   assert.deepStrictEqual(plain_(created), inserted);
   assert.strictEqual(created.managerEmail, 'staff@example.com');
@@ -130,6 +134,10 @@ function testPaymentBehavior_() {
   var audits = [];
 
   loadRequest_(context);
+  context.assertValidStudentFeeSemester_ = function (id) {
+    if (id !== '20261') throw new Error('학기기준');
+    return { id: id };
+  };
   context.findFeeApplicationRowById_ = function () { return application; };
   context.findFeePaymentRowByApplicationId_ = function () { return inserted || null; };
   context.updateFeeApplicationRowById_ = function (id, changes) { application = Object.assign({}, application, changes); return true; };

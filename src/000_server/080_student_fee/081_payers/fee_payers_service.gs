@@ -5,6 +5,7 @@ function upsertFeePayerFromApplication_(application, actorEmail) {
   var affiliation = requireStudentFeeText_(application && application.affiliation, 'affiliation');
   var startSemesterId = requireStudentFeeText_(application && application.startSemesterId, 'startSemesterId');
   var email = requireStudentFeeText_(actorEmail, 'actorEmail');
+  assertValidStudentFeeSemester_(startSemesterId);
 
   var before = findFeePayerRowById_(studentId);
   var now = getCurrentIsoDateTime_();

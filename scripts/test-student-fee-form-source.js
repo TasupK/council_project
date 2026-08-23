@@ -165,7 +165,7 @@ function fakeFormResponse(overrides) {
       fakeItemResponse('현재학기', '1학기'),
       fakeItemResponse('납부유형', '일반 납부'),
       fakeItemResponse('학생카드캡쳐', ['https://drive.google.com/open?id=STUDENT_CARD_FILE']),
-      fakeItemResponse('학생카드캡쳐', ['https://drive.google.com/file/d/DEPOSIT_FILE/view'])
+      fakeItemResponse('입금내역캡쳐', ['https://drive.google.com/file/d/DEPOSIT_FILE/view'])
     ]
   }, overrides || {});
   return {
