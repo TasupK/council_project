@@ -32,6 +32,8 @@
       <main class="main event-main">
         <!-- 상세 헤더·KPI·탭의 고정 DOM 구조는 View 파일이 담당합니다. -->
         <?!= include('600_event/630_detail/Event_Detail_View'); ?>
+        <!-- 페이지 전용 신청자 상세 모달은 별도 partial이 안정적인 dialog shell을 소유합니다. -->
+        <?!= include('600_event/630_detail/modals/Event_Applicant_Detail_Modal'); ?>
       </main>
     </div>
   </div>
