@@ -9,6 +9,17 @@ function read_(relativePath) {
   return fs.readFileSync(path.join(FRONTEND_ROOT, relativePath), 'utf8');
 }
 
+function hasLegacyDynamicPrimitive_(source) {
+  var classPattern = /class=["']([^"']*)["']/g;
+  var match;
+  while ((match = classPattern.exec(source)) !== null) {
+    var classes = match[1].split(/\s+/).filter(Boolean);
+    if (classes.indexOf('badge') >= 0) return true;
+    if (classes.indexOf('small') >= 0 && classes.indexOf('ui-btn') < 0) return true;
+  }
+  return false;
+}
+
 var views = [
   '410_ledger/Accounting_Ledger_View.html',
   '420_reconciliation/Accounting_Reconciliation_View.html',
@@ -67,7 +78,7 @@ var ledgerJs = read_('410_ledger/accounting_ledger_js.html');
 var reconciliationJs = read_('420_reconciliation/accounting_reconciliation_js.html');
 var settlementJs = read_('430_settlement/accounting_settlement_js.html');
 var combinedJs = [ledgerJs, reconciliationJs, settlementJs].join('\n');
-if (/class=["'][^"']*\b(?:badge|small)\b/.test(combinedJs)) {
+if (hasLegacyDynamicPrimitive_(combinedJs)) {
   failures.push('Accounting dynamic markup must use shared ui-badge/ui-btn variants instead of legacy badge/small classes.');
 }
 if (/match-pill|match-ok|match-check|match-bad/.test(reconciliationJs) || reconciliationJs.indexOf('ui-badge') < 0) {
