@@ -36,6 +36,12 @@ const DOMAIN_SHELLS = {
   ]
 };
 
+const ACCOUNTING_LEDGER_PARTIALS = [
+  'src/400_accounting/410_ledger/Accounting_Ledger_View.html',
+  'src/400_accounting/410_ledger/modals/Accounting_Ledger_Register_Modal.html',
+  'src/400_accounting/410_ledger/modals/Accounting_Ledger_Detail_Modal.html'
+];
+
 const REQUIRED_IDS = {
   settings: {
     'src/300_settings/310_users/Settings_Users_View.html': [
@@ -46,11 +52,15 @@ const REQUIRED_IDS = {
     'src/400_accounting/410_ledger/Accounting_Ledger_View.html': [
       'ledgerDbLink', 'openRegister', 'sumIncome', 'sumExpense', 'sumPending', 'sumReview',
       'keyword', 'type', 'department', 'event', 'status', 'rows', 'ledgerPagination',
-      'prevLedgerPage', 'ledgerPageInfo', 'nextLedgerPage', 'registerModal', 'entryForm',
-      'expenseBtn', 'incomeBtn', 'formDepartment', 'formEvent', 'eventBalance',
-      'entryEvidenceDropzone', 'entryEvidenceFile', 'entryEvidenceFileName', 'draft', 'create',
-      'detailModal', 'detailTitle', 'detailStatus', 'detailAlert', 'detailRows',
-      'detailEvidenceList', 'approve', 'toast'
+      'prevLedgerPage', 'ledgerPageInfo', 'nextLedgerPage', 'toast'
+    ],
+    'src/400_accounting/410_ledger/modals/Accounting_Ledger_Register_Modal.html': [
+      'registerModal', 'entryForm', 'expenseBtn', 'incomeBtn', 'formDepartment', 'formEvent', 'eventBalance',
+      'entryEvidenceDropzone', 'entryEvidenceFile', 'entryEvidenceFileName', 'draft', 'create'
+    ],
+    'src/400_accounting/410_ledger/modals/Accounting_Ledger_Detail_Modal.html': [
+      'detailModal', 'detailTitle', 'detailStatus', 'detailAlert', 'detailRows', 'detailEvidenceList',
+      'editLedger', 'deleteLedger', 'approve'
     ]
   },
   event: {
@@ -73,7 +83,7 @@ const REQUIRED_IDS = {
 
 const REQUIRED_FORM_NAMES = {
   accounting: {
-    'src/400_accounting/410_ledger/Accounting_Ledger_View.html': [
+    'src/400_accounting/410_ledger/modals/Accounting_Ledger_Register_Modal.html': [
       'transaction_date', 'department_name', 'amount', 'counterparty', 'event_name', 'description', 'note'
     ]
   },
@@ -110,6 +120,10 @@ function read(rel) {
   return fs.readFileSync(file, 'utf8');
 }
 
+function readMany(rels) {
+  return rels.map((rel) => read(rel)).join('\n');
+}
+
 function hasClass(source, className) {
   return new RegExp(`(?:^|[\\s\"'])${className}(?:[\\s\"']|$)`).test(source);
 }
@@ -118,6 +132,12 @@ function requireClasses(rel, classes) {
   const source = read(rel);
   classes.forEach((className) => {
     if (!hasClass(source, className)) failures.push(`${rel}: missing class ${className}`);
+  });
+}
+
+function requireClassesInSource(label, source, classes) {
+  classes.forEach((className) => {
+    if (!hasClass(source, className)) failures.push(`${label}: missing class ${className}`);
   });
 }
 
@@ -181,7 +201,8 @@ function verifyMain() {
 }
 
 function verifyAccounting() {
-  requireClasses('src/400_accounting/410_ledger/Accounting_Ledger_View.html', [
+  const ledgerComposed = readMany(ACCOUNTING_LEDGER_PARTIALS);
+  requireClassesInSource('Accounting Ledger composition', ledgerComposed, [
     'ui-page-head', 'ui-page-desc', 'ui-page-actions', 'ui-stat-card', 'ui-toolbar', 'ui-field',
     'ui-table-wrap', 'ui-table', 'ui-pagination', 'ui-modal-overlay', 'ui-modal', 'ui-badge', 'ui-toast'
   ]);
