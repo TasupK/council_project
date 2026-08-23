@@ -19,6 +19,7 @@ assert.ok(service.includes('invalidateLoginContextCache_'), 'login cache invalid
 assert.ok(service.includes('getAdminSettingsCurrent_'), 'admin authorization missing');
 assert.ok(query.includes('departmentMap') && query.includes('buildDepartmentsById_'), 'settings user query should reuse one department lookup');
 assert.ok(view.includes('data-user-department'), 'department selector hook missing');
-assert.ok(js.includes('settingsClient.updateUserDepartment'), 'frontend must use Settings semantic mutation client');
-assert.ok(client.includes('api_updateSettingsUserDepartment'), 'Settings client must own department mutation API mapping');
+assert.ok(js.includes("data-user-field=\"departmentId\"") || js.includes("data-user-field='departmentId'"), 'batch user editor must expose department field');
+assert.ok(js.includes('settingsClient.saveUserChanges'), 'batch department/user persistence must use Settings semantic client');
+assert.ok(client.includes('api_updateSettingsUserDepartment'), 'Settings client must retain department mutation API mapping');
 console.log('Settings department assignment contract passed.');
