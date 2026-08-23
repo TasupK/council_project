@@ -1,0 +1,124 @@
+var fs = require('fs');
+var path = require('path');
+
+var ROOT = path.resolve(__dirname, '..');
+
+function read_(relativePath) {
+  return fs.readFileSync(path.join(ROOT, relativePath), 'utf8');
+}
+
+function escapeRegex_(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function hasSelectorBlock_(source, selector) {
+  var pattern = new RegExp('(^|\\})\\s*' + escapeRegex_(selector) + '\\s*\\{', 'm');
+  return pattern.test(source);
+}
+
+function getCssVarValue_(source, token) {
+  var pattern = new RegExp(escapeRegex_(token) + '\\s*:\\s*([^;]+);');
+  var match = source.match(pattern);
+  return match ? match[1].trim() : '';
+}
+
+var appStyles = read_('src/100_common/App_Styles.html');
+var shellStyles = read_('src/100_common/App_Shell_Styles.html');
+var failures = [];
+
+function fail_(message) {
+  failures.push(message);
+}
+
+var REQUIRED_TOKENS = [
+  '--ui-bg', '--ui-surface', '--ui-border', '--ui-border-strong',
+  '--ui-text', '--ui-muted', '--ui-primary', '--ui-primary-hover',
+  '--ui-info-bg', '--ui-info-fg', '--ui-success-bg', '--ui-success-fg',
+  '--ui-warning-bg', '--ui-warning-fg', '--ui-danger-bg', '--ui-danger-fg',
+  '--ui-neutral-bg', '--ui-neutral-fg', '--ui-radius-sm', '--ui-radius-md',
+  '--ui-radius-lg', '--ui-shadow', '--ui-space-1', '--ui-space-2',
+  '--ui-space-3', '--ui-space-4', '--ui-space-5', '--ui-space-6', '--ui-space-8'
+];
+
+REQUIRED_TOKENS.forEach(function (token) {
+  if (appStyles.indexOf(token + ':') === -1) {
+    fail_('Missing canonical UI token: ' + token);
+  }
+});
+
+var LEGACY_ALIAS_TOKENS = [
+  '--bg', '--surface', '--border', '--border-strong', '--text', '--text-2', '--text-3', '--text-4',
+  '--primary', '--primary-hover', '--active-bg', '--active-text', '--danger', '--green', '--radius', '--shadow'
+];
+
+LEGACY_ALIAS_TOKENS.forEach(function (token) {
+  var value = getCssVarValue_(appStyles, token);
+  if (value && value.indexOf('var(--ui-') === -1) {
+    fail_('Legacy token must alias canonical UI token: ' + token + ' -> ' + value);
+  }
+});
+
+var SHELL_OWNED_SELECTORS = [
+  '.app', '.header', '.body', '.sidebar', '.main', '.sidebar-toggle',
+  '.nav-item', '.nav-group', '.nav-submenu', '.nav-subitem',
+  '.global-search', '.term-select', '.icon-btn', '.user-trigger', '.pop'
+];
+
+SHELL_OWNED_SELECTORS.forEach(function (selector) {
+  if (hasSelectorBlock_(appStyles, selector)) {
+    fail_('Shell selector must not be owned by App_Styles: ' + selector);
+  }
+  if (!hasSelectorBlock_(shellStyles, selector)) {
+    fail_('Shell selector missing from App_Shell_Styles: ' + selector);
+  }
+});
+
+var FORBIDDEN_UNSCOPED_SELECTORS = [
+  '.active', '.brand', '.crumb', '.page', '.side', '.top', '.shell'
+];
+
+FORBIDDEN_UNSCOPED_SELECTORS.forEach(function (selector) {
+  if (hasSelectorBlock_(appStyles, selector) || hasSelectorBlock_(shellStyles, selector)) {
+    fail_('Unscoped shared selector is forbidden: ' + selector);
+  }
+});
+
+var SHELL_TEMPLATES = [
+  'src/250_main/Main.html',
+  'src/270_mypage/MyPage.html',
+  'src/300_settings/300_home/Settings_Home.html',
+  'src/300_settings/310_users/Settings_Users.html',
+  'src/300_settings/320_roles/Settings_Roles.html',
+  'src/300_settings/330_permissions/Settings_Permissions.html',
+  'src/300_settings/340_departments/Settings_Departments.html',
+  'src/400_accounting/400_home/Accounting_Home.html',
+  'src/400_accounting/410_ledger/Accounting_Ledger.html',
+  'src/400_accounting/420_reconciliation/Accounting_Reconciliation.html',
+  'src/400_accounting/430_settlement/Accounting_Settlement.html',
+  'src/500_student_fee/500_home/Student_Fee_Home.html',
+  'src/500_student_fee/510_payers/Student_Fee_Payers.html',
+  'src/500_student_fee/520_payments/Student_Fee_Payments.html',
+  'src/500_student_fee/530_refunds/Student_Fee_Refunds.html',
+  'src/600_event/610_home/Event_Home.html',
+  'src/600_event/620_form/Event_Form.html',
+  'src/600_event/630_detail/Event_Detail.html'
+];
+
+SHELL_TEMPLATES.forEach(function (file) {
+  var source = read_(file);
+  if (source.indexOf("100_common/App_Styles") === -1) {
+    fail_('App shell page missing App_Styles include: ' + file);
+  }
+  if (source.indexOf("100_common/App_Shell_Styles") === -1) {
+    fail_('App shell page missing App_Shell_Styles include: ' + file);
+  }
+});
+
+if (failures.length) {
+  failures.forEach(function (failure) {
+    console.error(failure);
+  });
+  process.exitCode = 1;
+} else {
+  console.log('UI system architecture verification passed.');
+}
