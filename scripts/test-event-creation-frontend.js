@@ -45,6 +45,12 @@ function testEditableAdditionalFields_() {
   });
 }
 
+function testManagerUsesCurrentLoginUser_() {
+  assert.doesNotMatch(view, /name="managerId"/, 'managerId must not be submitted from the form');
+  assert.match(view, /id="ew-manager-display"[^>]+disabled/, 'manager must be rendered as a disabled display field');
+  assert.match(script, /managerDisplay\.value\s*=\s*APP_USER_NAME\s*\|\|\s*'-'/, 'manager display must use the current login user name');
+}
+
 function testClientScriptSyntax_() {
   var source = script.replace(/^\s*<script>\s*/, '').replace(/\s*<\/script>\s*$/, '');
   assert.doesNotThrow(function () { return new vm.Script(source); });
@@ -54,5 +60,6 @@ testCategoryDropdown_();
 testManagementOptionsAndFeeToggle_();
 testRequestedFormCleanup_();
 testEditableAdditionalFields_();
+testManagerUsesCurrentLoginUser_();
 testClientScriptSyntax_();
 console.log('Event creation frontend contract tests passed.');
