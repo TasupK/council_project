@@ -21,7 +21,7 @@ function renderEventForm(event) {
 
 // API DTO를 실제 input/checkbox/radio와 기존 자료 영역에 반영합니다.
 function populateEventForm(form, value, isEdit) {
-    var fields = ['name', 'category', 'department', 'description', 'applicationStartAt', 'applicationEndAt', 'eventStartAt', 'eventEndAt', 'location', 'capacity', 'managerId', 'payerFee', 'nonPayerFee', 'note'];
+    var fields = ['name', 'category', 'department', 'description', 'applicationStartAt', 'applicationEndAt', 'eventStartAt', 'eventEndAt', 'location', 'capacity', 'payerFee', 'nonPayerFee', 'note'];
     var optionFields = ['applicationEnabled', 'feeEnabled', 'attendanceEnabled', 'balanceDistributionEnabled'];
     fields.forEach(function (name) {
       if (form.elements[name]) form.elements[name].value = value[name] == null ? '' : value[name];
@@ -29,6 +29,8 @@ function populateEventForm(form, value, isEdit) {
     optionFields.forEach(function (name) {
       if (form.elements[name]) form.elements[name].checked = isEventOptionEnabled(value[name]);
     });
+    var managerDisplay = document.getElementById('ew-manager-display');
+    if (managerDisplay) managerDisplay.value = APP_USER_NAME || '-';
     form.dataset.id = value.id || '';
     document.getElementById('ew-form-title').textContent = isEdit ? '행사 수정' : '행사 생성';
     var selectedStatus = value.status || '예정';
