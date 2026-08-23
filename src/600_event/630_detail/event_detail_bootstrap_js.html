@@ -1,0 +1,84 @@
+<script>
+/**
+ * 630_detail 기능 모듈을 연결하는 이벤트 위임과 최초 overview 조회를 담당합니다.
+ * 이 파일은 모든 상세 기능/확장 모듈이 정의된 뒤 마지막에 로드해야 합니다.
+ */
+
+document.addEventListener('submit', function (event) {
+  event.preventDefault();
+  if (event.target.id === 'ew-applicant-search') {
+    state.applicantFilters = readForm(event.target);
+    state.applicantPage = 1;
+    loadApplicants(document.getElementById('ew-tab-panel'));
+  } else if (event.target.id === 'ew-attendance-search') {
+    state.attendanceFilters = readForm(event.target);
+    state.attendancePage = 1;
+    loadAttendance(document.getElementById('ew-tab-panel'));
+  }
+});
+
+// data-action 기반 이벤트 위임으로 동적으로 렌더링된 탭 버튼과 모달 액션을 연결합니다.
+document.addEventListener('click', function (event) {
+  var button = event.target.closest('[data-action]');
+  if (!button || button.disabled) return;
+  var action = button.dataset.action;
+  if (action === 'go-list') goList();
+  else if (action === 'edit-event') goEventForm(button.dataset.id);
+  else if (action === 'applicant-page') {
+    state.applicantPage = Number(button.dataset.page);
+    loadApplicants(document.getElementById('ew-tab-panel'));
+  } else if (action === 'attendance-page') {
+    state.attendancePage = Number(button.dataset.page);
+    loadAttendance(document.getElementById('ew-tab-panel'));
+  } else if (action === 'refund-page') {
+    state.refundPage = Number(button.dataset.page);
+    loadRefunds(document.getElementById('ew-tab-panel'));
+  } else if (action === 'detail-tab') {
+    state.activeTab = button.dataset.tab;
+    renderActiveTab();
+  } else if (action === 'applicant-detail') openApplicantModal(button.dataset.id);
+  else if (action === 'close-modal') closeModal(event);
+  else if (action === 'process-applicant') processApplicant(button.dataset.id, button.dataset.process);
+  // TODO(행사 연동): Google Forms와 출석 원본 계약 확정 후 semantic client 연결을 추가한다.
+  else if (action === 'cancel-attendance') {
+    state.dirtyAttendance = {};
+    loadAttendance(document.getElementById('ew-tab-panel'));
+  } else if (action === 'apply-attendance') applyAttendance();
+  // TODO(행사 환불): 대상 선정 및 계좌 필드 계약 확정 후 semantic client 연결을 추가한다.
+});
+
+// 체크 즉시 행과 배지는 바꾸지만 실제 DB 저장은 applyAttendance에서 처리합니다.
+document.addEventListener('change', function (event) {
+  if (!event.target.matches('[data-role="attendance-toggle"]')) return;
+  state.dirtyAttendance[event.target.dataset.id] = {
+    applicationId: event.target.dataset.id,
+    status: event.target.checked ? '출석' : '미참석'
+  };
+  renderDirtyBar();
+  event.target.closest('tr').classList.add('selected');
+  var badge = event.target.closest('tr').querySelector('td:last-child .ew-status');
+  if (badge) {
+    badge.textContent = event.target.checked ? '출석' : '미참석';
+    badge.className = 'ew-status ' + statusClass(badge.textContent) + ' ui-badge ' + sharedStatusClass(badge.textContent);
+  }
+});
+
+document.addEventListener('keydown', function (event) {
+  if (event.key === 'Escape' && modalRoot.innerHTML) modalRoot.innerHTML = '';
+});
+
+// URL의 행사 ID로 overview를 한 번 조회하고 상세 캐시와 첫 탭을 초기화합니다.
+if (!APP_RESOURCE_ID) {
+  showToast('행사 ID가 없습니다.', true);
+} else {
+  state.currentEventId = APP_RESOURCE_ID;
+  state.activeTab = 'basic';
+  runEventBusy(function () {
+    return eventClient.getOverview({ id: APP_RESOURCE_ID });
+  }).then(function (data) {
+    cacheEventDetailData_(data);
+    renderDetailShell();
+    renderActiveTab();
+  }).catch(handleError);
+}
+</script>

@@ -3,16 +3,16 @@ var fs = require('fs');
 var path = require('path');
 
 var ROOT = path.resolve(__dirname, '..');
-var detailPath = path.join(ROOT, 'src/600_event/620_detail/Event_Detail.html');
-var syncPath = path.join(ROOT, 'src/600_event/620_detail/event_form_sync_js.html');
-var clientPath = path.join(ROOT, 'src/600_event/common/event_client_js.html');
+var detailPath = path.join(ROOT, 'src/600_event/630_detail/Event_Detail.html');
+var syncPath = path.join(ROOT, 'src/600_event/630_detail/event_form_sync_js.html');
+var clientPath = path.join(ROOT, 'src/600_event/600_common/event_client_js.html');
 assert.ok(fs.existsSync(syncPath), 'focused event_form_sync_js.html module must exist');
 var detailSource = fs.readFileSync(detailPath, 'utf8');
 var source = fs.readFileSync(syncPath, 'utf8');
 var clientSource = fs.readFileSync(clientPath, 'utf8');
 
-assert.ok(/include\(['"]600_event\/620_detail\/event_form_sync_js['"]\)/.test(detailSource), 'Event Detail must include focused Forms module');
-assert.ok(/include\(['"]600_event\/common\/event_client_js['"]\)/.test(detailSource), 'Event Detail must load semantic Event client');
+assert.ok(/include\(['"]600_event\/630_detail\/event_form_sync_js['"]\)/.test(detailSource), 'Event Detail must include focused Forms module');
+assert.ok(/include\(['"]600_event\/600_common\/event_client_js['"]\)/.test(detailSource), 'Event Detail must load semantic Event client');
 assert.ok(/id=["']ew-form-sync-form["']/.test(source), 'basic tab must render form sync controls');
 assert.ok(/name=["']googleFormId["']/.test(source), 'Form ID input must exist');
 assert.ok(/name=["']responseSheetId["']/.test(source), 'response Sheet ID input must exist');

@@ -40,9 +40,9 @@ const templates = [
   'src/500_student_fee/510_payers/Student_Fee_Payers.html',
   'src/500_student_fee/520_payments/Student_Fee_Payments.html',
   'src/500_student_fee/530_refunds/Student_Fee_Refunds.html',
-  'src/600_event/600_home/Event_Home.html',
-  'src/600_event/610_form/Event_Form.html',
-  'src/600_event/620_detail/Event_Detail.html'
+  'src/600_event/610_home/Event_Home.html',
+  'src/600_event/620_form/Event_Form.html',
+  'src/600_event/630_detail/Event_Detail.html'
 ];
 
 templates.forEach(file => {

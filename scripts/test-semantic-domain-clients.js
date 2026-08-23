@@ -23,13 +23,17 @@ assert.doesNotMatch(studentFeePages, /\bstudentFeeApi\s*\(/, 'Student Fee pages 
 assert.doesNotMatch(studentFeePages, /['"]api_[A-Za-z0-9_]+['"]/, 'Student Fee pages must not own raw server API names');
 assert.match(studentFeeClient, /var\s+studentFeeClient\s*=\s*\{/, 'Student Fee semantic client must exist');
 
-const eventCommon = read('src/600_event/common/event_common_js.html');
-const eventClient = read('src/600_event/common/event_client_js.html');
+const eventCommon = read('src/600_event/600_common/event_common_js.html');
+const eventClient = read('src/600_event/600_common/event_client_js.html');
 const eventPages = [
-  'src/600_event/600_home/event_home_js.html',
-  'src/600_event/610_form/event_form_js.html',
-  'src/600_event/620_detail/event_detail_js.html',
-  'src/600_event/620_detail/event_form_sync_js.html'
+  'src/600_event/610_home/event_home_js.html',
+  'src/600_event/620_form/event_form_js.html',
+  'src/600_event/630_detail/event_detail_core_js.html',
+  'src/600_event/630_detail/event_detail_applicants_js.html',
+  'src/600_event/630_detail/event_detail_attendance_js.html',
+  'src/600_event/630_detail/event_detail_refunds_js.html',
+  'src/600_event/630_detail/event_form_sync_js.html',
+  'src/600_event/630_detail/event_detail_bootstrap_js.html'
 ].map(read).join('\n');
 
 assert.doesNotMatch(eventCommon, /function\s+api\s*\(/, 'Event api compatibility wrapper must be removed');

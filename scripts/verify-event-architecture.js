@@ -63,14 +63,17 @@ var ownership = {
   buildEventPayload_: '051_events/events_validator.gs', createEventData_: '051_events/events_service.gs', updateEventData_: '051_events/events_service.gs',
   updateEventStatusData_: '051_events/events_service.gs', updateEventClosureData_: '051_events/events_service.gs', getEventForEditData_: '051_events/events_query_service.gs',
   getEventListData_: '051_events/events_query_service.gs', buildUniqueEventValues_: '051_events/events_query_service.gs', getEventDetailData_: '051_events/events_query_service.gs',
+  buildEventDetailSection_: '051_events/events_query_service.gs', attachEventDetailApplicantRelations_: '051_events/events_query_service.gs',
   processApplicantData_: '052_applicants/applicants_service.gs', getApplicantListData_: '052_applicants/applicants_query_service.gs', getApplicantDetailData_: '052_applicants/applicants_query_service.gs',
+  buildEventExtraAnswersByApplicationId_: '052_applicants/applicants_query_service.gs', buildEventApplicantSectionRows_: '052_applicants/applicants_query_service.gs',
+  listEventExtraAnswerClientRows_: '052_applicants/applicants_sheet_dao.gs',
   createEventPaymentData_: '053_payment/payment_service.gs', updateEventPaymentData_: '053_payment/payment_service.gs', resolveEventPaymentActorEmail_: '053_payment/payment_service.gs',
   buildEventPaymentTotalsByApplicationId_: '053_payment/payment_query_service.gs', getEventPaymentRowsByApplicationId_: '053_payment/payment_query_service.gs',
-  buildEventPaymentAccountingFacts_: '053_payment/payment_query_service.gs', listEventPaymentClientRows_: '053_payment/payment_sheet_dao.gs',
+  buildEventPaymentAccountingFacts_: '053_payment/payment_query_service.gs', buildEventPaymentSectionRows_: '053_payment/payment_query_service.gs', listEventPaymentClientRows_: '053_payment/payment_sheet_dao.gs',
   findEventPaymentRowById_: '053_payment/payment_sheet_dao.gs', findEventPaymentRowsByApplicationId_: '053_payment/payment_sheet_dao.gs',
   insertEventPaymentRow_: '053_payment/payment_sheet_dao.gs', updateEventPaymentRowById_: '053_payment/payment_sheet_dao.gs',
-  applyAttendanceChangesData_: '054_attendance/attendance_service.gs', getAttendanceListData_: '054_attendance/attendance_query_service.gs',
-  findEventAttendanceRowByApplicationId_: '054_attendance/attendance_sheet_dao.gs', getEventRefundListData_: '055_refunds/refunds_query_service.gs',
+  applyAttendanceChangesData_: '054_attendance/attendance_service.gs', getAttendanceListData_: '054_attendance/attendance_query_service.gs', buildEventAttendanceSectionRows_: '054_attendance/attendance_query_service.gs',
+  findEventAttendanceRowByApplicationId_: '054_attendance/attendance_sheet_dao.gs', getEventRefundListData_: '055_refunds/refunds_query_service.gs', buildEventRefundSectionRows_: '055_refunds/refunds_query_service.gs',
   uploadEventRelatedMaterial_: '056_files/event_file_service.gs', resolveEventMaterialFolder_: '056_files/event_file_service.gs', sanitizeEventDriveFileName_: '056_files/event_file_service.gs'
 };
 Object.keys(ownership).forEach(function (name) { requireFunctionIn_(functions, name, ownership[name]); });

@@ -1,8 +1,15 @@
 <script>
+/**
+ * 630_detail Google Forms 응답 연동 확장 모듈입니다.
+ * Event_Detail.html에서 기본 상세 스크립트 다음에 로드되며, 기본 렌더 함수를 보관한 뒤
+ * Forms 상태/동기화 UI를 덧붙이는 방식으로 확장합니다.
+ */
 (function () {
+  // 기본 상세 기능은 그대로 실행하기 위해 원본 함수 참조를 먼저 보관합니다.
   var originalRenderBasicTab = renderBasicTab;
   var originalApplicantsToolbar = applicantsToolbar;
 
+  // 연동 정보가 없는 행사도 동일한 객체 구조를 사용하도록 기본값을 제공합니다.
   function currentFormSync_() {
     return state.detail && state.detail.formSync ? state.detail.formSync : {
       configured: false,
@@ -22,6 +29,7 @@
     return sync && sync.lastSyncedAt ? displayDate(sync.lastSyncedAt) : '없음';
   }
 
+  // 기본정보 탭을 그린 뒤 연동 현황과 Forms ID 입력 폼을 추가합니다.
   renderBasicTab = function (panel) {
     originalRenderBasicTab(panel);
     var sync = currentFormSync_();
@@ -44,6 +52,7 @@
     );
   };
 
+  // 신청자 탭의 비활성 동기화 버튼을 실제 Forms 동기화 액션으로 교체합니다.
   applicantsToolbar = function () {
     var html = originalApplicantsToolbar();
     var sync = currentFormSync_();
@@ -58,6 +67,7 @@
     return html;
   };
 
+  // 동기화 완료 후 overview를 다시 받아 모든 섹션 캐시와 KPI를 최신 상태로 맞춥니다.
   function syncEventFormResponses_(payload) {
     return runEventBusy(function () {
       return eventClient.syncApplicantsFromForms({
@@ -72,12 +82,13 @@
         return eventClient.getOverview({ id: state.currentEventId });
       });
     }).then(function (detail) {
-      state.detail = detail;
+      cacheEventDetailData_(detail);
       renderDetailShell();
       renderActiveTab();
     }).catch(handleError);
   }
 
+  // 기본정보 탭에서 Form/Spreadsheet ID를 지정하며 동기화하는 흐름입니다.
   document.addEventListener('submit', function (event) {
     if (event.target.id !== 'ew-form-sync-form') return;
     event.preventDefault();
@@ -88,6 +99,7 @@
     });
   });
 
+  // 신청자 탭에서는 이미 저장된 연동 설정으로 즉시 동기화합니다.
   document.addEventListener('click', function (event) {
     var button = event.target.closest('[data-action="sync-forms"]');
     if (!button || button.disabled) return;

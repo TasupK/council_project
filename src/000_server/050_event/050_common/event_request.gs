@@ -42,9 +42,16 @@ function parseEventDateText_(value, fieldName) {
   return text;
 }
 
-function validateEventChoice_(value, choices, fieldName) {
+function parseEventBoolean_(value, fieldName) {
+  var text = String(value === null || typeof value === 'undefined' ? '' : value).trim().toLowerCase();
+  if (value === true || value === 1 || text === '1' || text === 'true') return true;
+  if (value === false || value === 0 || text === '0' || text === 'false') return false;
+  throwEventError_('VALIDATION_FAILED', fieldName + ' 값은 true 또는 false여야 합니다.');
+}
+
+function validateEventChoice_(value, choices, fieldName, errorCode) {
   if (choices.indexOf(value) < 0) {
-    throwEventError_('INVALID_STATUS', fieldName + ' 값이 올바르지 않습니다.', { allowed: choices });
+    throwEventError_(errorCode || 'INVALID_STATUS', fieldName + ' 값이 올바르지 않습니다.', { allowed: choices });
   }
   return value;
 }

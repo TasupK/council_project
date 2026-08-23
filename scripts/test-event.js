@@ -102,18 +102,31 @@ function testEventDetail_() {
   context.getEventForEditData_ = function () { return { id: 'event-1', name: '행사' }; };
   context.listEventApplicationClientRows_ = function () {
     return [
-      { id: 'app-1', eventId: 'event-1', status: '승인', appliedFee: 1000 },
+      { id: 'app-1', eventId: 'event-1', status: '승인', appliedFee: 1000, name: '김학생', studentId: '6001', bankName: '테스트은행', accountNumber: '123-456', accountHolder: '김학생' },
       { id: 'app-2', eventId: 'event-1', status: '대기', appliedFee: 2000 },
       { id: 'app-3', eventId: 'event-2', status: '승인', appliedFee: 1000 }
     ];
   };
+  context.listEventExtraAnswerClientRows_ = function () {
+    return [{ id: 'answer-1', applicationId: 'app-1', questionTitle: '알레르기', answer: '없음' }];
+  };
   context.listEventAttendanceClientRows_ = function () { return [{ applicationId: 'app-1', status: '출석' }, { applicationId: 'app-2', status: '결석' }]; };
   context.listEventPaymentClientRows_ = function () { return [{ applicationId: 'app-1', paidAmount: 1000 }, { applicationId: 'app-2', paidAmount: 1500 }]; };
+  context.listEventRefundClientRows_ = function () { return [{ id: 'refund-1', applicationId: 'app-1', refundAmount: 500 }]; };
   var result = context.getEventDetailData_({ id: 'event-1' });
-  assert.deepStrictEqual(JSON.parse(JSON.stringify(result)), {
-    event: { id: 'event-1', name: '행사' },
-    summary: { totalApplicants: 2, approvedApplicants: 1, paidApplicants: 1, actualAttendees: 1, currentBalance: null }
+  assert.deepStrictEqual(JSON.parse(JSON.stringify(result.summary)), {
+    totalApplicants: 2, approvedApplicants: 1, paidApplicants: 1, actualAttendees: 1, currentBalance: null
   });
+  assert.strictEqual(result.sections.applicants.source, 'googleFormsSync');
+  assert.strictEqual(result.sections.applicants.totalCount, 2);
+  assert.strictEqual(result.sections.payments.totalCount, 2);
+  assert.strictEqual(result.sections.attendance.totalCount, 2);
+  assert.strictEqual(result.sections.refunds.totalCount, 1);
+  assert.strictEqual(result.sections.refunds.joinedBy, 'applicationId');
+  assert.strictEqual(result.sections.refunds.items[0].bankName, '테스트은행');
+  assert.strictEqual(result.sections.refunds.items[0].accountNumber, '123-456');
+  assert.strictEqual(result.sections.applicants.items[0].extraAnswers[0].questionTitle, '알레르기');
+  assert.strictEqual(result.sections.applicants.items[0].refunds[0].id, 'refund-1');
 }
 
 function testApplicantListAndDetail_() {
@@ -132,7 +145,7 @@ function testApplicantListAndDetail_() {
   assert.deepStrictEqual(list.items.map(function (item) { return [item.id, item.paidAmount]; }), [['app-2', 500], ['app-1', 1000]]);
   var detail = context.getApplicantDetailData_({ applicationId: 'app-1' });
   assert.deepStrictEqual(JSON.parse(JSON.stringify(detail)), {
-    applicant: { id: 'app-1', eventId: 'event-1', name: '김학생', appliedFee: 1000, paidAmount: 1000 },
+    applicant: { id: 'app-1', eventId: 'event-1', name: '김학생', appliedFee: 1000, paidAmount: 1000, extraAnswers: [] },
     attendance: { id: 'attendance-1', applicationId: 'app-1', status: '출석' }
   });
 }
@@ -158,10 +171,13 @@ function testAttendanceList_() {
 
 function testRefundList_() {
   var context = createQueryContext_();
-  context.listEventApplicationClientRows_ = function () { return [{ id: 'app-1', eventId: 'event-1', name: '김학생', studentId: '6001' }, { id: 'app-2', eventId: 'event-2', name: '이학생', studentId: '6002' }]; };
+  context.listEventApplicationClientRows_ = function () { return [{ id: 'app-1', eventId: 'event-1', name: '김학생', studentId: '6001', phone: '010-1111', bankName: '테스트은행', accountNumber: '123', accountHolder: '김학생', sourceResponseId: 'FORM-1' }, { id: 'app-2', eventId: 'event-2', name: '이학생', studentId: '6002' }]; };
   context.listEventRefundClientRows_ = function () { return [{ id: 'refund-1', applicationId: 'app-1', amount: 1000 }, { id: 'refund-2', applicationId: 'app-2', amount: 2000 }]; };
   var result = context.getEventRefundListData_({ eventId: 'event-1', page: 1, pageSize: 10 });
-  assert.deepStrictEqual(JSON.parse(JSON.stringify(result.items)), [{ id: 'refund-1', applicationId: 'app-1', amount: 1000, name: '김학생', studentId: '6001' }]);
+  assert.deepStrictEqual(JSON.parse(JSON.stringify(result.items)), [{
+    id: 'refund-1', applicationId: 'app-1', amount: 1000, name: '김학생', studentId: '6001', phone: '010-1111',
+    bankName: '테스트은행', accountNumber: '123', accountHolder: '김학생', sourceResponseId: 'FORM-1'
+  }]);
 }
 
 testPaymentTotals_();

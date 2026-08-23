@@ -89,19 +89,20 @@ function digestBytes(text) {
     findEventApplicationRowById_: function () { return row; },
     updateEventApplicationRowById_: function (_, patch) { row = Object.assign({}, row, patch); },
     getCurrentIsoDateTime_: function () { return '2026-08-18T21:00:00+09:00'; },
-    readActiveUserEmailFromSession_: function () { return 'staff@example.com'; },
+    readActiveUserEmailFromSession_: function () { return 'fallback@example.com'; },
     withoutInternalRowNumber_: function (value) { return value; },
     writeBusinessAudit_: function (event) { audits.push(event); return event; },
     throwEventError_: function (code, message) { var e = new Error(message); e.code = code; throw e; }
   });
   var file = path.join(ROOT, 'src/000_server/050_event/052_applicants/applicants_service.gs');
   vm.runInContext(fs.readFileSync(file, 'utf8'), ctx, { filename: file });
-  var result = ctx.processApplicantData_({ id: 'APP-1', action: 'reject' });
+  var result = ctx.processApplicantData_({ id: 'APP-1', action: 'reject' }, { email: 'staff@example.com' });
   assert.strictEqual(result.status, '반려');
   assert.strictEqual(result.processedAt, '2026-08-18T21:00:00+09:00');
   assert.strictEqual(result.managerEmail, 'staff@example.com');
   assert.strictEqual(audits.length, 1);
   assert.strictEqual(audits[0].actionType, 'REJECT');
+  assert.strictEqual(audits[0].afterValue.managerEmail, 'staff@example.com');
 })();
 
 console.log('Event consistency hardening contract passed.');

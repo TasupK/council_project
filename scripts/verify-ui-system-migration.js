@@ -31,9 +31,9 @@ const DOMAIN_SHELLS = {
     'src/400_accounting/430_settlement/Accounting_Settlement.html'
   ],
   event: [
-    'src/600_event/600_home/Event_Home.html',
-    'src/600_event/610_form/Event_Form.html',
-    'src/600_event/620_detail/Event_Detail.html'
+    'src/600_event/610_home/Event_Home.html',
+    'src/600_event/620_form/Event_Form.html',
+    'src/600_event/630_detail/Event_Detail.html'
   ]
 };
 
@@ -55,16 +55,16 @@ const REQUIRED_IDS = {
     ]
   },
   event: {
-    'src/600_event/600_home/Event_Home_View.html': [
-      'ew-event-search', 'ew-managerId-filter', 'ew-type-filter', 'ew-status-filter',
+    'src/600_event/610_home/Event_Home_View.html': [
+      'ew-event-search', 'ew-managerEmail-filter', 'ew-type-filter', 'ew-status-filter',
       'ew-event-summary', 'ew-event-table', 'ew-loading', 'ew-modal-root', 'ew-toast'
     ],
-    'src/600_event/610_form/Event_Form_View.html': [
+    'src/600_event/620_form/Event_Form_View.html': [
       'ew-app', 'ew-form-breadcrumb', 'ew-form-title', 'ew-event-form', 'ew-member-fee',
-      'ew-non-member-fee', 'ew-event-status-radios', 'ew-related-material-file',
-      'ew-related-material-name', 'ew-existing-material', 'ew-loading', 'ew-modal-root', 'ew-toast'
+      'ew-non-member-fee', 'ew-fee-row', 'ew-event-status-radios', 'ew-related-material-file',
+      'ew-related-material-name', 'ew-existing-material', 'ew-manager-display', 'ew-loading', 'ew-modal-root', 'ew-toast'
     ],
-    'src/600_event/620_detail/Event_Detail_View.html': [
+    'src/600_event/630_detail/Event_Detail_View.html': [
       'ew-app', 'ew-edit-event', 'ew-detail-name', 'ew-detail-status', 'ew-detail-meta',
       'ew-kpi-total', 'ew-kpi-approved', 'ew-kpi-paid', 'ew-kpi-attended', 'ew-kpi-balance',
       'ew-tab-panel', 'ew-loading', 'ew-modal-root', 'ew-toast'
@@ -79,18 +79,19 @@ const REQUIRED_FORM_NAMES = {
     ]
   },
   event: {
-    'src/600_event/610_form/Event_Form_View.html': [
+    'src/600_event/620_form/Event_Form_View.html': [
       'name', 'category', 'description', 'applicationStartAt', 'applicationEndAt', 'eventStartAt',
-      'capacity', 'managerId', 'payerFee', 'nonPayerFee', 'status'
+      'eventEndAt', 'capacity', 'applicationEnabled', 'feeEnabled',
+      'attendanceEnabled', 'balanceDistributionEnabled', 'payerFee', 'nonPayerFee', 'status'
     ]
   }
 };
 
 const REQUIRED_DATA_ACTIONS = {
   event: {
-    'src/600_event/600_home/Event_Home_View.html': ['go-create', 'reset-event-filters'],
-    'src/600_event/610_form/Event_Form_View.html': ['go-list'],
-    'src/600_event/620_detail/Event_Detail_View.html': ['go-list', 'edit-event', 'detail-tab']
+    'src/600_event/610_home/Event_Home_View.html': ['go-create', 'reset-event-filters'],
+    'src/600_event/620_form/Event_Form_View.html': ['go-list'],
+    'src/600_event/630_detail/Event_Detail_View.html': ['go-list', 'edit-event', 'detail-tab']
   }
 };
 
@@ -156,7 +157,7 @@ function verifyHooks(domain) {
   verifyLiteralMap(REQUIRED_FORM_NAMES[domain], 'name');
   verifyLiteralMap(REQUIRED_DATA_ACTIONS[domain], 'data-action');
   if (domain === 'event') {
-    const detail = read('src/600_event/620_detail/Event_Detail_View.html');
+    const detail = read('src/600_event/630_detail/Event_Detail_View.html');
     ['basic', 'applicants', 'attendance', 'ledger', 'refund'].forEach((tab) => {
       if (!new RegExp(`data-tab=[\"']${tab}[\"']`).test(detail)) failures.push(`Event_Detail_View.html: missing data-tab ${tab}`);
     });
@@ -206,12 +207,13 @@ function verifyAccountingServerContracts() {
 }
 
 function verifyEvent() {
-  requireClasses('src/600_event/600_home/Event_Home_View.html', ['ui-page-head', 'ui-page-actions', 'ui-card', 'ui-btn', 'ui-field', 'ui-loading', 'ui-toast']);
-  requireClasses('src/600_event/610_form/Event_Form_View.html', ['ui-page-head', 'ui-page-actions', 'ui-card', 'ui-btn', 'ui-field', 'ui-badge', 'ui-loading', 'ui-toast']);
-  requireClasses('src/600_event/620_detail/Event_Detail_View.html', ['ui-page-head', 'ui-page-actions', 'ui-card', 'ui-stat-card', 'ui-btn', 'ui-badge', 'ui-tabs', 'ui-tab', 'ui-loading', 'ui-toast']);
-  requireClasses('src/600_event/600_home/event_home_js.html', ['ui-table', 'ui-btn', 'ui-empty']);
-  requireClasses('src/600_event/common/event_common_js.html', ['ui-badge', 'ui-pagination', 'ui-page-btn']);
-  requireClasses('src/600_event/620_detail/event_detail_js.html', ['ui-card', 'ui-table', 'ui-modal-overlay', 'ui-modal', 'ui-btn', 'ui-badge']);
+  requireClasses('src/600_event/610_home/Event_Home_View.html', ['ui-page-head', 'ui-page-actions', 'ui-card', 'ui-btn', 'ui-field', 'ui-loading', 'ui-toast']);
+  requireClasses('src/600_event/620_form/Event_Form_View.html', ['ui-page-head', 'ui-page-actions', 'ui-card', 'ui-btn', 'ui-field', 'ui-loading', 'ui-toast']);
+  requireClasses('src/600_event/630_detail/Event_Detail_View.html', ['ui-page-head', 'ui-page-actions', 'ui-card', 'ui-stat-card', 'ui-btn', 'ui-badge', 'ui-tabs', 'ui-tab', 'ui-loading', 'ui-toast']);
+  requireClasses('src/600_event/610_home/event_home_js.html', ['ui-table', 'ui-btn', 'ui-empty']);
+  requireClasses('src/600_event/600_common/event_common_js.html', ['ui-badge', 'ui-pagination', 'ui-page-btn']);
+  requireClasses('src/600_event/630_detail/event_detail_core_js.html', ['ui-card', 'ui-btn', 'ui-badge']);
+  requireClasses('src/600_event/630_detail/event_detail_applicants_js.html', ['ui-table', 'ui-modal-overlay', 'ui-modal', 'ui-btn']);
 }
 
 verifySharedSystem();

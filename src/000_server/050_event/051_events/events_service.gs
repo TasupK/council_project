@@ -5,15 +5,12 @@ function createEventData_(request, context) {
   payload.managerEmail = String(context && context.email || readActiveUserEmailFromSession_() || '').trim();
   if (!payload.managerEmail) throwEventError_('UNAUTHORIZED', '담당자 이메일을 확인할 수 없습니다.');
   return withOperationWriteLock_(function () {
-    // TODO(API 상세 계약): id 채번 규칙이 스키마에 없어 충돌 없는 UUID를 임시 사용한다.
-    payload.id = Utilities.getUuid();
-    payload.applicationEnabled = true;
-    payload.feeEnabled = Number(payload.payerFee || 0) > 0 || Number(payload.nonPayerFee || 0) > 0;
-    payload.attendanceEnabled = true;
+    payload.id = buildNextEventId_(payload.category, payload.eventStartAt);
+    if (findEventRowById_(payload.id)) {
+      throwEventError_('CONFLICT', '이미 존재하는 행사ID입니다: ' + payload.id);
+    }
     payload.refundEnabled = false;
     payload.fullRefundPolicy = '없음';
-    payload.balanceDistributionEnabled = false;
-    payload.eventEndAt = payload.eventEndAt || payload.eventStartAt;
     payload.createdAt = getCurrentIsoDateTime_();
     payload.updatedAt = payload.createdAt;
     payload.evidenceFolderId = resolveEventMaterialFolder_().getId();
@@ -33,6 +30,39 @@ function createEventData_(request, context) {
     });
     return after;
   });
+}
+
+// 행사 시작연도와 유형별 마지막 순번을 기준으로 신규 행사ID를 발급한다.
+function buildNextEventId_(category, eventStartAt) {
+  var categoryCode = EVENT_CATEGORY_CODES[category];
+  var eventYear = String(eventStartAt || '').slice(0, 4);
+  var prefix;
+  var highestSequence = 0;
+
+  if (!categoryCode || !/^\d{4}$/.test(eventYear)) {
+    throwEventError_('VALIDATION_FAILED', '행사ID를 생성할 유형과 시작일이 올바르지 않습니다.');
+  }
+
+  prefix = 'EVT-' + eventYear + '-' + categoryCode + '-';
+  listEventRows_().forEach(function (row) {
+    var id = String(row.id || '').trim();
+    var match = id.match(new RegExp('^' + prefix + '(\\d{3})$'));
+    var sequence;
+    if (!match) return;
+    sequence = Number(match[1]);
+    if (sequence > highestSequence) highestSequence = sequence;
+  });
+
+  if (highestSequence >= 999) {
+    throwEventError_('CONFLICT', eventYear + '년 ' + category + ' 행사ID 순번을 더 이상 발급할 수 없습니다.');
+  }
+  return prefix + formatEventSequence_(highestSequence + 1);
+}
+
+function formatEventSequence_(sequence) {
+  var text = String(sequence);
+  while (text.length < 3) text = '0' + text;
+  return text;
 }
 
 function updateEventData_(request, context) {

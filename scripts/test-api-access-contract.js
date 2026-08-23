@@ -78,4 +78,12 @@ assert.throws(function () {
   context.resolveApiAccess_({ ok: true }, { domain: 'event', action: 'view' });
 }, /resolver/i);
 
+calls.length = 0;
+assert.strictEqual(context.resolveApiAccess_({ isAdmin: true }, {
+  domain: 'event',
+  action: 'edit',
+  resolve: function () { throw new Error('admin resolver must not run'); }
+}), true);
+assert.deepStrictEqual(calls, [], 'administrator access must not depend on a permission catalog row');
+
 console.log('Common API access contract passed.');
