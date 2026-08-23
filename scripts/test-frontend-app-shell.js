@@ -7,6 +7,7 @@ const read = filePath => fs.readFileSync(path.join(root, filePath), 'utf8');
 
 const header = read('src/100_common/App_Header.html');
 const sidebar = read('src/100_common/App_Sidebar.html');
+const appStyles = read('src/100_common/App_Styles.html');
 const shellStyles = read('src/100_common/App_Shell_Styles.html');
 const shellJs = read('src/100_common/app_shell_js.html');
 
@@ -15,10 +16,29 @@ assert.match(header, /aria-controls=["']appSidebar["']/);
 assert.match(sidebar, /id=["']appSidebar["']/);
 assert.match(shellStyles, /\.app\s*\{[\s\S]*height:\s*100vh/);
 assert.match(shellStyles, /grid-template-rows:\s*var\(--header-h\)\s+minmax\(0,\s*1fr\)/);
-assert.match(shellStyles, /\.main\s*\{[\s\S]*overflow:\s*auto/);
+assert.match(shellStyles, /\.header\s*\{/);
+assert.match(shellStyles, /\.global-search\s*\{/);
 assert.match(shellStyles, /\.sidebar\s*\{[\s\S]*overflow-y:\s*auto/);
+assert.match(shellStyles, /\.nav-item\s*\{/);
+assert.match(shellStyles, /\.nav-group\s*\{/);
+assert.match(shellStyles, /\.nav-submenu\s*\{/);
+assert.match(shellStyles, /\.nav-subitem\s*\{/);
+assert.match(shellStyles, /\.user-trigger\s*\{/);
+assert.match(shellStyles, /\.pop\s*\{/);
+assert.match(shellStyles, /\.main\s*\{[\s\S]*overflow:\s*auto/);
 assert.match(shellStyles, /\.app\.sidebar-hidden\s+\.body/);
 assert.match(shellStyles, /body\.app-mode\s*\{[\s\S]*overflow:\s*hidden/);
+
+[
+  '.app', '.header', '.body', '.sidebar', '.main', '.nav-item', '.nav-group',
+  '.nav-submenu', '.nav-subitem', '.global-search', '.term-select', '.icon-btn',
+  '.user-trigger', '.pop'
+].forEach(selector => {
+  const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const block = new RegExp('(^|\\})\\s*' + escaped + '\\s*\\{', 'm');
+  assert.doesNotMatch(appStyles, block, `App_Styles must not own shell selector ${selector}`);
+});
+
 assert.match(shellJs, /localStorage/);
 assert.match(shellJs, /sidebar-hidden/);
 assert.match(shellJs, /aria-expanded/);
@@ -48,6 +68,7 @@ const templates = [
 templates.forEach(file => {
   const source = read(file);
   assert.doesNotMatch(source, /<footer\b[^>]*status-bar/);
+  assert.match(source, /include\(['"]100_common\/App_Styles['"]\)/);
   assert.match(source, /include\(['"]100_common\/App_Header['"]\)/);
   assert.match(source, /include\(['"]100_common\/App_Sidebar['"]\)/);
   assert.match(source, /include\(['"]100_common\/App_Shell_Styles['"]\)/);
