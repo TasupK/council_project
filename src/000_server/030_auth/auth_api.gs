@@ -79,8 +79,8 @@ function getNotificationSettings_(dbNotiStr) {
   });
 }
 
-/** COM_API_019 알림 설정 저장 */
-function api_saveNotificationSettings(payload) {
+/** COM_API_019 알림 설정 변경 */
+function api_updateNotificationSettings(payload) {
   var rawChanges = payload && payload.request ? payload.request : payload;
   var changes = [];
   
