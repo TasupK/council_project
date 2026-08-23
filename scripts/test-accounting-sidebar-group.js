@@ -11,6 +11,14 @@ function tagById(source, id) {
   return match ? match[0] : '';
 }
 
+function divBlockById(source, id) {
+  const idIndex = source.indexOf(`id="${id}"`);
+  if (idIndex < 0) return '';
+  const start = source.lastIndexOf('<div', idIndex);
+  const end = source.indexOf('</div>', idIndex);
+  return start >= 0 && end >= 0 ? source.slice(start, end + 6) : '';
+}
+
 const accountingGroupTag = tagById(sidebar, 'appNavAccountingGroup');
 assert.ok(accountingGroupTag && /class=["'][^"']*nav-group/.test(accountingGroupTag),
   '장부관리는 nav-group 컨테이너여야 합니다.');
@@ -31,7 +39,8 @@ assert.ok(accountingSubmenuTag && /class=["'][^"']*nav-submenu/.test(accountingS
   const pattern = new RegExp(`id=["']${item[0]}["'][^>]*>\\s*${item[1]}\\s*</a>`);
   assert.match(sidebar, pattern, item[1] + ' 하위 메뉴가 필요합니다.');
 });
-assert.doesNotMatch(sidebar, /appNavAccountingHome|>\s*전체 현황\s*<\/a>/,
+const accountingSubmenu = divBlockById(sidebar, 'appAccountingSubmenu');
+assert.doesNotMatch(accountingSubmenu, /appNavAccountingHome|>\s*전체 현황\s*<\/a>/,
   '장부관리 submenu에는 전체 현황을 노출하지 않습니다.');
 
 assert.match(shell, /appNavAccountingLedger['"]\)\.href\s*=\s*buildAppPageUrl\(['"]accounting_ledger['"]\)/,
