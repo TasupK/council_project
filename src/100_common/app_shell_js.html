@@ -43,27 +43,43 @@ if (appSidebarToggle) {
   appSidebarToggle.addEventListener('click', toggleAppSidebar_);
 }
 
-// 1. 공통 사용자 정보 표시 (서버에서 받은 유저 정보 바인딩)
+// 2. 공통 사용자 정보 및 프로필 팝업
 getAppElement('appUserName').textContent = APP_USER_NAME || '운영자';
 getAppElement('appUserTitle').textContent = APP_USER_TITLE || '사용자';
 
-if (getAppElement('appUserCard')) {
-  getAppElement('appUserCard').href = buildAppPageUrl('mypage');
+function setProfilePopOpen_(open) {
+  var pop = getAppElement('profilePop');
+  var trigger = getAppElement('appUserCard');
+  if (!pop || !trigger) return;
+  pop.classList.toggle('open', !!open);
+  trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
 }
+
+var appUserCard = getAppElement('appUserCard');
+if (appUserCard) {
+  appUserCard.addEventListener('click', function () {
+    var pop = getAppElement('profilePop');
+    setProfilePopOpen_(!(pop && pop.classList.contains('open')));
+  });
+}
+
 document.addEventListener('click', function (e) {
   var pop = getAppElement('profilePop');
   var trigger = getAppElement('appUserCard');
   if (pop && pop.classList.contains('open') && !pop.contains(e.target) && trigger && !trigger.contains(e.target)) {
-    pop.classList.remove('open');
+    setProfilePopOpen_(false);
   }
 });
-if (getAppElement('goMy')) {
-  getAppElement('goMy').addEventListener('click', function () {
+
+var goMy = getAppElement('goMy');
+if (goMy) {
+  goMy.addEventListener('click', function () {
+    setProfilePopOpen_(false);
     window.top.location.href = buildAppPageUrl('mypage');
   });
 }
 
-// 2. 공통 페이지 링크 및 활성 메뉴 연결 (메뉴 클릭 시 이동할 URL)
+// 3. 공통 페이지 링크 및 활성 메뉴 연결
 getAppElement('appNavMain').href = buildAppPageUrl('main');
 getAppElement('appNavAccounting').href = buildAppPageUrl('accounting');
 getAppElement('appNavStudentFeeHome').href = buildAppPageUrl('student_fee');
@@ -81,7 +97,6 @@ getAppElement('appNavStudentFee').addEventListener('click', function () {
 });
 
 function loadAppNavigationAccess_() {
-  // 서버(백그라운드)에서 유저의 접근 권한 목록을 가져옴
   appClient.getCurrentUser()
     .then(function (current) {
       if (!current) return;
@@ -101,7 +116,6 @@ function loadAppNavigationAccess_() {
       if (getAppElement('popAvatar')) getAppElement('popAvatar').textContent = firstChar;
 
       var access = current.domainAccess || {};
-      // 권한 유무에 따라 좌측 메뉴들의 화면 노출 여부 동적 처리
       setAppDomainVisible_('main', !!access.main);
       setAppDomainVisible_('accounting', !!access.accounting);
       setAppDomainVisible_('student_fee', !!access.student_fee);
@@ -135,7 +149,6 @@ function setStudentFeeSubmenuExpanded_(expanded) {
 }
 
 function setAppActiveNavigation(page) {
-  // 현재 접속 중인 탭 위치를 파악해 메뉴에 '활성화(active)' 디자인 적용
   var current = String(page || '');
   var mainLink = getAppElement('appNavMain');
   var accountingLink = getAppElement('appNavAccounting');
@@ -159,14 +172,14 @@ function setAppActiveNavigation(page) {
   setStudentFeeSubmenuExpanded_(isStudentFeePage_(current));
 }
 
-// 3. 공통 웹앱 페이지 URL 생성
+// 4. 공통 웹앱 페이지 URL 생성
 function buildAppPageUrl(page) {
   var url = new URL(WEB_APP_URL || window.location.href);
   url.searchParams.set('page', page);
   return url.toString();
 }
 
-// 4. 공통 DOM 조회
+// 5. 공통 DOM 조회
 function getAppElement(id) {
   return document.getElementById(id);
 }
