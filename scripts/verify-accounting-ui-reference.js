@@ -30,7 +30,7 @@ views.forEach(function (file) {
 });
 
 var ledger = read_('410_ledger/Accounting_Ledger_View.html');
-['ui-stat-card', 'ui-toolbar', 'ui-table', 'ui-pagination', 'ui-modal'].forEach(function (primitive) {
+['ui-stat-card', 'ui-toolbar', 'ui-table', 'ui-pagination', 'ui-modal', 'ui-badge'].forEach(function (primitive) {
   if (ledger.indexOf(primitive) < 0) failures.push('Ledger must use shared primitive: ' + primitive);
 });
 
@@ -54,19 +54,24 @@ if (/\.accounting-page\s+\.(?:small|badge)\b/.test(styles)) {
 if (/\.accounting-page\s+\.(?:page-head|breadcrumb|desc)\b/.test(styles)) {
   failures.push('Accounting domain styles must not own shared page-header presentation.');
 }
+if (/\.accounting-page\s+\.(?:match-pill|match-ok|match-check|match-bad)\b/.test(styles)) {
+  failures.push('Accounting reconciliation status styling must use shared ui-badge variants.');
+}
 
 var commonJs = read_('common/accounting_common_js.html');
 if (/function\s+setupAccountingPageLinks\s*\(/.test(commonJs) || /data-accounting-page/.test(commonJs)) {
   failures.push('Accounting common JS must not provide internal page-link navigation.');
 }
 
-var combinedJs = [
-  read_('410_ledger/accounting_ledger_js.html'),
-  read_('420_reconciliation/accounting_reconciliation_js.html'),
-  read_('430_settlement/accounting_settlement_js.html')
-].join('\n');
+var ledgerJs = read_('410_ledger/accounting_ledger_js.html');
+var reconciliationJs = read_('420_reconciliation/accounting_reconciliation_js.html');
+var settlementJs = read_('430_settlement/accounting_settlement_js.html');
+var combinedJs = [ledgerJs, reconciliationJs, settlementJs].join('\n');
 if (/class=["'][^"']*\b(?:badge|small)\b/.test(combinedJs)) {
   failures.push('Accounting dynamic markup must use shared ui-badge/ui-btn variants instead of legacy badge/small classes.');
+}
+if (/match-pill|match-ok|match-check|match-bad/.test(reconciliationJs) || reconciliationJs.indexOf('ui-badge') < 0) {
+  failures.push('Accounting reconciliation dynamic statuses must use ui-badge semantic variants.');
 }
 
 if (failures.length) {
