@@ -28,9 +28,9 @@ function filteredItems() {
 }
 
 function badgeClass(status) {
-  if (status === '정상') return 'approved';
-  if (status === '확인필요') return 'review';
-  return 'pending';
+  if (status === '정상') return 'success';
+  if (status === '확인필요') return 'danger';
+  return 'warning';
 }
 
 function renderLedgerSummary(summary) {
@@ -61,9 +61,9 @@ function render() {
       '<td class="' + (income ? 'income' : 'muted') + '">' + (income ? won.format(item.amount || 0) : '-') + '</td>' +
       '<td class="' + (income ? 'muted' : 'expense') + '">' + (income ? '-' : won.format(item.amount || 0)) + '</td>' +
       '<td>' + escapeHtml(item.event_name || '해당없음') + '</td><td><strong>' + (item.has_evidence ? 'O' : 'X') + '</strong></td>' +
-      '<td><span class="badge ' + badgeClass(item.status) + '">' + escapeHtml(item.status || '') + '</span></td>' +
-      '<td>' + escapeHtml(item.manager || '') + '</td><td><button class="small" type="button" data-id="' + escapeHtml(item.transaction_id) + '">상세보기</button></td></tr>';
-  }).join('') : '<tr><td colspan="11" class="muted">표시할 수입·지출 내역이 없습니다.</td></tr>';
+      '<td><span class="ui-badge ' + badgeClass(item.status) + '">' + escapeHtml(item.status || '') + '</span></td>' +
+      '<td>' + escapeHtml(item.manager || '') + '</td><td><button class="ui-btn outline small" type="button" data-id="' + escapeHtml(item.transaction_id) + '">상세보기</button></td></tr>';
+  }).join('') : '<tr><td colspan="11" class="ui-empty">표시할 수입·지출 내역이 없습니다.</td></tr>';
   renderPagination(items.length, totalPages);
 }
 
@@ -180,7 +180,7 @@ function openDetail(id) {
   if (!item) return;
   state.selectedId = item.transaction_id;
   document.getElementById('detailTitle').textContent = item.transaction_type + ' 상세';
-  document.getElementById('detailStatus').className = 'badge ' + badgeClass(item.status);
+  document.getElementById('detailStatus').className = 'ui-badge ' + badgeClass(item.status);
   document.getElementById('detailStatus').textContent = item.status;
   document.getElementById('detailAlert').style.display = 'none';
   document.getElementById('detailRows').innerHTML = [
@@ -195,7 +195,7 @@ function renderDetailEvidence(item) {
   const files = item.evidence || [];
   document.getElementById('detailEvidenceList').innerHTML = files.length ? files.map(function (file) {
     return '<div class="evidence-file"><span class="evidence-name">' + escapeHtml(file.file_name || '증빙자료') + '</span>' +
-      (file.file_id ? '<button class="small" type="button" data-evidence-id="' + escapeHtml(file.evidence_id || '') + '" data-file-id="' + escapeHtml(file.file_id) + '">파일 열기</button>' : '') + '</div>';
+      (file.file_id ? '<button class="ui-btn outline small" type="button" data-evidence-id="' + escapeHtml(file.evidence_id || '') + '" data-file-id="' + escapeHtml(file.file_id) + '">파일 열기</button>' : '') + '</div>';
   }).join('') : '<div class="evidence-empty">첨부된 증빙자료가 없습니다.</div>';
 }
 
@@ -240,7 +240,6 @@ async function updateDatabaseLink() {
   }
 }
 
-setupAccountingPageLinks();
 setupFileUpload({ key: 'ledgerEntry', zoneId: 'entryEvidenceDropzone', inputId: 'entryEvidenceFile', nameId: 'entryEvidenceFileName', multiple: true });
 document.getElementById('openRegister').addEventListener('click', function () { state.editingLedgerId = null; document.getElementById('create').textContent = '등록하기'; setType('지출'); openModal('registerModal'); });
 document.getElementById('expenseBtn').addEventListener('click', function () { setType('지출'); });
@@ -252,12 +251,11 @@ document.getElementById('approve').addEventListener('click', approve);
 document.getElementById('editLedger').addEventListener('click', editSelectedLedger);
 document.getElementById('deleteLedger').addEventListener('click', deleteSelectedLedger);
 document.querySelectorAll('[data-close]').forEach(function (button) { button.addEventListener('click', function () { closeModal(button.dataset.close); }); });
-document.querySelectorAll('.filters input, .filters select').forEach(function (element) { element.addEventListener('input', function () { state.ledgerPage = 1; render(); }); });
+document.querySelectorAll('.accounting-ledger-filters input, .accounting-ledger-filters select').forEach(function (element) { element.addEventListener('input', function () { state.ledgerPage = 1; render(); }); });
 document.getElementById('prevLedgerPage').addEventListener('click', function () { goLedgerPage(state.ledgerPage - 1); });
 document.getElementById('nextLedgerPage').addEventListener('click', function () { goLedgerPage(state.ledgerPage + 1); });
 document.getElementById('rows').addEventListener('click', function (event) { const button = event.target.closest('[data-id]'); if (button) openDetail(button.dataset.id); });
 document.getElementById('detailEvidenceList').addEventListener('click', function (event) { const button = event.target.closest('[data-evidence-id]'); if (button) openEvidenceFile(button); });
-
 async function initializeLedgerPage() {
   try { await refreshLedger(); } catch (error) { toast(error && error.message ? error.message : '원장 정보를 불러오지 못했습니다.'); }
   await updateDatabaseLink();
