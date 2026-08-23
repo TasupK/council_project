@@ -62,7 +62,7 @@ const REQUIRED_IDS = {
     'src/600_event/620_form/Event_Form_View.html': [
       'ew-app', 'ew-form-breadcrumb', 'ew-form-title', 'ew-event-form', 'ew-member-fee',
       'ew-non-member-fee', 'ew-fee-row', 'ew-event-status-radios', 'ew-related-material-file',
-      'ew-related-material-name', 'ew-existing-material', 'ew-loading', 'ew-modal-root', 'ew-toast'
+      'ew-related-material-name', 'ew-existing-material', 'ew-manager-display', 'ew-loading', 'ew-modal-root', 'ew-toast'
     ],
     'src/600_event/630_detail/Event_Detail_View.html': [
       'ew-app', 'ew-edit-event', 'ew-detail-name', 'ew-detail-status', 'ew-detail-meta',
@@ -81,7 +81,7 @@ const REQUIRED_FORM_NAMES = {
   event: {
     'src/600_event/620_form/Event_Form_View.html': [
       'name', 'category', 'description', 'applicationStartAt', 'applicationEndAt', 'eventStartAt',
-      'eventEndAt', 'capacity', 'managerId', 'applicationEnabled', 'feeEnabled',
+      'eventEndAt', 'capacity', 'applicationEnabled', 'feeEnabled',
       'attendanceEnabled', 'balanceDistributionEnabled', 'payerFee', 'nonPayerFee', 'status'
     ]
   }
