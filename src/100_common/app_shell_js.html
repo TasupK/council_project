@@ -48,11 +48,7 @@ getAppElement('appUserName').textContent = APP_USER_NAME || '운영자';
 getAppElement('appUserTitle').textContent = APP_USER_TITLE || '사용자';
 
 if (getAppElement('appUserCard')) {
-  getAppElement('appUserCard').addEventListener('click', function (e) {
-    e.stopPropagation();
-    var pop = getAppElement('profilePop');
-    if (pop) pop.classList.toggle('open');
-  });
+  getAppElement('appUserCard').href = buildAppPageUrl('mypage');
 }
 document.addEventListener('click', function (e) {
   var pop = getAppElement('profilePop');
@@ -88,7 +84,7 @@ function loadAppNavigationAccess_() {
   // 서버(백그라운드)에서 유저의 접근 권한 목록을 가져옴
   appClient.getCurrentUser()
     .then(function (current) {
-      if (!current || !current.ok) return;
+      if (!current) return;
       
       var user = current.user || {};
       var name = user.name || APP_USER_NAME || '운영자';

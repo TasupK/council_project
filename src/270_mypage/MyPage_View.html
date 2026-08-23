@@ -1,71 +1,70 @@
 <div class="workspace">
-        <section class="section">
-          <h2>내 정보</h2>
-          <p class="desc">Google 계정과 관리자 기준정보를 표시합니다.</p>
-          <div class="profile-card">
-            <div class="profile-avatar" id="profileAvatar"></div>
-            <div class="profile-identity">
-              <b id="profileName"></b>
-              <span class="active">●&nbsp; 활성 계정</span>
-            </div>
-            <dl class="facts">
-              <div>
-                <dt>Google 계정</dt>
-                <dd id="emailFact"></dd>
-              </div>
-              <div>
-                <dt>직책</dt>
-                <dd id="roleFact"></dd>
-              </div>
-              <div>
-                <dt>소속·부서</dt>
-                <dd id="departmentFact"></dd>
-              </div>
-              <div>
-                <dt>최근 로그인</dt>
-                <dd>현재 접속</dd>
-              </div>
-            </dl>
-            <p class="profile-note">정보 변경은 관리자에게 요청해 주세요.</p>
-          </div>
-        </section>
-        </section>
+  <section class="section">
+    <h2>내 정보</h2>
+    <p class="desc">Google 계정과 관리자 기준정보를 표시합니다.</p>
+    <div class="profile-card">
+      <div class="profile-avatar" id="profileAvatar"></div>
+      <div class="profile-identity">
+        <b id="mypageName"></b>
+        <span class="active">●&nbsp; <span id="mypageStatus">활성 계정</span></span>
+      </div>
+      <dl class="facts">
+        <div>
+          <dt>Google 계정</dt>
+          <dd id="emailFact"></dd>
+        </div>
+        <div>
+          <dt>이메일</dt>
+          <dd id="mypageEmail"></dd>
+        </div>
+        <div>
+          <dt>직책</dt>
+          <dd id="mypageTitle"></dd>
+        </div>
+        <div>
+          <dt>소속 부서</dt>
+          <dd id="mypageDepartment"></dd>
+        </div>
+      </dl>
+      <p class="profile-note">정보 변경은 관리자에게 요청해 주세요.</p>
+    </div>
+  </section>
 
-        <!-- 내 권한 -->
-        <section class="section">
-          <h2>내 권한</h2>
-          <p class="desc">여러 역할이 배정된 경우 각 역할의 권한이 합산되어 적용됩니다.</p>
-          <div id="roles"></div>
-        </section>
+  <!-- 내 권한 -->
+  <section class="section">
+    <h2>내 권한</h2>
+    <p class="desc">여러 역할이 배정된 경우 각 역할의 권한이 합산되어 적용됩니다.</p>
+    <div id="mypageRoles"></div>
+    <span id="mypageMenus" style="display:none"></span>
+  </section>
 
-        <!-- 알림 설정 (메인 화면 요약) -->
-        <section class="section">
-          <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 16px;">
-            <div>
-              <h2>알림 설정</h2>
-              <p class="desc" style="margin-bottom: 0;">앱 내 알림과 Gmail 수신 여부를 확인하고 상세히 관리합니다.</p>
-            </div>
-            <button id="openNotificationSettings" class="view" style="width: auto; padding: 0 16px;">자세히 보기&nbsp; →</button>
-          </div>
-          
-          <div class="notification-table">
-            <div class="n-head">
-              <span>알림 항목</span>
-              <span>설명</span>
-              <span>앱 내 알림</span>
-              <span>Gmail</span>
-              <span>구분</span>
-            </div>
-            <div id="summaryNotifications"></div>
-          </div>
-        </section>
-
+  <!-- 알림 설정 (메인 화면 요약) -->
+  <section class="section">
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 16px;">
+      <div>
+        <h2>알림 설정</h2>
+        <p class="desc" style="margin-bottom: 0;">앱 내 알림과 Gmail 수신 여부를 확인하고 상세히 관리합니다.</p>
+      </div>
+      <button id="openNotificationSettings" class="view" style="width: auto; padding: 0 16px;">자세히 보기&nbsp; →</button>
+    </div>
+    
+    <div class="notification-table">
+      <div class="n-head">
+        <span>알림 항목</span>
+        <span>설명</span>
+        <span>앱 내 알림</span>
+        <span>Gmail</span>
+        <span>구분</span>
+      </div>
+      <div id="summaryNotifications"></div>
+    </div>
+  </section>
 
   <!-- 권한 조회 모달 -->
   <div class="backdrop" id="permissionModal">
     <section class="modal">
       <button class="close" data-close="permissionModal">×</button>
-      <h2 id="modalTitle"></h2>
+      <h2 id="modalTitle">권한 상세보기</h2>
       <p class="modal-sub">기본 역할 · 활성 <span class="readonly">읽기 전용</span></p>
       <div class="info">ⓘ 이 권한은 관리자 설정에 따라 적용되며, 마이페이지에서는 변경할 수 없습니다.</div>
       <p class="desc" style="margin-top:16px; font-size:13px; color:#697077;">여러 역할이 배정된 경우 각 역할의 권한이 합산되어 적용됩니다.</p>
@@ -81,11 +80,11 @@
             <th>출력·다운로드</th>
           </tr>
         </thead>
-        <tbody id="permissionRows"></tbody>
+        <tbody id="mypagePermissions"></tbody>
       </table>
       
       <div class="modal-foot">
-        <span>권한 기준일 2026-08-11</span>
+        <span id="permissionDate">권한 기준일</span>
         <button data-close="permissionModal">닫기</button>
       </div>
     </section>
@@ -131,5 +130,4 @@
       </div>
     </section>
   </div>
-
 </div>

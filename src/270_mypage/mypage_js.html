@@ -1,86 +1,85 @@
 <script>
-// 1. 유틸리티 함수 및 상태 관리 객체 초기화
-// $ 함수: document.getElementById를 간결하게 호출하기 위한 유틸리티
-const $ = function(id) { return document.getElementById(id); };
+var $ = function(id) { return document.getElementById(id); };
 
-// state 객체: 화면에서 사용하는 전역 데이터를 관리합니다.
-// - data: 서버에서 최초 로드된 원본 사용자 및 권한 데이터
-// - base: 화면 렌더링에 사용할 알림 설정의 기준(원본) 데이터
-// - pending: 사용자가 모달에서 변경한(저장 대기 중인) 알림 설정 데이터
-const state = { data: null, base: {}, pending: {} };
+var state = { data: null, base: {}, pending: {} };
+var esc = function(v) { return String(v||'').replace(/[&<>"']/g, function(c) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]); }); };
 
-// esc 함수: XSS 방지를 위해 화면에 출력되는 문자열의 특수문자를 HTML 엔티티로 변환합니다.
-const esc = function(v) { return String(v||'').replace(/[&<>"']/g, function(c) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]); }); };
-
-// 3. 토스트 메시지 UI 표시 함수
-// 알림 저장 결과나 에러 발생 시 2.6초간 화면 하단에 텍스트 메시지를 띄우는 역할을 합니다.
 function toast(text) {
   var t = $('toast');
-  if (!t) return;
+  if (!t) {
+    alert(text);
+    return;
+  }
   t.textContent = text;
   t.classList.add('show');
   setTimeout(function() { t.classList.remove('show'); }, 2600);
 }
 
-// 4. 화면 초기 렌더링 함수
-// state.data에 저장된 사용자 정보(이름, 이메일, 역할 등)를 읽어와서 마이페이지의 각 DOM 요소에 값을 주입합니다.
+function setText_(id, value, fallback) {
+  var element = $(id);
+  if (element) element.textContent = value || fallback || '-';
+}
+
 function renderMyPage_() {
   if (!state.data) return;
   var u = state.data.user || {};
   
-  // 사용자의 권한 목록을 문자열로 결합 (예: "관리자, 재무국장")
-  var role = (u.roles && u.roles.length) ? u.roles.map(function(r) { return r.name; }).join(', ') : '역할 없음';
-  
-  // DOM에 기본 프로필 정보 주입
-  var nameEl = $('profileName');
-  if (nameEl) nameEl.textContent = u.name || '이름 미등록';
+  var name = u.name || '이름 미등록';
+  setText_('mypageName', name);
+  setText_('mypageEmail', u.email, '이메일 미등록');
+  setText_('emailFact', u.email, '-');
+  setText_('mypageDepartment', u.department, '소속 미등록');
+  setText_('mypageTitle', u.title, '역할 미등록');
   
   var avatarEl = $('profileAvatar');
-  if (avatarEl) avatarEl.textContent = (u.name || '-').charAt(0); // 아바타에 첫 글자 표시
+  if (avatarEl) avatarEl.textContent = name.charAt(0) || '-';
+
+  setText_('mypageStatus', u.status === 'active' || u.status === '활성' ? '활성 계정' : (u.status || '상태 미등록'));
   
-  var emailFact = $('emailFact');
-  if (emailFact) emailFact.textContent = u.email || '-';
-  
-  var deptFact = $('departmentFact');
-  if (deptFact) deptFact.textContent = u.department || '소속 미등록';
-  
-  var roleFact = $('roleFact');
-  if (roleFact) roleFact.textContent = role;
-  
-  // "내 권한" 섹션의 역할 리스트 동적 생성
-  var rolesEl = $('roles');
+  var rolesEl = $('mypageRoles');
   if (rolesEl) {
     var roleData = state.data.roles || [];
-    rolesEl.innerHTML = roleData.map(function(r, i) {
-      return '<div class="role-row">' +
-        '<span class="role-name">' + esc(r.name) + '</span>' +
-        '<span class="role-tag">기본 역할</span>' +
-        '<span class="role-status">●&nbsp; 활성</span>' +
-        '<button class="view" data-role="' + i + '">권한 보기&nbsp; →</button>' +
-      '</div>';
-    }).join('');
+    if (!roleData.length) {
+      rolesEl.innerHTML = '<span class="muted" style="color: #697077;">배정된 역할이 없습니다.</span>';
+    } else {
+      rolesEl.innerHTML = roleData.map(function(r, i) {
+        return '<div class="role-row">' +
+          '<span class="role-name">' + esc(r.name) + '</span>' +
+          '<span class="role-tag">기본 역할</span>' +
+          '<span class="role-status">●&nbsp; 활성</span>' +
+          '<button class="view" data-role="' + i + '">권한 보기&nbsp; →</button>' +
+        '</div>';
+      }).join('');
+    }
+  }
+
+  var menusEl = $('mypageMenus');
+  if (menusEl) {
+    menusEl.innerHTML = '';
+    var menus = u.menus || [];
+    menus.forEach(function (menu) {
+      var chip = document.createElement('span');
+      chip.className = 'mypage-chip';
+      chip.textContent = menu.name || menu.group || menu.id || '업무영역';
+      menusEl.appendChild(chip);
+    });
   }
   
-  // 상태 변수(state.base)에 알림 설정 초기값 세팅
   var notifications = state.data.notifications || [];
   notifications.forEach(function(n) {
     state.base[n.id] = { inApp: n.inApp, gmail: n.gmail };
   });
   
-  // 요약 테이블 및 모달 알림 테이블 렌더링 연계 호출
   renderSummaryTable();
   renderModalNotifications();
 }
 
-// 5. 알림 설정 요약 테이블 렌더링 (읽기 전용)
-// 마이페이지 메인 화면에 표시되는 읽기 전용 알림 설정 목록을 HTML로 생성합니다.
 function renderSummaryTable() {
   var el = $('summaryNotifications');
   if (!el) return;
   var notifications = state.data.notifications || [];
   el.innerHTML = notifications.map(function(n) {
-    var v = state.base[n.id]; // 원본 상태값 읽기
-    // 값에 따라 켜짐(🔔) 또는 꺼짐(🔕) 이모지 아이콘을 반환하는 헬퍼
+    var v = state.base[n.id] || { inApp: false, gmail: false };
     var channel = function(key) {
       return v[key] 
         ? '<span style="font-size: 16px;" title="켜짐">🔔</span>' 
@@ -96,24 +95,21 @@ function renderSummaryTable() {
   }).join('');
 }
 
-// 6. 알림 설정 수정 모달 내부 테이블 렌더링 (쓰기 가능)
-// 모달 내부에 사용자가 켜고 끌 수 있는 알림 토글 리스트를 생성합니다.
 function renderModalNotifications() {
   var el = $('modalNotifications');
   if (!el) return;
   var notifications = state.data.notifications || [];
   el.innerHTML = notifications.map(function(n) {
-    // state.pending에 임시 변경값이 있으면 적용, 없으면 base 원본 사용
     var p = state.pending[n.id];
-    var v = p || state.base[n.id];
+    var v = p || state.base[n.id] || { inApp: false, gmail: false };
     var cl = 'n-row' + (p ? ' changed' : '') + (p && p.error ? ' failed' : '');
     
-    // 알림 필수 여부에 따라 자물쇠(🔔🔒) 표시 또는 토글 체크박스를 반환
     var channel = function(key) {
       if (n.required) {
         return '<span class="locked" style="font-size: 16px;" title="필수(잠금)">🔔🔒</span>';
       } else {
-        var isChanged = p && p[key] !== state.base[n.id][key];
+        var baseV = state.base[n.id] || { inApp: false, gmail: false };
+        var isChanged = p && p[key] !== baseV[key];
         var changedText = isChanged ? '변경&nbsp; ' : '';
         var changedClass = isChanged ? 'changed-cell' : '';
         return '<span class="' + changedClass + '">' + changedText + 
@@ -130,11 +126,10 @@ function renderModalNotifications() {
     '</div>';
   }).join('');
   
-  // 모달 하단의 "저장" 버튼 및 변경 개수 업데이트 연계
   var num = Object.keys(state.pending).length;
   var bar = $('changeBar');
   if (bar) {
-    bar.classList.toggle('has-changes', !!num); // 변경사항이 1개 이상이면 노란색 알림바 스타일(has-changes) 추가
+    bar.classList.toggle('has-changes', !!num);
     var cc = $('changeCount');
     if (cc) cc.textContent = num ? num + '개 변경됨' : '변경사항 없음';
     var saveBtn = $('save');
@@ -142,110 +137,65 @@ function renderModalNotifications() {
   }
 }
 
-// 7. 모달 내 알림 스위치 토글 이벤트 핸들러
-// 토글 스위치 변경 시 이벤트가 발생하여 state.pending 객체에 변경 사항을 임시 기록합니다.
 function updateChannel(e) {
   var target = e.target;
   if (!target || target.tagName !== 'INPUT') return;
   var id = target.dataset.id;
   if (!id) return;
   
-  // 변경 내역이 없으면 원본 객체를 복사하여 pending에 생성
   var item = state.pending[id];
+  var baseItem = state.base[id] || { inApp: false, gmail: false };
   if (!item) {
-    item = { inApp: state.base[id].inApp, gmail: state.base[id].gmail };
+    item = { inApp: baseItem.inApp, gmail: baseItem.gmail };
   }
   item[target.dataset.channel] = target.checked;
   delete item.error;
   
-  // 만약 토글을 여러 번 눌러 원래 값과 똑같아졌다면 pending 목록에서 제거
-  if (item.inApp === state.base[id].inApp && item.gmail === state.base[id].gmail) {
+  if (item.inApp === baseItem.inApp && item.gmail === baseItem.gmail) {
     delete state.pending[id];
   } else {
     state.pending[id] = item;
   }
   
-  // 변경된 state를 바탕으로 UI 재랜더링 연계
   renderModalNotifications();
 }
 
-// 8. "권한 보기" 팝업 모달 표시 핸들러
-// 버튼 클릭 시 사용자의 세부 메뉴 접근/수정 권한 정보를 표(table) 형태로 만들어 모달에 표시합니다.
-function showPermissions(index) {
-  var r = state.data.roles[index];
-  if (!r) return;
+function renderPermissions_(permissionDetails) {
+  var tbody = $('mypagePermissions');
+  if (!tbody) return;
+  tbody.innerHTML = '';
   
-  // 임시 하드코딩된 기능명세 분류표를 통해 권한 테이블 렌더링
-  var yes = function(term) { return true; }; 
-  const structure = [
-    { name: '메인화면', subs: [] },
-    { name: '장부관리', subs: [{ name: '수입·지출 관리' }, { name: '감사 이력' }] },
-    { name: '학생회비관리', subs: [{ name: '납부 현황' }, { name: '환불 신청' }] },
-    { name: '행사복지관리', subs: [{ name: '행사 참여자' }, { name: '복지 물품 대여' }] }
-  ];
-
-  function renderCell(taskName, cellType) {
-    var allowed = true; // 현재는 임시로 모두 허용 표시
-    return '<td>' + (allowed ? '<span class="yes">✓</span>' : '<span class="no"></span>') + '</td>';
+  if (!permissionDetails || !permissionDetails.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 20px; color:#697077;">표시할 유효 권한이 없습니다.</td></tr>';
+    return;
+  }
+  
+  function renderCell(hasAccess) {
+    return '<td>' + (hasAccess ? '<span class="yes">✓</span>' : '<span class="no"></span>') + '</td>';
   }
 
-  var mt = $('modalTitle');
-  if (mt) mt.textContent = r.name + ' 역할 권한';
-  
-  var html = '';
-  structure.forEach(function(group, i) {
-    var hasSubs = group.subs && group.subs.length > 0;
-    var trClass = hasSubs ? 'group' : 'group no-subs';
-    // 대분류 권한 행 추가
-    html += '<tr class="' + trClass + '" data-group="' + i + '">' +
-      '<td>' + group.name + '</td>' +
-      renderCell(group.name, '메뉴 접근') +
-      renderCell(group.name, '조회') +
-      renderCell(group.name, '등록·수정') +
-      renderCell(group.name, '승인·처리') +
-      renderCell(group.name, '출력·다운로드') +
+  permissionDetails.forEach(function (p) {
+    var name = p.name || p.action || p.id || '권한';
+    var area = p.area ? '[' + p.area + '] ' : '';
+    var g = p.grants || {};
+    
+    var html = '<tr class="group no-subs">' +
+      '<td>' + esc(area + name) + '</td>' +
+      renderCell(g.menu) +
+      renderCell(g.view) +
+      renderCell(g.edit) +
+      renderCell(g.approve) +
+      renderCell(g.export) +
     '</tr>';
     
-    // 소분류 권한 행 추가
-    if (hasSubs) {
-      group.subs.forEach(function(sub) {
-        html += '<tr class="sub sub-' + i + '">' +
-          '<td>└ ' + sub.name + '</td>' +
-          renderCell(sub.name, '메뉴 접근') +
-          renderCell(sub.name, '조회') +
-          renderCell(sub.name, '등록·수정') +
-          renderCell(sub.name, '승인·처리') +
-          renderCell(sub.name, '출력·다운로드') +
-        '</tr>';
-      });
-    }
+    tbody.insertAdjacentHTML('beforeend', html);
   });
-  
-  var pr = $('permissionRows');
-  if (pr) pr.innerHTML = html;
-  
-  // 대분류 클릭 시 소분류 행이 아코디언처럼 접히거나 펼쳐지도록 이벤트 바인딩 연계
-  document.querySelectorAll('.permission-table tr.group').forEach(function(tr) {
-    tr.onclick = function() {
-      if (tr.classList.contains('no-subs')) return;
-      var g = tr.dataset.group;
-      tr.classList.toggle('open');
-      document.querySelectorAll('.sub-' + g).forEach(function(sub) { sub.classList.toggle('show'); });
-    };
-  });
-  
-  // 모달 활성화
-  var pm = $('permissionModal');
-  if (pm) pm.classList.add('open');
 }
 
-// 9. "저장 확인" 이차 모달 표시 핸들러
-// 알림 설정 모달에서 "알림 설정 저장" 버튼 클릭 시, 변경된 내용을 요약하여 보여주는 확인창(2차 모달)을 띄웁니다.
 function openSave() {
   var ids = Object.keys(state.pending);
-  if (!ids.length) return; // 변경 내역 없으면 중단
+  if (!ids.length) return;
   
-  // 변경 내역 목록(UI) 구성
   var sl = $('saveList');
   if (sl) {
     sl.innerHTML = ids.map(function(id) {
@@ -256,48 +206,39 @@ function openSave() {
     }).join('<hr style="border:0; border-top:1px solid #dde1e6; margin:12px 0;">');
   }
   
-  // 2차 확인 모달 열기
   var sm = $('saveModal');
   if (sm) sm.classList.add('open');
 }
 
-// 10. 백엔드(API)로 설정 데이터 저장 수행 함수
-// 2차 확인 모달에서 "확인" 클릭 시 백엔드(api_saveNotificationSettings)와 통신하여 데이터를 영구 보관(저장)합니다.
 async function saveSettings() {
-  // 백엔드 API 포맷에 맞춰 데이터 가공
   var changes = Object.keys(state.pending).map(function(id) {
     return { id: id, inApp: state.pending[id].inApp, gmail: state.pending[id].gmail };
   });
   
   var cs = $('confirmSave');
-  if (cs) cs.disabled = true; // 통신 중 중복 클릭 방지
+  if (cs) cs.disabled = true;
   
   try {
-    // API 호출 연계 -> 결과 반환 대기
     var res = await appClient.saveNotificationSettings(changes);
-    if (!res || !res.ok) throw new Error(res ? res.message : '저장 실패');
+    if (!res) throw new Error('저장 실패');
     
-    // 저장이 성공한 항목을 판단하여 state.base에 확정 반영하고, pending에서 지웁니다.
     res.results.forEach(function(r) {
       if (r.success) {
         state.base[r.id] = { inApp: state.pending[r.id].inApp, gmail: state.pending[r.id].gmail };
         delete state.pending[r.id];
       } else if (state.pending[r.id]) {
-        state.pending[r.id].error = '저장에 실패했습니다.'; // 실패 항목은 에러 마킹
+        state.pending[r.id].error = '저장에 실패했습니다.';
       }
     });
     
-    // 성공 후 열려있는 1차, 2차 모달 모두 닫기
     var sm = $('saveModal');
     if (sm) sm.classList.remove('open');
     var nm = $('notificationModal');
     if (nm) nm.classList.remove('open');
     
-    // 확정된 데이터로 다시 화면 렌더링 연계 호출
     renderSummaryTable();
     renderModalNotifications();
     
-    // 완료 토스트 메시지
     var failed = Object.keys(state.pending).length;
     toast(failed ? '일부 알림을 저장하지 못했습니다.' : '알림 설정을 성공적으로 저장했습니다.');
   } catch (e) {
@@ -307,11 +248,8 @@ async function saveSettings() {
   }
 }
 
-// 11. 화면 로드 완료 시(최초 진입점) 초기화 및 이벤트 바인딩 핸들러
-// 페이지 렌더링이 끝나면 가장 먼저 실행되는 메인 초기화 함수입니다.
 async function initializeMyPage() {
   try {
-    // 병렬로 유저 기본 정보와 권한 정보를 백엔드에서 조회(연계 호출)
     var results = await Promise.all([
       appClient.getCurrentUser(),
       appClient.getMyPermissions()
@@ -319,9 +257,8 @@ async function initializeMyPage() {
     var current = results[0];
     var permissions = results[1];
     
-    if (!current || !current.ok) throw new Error('사용자 정보를 불러오지 못했습니다.');
+    if (!current) throw new Error('사용자 정보를 불러오지 못했습니다.');
     
-    // 가져온 데이터를 상태 저장소(state.data)에 기록
     state.data = {
       user: current.user,
       roles: permissions.roles || [],
@@ -329,45 +266,45 @@ async function initializeMyPage() {
       notifications: current.notifications || []
     };
     
-    // 기록된 데이터를 바탕으로 초기 UI 렌더링 호출 연계
     renderMyPage_();
+    renderPermissions_(permissions.permissionDetails || []);
     
-    // --- 아래부터는 각 버튼 및 UI의 클릭(상호작용) 이벤트를 연결합니다 ---
-    
-    // [권한 보기] 버튼 클릭 이벤트 
-    var rolesEl = $('roles');
+    var dateEl = $('permissionDate');
+    if (dateEl) {
+        var today = new Date();
+        dateEl.textContent = '권한 기준일 ' + today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+    }
+
+    var rolesEl = $('mypageRoles');
     if (rolesEl) {
       rolesEl.addEventListener('click', function(e) {
-        if (e.target.dataset.role !== undefined) showPermissions(e.target.dataset.role);
+        if (e.target.dataset.role !== undefined) {
+          var pm = $('permissionModal');
+          if (pm) pm.classList.add('open');
+        }
       });
     }
     
-    // [알림 설정 토글 스위치] 클릭 이벤트 위임
     var mn = $('modalNotifications');
     if (mn) mn.addEventListener('change', updateChannel);
     
-    // [변경사항 취소] 버튼: 임시 상태를 비우고 다시 모달을 리셋
     var discardBtn = $('discard');
     if (discardBtn) discardBtn.addEventListener('click', function() { state.pending = {}; renderModalNotifications(); });
     
-    // [알림 설정 저장] 1차 버튼: 2차 확인 모달(openSave) 열기
     var saveBtn = $('save');
     if (saveBtn) saveBtn.addEventListener('click', openSave);
     
-    // [변경사항 확인] 2차 버튼: 실제 백엔드 API 연동(saveSettings) 실행
     var confirmSaveBtn = $('confirmSave');
     if (confirmSaveBtn) confirmSaveBtn.addEventListener('click', saveSettings);
     
-    // 메인 화면에서 [알림 설정 수정] 모달 띄우는 버튼
     var openNotiBtn = $('openNotificationSettings');
     if (openNotiBtn) openNotiBtn.addEventListener('click', function() {
       state.pending = {};
-      renderModalNotifications(); // 열기 전에 최신 base 상태로 깨끗하게 그림
+      renderModalNotifications();
       var nm = $('notificationModal');
       if (nm) nm.classList.add('open');
     });
     
-    // [공통] [data-close] 속성을 가진 모달 닫기(X) 버튼들에 동작 연결
     document.querySelectorAll('[data-close]').forEach(function(b) {
       b.addEventListener('click', function() {
         var el = $(b.dataset.close);
@@ -376,7 +313,6 @@ async function initializeMyPage() {
     });
     
   } catch (error) {
-    // 오류 시 전체 에러 메시지를 화면 상단에 표출
     var errEl = $('mypageError');
     if (errEl) {
       errEl.textContent = error.message;
@@ -385,6 +321,5 @@ async function initializeMyPage() {
   }
 }
 
-// 브라우저 렌더링이 준비되면 곧바로 initializeMyPage 함수를 실행
 document.addEventListener('DOMContentLoaded', initializeMyPage);
 </script>

@@ -555,19 +555,21 @@
 
     /* 내 정보 카드 */
     .profile-card {
-      height: 192px; background: #fff; border: 1px solid var(--line);
-      display: flex; align-items: flex-start; padding: 32px; position: relative; border-radius: 4px;
+      min-height: 192px; background: #fff; border: 1px solid var(--line);
+      display: flex; align-items: flex-start; padding: 32px 32px 50px 32px; position: relative; border-radius: 4px;
+      flex-wrap: wrap; gap: 20px;
     }
     .profile-avatar {
       width: 72px; height: 72px; border-radius: 50%;
       display: grid; place-items: center; background: #e8f2ff;
       color: var(--blue); font-size: 28px; font-weight: 800;
+      flex-shrink: 0;
     }
-    .profile-identity { margin: 3px 0 0 20px; width: 180px; }
-    .profile-identity b { font-size: 20px; font-weight: 700; display: block; }
+    .profile-identity { margin: 3px 0 0 0; width: 180px; flex-shrink: 0; }
+    .profile-identity b { font-size: 20px; font-weight: 700; display: block; word-break: keep-all; }
     .active { display: block; margin-top: 12px; color: var(--green); font-size: 13px; font-weight: 700; }
     
-    .facts { display: grid; grid-template-columns: repeat(2, minmax(210px, 1fr)); gap: 28px 80px; margin: 0 0 0 35px; }
+    .facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 28px 40px; margin: 0; flex-grow: 1; width: 100%; min-width: 250px; }
     .facts dt { font-size: 12px; color: var(--muted); font-weight: 700; margin-bottom: 8px; }
     .facts dd { margin: 0; font-size: 14px; font-weight: 700; color: #121619; }
     .profile-note { position: absolute; bottom: 16px; left: 32px; color: var(--muted); font-size: 12px; margin: 0;}
