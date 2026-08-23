@@ -131,8 +131,13 @@ function renderPendingTab(panel, title, message) {
   panel.innerHTML = '<section class="ew-card ew-pending-panel ui-card"><h3>' + escapeHtml(title) + '</h3><p>' + escapeHtml(message) + '</p></section>';
 }
 
+function hideApplicantModal_() {
+  var modal = document.getElementById('ew-applicant-detail-modal');
+  if (modal) modal.hidden = true;
+}
+
 function closeModal(event) {
-  if (event.target.closest('[data-modal-stop]') && !event.target.classList.contains('ew-modal-close')) return;
-  modalRoot.innerHTML = '';
+  if (event && event.target.closest('[data-modal-stop]') && !event.target.closest('[data-action="close-modal"]')) return;
+  hideApplicantModal_();
 }
 </script>
