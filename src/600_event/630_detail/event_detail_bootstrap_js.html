@@ -64,7 +64,8 @@ document.addEventListener('change', function (event) {
 });
 
 document.addEventListener('keydown', function (event) {
-  if (event.key === 'Escape' && modalRoot.innerHTML) modalRoot.innerHTML = '';
+  var applicantModal = document.getElementById('ew-applicant-detail-modal');
+  if (event.key === 'Escape' && applicantModal && !applicantModal.hidden) hideApplicantModal_();
 });
 
 // URL의 행사 ID로 overview를 한 번 조회하고 상세 캐시와 첫 탭을 초기화합니다.
