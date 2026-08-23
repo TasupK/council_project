@@ -12,22 +12,6 @@ const state = { data: null, base: {}, pending: {} };
 // esc 함수: XSS 방지를 위해 화면에 출력되는 문자열의 특수문자를 HTML 엔티티로 변환합니다.
 const esc = function(v) { return String(v||'').replace(/[&<>"']/g, function(c) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]); }); };
 
-// 2. 백엔드 통신(API 호출) 함수
-// callMyPageApi_: google.script.run을 래핑하여 Promise 기반으로 백엔드 함수를 호출합니다.
-// - name: 호출할 백엔드 함수명
-// - arg: 백엔드로 전달할 인자(parameter)
-function callMyPageApi_(name, arg) {
-  return new Promise(function (resolve, reject) {
-    var runner = google.script.run
-      .withSuccessHandler(resolve) // 성공 시 resolve 호출
-      .withFailureHandler(function (error) { // 에러 시 reject 호출
-        reject(new Error(error && error.message ? error.message : '서버 요청에 실패했습니다.'));
-      });
-    if (arg !== undefined) runner[name](arg);
-    else runner[name]();
-  });
-}
-
 // 3. 토스트 메시지 UI 표시 함수
 // 알림 저장 결과나 에러 발생 시 2.6초간 화면 하단에 텍스트 메시지를 띄우는 역할을 합니다.
 function toast(text) {
@@ -290,7 +274,7 @@ async function saveSettings() {
   
   try {
     // API 호출 연계 -> 결과 반환 대기
-    var res = await callMyPageApi_('api_saveNotificationSettings', changes);
+    var res = await appClient.saveNotificationSettings(changes);
     if (!res || !res.ok) throw new Error(res ? res.message : '저장 실패');
     
     // 저장이 성공한 항목을 판단하여 state.base에 확정 반영하고, pending에서 지웁니다.
@@ -329,8 +313,8 @@ async function initializeMyPage() {
   try {
     // 병렬로 유저 기본 정보와 권한 정보를 백엔드에서 조회(연계 호출)
     var results = await Promise.all([
-      callMyPageApi_('api_getCurrentUser'),
-      callMyPageApi_('api_getMyPermissions')
+      appClient.getCurrentUser(),
+      appClient.getMyPermissions()
     ]);
     var current = results[0];
     var permissions = results[1];

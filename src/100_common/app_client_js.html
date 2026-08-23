@@ -6,6 +6,10 @@ var appClient = {
 
   getMyPermissions: function () {
     return runAppApi('api_getMyPermissions', {});
+  },
+
+  saveNotificationSettings: function (changes) {
+    return runAppApi('api_saveNotificationSettings', changes);
   }
 };
 </script>
