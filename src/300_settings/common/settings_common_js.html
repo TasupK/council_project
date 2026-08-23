@@ -1,7 +1,6 @@
 <script>
   var SETTINGS_CAN_ADMIN = false;
 
-  // 1. 공통 사용자 및 상태 표시
   function applySettingsShell(data) {
     if (!data.session || !data.session.canAccessSettings) {
       throw new Error("설정 화면에 접근할 권한이 없습니다.");
@@ -10,10 +9,14 @@
     var user = data.currentUser || {};
     var app = data.app || {};
     var database = data.database || {};
-    getAppElement("appUserName").textContent = user.name || "운영자";
-    getAppElement("appUserTitle").textContent = user.title || "사용자";
-    getAppElement("appTerm").innerHTML = "<option>" + escapeSettingsHtml(app.term || "2026학년도") + "</option>";
-    getSettingsElement("statusBar").textContent = "시스템 " + (app.version || "") + " · Google Sheets DB 연결됨";
+    var nameEl = getAppElement("appUserName");
+    var titleEl = getAppElement("appUserTitle");
+    var termEl = getAppElement("appTerm");
+    var statusBar = getSettingsElement("statusBar");
+    if (nameEl) nameEl.textContent = user.name || "운영자";
+    if (titleEl) titleEl.textContent = user.title || "사용자";
+    if (termEl) termEl.innerHTML = "<option>" + escapeSettingsHtml(app.term || "2026학년도") + "</option>";
+    if (statusBar) statusBar.textContent = "시스템 " + (app.version || "") + " · Google Sheets DB 연결됨";
     return database;
   }
 
@@ -30,7 +33,6 @@
     loading.innerHTML = '<div class="placeholder-page"><strong>초기화 실패</strong><p>' + escapeSettingsHtml(error.message || error) + "</p></div>";
   }
 
-  // 2. 설정 문자열 처리
   function escapeSettingsHtml(value) {
     return String(value == null ? "" : value)
       .replace(/&/g, "&amp;")
@@ -39,8 +41,15 @@
       .replace(/"/g, "&quot;");
   }
 
-  // 3. 설정 DOM 조회
   function getSettingsElement(id) {
     return document.getElementById(id);
   }
+
+  function wireSettingsBackLink() {
+    var link = getSettingsElement("settingsBackLink");
+    if (!link || typeof buildAppPageUrl !== "function") return;
+    link.href = buildAppPageUrl("settings");
+  }
+
+  wireSettingsBackLink();
 </script>

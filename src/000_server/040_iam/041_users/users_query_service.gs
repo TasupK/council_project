@@ -20,6 +20,7 @@ function mapUserDto_(row, roleIds, roles, departmentMap) {
   var departmentId = hasDepartmentField ? normalizeTextValue_(row[fields.departmentId]) : '';
   var departments = departmentMap || (typeof buildDepartmentsById_ === 'function' ? buildDepartmentsById_() : {});
   var department = departmentId && departments[departmentId] ? departments[departmentId].name : '';
+  var statusField = fields.active || fields.status;
   var result = {
     id: normalizeEmail_(row[fields.email]),
     name: normalizeTextValue_(row[fields.name]) || normalizeEmail_(row[fields.email]),
@@ -29,7 +30,7 @@ function mapUserDto_(row, roleIds, roles, departmentMap) {
     department: department,
     roleIds: roleIds || [],
     roles: roles || [],
-    status: isActiveStatus_(row[fields.status]) ? 'active' : 'inactive',
+    status: isActiveStatus_(row[statusField]) ? 'active' : 'inactive',
     updatedAt: formatDateValue_(row[fields.updatedAt]),
     updatedBy: normalizeTextValue_(row[fields.updatedBy])
   };

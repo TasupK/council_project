@@ -23,7 +23,7 @@ function createContext_() {
 function installValueStubs_(context) {
   context.normalizeEmail_ = function (value) { return String(value || '').trim().toLowerCase(); };
   context.normalizeTextValue_ = function (value) { return value === null || typeof value === 'undefined' ? '' : String(value).trim(); };
-  context.isActiveStatus_ = function (value) { return value === true || value === '활성' || value === 'active'; };
+  context.isActiveStatus_ = function (value) { return value === true || value === 'TRUE' || value === '활성' || value === 'active'; };
   context.isTruthyValue_ = function (value) { return value === true || value === 'TRUE' || value === 'true' || value === 1; };
   context.formatDateValue_ = function (value) { return String(value || ''); };
 }
@@ -66,10 +66,10 @@ function testSettingsHomeData_() {
 function testUsersSettingsComposition_() {
   var context = createContext_();
   installValueStubs_(context);
-  context.getUserDbFields_ = function () { return { email: 'Google이메일', name: '성명', studentId: '학번', phone: '연락처', status: '계정상태', updatedAt: '최종수정일시', updatedBy: '등록자이메일' }; };
+  context.getUserDbFields_ = function () { return { email: 'Google이메일', name: '성명', studentId: '학번', phone: '연락처', active: '활성여부', updatedAt: '최종수정일시', updatedBy: '등록자이메일' }; };
   load_(context, 'src/000_server/040_iam/041_users/users_query_service.gs');
   load_(context, 'src/000_server/070_settings/071_users/settings_users_query_service.gs');
-  context.listUserRows_ = function () { return [{ 'Google이메일': 'Student@Example.com ', '성명': '김학생', '학번': '6001', '연락처': '010-1111-2222', '계정상태': '활성', '최종수정일시': '2026-08-17T12:00:00', '등록자이메일': 'admin@example.com' }]; };
+  context.listUserRows_ = function () { return [{ 'Google이메일': 'Student@Example.com ', '성명': '김학생', '학번': '6001', '연락처': '010-1111-2222', '활성여부': 'TRUE', '최종수정일시': '2026-08-17T12:00:00', '등록자이메일': 'admin@example.com' }]; };
   context.buildRolesById_ = function () { return { ROLE_ADMIN: { id: 'ROLE_ADMIN', name: '관리자' } }; };
   context.buildActiveRoleIdsByEmail_ = function () { return { 'student@example.com': ['ROLE_ADMIN'] }; };
   context.buildRoleSummaryForUser_ = function (role) { return { id: role.id, name: role.name }; };
@@ -108,6 +108,9 @@ function testPermissionsIamAndSettingsComposition_() {
   context.buildPermissionIdsByRoleId_ = function () { return { ROLE_ADMIN: ['EVENT_VIEW', 'EVENT_EDIT'] }; };
   assert.strictEqual(context.buildPermissionTreeFromDb_()[0].id, 'area_행사');
   assert.strictEqual(context.buildPermissionsByRoleFromDb_().ROLE_ADMIN.perm_EVENT_EDIT.edit, true);
+  assert.strictEqual(context.buildSettingsPermissionTreeFromDb_()[0].children[0].id, 'screen_EVENT');
+  assert.strictEqual(context.buildSettingsPermissionsByRoleFromDb_().ROLE_ADMIN.screen_EVENT.view, true);
+  assert.strictEqual(context.buildSettingsPermissionsByRoleFromDb_().ROLE_ADMIN.screen_EVENT.edit, true);
 
   context.okResponse_ = function (payload) { return Object.assign({ ok: true }, payload); };
   context.buildSettingsBaseView_ = function (current) { return { currentUser: current.user, shell: true }; };
@@ -115,8 +118,9 @@ function testPermissionsIamAndSettingsComposition_() {
   load_(context, 'src/000_server/070_settings/073_permissions/settings_permissions_query_service.gs');
   var serviceResult = context.getSettingsPermissionsData_({ user: { email: 'admin@example.com' } });
   assert.strictEqual(serviceResult.ok, true);
-  assert.strictEqual(serviceResult.permissionTree[0].id, 'area_행사');
-  assert.strictEqual(serviceResult.permissionsByRole.ROLE_ADMIN.perm_EVENT_VIEW.view, true);
+  assert.strictEqual(serviceResult.permissionTree[0].children[0].id, 'screen_EVENT');
+  assert.strictEqual(serviceResult.permissionsByRole.ROLE_ADMIN.screen_EVENT.view, true);
+  assert.strictEqual(serviceResult.permissionsByRole.ROLE_ADMIN.screen_EVENT.edit, true);
 }
 
 testAdminSettingsAccess_();
