@@ -3,15 +3,15 @@ var settingsClient = {
   getHome: function () { return runAppApi('api_getSettingsHome'); },
   getUsers: function () { return runAppApi('api_getSettingsUsers'); },
   updateUserDepartment: function (request) { return runAppApi('api_updateSettingsUserDepartment', request || {}); },
-  saveUserChanges: function (request) { return runAppApi('api_saveSettingsUserChanges', request || {}); },
+  saveUserChanges: function (request) { return runAppApi('api_applySettingsUserChanges', request || {}); },
   createUser: function (request) { return runAppApi('api_createSettingsUser', request || {}); },
   updateUser: function (request) { return runAppApi('api_updateSettingsUser', request || {}); },
   getRoles: function () { return runAppApi('api_getSettingsRoles'); },
-  saveRoleChanges: function (request) { return runAppApi('api_saveSettingsRoleChanges', request || {}); },
+  saveRoleChanges: function (request) { return runAppApi('api_applySettingsRoleChanges', request || {}); },
   createRole: function (request) { return runAppApi('api_createSettingsRole', request || {}); },
   updateRole: function (request) { return runAppApi('api_updateSettingsRole', request || {}); },
   getPermissions: function () { return runAppApi('api_getSettingsPermissions'); },
-  saveRolePermissions: function (request) { return runAppApi('api_saveSettingsRolePermissions', request || {}); },
+  saveRolePermissions: function (request) { return runAppApi('api_updateSettingsRolePermissions', request || {}); },
   getDepartments: function () { return runAppApi('api_getSettingsDepartments'); }
 };
 </script>

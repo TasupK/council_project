@@ -3,27 +3,25 @@ var fs = require('fs');
 var path = require('path');
 
 var ROOT = path.resolve(__dirname, '..');
-function read_(relativePath) {
-  return fs.readFileSync(path.join(ROOT, relativePath), 'utf8');
-}
+function read_(relativePath) { return fs.readFileSync(path.join(ROOT, relativePath), 'utf8'); }
 
 var clientPath = path.join(ROOT, 'src/300_settings/common/settings_client_js.html');
 assert.ok(fs.existsSync(clientPath), 'settings_client_js.html must exist');
 var client = fs.readFileSync(clientPath, 'utf8');
 [
-  ["getHome", "api_getSettingsHome"],
-  ["getUsers", "api_getSettingsUsers"],
-  ["updateUserDepartment", "api_updateSettingsUserDepartment"],
-  ["saveUserChanges", "api_saveSettingsUserChanges"],
-  ["createUser", "api_createSettingsUser"],
-  ["updateUser", "api_updateSettingsUser"],
-  ["getRoles", "api_getSettingsRoles"],
-  ["saveRoleChanges", "api_saveSettingsRoleChanges"],
-  ["createRole", "api_createSettingsRole"],
-  ["updateRole", "api_updateSettingsRole"],
-  ["getPermissions", "api_getSettingsPermissions"],
-  ["saveRolePermissions", "api_saveSettingsRolePermissions"],
-  ["getDepartments", "api_getSettingsDepartments"]
+  ['getHome', 'api_getSettingsHome'],
+  ['getUsers', 'api_getSettingsUsers'],
+  ['updateUserDepartment', 'api_updateSettingsUserDepartment'],
+  ['saveUserChanges', 'api_applySettingsUserChanges'],
+  ['createUser', 'api_createSettingsUser'],
+  ['updateUser', 'api_updateSettingsUser'],
+  ['getRoles', 'api_getSettingsRoles'],
+  ['saveRoleChanges', 'api_applySettingsRoleChanges'],
+  ['createRole', 'api_createSettingsRole'],
+  ['updateRole', 'api_updateSettingsRole'],
+  ['getPermissions', 'api_getSettingsPermissions'],
+  ['saveRolePermissions', 'api_updateSettingsRolePermissions'],
+  ['getDepartments', 'api_getSettingsDepartments']
 ].forEach(function (pair) {
   assert.ok(client.indexOf(pair[0]) !== -1, 'missing settings client method: ' + pair[0]);
   assert.ok(client.indexOf(pair[1]) !== -1, 'missing settings API mapping: ' + pair[1]);
@@ -63,15 +61,15 @@ assert.ok(access.indexOf('api_getCurrentUser()') === -1, 'Settings access must n
 });
 
 var usersApi = read_('src/000_server/070_settings/071_users/settings_users_api.gs');
-['api_saveSettingsUserChanges', 'api_createSettingsUser', 'api_updateSettingsUser'].forEach(function (name) {
+['api_applySettingsUserChanges', 'api_createSettingsUser', 'api_updateSettingsUser'].forEach(function (name) {
   assert.ok(usersApi.indexOf(name) !== -1, 'missing settings users API: ' + name);
 });
 var rolesApi = read_('src/000_server/070_settings/072_roles/settings_roles_api.gs');
-['api_saveSettingsRoleChanges', 'api_createSettingsRole', 'api_updateSettingsRole'].forEach(function (name) {
+['api_applySettingsRoleChanges', 'api_createSettingsRole', 'api_updateSettingsRole'].forEach(function (name) {
   assert.ok(rolesApi.indexOf(name) !== -1, 'missing settings roles API: ' + name);
 });
 var permissionsApi = read_('src/000_server/070_settings/073_permissions/settings_permissions_api.gs');
-assert.ok(permissionsApi.indexOf('api_saveSettingsRolePermissions') !== -1, 'missing settings permissions mutation API');
+assert.ok(permissionsApi.indexOf('api_updateSettingsRolePermissions') !== -1, 'missing settings permissions mutation API');
 
 [
   'src/000_server/070_settings/071_users/settings_users_mutation_service.gs',
