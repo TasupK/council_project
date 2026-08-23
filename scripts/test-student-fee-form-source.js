@@ -116,6 +116,8 @@ function createContext() {
   context.resolveStudentFeeRate_ = () => ({ amountPerSemester: 20000 });
   context.getCurrentIsoDateTime_ = () => '2026-08-19T23:00:00+09:00';
   context.writeStudentFeeAudit_ = () => {};
+  // feePayers upsert는 별도 테스트(test-student-fee.js)에서 검증하므로 여기서는 no-op으로 stub 처리한다.
+  context.upsertFeePayerFromApplication_ = () => null;
   load(context, 'src/000_server/080_student_fee/082_payments/fee_payments_service.gs');
 
   context.processFeeApplicationsData_({ ids: ['app-1'], action: 'APPROVE' }, { email: 'staff@example.com' });
@@ -133,6 +135,8 @@ function createContext() {
     context.resolveStudentFeeRate_ = () => ({ amountPerSemester: 20000 });
     context.getCurrentIsoDateTime_ = () => '2026-08-19T23:00:00+09:00';
     context.writeStudentFeeAudit_ = () => {};
+    // feePayers upsert는 별도 테스트(test-student-fee.js)에서 검증하므로 여기서는 no-op으로 stub 처리한다.
+    context.upsertFeePayerFromApplication_ = () => null;
     load(context, 'src/000_server/080_student_fee/082_payments/fee_payments_service.gs');
     assert.throws(
       () => context.processFeeApplicationsData_({ ids: ['app-invalid'], action: 'APPROVE' }, { email: 'staff@example.com' }),
