@@ -25,7 +25,6 @@ const DOMAIN_SHELLS = {
   ],
   main: ['src/250_main/Main.html'],
   accounting: [
-    'src/400_accounting/400_home/Accounting_Home.html',
     'src/400_accounting/410_ledger/Accounting_Ledger.html',
     'src/400_accounting/420_reconciliation/Accounting_Reconciliation.html',
     'src/400_accounting/430_settlement/Accounting_Settlement.html'
@@ -182,13 +181,16 @@ function verifyMain() {
 }
 
 function verifyAccounting() {
-  requireClasses('src/400_accounting/400_home/Accounting_Home_View.html', ['ui-page-head', 'ui-tabs', 'ui-tab', 'ui-card']);
   requireClasses('src/400_accounting/410_ledger/Accounting_Ledger_View.html', [
-    'ui-page-head', 'ui-page-actions', 'ui-stat-card', 'ui-toolbar', 'ui-field',
-    'ui-table-wrap', 'ui-table', 'ui-modal-overlay', 'ui-modal', 'ui-badge', 'ui-toast'
+    'ui-page-head', 'ui-page-desc', 'ui-page-actions', 'ui-stat-card', 'ui-toolbar', 'ui-field',
+    'ui-table-wrap', 'ui-table', 'ui-pagination', 'ui-modal-overlay', 'ui-modal', 'ui-badge', 'ui-toast'
   ]);
-  requireClasses('src/400_accounting/420_reconciliation/Accounting_Reconciliation_View.html', ['ui-page-head', 'ui-tabs', 'ui-tab', 'ui-card', 'ui-toolbar', 'ui-table-wrap', 'ui-table', 'ui-toast']);
-  requireClasses('src/400_accounting/430_settlement/Accounting_Settlement_View.html', ['ui-page-head', 'ui-tabs', 'ui-tab', 'ui-stat-card', 'ui-card', 'ui-field', 'ui-btn', 'ui-toast']);
+  requireClasses('src/400_accounting/420_reconciliation/Accounting_Reconciliation_View.html', [
+    'ui-page-head', 'ui-page-desc', 'ui-card', 'ui-toolbar', 'ui-table-wrap', 'ui-table', 'ui-toast'
+  ]);
+  requireClasses('src/400_accounting/430_settlement/Accounting_Settlement_View.html', [
+    'ui-page-head', 'ui-page-desc', 'ui-stat-card', 'ui-card', 'ui-field', 'ui-btn', 'ui-toast'
+  ]);
 }
 
 function verifyAccountingServerContracts() {
