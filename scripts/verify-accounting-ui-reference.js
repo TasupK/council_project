@@ -9,6 +9,16 @@ function read_(relativePath) {
   return fs.readFileSync(path.join(FRONTEND_ROOT, relativePath), 'utf8');
 }
 
+function hasExactClassToken_(source, forbiddenTokens) {
+  var classPattern = /class=["']([^"']*)["']/g;
+  var match;
+  while ((match = classPattern.exec(source)) !== null) {
+    var classes = match[1].split(/\s+/).filter(Boolean);
+    if (forbiddenTokens.some(function (token) { return classes.indexOf(token) >= 0; })) return true;
+  }
+  return false;
+}
+
 function hasLegacyDynamicPrimitive_(source) {
   var classPattern = /class=["']([^"']*)["']/g;
   var match;
@@ -35,7 +45,7 @@ views.forEach(function (file) {
   if (source.indexOf('ui-page-desc') < 0) failures.push(file + ' must use ui-page-desc.');
   if (source.indexOf('ui-btn') < 0) failures.push(file + ' must use ui-btn.');
   if (source.indexOf('ui-toast') < 0) failures.push(file + ' must use ui-toast.');
-  if (/class=["'][^"']*\b(?:breadcrumb|desc)\b/.test(source)) {
+  if (hasExactClassToken_(source, ['breadcrumb', 'desc'])) {
     failures.push(file + ' must not keep legacy breadcrumb/desc presentation classes.');
   }
 });
