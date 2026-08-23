@@ -219,7 +219,7 @@ async function saveSettings() {
   if (cs) cs.disabled = true;
   
   try {
-    var res = await appClient.saveNotificationSettings(changes);
+    var res = await appClient.updateNotificationSettings(changes);
     if (!res) throw new Error('저장 실패');
     
     res.results.forEach(function(r) {
