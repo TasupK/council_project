@@ -23,21 +23,11 @@ function processReconciliationData_(request, context) {
   request = request || {};
   if (!request.startDate || !request.endDate) throw new Error('startDate와 endDate가 필요합니다.');
   if (request.startDate > request.endDate) throw new Error('감사 시작일이 종료일보다 늦을 수 없습니다.');
-  var requestedBankIds = (request.bankTransactionIds || []).map(function (id) {
-    return String(id || '').trim();
-  }).filter(Boolean);
-  if (!requestedBankIds.length) throw new Error('현재 업로드한 파일의 계좌 거래가 없습니다.');
-  var requestedBankIdSet = requestedBankIds.reduce(function (index, id) {
-    index[id] = true;
-    return index;
-  }, {});
 
   var banks = listBankTransactionRows_().filter(function (row) {
     return String(row.recordStatus || '정상') !== '무효' &&
-      requestedBankIdSet[String(row.id || '')] &&
       isAccountingDateInRange_(row.transactionAt, request.startDate, request.endDate);
   });
-  if (!banks.length) throw new Error('현재 업로드한 파일에서 비교할 계좌 거래를 찾지 못했습니다.');
   var ledgers = buildReconciliationLedgerCandidates_({ startDate: request.startDate, endDate: request.endDate });
   var results = buildReconciliationSnapshotItems_(banks, ledgers);
   var balances = resolveReconciliationBankBalances_(banks);

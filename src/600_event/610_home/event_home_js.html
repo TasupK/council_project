@@ -1,4 +1,10 @@
 <script>
+/**
+ * 610_home 행사 목록 실행 순서
+ * 필터 복원 → 목록 API 조회 → 요약/표 렌더링 → 사용자 이벤트 처리
+ */
+
+// 뒤로 이동 후에도 유지된 브라우저 필터 상태를 검색 폼에 다시 반영합니다.
 function renderEventListShell() {
     var filter = state.eventFilters;
     var searchForm = document.getElementById('ew-event-search');
@@ -9,6 +15,7 @@ function renderEventListShell() {
     searchForm.elements.includeClosed.checked = Boolean(filter.includeClosed);
   }
 
+// 목록 응답 하나로 필터 선택지, 상태 요약, 테이블을 함께 갱신합니다.
 function loadEventList() {
     runEventBusy(function () {
       return eventClient.getEvents({
@@ -24,15 +31,18 @@ function loadEventList() {
     }).catch(handleError);
   }
 
+// 서버가 실제 데이터에서 계산한 담당자·유형·상태 선택지를 필터에 채웁니다.
 function fillEventFilterOptions(options) {
-    fillSelect('ew-managerId-filter', options.managers || [], state.eventFilters.managerId);
+    fillSelect('ew-managerEmail-filter', options.managers || [], state.eventFilters.managerEmail);
     fillSelect('ew-type-filter', options.eventTypes || [], state.eventFilters.category);
     fillSelect('ew-status-filter', options.eventStatuses || [], state.eventFilters.status);
   }
 
+// 첫 번째 '전체' 옵션은 유지하고 동적 옵션만 매 조회마다 교체합니다.
 function fillSelect(id, values, selected) {
     var select = document.getElementById(id);
     if (!select) return;
+    while (select.options.length > 1) select.remove(1);
     values.forEach(function (value) {
       var option = document.createElement('option');
       option.value = value;
@@ -57,19 +67,23 @@ function summaryItem(label, value, className) {
       escapeHtml(value) + '건</strong></div>';
   }
 
+// 행사 행과 즉시 변경 가능한 상태 드롭다운을 함께 생성합니다.
 function renderEventTable(data) {
     var target = document.getElementById('ew-event-table');
     if (!target) return;
     var rows = data.items || [];
     var body = rows.length ? rows.map(function (event) {
-      var statusOptions = (data.options && data.options.eventStatuses || ['예정', '모집', '진행', '종료', '취소'])
+      var statusValues = (data.options && data.options.eventStatuses || ['예정', '모집', '진행', '종료']).slice();
+      // 현재 DB 상태가 최신 선택지에 없어도 기존 값이 화면에서 사라지지 않게 보존합니다.
+      if (event.status && statusValues.indexOf(event.status) < 0) statusValues.unshift(event.status);
+      var statusOptions = statusValues
         .map(function (status) {
           return '<option value="' + escapeHtml(status) + '" ' + (status === event.status ? 'selected' : '') + '>' + escapeHtml(status) + '</option>';
         }).join('');
-      return '<tr><td><strong>' + escapeHtml(event.name) + '</strong><small>' + escapeHtml(event.id) + '</small></td>' +
-        '<td>' + escapeHtml(event.managerId) + '</td><td>' + displayDate(event.eventStartAt) + '</td>' +
+      return '<tr class="ew-event-row" data-event-id="' + escapeHtml(event.id) + '" title="더블클릭하여 상세 보기"><td><strong>' + escapeHtml(event.name) + '</strong><small>' + escapeHtml(event.id) + '</small></td>' +
+        '<td>' + escapeHtml(event.managerEmail) + '</td><td>' + displayDate(event.eventStartAt) + '</td>' +
         '<td>' + escapeHtml(event.category) + '</td>' +
-        '<td><select class="ui-control" data-role="event-status" data-id="' + escapeHtml(event.id) + '">' + statusOptions + '</select></td>' +
+        '<td><select class="ui-control" data-role="event-status" data-id="' + escapeHtml(event.id) + '" aria-label="' + escapeHtml(event.name) + ' 행사 상태">' + statusOptions + '</select></td>' +
         '<td><div class="ew-row-actions"><button type="button" class="ew-btn ew-btn-outline ew-btn-small ui-btn outline small" data-action="go-detail" data-id="' + escapeHtml(event.id) + '">상세</button>' +
         '<button type="button" class="ew-btn ew-btn-small ui-btn outline small" data-action="close-event" data-id="' + escapeHtml(event.id) + '" ' + (event.status === '종료' ? 'disabled' : '') + '>종료</button></div></td></tr>';
     }).join('') : '<tr><td colspan="6" class="ew-table-empty ui-empty">조건에 맞는 행사가 없습니다.</td></tr>';
@@ -77,6 +91,7 @@ function renderEventTable(data) {
       body + '</tbody></table>' + paginationHtml(data, 'event-page');
   }
 
+// 사용자 확인 후 종료 상태를 저장하고 최신 목록을 다시 조회합니다.
 function closeEvent(id) {
     if (!window.confirm('이 행사를 종료 상태로 변경하시겠습니까?')) return;
     runEventBusy(function () { return eventClient.closeEvent({ id: id }); })
@@ -84,9 +99,11 @@ function closeEvent(id) {
       .catch(handleError);
   }
 
+// 검색 조건이 바뀌면 항상 첫 페이지부터 조회합니다.
 document.getElementById('ew-event-search').addEventListener('submit', function (event) {
   event.preventDefault(); state.eventFilters = readForm(event.target); state.eventPage = 1; loadEventList();
 });
+// data-action 이벤트 위임으로 동적으로 다시 그린 버튼도 동일하게 처리합니다.
 document.addEventListener('click', function (event) {
   var button = event.target.closest('[data-action]'); if (!button || button.disabled) return;
   var action = button.dataset.action;
@@ -96,6 +113,7 @@ document.addEventListener('click', function (event) {
   else if (action === 'event-page') { state.eventPage = Number(button.dataset.page); loadEventList(); }
   else if (action === 'close-event') closeEvent(button.dataset.id);
 });
+// 상태 저장 실패 시 서버의 원래 값으로 복구하기 위해 목록을 재조회합니다.
 document.addEventListener('change', function (event) {
   if (!event.target.matches('[data-role="event-status"]')) return;
   var select = event.target;
@@ -104,6 +122,14 @@ document.addEventListener('change', function (event) {
   }).then(function () { showToast('행사 상태를 변경했습니다.'); loadEventList(); })
     .catch(function (error) { handleError(error); loadEventList(); });
 });
+// 행 더블클릭은 상세로 이동하되 버튼·상태 드롭다운 조작과 충돌하지 않게 제외합니다.
+document.addEventListener('dblclick', function (event) {
+  if (event.target.closest('button, select, input, a')) return;
+  var row = event.target.closest('tr[data-event-id]');
+  if (!row) return;
+  goDetail(row.dataset.eventId, 'basic');
+});
+// 페이지 진입 시 필터 UI를 먼저 만든 뒤 서버 데이터를 불러옵니다.
 renderEventListShell();
 loadEventList();
 </script>

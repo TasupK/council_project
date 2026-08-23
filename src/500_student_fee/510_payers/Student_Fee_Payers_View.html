@@ -9,7 +9,7 @@
   </section>
 
   <section class="ui-card sf-table-card">
-    <form id="sf-payer-search" class="ui-toolbar" style="padding:16px 16px 4px;">
+    <form id="sf-payer-search" class="ui-toolbar sf-table-toolbar">
       <div class="ui-field grow sf-search">
         <label for="sf-payer-keyword">학번·성명 검색</label>
         <input id="sf-payer-keyword" name="keyword" type="search" placeholder="학번 또는 성명">
@@ -27,37 +27,6 @@
     <div id="sf-payer-loading" class="ui-loading">불러오는 중입니다.</div>
     <div id="sf-payer-error" class="sf-error-state" hidden></div>
   </section>
-
-  <div id="sf-payer-modal" class="ui-modal-overlay" hidden>
-    <div class="ui-modal" role="dialog" aria-modal="true" aria-labelledby="sf-payer-modal-title">
-      <h2 id="sf-payer-modal-title">가입자 등록</h2>
-      <p class="ui-modal-desc" id="sf-payer-modal-desc">현재 운영 스키마 필드만 입력합니다.</p>
-      <form id="sf-payer-form">
-        <div class="sf-modal-grid">
-          <div class="ui-field">
-            <label for="sf-payer-student-id">학번</label>
-            <input id="sf-payer-student-id" name="studentId" type="text" autocomplete="off" required>
-          </div>
-          <div class="ui-field">
-            <label for="sf-payer-name">성명</label>
-            <input id="sf-payer-name" name="name" type="text" required>
-          </div>
-          <div class="ui-field">
-            <label for="sf-payer-affiliation-input">소속</label>
-            <input id="sf-payer-affiliation-input" name="affiliation" type="text" required>
-          </div>
-          <div class="ui-field">
-            <label for="sf-payer-semester">적용 시작 학기</label>
-            <select id="sf-payer-semester" name="startSemesterId" required></select>
-          </div>
-        </div>
-        <div class="ui-modal-actions">
-          <button type="button" class="ui-btn outline" data-action="close-payer-modal">취소</button>
-          <button type="submit" class="ui-btn" id="sf-payer-submit">저장</button>
-        </div>
-      </form>
-    </div>
-  </div>
 
   <div id="sf-toast" class="ui-toast" role="status" hidden></div>
 </div>

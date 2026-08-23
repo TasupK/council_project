@@ -69,23 +69,75 @@ function buildEventFormSyncView_(eventForm) {
   };
 }
 
+function buildEventDetailSection_(items, source, joinedBy) {
+  var rows = items || [];
+  var section = {
+    items: rows,
+    totalCount: rows.length,
+    source: source || ''
+  };
+  if (joinedBy) section.joinedBy = joinedBy;
+  return section;
+}
+
+function attachEventDetailApplicantRelations_(applicants, payments, attendance, refunds) {
+  var paymentsByApplicationId = {};
+  var attendanceByApplicationId = {};
+  var refundsByApplicationId = {};
+
+  (payments || []).forEach(function (payment) {
+    var applicationId = String(payment.applicationId || '');
+    if (!paymentsByApplicationId[applicationId]) paymentsByApplicationId[applicationId] = [];
+    paymentsByApplicationId[applicationId].push(payment);
+  });
+  (attendance || []).forEach(function (item) {
+    attendanceByApplicationId[String(item.applicationId || '')] = item;
+  });
+  (refunds || []).forEach(function (refund) {
+    var applicationId = String(refund.applicationId || '');
+    if (!refundsByApplicationId[applicationId]) refundsByApplicationId[applicationId] = [];
+    refundsByApplicationId[applicationId].push(refund);
+  });
+
+  return (applicants || []).map(function (applicant) {
+    var applicationId = String(applicant.id || '');
+    return Object.assign({}, applicant, {
+      payments: paymentsByApplicationId[applicationId] || [],
+      attendance: attendanceByApplicationId[applicationId] || null,
+      refunds: refundsByApplicationId[applicationId] || []
+    });
+  });
+}
+
 function getEventDetailData_(request) {
   var event = getEventForEditData_(request);
-  var applicants = listEventApplicationClientRows_().filter(function (row) {
-    return String(row.eventId) === String(event.id);
-  });
-  var attendanceById = {};
-  listEventAttendanceClientRows_().forEach(function (row) {
-    attendanceById[String(row.applicationId)] = row;
-  });
+  var applicants = typeof buildEventApplicantSectionRows_ === 'function'
+    ? buildEventApplicantSectionRows_(event.id)
+    : listEventApplicationClientRows_().filter(function (row) {
+      return String(row.eventId) === String(event.id);
+    }).map(function (row) {
+      var item = Object.assign({}, withoutInternalRowNumber_(row));
+      item.paidAmount = buildEventPaymentTotalsByApplicationId_()[item.id] || 0;
+      item.extraAnswers = [];
+      return item;
+    });
+  var payments = typeof buildEventPaymentSectionRows_ === 'function'
+    ? buildEventPaymentSectionRows_(applicants)
+    : [];
+  var attendance = typeof buildEventAttendanceSectionRows_ === 'function'
+    ? buildEventAttendanceSectionRows_(event.id)
+    : [];
+  var refunds = typeof buildEventRefundSectionRows_ === 'function'
+    ? buildEventRefundSectionRows_(event.id)
+    : [];
+  applicants = attachEventDetailApplicantRelations_(applicants, payments, attendance, refunds);
+
   var approved = applicants.filter(function (row) { return row.status === '승인'; });
-  var paymentTotals = buildEventPaymentTotalsByApplicationId_();
   var paid = applicants.filter(function (row) {
-    return Number(paymentTotals[row.id] || 0) >= Number(row.appliedFee || 0);
+    return Number(row.paidAmount || 0) >= Number(row.appliedFee || 0);
   });
   var attended = applicants.filter(function (row) {
-    var attendance = attendanceById[String(row.id)];
-    return attendance && attendance.status === '출석';
+    return row.attendance && row.attendance.status === '출석';
   });
   var result = {
     event: event,
@@ -96,6 +148,12 @@ function getEventDetailData_(request) {
       actualAttendees: attended.length,
       // TODO(회계 연동): 현재 잔액은 행사 DB/API 스키마에 원천 테이블이 없다.
       currentBalance: null
+    },
+    sections: {
+      applicants: buildEventDetailSection_(applicants, 'googleFormsSync'),
+      payments: buildEventDetailSection_(payments, 'eventPayments', 'applicationId'),
+      attendance: buildEventDetailSection_(attendance, 'eventAttendance', 'applicationId'),
+      refunds: buildEventDetailSection_(refunds, 'eventRefunds+googleFormsSync', 'applicationId')
     }
   };
   // 실제 GAS 런타임에서는 DAO가 항상 로드되며 additive formSync를 제공한다.

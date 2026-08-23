@@ -8,7 +8,7 @@
   </section>
 
   <section class="ui-card sf-table-card">
-    <form id="sf-payment-search" class="ui-toolbar" style="padding:16px 16px 4px;">
+    <form id="sf-payment-search" class="ui-toolbar sf-table-toolbar">
       <div class="ui-field grow sf-search">
         <label for="sf-payment-keyword">학번·성명 검색</label>
         <input id="sf-payment-keyword" name="keyword" type="search" placeholder="학번 또는 성명">
@@ -39,39 +39,6 @@
     <div id="sf-payment-loading" class="ui-loading">불러오는 중입니다.</div>
     <div id="sf-payment-error" class="sf-error-state" hidden></div>
   </section>
-
-  <div id="sf-payment-detail-modal" class="ui-modal-overlay" hidden>
-    <div class="ui-modal" role="dialog" aria-modal="true" aria-labelledby="sf-payment-detail-title">
-      <h2 id="sf-payment-detail-title">납부신청 상세</h2>
-      <p class="ui-modal-desc">신청 정보와 생성된 납부내역을 확인합니다.</p>
-      <div id="sf-payment-detail-content"></div>
-      <div class="ui-modal-actions" id="sf-payment-detail-actions"></div>
-    </div>
-  </div>
-
-  <div id="sf-payment-confirm-modal" class="ui-modal-overlay" hidden>
-    <div class="ui-modal" role="dialog" aria-modal="true" aria-labelledby="sf-payment-confirm-title">
-      <h2 id="sf-payment-confirm-title">입금 확인</h2>
-      <p class="ui-modal-desc">실제 입금자명과 대사 결과를 입력합니다.</p>
-      <form id="sf-payment-confirm-form">
-        <div class="sf-modal-grid">
-          <div class="ui-field wide">
-            <label for="sf-payment-depositor">입금자명</label>
-            <input id="sf-payment-depositor" name="depositorName" type="text">
-          </div>
-          <div class="ui-field wide">
-            <label for="sf-payment-confirm-reason">처리 메모</label>
-            <textarea id="sf-payment-confirm-reason" name="reason"></textarea>
-          </div>
-        </div>
-        <div class="ui-modal-actions">
-          <button type="button" class="ui-btn outline" data-action="close-payment-confirm">취소</button>
-          <button type="button" class="ui-btn danger" data-action="confirm-payment" data-result="MISMATCH">불일치</button>
-          <button type="button" class="ui-btn" data-action="confirm-payment" data-result="DONE">완료</button>
-        </div>
-      </form>
-    </div>
-  </div>
 
   <div id="sf-toast" class="ui-toast" role="status" hidden></div>
 </div>

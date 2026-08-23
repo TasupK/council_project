@@ -1,10 +1,5 @@
 /** Accounting 내부 ledger read contract */
 
-function normalizeLedgerApprovalStatus_(value) {
-  var status = String(value || '').trim();
-  return ['승인대기', '승인', '반려'].indexOf(status) > -1 ? status : '승인대기';
-}
-
 function buildLedgerAccountingFacts_() {
   return listLedgerRows_().map(function (row) {
     return {
@@ -23,18 +18,8 @@ function buildLedgerAccountingFacts_() {
       recordStatus: row.recordStatus || '활성',
       managerEmail: row.managerEmail || '',
       createdAt: row.createdAt || '',
-      updatedAt: row.updatedAt || '',
-      approvalStatus: normalizeLedgerApprovalStatus_(row.approvalStatus),
-      approvedByEmail: row.approvedByEmail || '',
-      approvedAt: row.approvedAt || '',
-      rejectionReason: row.rejectionReason || ''
+      updatedAt: row.updatedAt || ''
     };
-  });
-}
-
-function buildApprovedLedgerAccountingFacts_() {
-  return buildLedgerAccountingFacts_().filter(function (row) {
-    return String(row.recordStatus || '활성') !== '무효' && row.approvalStatus === '승인';
   });
 }
 

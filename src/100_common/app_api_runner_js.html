@@ -3,9 +3,10 @@ var APP_API_ERROR_PREFIX_ = '__APP_ERROR__:';
 
 function normalizeAppApiError_(error) {
   var message = error && error.message ? String(error.message) : '';
-  if (message.indexOf(APP_API_ERROR_PREFIX_) === 0) {
+  var prefixIndex = message.indexOf(APP_API_ERROR_PREFIX_);
+  if (prefixIndex >= 0) {
     try {
-      var parsed = JSON.parse(message.slice(APP_API_ERROR_PREFIX_.length));
+      var parsed = JSON.parse(message.slice(prefixIndex + APP_API_ERROR_PREFIX_.length));
       return {
         code: String(parsed && parsed.code || 'ERROR'),
         message: String(parsed && parsed.message || '서버 요청에 실패했습니다.'),

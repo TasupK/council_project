@@ -1,7 +1,6 @@
 <script>
 var accountingClient = {
   getLedgerEntries: function (request) { return runAppApi('api_getLedgerEntries', request || {}); },
-  getLedgerEntry: function (request) { return runAppApi('api_getLedgerEntry', request || {}); },
   getLedgerSummary: function (request) { return runAppApi('api_getLedgerSummary', request || {}); },
   getLedgerEventOptions: function (request) { return runAppApi('api_getLedgerEventOptions', request || {}); },
   getLedgerEvidenceFileContent: function (request) { return runAppApi('api_getLedgerEvidenceFileContent', request || {}); },

@@ -33,7 +33,7 @@ function buildSettlementSnapshotMetrics_(priorRows, periodRows, evidenceRows) {
 
 function getSettlementSourceRows_(filter) {
   filter = filter || {};
-  var all = buildApprovedLedgerAccountingFacts_();
+  var all = buildLedgerAccountingFacts_().filter(function (row) { return String(row.recordStatus || '활성') !== '무효'; });
   return {
     prior: all.filter(function (row) { return String(row.transactionAt || '').slice(0, 10) < String(filter.startDate || ''); }),
     period: all.filter(function (row) { return isAccountingDateInRange_(row.transactionAt, filter.startDate, filter.endDate); })

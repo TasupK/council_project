@@ -85,12 +85,7 @@ function updateOperationTableRow_(tableKey, id, changes) {
   return updateSheetCrudItemById_('operation', tableKey, id, changes);
 }
 
-// 11. 운영 DB PK 기준 행 내용 제거
-function deleteOperationTableRow_(tableKey, id) {
-  return deleteSheetCrudItemById_('operation', tableKey, id);
-}
-
-// 12. 운영 DB 행번호 기준 수정
+// 11. 운영 DB 행번호 기준 수정
 function updateOperationTableRowByNumber_(tableKey, rowNumber, changes) {
   var table = getOperationDbTableSchema_(tableKey);
   var sheet = requireOperationTableSheet_(tableKey);
@@ -102,7 +97,7 @@ function updateOperationTableRowByNumber_(tableKey, rowNumber, changes) {
   return true;
 }
 
-// 13. 운영 DB 쓰기 잠금 실행
+// 12. 운영 DB 쓰기 잠금 실행
 function withOperationWriteLock_(callback) {
   var lock = LockService.getScriptLock();
   lock.waitLock(30000);
@@ -113,17 +108,17 @@ function withOperationWriteLock_(callback) {
   }
 }
 
-// 14. 이메일 비교용 값 정리
+// 13. 이메일 비교용 값 정리
 function normalizeEmail_(value) {
   return String(value || '').trim().toLowerCase();
 }
 
-// 15. 일반 텍스트 값 정리
+// 14. 일반 텍스트 값 정리
 function normalizeTextValue_(value) {
   return String(value || '').trim();
 }
 
-// 16. 참/거짓 입력값 판정
+// 15. 참/거짓 입력값 판정
 function isTruthyValue_(value) {
   if (value === true) return true;
   if (value === false || value == null) return false;
@@ -132,14 +127,14 @@ function isTruthyValue_(value) {
   return ['true', 'y', 'yes', '1', '활성', '사용', '예'].indexOf(text) !== -1;
 }
 
-// 17. 활성 상태값 판정
+// 16. 활성 상태값 판정
 function isActiveStatus_(value) {
   var text = String(value || '').trim().toLowerCase();
   if (!text) return true;
   return ['활성', '사용', 'y', 'yes', 'true', '1'].indexOf(text) !== -1;
 }
 
-// 18. 날짜 값을 화면 표시용 문자열로 변환
+// 17. 날짜 값을 화면 표시용 문자열로 변환
 function formatDateValue_(value) {
   if (!value) return '';
   if (Object.prototype.toString.call(value) === '[object Date]' && !isNaN(value.getTime())) {
@@ -148,7 +143,7 @@ function formatDateValue_(value) {
   return String(value);
 }
 
-// 19. 일시 값을 화면 표시용 문자열로 변환
+// 18. 일시 값을 화면 표시용 문자열로 변환
 function formatDateTimeValue_(value) {
   if (!value) return '';
   if (Object.prototype.toString.call(value) === '[object Date]' && !isNaN(value.getTime())) {
@@ -157,7 +152,7 @@ function formatDateTimeValue_(value) {
   return String(value);
 }
 
-// 20. 클라이언트 전달용 셀 값 변환
+// 19. 클라이언트 전달용 셀 값 변환
 function toClientCellValue_(value) {
   if (Object.prototype.toString.call(value) === '[object Date]' && !isNaN(value.getTime())) {
     return formatDateTimeValue_(value);
@@ -165,7 +160,7 @@ function toClientCellValue_(value) {
   return value == null ? '' : value;
 }
 
-// 21. 현재 일시 생성
+// 20. 현재 일시 생성
 function getCurrentIsoDateTime_() {
   return Utilities.formatDate(new Date(), Session.getScriptTimeZone() || 'Asia/Seoul', "yyyy-MM-dd'T'HH:mm:ssXXX");
 }

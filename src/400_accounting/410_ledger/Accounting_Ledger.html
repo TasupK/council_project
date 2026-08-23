@@ -28,7 +28,11 @@
     <div class="body">
       <?!= include('100_common/App_Sidebar'); ?>
       <main class="main accounting-main">
-        <?!= include('400_accounting/410_ledger/Accounting_Ledger_View'); ?>
+        <div class="accounting-page">
+          <?!= include('400_accounting/410_ledger/Accounting_Ledger_View'); ?>
+          <?!= include('400_accounting/410_ledger/modals/Accounting_Ledger_Register_Modal'); ?>
+          <?!= include('400_accounting/410_ledger/modals/Accounting_Ledger_Detail_Modal'); ?>
+        </div>
       </main>
     </div>
   </div>
