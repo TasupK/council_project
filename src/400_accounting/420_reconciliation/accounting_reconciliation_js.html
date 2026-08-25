@@ -125,7 +125,7 @@ function showCurrentReconciliationRun(detail) {
   const select = document.getElementById('reconciliationHistory');
   select.innerHTML = state.reconciliationRuns.length ? state.reconciliationRuns.map(function (row) {
     return '<option value="' + escapeHtml(row.id) + '">' + escapeHtml(String(row.auditStartDate || '').slice(0, 10) + ' ~ ' + String(row.auditEndDate || '').slice(0, 10) + ' · ' + row.status) + '</option>';
-  }).join('') : '<option value="">현재 파일 대사 이력 없음</option>';
+  }).join('') : '<option value="">현재 대사 결과 없음</option>';
   renderReconciliationDetail(detail || null);
 }
 
@@ -215,7 +215,8 @@ async function manuallyLink(itemId) {
 async function createLedgerForItem(itemId) {
   if (!window.confirm('이 계좌 거래를 기준으로 새 원장을 만들까요?')) return;
   try {
-    const detail = await accountingClient.createLedgerEntryFromReconciliation({ reconciliationItemId: itemId });
+    const result = await accountingClient.createLedgerEntryFromReconciliation({ reconciliationItemId: itemId });
+    const detail = result && result.snapshot ? result.snapshot : result;
     showCurrentReconciliationRun(detail); toast('원장을 생성하고 연결했습니다.');
   } catch (error) { toast(error && error.message ? error.message : '원장 생성에 실패했습니다.'); }
 }
