@@ -20,66 +20,39 @@
 - Preserve route names: `accounting_ledger`, `accounting_reconciliation`, `accounting_settlement`.
 - Preserve server API names and request/response shapes. `runAppApi()` remains the only direct `google.script.run` transport boundary.
 - Preserve authentication/authorization behavior. `api_checkLogin()` and `canAccessPage_()` remain authoritative before protected rendering.
-- Preserve all Accounting business behavior, form `name` values, IDs needed by behavior/tests, table semantics, approval flow, reconciliation flow, evidence handling, settlement generation/export behavior, and current API client calls.
+- Preserve Accounting business behavior, form `name` values, behavior IDs, table semantics, approval flow, reconciliation flow, evidence behavior, settlement generation/export behavior, and existing API client calls.
 - Common code must not reference Accounting, Student Fee, Event, Settings, or another domain namespace.
 - `App.ui` owns UI mechanics/state only. It must never call Accounting APIs or make Accounting decisions.
-- Static markup stays in HTML. JS creates markup only for genuinely data-driven UI such as rows, pagination controls, evidence lists, and transient toast state.
-- Do not physically relocate `App_Header.html`, `App_Sidebar.html`, or `App_Shell_Styles.html` in this plan. The new Frame becomes their logical owner while legacy pages continue to include the root files. Physical relocation waits until all protected pages migrate.
-- Do not split all existing `.ui-*` CSS out of `App_Styles.html` now. Existing consumers depend on it. `App_UI_Styles.html` adds only behavior/state styling needed by `App.ui`; visual primitive relocation is a later cleanup.
-- File upload remains Accounting-owned in this phase because it includes workflow-specific file collection. It must no longer depend on one shared Accounting-global `state` object.
+- Static markup stays in HTML. JS creates markup only for genuinely data-driven structures such as table rows, evidence lists, pagination items, or transient toast state.
+- Do not physically relocate `App_Header.html`, `App_Sidebar.html`, or `App_Shell_Styles.html` in this plan. The new Frame becomes their logical owner while legacy pages continue to use the root files. Physical relocation waits until all protected pages migrate.
+- Do not move all existing `.ui-*` visual CSS out of `App_Styles.html` now. Existing pages depend on it. `App_UI_Styles.html` adds only behavior/state rules needed by `App.ui`.
+- File upload remains Accounting-owned because the workflows are domain-specific. It must no longer depend on one cross-page Accounting-global `state` object.
+- Non-Accounting full-page templates are not required to include `app_core_js.html` in this plan. Therefore `app_shell_js.html` must contain compatibility fallbacks when `App.core`/`App.router` are absent on a legacy page.
 - Every production task follows RED -> minimal GREEN -> focused regression -> commit.
 
 ---
 
-## Target File Map for This Plan
+## Target File Map
 
-### Common foundation
-
-Create:
+### Create
 
 ```text
 src/100_common/core/app_core_js.html
 src/100_common/ui/App_UI_Styles.html
 src/100_common/ui/app_ui_js.html
 src/100_common/frame/App_Frame.html
+src/400_accounting/common/accounting_file_upload_js.html
 scripts/test-frontend-a-plus-foundation.js
 scripts/test-app-ui-components.js
 scripts/verify-frontend-a-plus-accounting.js
 ```
 
-Modify:
+### Modify
 
 ```text
 src/000_server/Code.js
 src/100_common/App_Header.html
 src/100_common/app_shell_js.html
-scripts/test-app-api-runner.js
-scripts/test-api-contract-v1-common-frontend.js
-scripts/test-accounting-sidebar-group.js
-scripts/test-api-contract-v1-accounting-frontend.js
-scripts/verify-ui-system-migration.js
-scripts/verify-server-architecture.js
-```
-
-Preserve unchanged as transport/client boundaries unless a test-only assertion needs updating:
-
-```text
-src/100_common/app_api_runner_js.html
-src/100_common/app_client_js.html
-src/400_accounting/common/accounting_client_js.html
-```
-
-### Accounting shared frontend
-
-Create:
-
-```text
-src/400_accounting/common/accounting_file_upload_js.html
-```
-
-Modify:
-
-```text
 src/400_accounting/common/Accounting_Styles.html
 src/400_accounting/410_ledger/Accounting_Ledger_View.html
 src/400_accounting/410_ledger/modals/Accounting_Ledger_Register_Modal.html
@@ -89,9 +62,23 @@ src/400_accounting/420_reconciliation/Accounting_Reconciliation_View.html
 src/400_accounting/420_reconciliation/accounting_reconciliation_js.html
 src/400_accounting/430_settlement/Accounting_Settlement_View.html
 src/400_accounting/430_settlement/accounting_settlement_js.html
+scripts/test-app-api-runner.js
+scripts/test-api-contract-v1-common-frontend.js
+scripts/test-accounting-sidebar-group.js
+scripts/test-api-contract-v1-accounting-frontend.js
+scripts/verify-ui-system-migration.js
+scripts/verify-server-architecture.js
 ```
 
-Delete only after all three Accounting controllers are GREEN:
+### Preserve transport/client boundaries
+
+```text
+src/100_common/app_api_runner_js.html
+src/100_common/app_client_js.html
+src/400_accounting/common/accounting_client_js.html
+```
+
+### Delete only after all three Accounting page controllers are GREEN
 
 ```text
 src/400_accounting/common/accounting_common_js.html
@@ -102,9 +89,9 @@ src/400_accounting/430_settlement/Accounting_Settlement.html
 
 ---
 
-## Public Frontend Contracts Locked by This Plan
+## Public Frontend Contracts
 
-### `App.core`
+### Core and router
 
 ```js
 App.core.byId(id, root);
@@ -113,18 +100,13 @@ App.core.escapeHtml(value);
 App.core.formatNumber(value);
 App.core.formatMoney(value);
 App.core.formatDate(value);
-```
-
-### `App.router`
-
-```js
 App.router.url(page, params);
 App.router.go(page, params);
 ```
 
-`url()` uses `APP_BOOTSTRAP.webAppUrl`, then legacy `WEB_APP_URL`, then `window.location.href` as fallback. `go()` writes to `window.top.location.href` to preserve Apps Script iframe navigation behavior.
+`App.router.url()` resolves the base URL in this order: `APP_BOOTSTRAP.webAppUrl` -> legacy `WEB_APP_URL` -> current `window.location.href`. `App.router.go()` writes to `window.top.location.href` for Apps Script iframe navigation.
 
-### `App.shell`
+### Shell
 
 ```js
 App.shell.init(APP_BOOTSTRAP);
@@ -132,9 +114,9 @@ App.shell.setActiveNavigation(page);
 App.shell.setDomainVisible(domain, visible);
 ```
 
-The shell consumes `APP_BOOTSTRAP.user` and `APP_BOOTSTRAP.access` first. It may call `appClient.getCurrentUser()` only as a compatibility fallback when bootstrap user/access data is absent.
+The shell consumes `APP_BOOTSTRAP.user` and `APP_BOOTSTRAP.access` first. `appClient.getCurrentUser()` is compatibility fallback only when bootstrap user/access is absent.
 
-### `App.ui`
+### UI
 
 ```js
 App.ui.init(root);
@@ -170,88 +152,74 @@ AccountingReconciliationPage
 AccountingSettlementPage
 ```
 
-Each owns its page state and explicit `init()`; none may depend on a generic global `state`, `toast`, `escapeHtml`, `currency`, `openModal`, or `closeModal` function.
+Each controller owns page-local state and explicit initialization. No migrated Accounting page may depend on generic global `state`, `toast`, `escapeHtml`, `currency`, `openModal`, or `closeModal` functions.
 
 ---
 
-### Task 1: Define the Frontend A+ architecture gate in RED
+### Task 1: Add the Frontend A+ architecture gate in RED
 
 **Files:**
 - Create: `scripts/test-frontend-a-plus-foundation.js`
 - Create: `scripts/verify-frontend-a-plus-accounting.js`
 
-**Interfaces:**
-- Consumes: repository source only.
-- Produces: deterministic failures for missing Frame/core/UI/page-controller contracts.
+- [ ] **Step 1: Add the common-foundation contract test**
 
-- [ ] **Step 1: Write the foundation contract test**
-
-Create `scripts/test-frontend-a-plus-foundation.js` using `assert`, `fs`, and `path`. Lock the target files and public namespace shape:
+Create `scripts/test-frontend-a-plus-foundation.js`:
 
 ```js
 var assert = require('assert');
 var fs = require('fs');
 var path = require('path');
 var ROOT = path.resolve(__dirname, '..');
-
-function read_(relativePath) {
-  return fs.readFileSync(path.join(ROOT, relativePath), 'utf8');
-}
+function read_(p) { return fs.readFileSync(path.join(ROOT, p), 'utf8'); }
 
 [
   'src/100_common/core/app_core_js.html',
   'src/100_common/ui/App_UI_Styles.html',
   'src/100_common/ui/app_ui_js.html',
   'src/100_common/frame/App_Frame.html'
-].forEach(function (relativePath) {
-  assert.ok(fs.existsSync(path.join(ROOT, relativePath)), relativePath + ' must exist');
+].forEach(function (p) {
+  assert.ok(fs.existsSync(path.join(ROOT, p)), p + ' must exist');
 });
 
 var core = read_('src/100_common/core/app_core_js.html');
-['App.core', 'App.router', 'escapeHtml', 'formatMoney', 'formatNumber', 'resolveElement'].forEach(function (token) {
+['App.core','App.router','escapeHtml','formatMoney','formatNumber','resolveElement'].forEach(function (token) {
   assert.ok(core.indexOf(token) >= 0, 'core contract missing ' + token);
 });
-
 var ui = read_('src/100_common/ui/app_ui_js.html');
-[
-  'App.ui', 'App.ui.init', 'App.ui.button', 'App.ui.card', 'App.ui.search',
-  'App.ui.filter', 'App.ui.modal', 'App.ui.toast', 'App.ui.pagination'
-].forEach(function (token) {
+['App.ui','App.ui.init','App.ui.button','App.ui.card','App.ui.search','App.ui.filter','App.ui.modal','App.ui.toast','App.ui.pagination'].forEach(function (token) {
   assert.ok(ui.indexOf(token) >= 0, 'UI contract missing ' + token);
 });
-
 var frame = read_('src/100_common/frame/App_Frame.html');
 [
   "include('100_common/App_Header')",
   "include('100_common/App_Sidebar')",
   "include('100_common/core/app_core_js')",
-  "include('100_common/ui/app_ui_js')"
+  "include('100_common/ui/app_ui_js')",
+  'APP_BOOTSTRAP'
 ].forEach(function (token) {
   assert.ok(frame.indexOf(token) >= 0, 'Frame contract missing ' + token);
 });
-
-assert.ok(frame.indexOf('APP_BOOTSTRAP') >= 0, 'Frame must publish APP_BOOTSTRAP');
 console.log('Frontend A+ foundation contract: PASS');
 ```
 
-- [ ] **Step 2: Write the Accounting architecture verifier**
+- [ ] **Step 2: Add Accounting architecture verification**
 
-Create `scripts/verify-frontend-a-plus-accounting.js`. It must accumulate failures and exit `1` when any contract fails. Require:
+Create `scripts/verify-frontend-a-plus-accounting.js` with accumulated failures and exit code `1`. Lock these invariants:
 
 ```text
-- all three Accounting routes appear in the server page-descriptor map,
-- their descriptor renderer is App_Frame,
-- the three old full-document Accounting wrappers are absent after migration,
-- Accounting views/partials retain required behavior IDs and form names,
-- exactly one shared toast target exists in the Frame composition and Accounting views do not define id="toast",
-- all three page JS files expose their named page controller,
-- no Accounting page JS contains top-level `const state =`, `var state =`, `function toast(`, `function escapeHtml(`, `function currency(`, `function openModal(`, or `function closeModal(`,
-- common files under `src/100_common/core`, `ui`, and `frame` contain no `Accounting` or `accountingClient` references,
-- Accounting page JS contains no `google.script.run`,
-- `accountingClient` remains the semantic API boundary.
+- Code.js has App Frame descriptors for accounting_ledger/accounting_reconciliation/accounting_settlement.
+- after final migration, the old three Accounting full-document wrappers are absent.
+- all behavior IDs/form names below remain present.
+- Accounting views no longer define id="toast"; the shared Header owns it.
+- each page script exposes its named controller.
+- page scripts contain no top-level generic state/toast/escapeHtml/currency/openModal/closeModal declaration.
+- core/ui/frame files contain neither Accounting nor accountingClient references.
+- Accounting page scripts contain no google.script.run.
+- accountingClient remains the semantic server client.
 ```
 
-Use these behavior-hook contracts:
+Use these literal hooks:
 
 ```js
 var REQUIRED_IDS = {
@@ -285,7 +253,7 @@ var REQUIRED_IDS = {
 };
 ```
 
-Preserve Ledger register names:
+Preserve Ledger form names:
 
 ```js
 ['transaction_date','department_name','amount','counterparty','event_name','description','note']
@@ -293,16 +261,14 @@ Preserve Ledger register names:
 
 - [ ] **Step 3: Prove RED**
 
-Run:
-
 ```bash
 node scripts/test-frontend-a-plus-foundation.js
 node scripts/verify-frontend-a-plus-accounting.js
 ```
 
-Expected: both fail because the new common files/page descriptors/controllers do not exist and legacy Accounting shells still exist.
+Expected: FAIL because the new common files/controllers/descriptors do not yet exist and legacy Accounting wrappers still exist.
 
-- [ ] **Step 4: Commit tests**
+- [ ] **Step 4: Commit**
 
 ```bash
 git add scripts/test-frontend-a-plus-foundation.js scripts/verify-frontend-a-plus-accounting.js
@@ -311,44 +277,35 @@ git commit -m "test: define frontend a+ architecture contract"
 
 ---
 
-### Task 2: Introduce `App.core`, `App.router`, and shared UI behavior
+### Task 2: Implement `App.core`, `App.router`, and `App.ui`
 
 **Files:**
 - Create: `src/100_common/core/app_core_js.html`
 - Create: `src/100_common/ui/app_ui_js.html`
 - Create: `src/100_common/ui/App_UI_Styles.html`
 - Create: `scripts/test-app-ui-components.js`
-- Test: `scripts/test-frontend-a-plus-foundation.js`
 
-**Interfaces:**
-- Produces the domain-neutral public contracts listed above.
+- [ ] **Step 1: Add component behavior tests and prove RED**
 
-- [ ] **Step 1: Add a component behavior test and prove RED**
-
-Create `scripts/test-app-ui-components.js`. Strip `<script>` wrappers before evaluating `app_core_js.html` and `app_ui_js.html` in `vm`. Use a small fake DOM/event target sufficient to test public APIs. Cover at least:
+`test-app-ui-components.js` strips `<script>` wrappers and evaluates common scripts in `vm` with a small fake DOM/event target. Test:
 
 ```text
-App.core.escapeHtml('<&"\'') -> '&lt;&amp;&quot;&#39;'
-App.core.formatNumber(12000) -> '12,000'
-App.core.formatMoney(12000) -> '₩12,000'
-button setLoading(true) disables and changes label
-button setLoading(false) restores original disabled/label state
-modal open/close toggles `open` and `is-open`, aria-hidden, and emits one matching custom event
-pagination update writes page info, disables prev/next correctly, and click emits ui:page-change
-App.ui.init(root) may run twice without duplicate click/input handlers
+escapeHtml('<&"\'') = '&lt;&amp;&quot;&#39;'
+formatNumber(12000) = '12,000'
+formatMoney(12000) = '₩12,000'
+button loading disables and replaces label, then restores both label and original disabled state
+modal open/close toggles open + is-open and emits exactly one matching event
+pagination update writes page info/bounds and click emits ui:page-change
+App.ui.init(root) may run twice without duplicate input/click handlers
 ```
 
-Run:
+Run and confirm failure because the files are absent:
 
 ```bash
 node scripts/test-app-ui-components.js
 ```
 
-Expected: FAIL because the component files do not exist.
-
 - [ ] **Step 2: Implement `app_core_js.html`**
-
-Use one root global only:
 
 ```js
 <script>
@@ -358,38 +315,26 @@ Use one root global only:
   App.router = App.router || {};
 
   App.core.byId = function (id, root) {
-    return (root || document).getElementById(id);
+    var scope = root || document;
+    return scope.getElementById ? scope.getElementById(id) : scope.querySelector('#' + id);
   };
-
   App.core.resolveElement = function (target, root) {
     if (!target) return null;
     if (typeof target !== 'string') return target;
-    var scope = root || document;
     return target.charAt(0) === '#'
-      ? scope.querySelector(target)
-      : (scope.getElementById ? scope.getElementById(target) : scope.querySelector('#' + target));
+      ? (root || document).querySelector(target)
+      : App.core.byId(target, root);
   };
-
   App.core.escapeHtml = function (value) {
     return String(value == null ? '' : value)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#39;');
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   };
-
   App.core.formatNumber = function (value) {
     return new Intl.NumberFormat('ko-KR').format(Number(value || 0));
   };
-
-  App.core.formatMoney = function (value) {
-    return '₩' + App.core.formatNumber(value);
-  };
-
-  App.core.formatDate = function (value) {
-    return String(value || '').slice(0, 10);
-  };
+  App.core.formatMoney = function (value) { return '₩' + App.core.formatNumber(value); };
+  App.core.formatDate = function (value) { return String(value || '').slice(0, 10); };
 
   App.router.url = function (page, params) {
     var bootstrap = global.APP_BOOTSTRAP || {};
@@ -403,7 +348,6 @@ Use one root global only:
     });
     return url.toString();
   };
-
   App.router.go = function (page, params) {
     global.top.location.href = App.router.url(page, params);
   };
@@ -413,72 +357,66 @@ Use one root global only:
 
 Do not move `runAppApi()` into this file.
 
-- [ ] **Step 3: Implement component behavior in `app_ui_js.html`**
+- [ ] **Step 3: Implement `app_ui_js.html`**
 
-Use an IIFE that extends `window.App.ui`. Keep helpers private to the file. Implement these exact behaviors:
+Use an IIFE extending `window.App.ui`. Implement these mechanics exactly:
 
 ```text
-button.setLoading:
-- resolve target with App.core.resolveElement
-- on first loading=true, store textContent in data-ui-original-label and original disabled state in data-ui-original-disabled
-- toggle is-loading and aria-busy
-- disable while loading
-- restore original text/disabled state when loading=false
+button.setLoading(target, true, label)
+  store original text/disabled once in data attributes
+  add is-loading + aria-busy=true
+  disable and optionally replace label
+button.setLoading(target, false)
+  remove loading state and restore original text/disabled
 
-card.setLoading:
-- toggle is-loading and aria-busy only
+card.setLoading
+  toggle is-loading and aria-busy
 
-search.initAll:
-- find [data-ui="search"]
-- bind once using data-ui-bound-search="true"
-- find input[type="search"] or input
-- input event emits ui:search with trimmed value
-search.clear:
-- blank input, focus it, emit ui:search {value:''}
+search.initAll
+  bind [data-ui="search"] once with data-ui-bound-search="true"
+  input emits ui:search {value: trimmedValue}
+search.clear
+  clear + focus + emit ui:search {value:''}
 
-filter.initAll:
-- find form[data-ui="filter"]
-- bind submit/reset once
-- submit prevents default and emits ui:filter-submit with App.ui.filter.values(form)
-- reset emits ui:filter-reset after native reset state is applied
-filter.values:
-- use FormData and return a plain object
+filter.initAll
+  bind form[data-ui="filter"] submit/reset once
+  submit prevents default and emits ui:filter-submit with filter.values(form)
+  reset emits ui:filter-reset after native reset
+filter.values
+  FormData -> plain object
 
-modal.initAll:
-- bind [data-ui-modal-close] and legacy [data-close] once
-- clicking close resolves the referenced modal id and closes it
-modal.open/close:
-- toggle both `open` and `is-open`
-- update aria-hidden
-- emit ui:modal-open/ui:modal-close with {id}
+modal.initAll
+  bind [data-ui-modal-close] and compatibility [data-close] once
+modal.open/close
+  toggle open + is-open, update aria-hidden, emit ui:modal-open/ui:modal-close
 
-pagination.initAll:
-- find [data-ui="pagination"]
-- bind [data-ui-page="prev"]/[data-ui-page="next"] once
-- derive next page from root.dataset.uiPage / uiTotalPages
-- emit ui:page-change {page}
-pagination.update:
-- persist page/totalPages to dataset
-- update [data-ui-page-info]
-- disable prev/next at bounds
+pagination.initAll
+  bind [data-ui="pagination"] prev/next controls once
+  click derives bounded next page from root dataset and emits ui:page-change
+pagination.update
+  save page/totalPages in root dataset, update [data-ui-page-info], disable boundary buttons
 
-toast:
-- resolve the single document [data-ui="toast"] then fallback #toast
-- clear the previous timer
-- set message and modifier class ui-toast--<kind>
-- toggle show
-- success/error delegate to show
+toast.show
+  resolve document [data-ui="toast"], fallback #toast
+  clear previous timer; set message/kind; toggle show; auto-hide
+success/error
+  delegate to show
 
-App.ui.init:
-- call only initAll functions that exist
-- safe when invoked repeatedly
+App.ui.init(root)
+  call only component initAll functions that exist; repeated calls must not duplicate binding
 ```
 
-Use `new CustomEvent(name, { bubbles: true, detail: detail })` for component events.
+Use:
 
-- [ ] **Step 4: Add behavior-only CSS**
+```js
+new CustomEvent(name, { bubbles: true, detail: detail });
+```
 
-Create `App_UI_Styles.html`:
+for UI events.
+
+- [ ] **Step 4: Add behavior-only styles**
+
+`App_UI_Styles.html`:
 
 ```css
 <style>
@@ -492,28 +430,25 @@ Create `App_UI_Styles.html`:
 </style>
 ```
 
-Do not duplicate the base `.ui-btn`, `.ui-card`, `.ui-modal`, or `.ui-toast` visual definitions already in `App_Styles.html`.
+Do not duplicate base visual definitions from `App_Styles.html`.
 
-- [ ] **Step 5: Run focused tests**
+- [ ] **Step 5: Verify and commit**
 
 ```bash
 node scripts/test-app-ui-components.js
-node scripts/test-frontend-a-plus-foundation.js
 node scripts/test-app-api-runner.js
 ```
 
-Expected: component tests GREEN; foundation may still fail only for missing Frame; API runner remains GREEN.
-
-- [ ] **Step 6: Commit**
+Expected: both PASS.
 
 ```bash
-git add src/100_common/core src/100_common/ui scripts/test-app-ui-components.js scripts/test-frontend-a-plus-foundation.js
+git add src/100_common/core src/100_common/ui scripts/test-app-ui-components.js
 git commit -m "feat: add shared frontend core and ui behavior"
 ```
 
 ---
 
-### Task 3: Add the shared App Frame, bootstrap context, and Accounting route descriptors
+### Task 3: Add shared App Frame, bootstrap context, and Accounting descriptors
 
 **Files:**
 - Create: `src/100_common/frame/App_Frame.html`
@@ -525,26 +460,24 @@ git commit -m "feat: add shared frontend core and ui behavior"
 - Modify: `scripts/test-accounting-sidebar-group.js`
 - Modify: `scripts/verify-server-architecture.js`
 - Modify: `scripts/verify-ui-system-migration.js`
-- Test: `scripts/test-frontend-a-plus-foundation.js`
-- Test: `scripts/verify-frontend-a-plus-accounting.js`
 
-**Interfaces:**
-- Produces shared protected-page composition for the three Accounting routes only.
-- Keeps every non-Accounting route on its existing template.
+- [ ] **Step 1: Update tests for shared-frame routing and prove RED**
 
-- [ ] **Step 1: Extend the tests to require shared-frame Accounting routing and prove RED**
+Change `verify-server-architecture.js` so Accounting routes remain required by name but are verified through `getAppPageDescriptor_()` rather than required direct template files. In `test-app-api-runner.js`, remove the three Accounting full wrappers from the direct-include list and assert `App_Frame.html` includes `100_common/app_api_runner_js`. In `verify-ui-system-migration.js`, use the common Frame as the Accounting shell target while retaining view/modal class/hook checks.
 
-In `verify-server-architecture.js`, stop requiring the three Accounting routes to map directly to deleted full templates. Instead require that `Code.js` recognizes each route and that `getAppPageDescriptor_()` contains its content paths. Keep the literal route-name check.
+Run:
 
-In `test-app-api-runner.js`, remove the three Accounting full wrappers from the list of templates that must directly include `app_api_runner_js`; add one assertion that `src/100_common/frame/App_Frame.html` includes it.
+```bash
+node scripts/test-app-api-runner.js
+node scripts/verify-server-architecture.js
+node scripts/verify-ui-system-migration.js
+```
 
-In `verify-ui-system-migration.js`, replace Accounting `DOMAIN_SHELLS` with the shared Frame for include verification while keeping Accounting UI-class/hook verification on view/modal partials.
+Expected: FAIL until descriptors/Frame exist.
 
-Run focused tests and confirm they fail before the Frame implementation.
+- [ ] **Step 2: Add Accounting page descriptors**
 
-- [ ] **Step 2: Add page descriptors in `Code.js`**
-
-Add:
+In `Code.js`:
 
 ```js
 function getAppPageDescriptor_(page) {
@@ -591,11 +524,9 @@ function getAppPageDescriptor_(page) {
 }
 ```
 
-The temporary `accounting_common_js` entries intentionally keep pages behavior-compatible while the Frame lands; Tasks 4-7 remove them.
+The temporary `accounting_common_js` entries preserve behavior until Tasks 4-7.
 
-- [ ] **Step 3: Build bootstrap data from the already-authenticated login result**
-
-Add server helpers:
+- [ ] **Step 3: Build bootstrap from the existing authenticated login result**
 
 ```js
 function buildAppBootstrap_(page, login, resourceId) {
@@ -624,27 +555,24 @@ function serializeForHtmlScript_(value) {
 }
 ```
 
-Do not call `api_getCurrentUser()` from the server render path. Reuse the `api_checkLogin()` result that `doGet()` already acquired.
+Do not call `api_getCurrentUser()` from the render path. Reuse the result already returned by `api_checkLogin()`.
 
-- [ ] **Step 4: Add shared-frame renderer**
-
-Add:
+- [ ] **Step 4: Add Frame renderer and route branch**
 
 ```js
 function renderAppFrame_(descriptor, data) {
   var template = HtmlService.createTemplateFromFile('100_common/frame/App_Frame');
-  var bootstrap = data.appBootstrap || {};
   template.pageTitle = descriptor.title || APP_TITLE;
   template.pageMainClass = descriptor.mainClass || 'main';
   template.pageStyleHtml = (descriptor.styles || []).map(include).join('\n');
   template.pageContentHtml = (descriptor.views || []).map(include).join('\n');
   template.pageScriptHtml = (descriptor.scripts || []).map(include).join('\n');
-  template.appBootstrapJson = serializeForHtmlScript_(bootstrap);
+  template.appBootstrapJson = serializeForHtmlScript_(data.appBootstrap || {});
   return template.evaluate();
 }
 ```
 
-In `doGet()`, after successful auth/access:
+After successful existing login/access checks in `doGet()`:
 
 ```js
 var descriptor = getAppPageDescriptor_(page);
@@ -656,11 +584,9 @@ if (descriptor) {
 }
 ```
 
-All other routes continue through the existing `renderPage_(file, templateData)` path.
+Other routes continue through existing `renderPage_()`.
 
 - [ ] **Step 5: Implement `App_Frame.html`**
-
-Use the existing shared header/sidebar files and include order:
 
 ```html
 <!DOCTYPE html>
@@ -687,9 +613,7 @@ Use the existing shared header/sidebar files and include order:
     <?!= include('100_common/App_Header'); ?>
     <div class="body">
       <?!= include('100_common/App_Sidebar'); ?>
-      <main class="<?= pageMainClass ?>">
-        <?!= pageContentHtml ?>
-      </main>
+      <main class="<?= pageMainClass ?>"><?!= pageContentHtml ?></main>
     </div>
   </div>
   <?!= include('100_common/ui/app_ui_js'); ?>
@@ -703,44 +627,83 @@ Use the existing shared header/sidebar files and include order:
 </html>
 ```
 
-- [ ] **Step 6: Make Header own the one shared toast target**
+- [ ] **Step 6: Make Header the shared toast owner**
 
-Change the existing Header toast to:
+Replace the existing header toast markup with:
 
 ```html
 <div class="ui-toast" id="toast" data-ui="toast" role="status" aria-live="polite"></div>
 ```
 
-Do not add another toast container to `App_Frame`.
+Accounting page-owned toast nodes remain temporarily until each page migration removes them. Do not add a second Frame-level toast.
 
-- [ ] **Step 7: Refactor `app_shell_js.html` under `App.shell` with legacy fallback**
+- [ ] **Step 7: Refactor shell under `App.shell` with legacy-page fallbacks**
 
-Wrap shell behavior in an IIFE and expose only the public methods. `App.shell.init(bootstrap)` must:
-
-```text
-1. apply sidebar saved state,
-2. render user/profile from bootstrap.user,
-3. assign navigation links with App.router.url(),
-4. apply bootstrap.access visibility,
-5. apply current-page active state,
-6. bind sidebar/profile/submenu handlers once,
-7. call appClient.getCurrentUser() only if bootstrap.user or bootstrap.access is absent.
-```
-
-Keep temporary compatibility functions required by non-migrated pages:
+Start `app_shell_js.html` with:
 
 ```js
-function buildAppPageUrl(page) { return App.router.url(page); }
-function getAppElement(id) { return App.core.byId(id); }
+(function (global) {
+  var App = global.App = global.App || {};
+  App.shell = App.shell || {};
+
+  function byId_(id) {
+    return App.core && App.core.byId ? App.core.byId(id) : document.getElementById(id);
+  }
+
+  function pageUrl_(page) {
+    if (App.router && App.router.url) return App.router.url(page);
+    var base = global.WEB_APP_URL || global.location.href;
+    var separator = base.indexOf('?') >= 0 ? '&' : '?';
+    return base + separator + 'page=' + encodeURIComponent(page);
+  }
 ```
 
-Do not execute shell initialization at top level anymore; `App_Frame` invokes it explicitly. Legacy full-page shells that still include `app_shell_js` need a compatibility auto-start guarded by `if (!window.APP_BOOTSTRAP)` so they retain current behavior until their later migration.
+`App.shell.init(bootstrap)` performs, in order:
 
-- [ ] **Step 8: Update sidebar test to assert outcomes, not old private function names**
+```text
+apply sidebar saved state
+render user/profile from bootstrap.user
+wire links using pageUrl_
+apply bootstrap.access visibility
+apply current-page active state
+bind sidebar/profile/accounting/student-fee handlers once
+if bootstrap user/access are missing, fetch appClient.getCurrentUser() as compatibility fallback
+```
 
-Retain all current Sidebar structural assertions. Replace regex checks for `setAccountingSubmenuExpanded_()` and direct `buildAppPageUrl()` implementation with assertions that `app_shell_js.html` exposes `App.shell.setActiveNavigation`, references the three Accounting route names, and uses `App.router.url`.
+Expose:
 
-- [ ] **Step 9: Run focused regression**
+```js
+App.shell.setActiveNavigation = setActiveNavigation_;
+App.shell.setDomainVisible = setDomainVisible_;
+```
+
+At the bottom retain compatibility wrappers for legacy scripts/tests:
+
+```js
+function buildAppPageUrl(page) { return pageUrl_(page); }
+function getAppElement(id) { return byId_(id); }
+
+if (!global.APP_BOOTSTRAP) {
+  App.shell.init({
+    webAppUrl: global.WEB_APP_URL || '',
+    currentPage: global.APP_CURRENT_PAGE || '',
+    user: {
+      name: global.APP_USER_NAME || '',
+      title: global.APP_USER_TITLE || '',
+      isAdmin: !!global.APP_IS_ADMIN
+    }
+  });
+}
+})(window);
+```
+
+This fallback is mandatory because legacy non-Accounting templates do not load `app_core_js.html` yet.
+
+- [ ] **Step 8: Update sidebar tests to assert public outcomes**
+
+Keep Sidebar markup assertions. Replace tests for private old shell function names with checks that the shell exposes `App.shell.setActiveNavigation`, contains the three Accounting route literals, and routes through `pageUrl_`/`App.router.url` when available.
+
+- [ ] **Step 9: Verify and commit**
 
 ```bash
 node scripts/test-frontend-a-plus-foundation.js
@@ -753,65 +716,35 @@ node scripts/verify-server-architecture.js
 node scripts/verify-ui-system-migration.js
 ```
 
-Expected: shared Frame/bootstrap/shell contracts GREEN. `verify-frontend-a-plus-accounting.js` may still fail only on page-controller/global-helper migration and old wrapper deletion.
-
-- [ ] **Step 10: Commit**
+Expected: Frame/bootstrap/shell tests PASS. The Accounting A+ verifier can still report controller/global-helper/legacy-wrapper work reserved for later tasks.
 
 ```bash
-git add src/000_server/Code.js src/100_common scripts/test-app-api-runner.js scripts/test-api-contract-v1-common-frontend.js scripts/test-accounting-sidebar-group.js scripts/verify-server-architecture.js scripts/verify-ui-system-migration.js scripts/test-frontend-a-plus-foundation.js scripts/verify-frontend-a-plus-accounting.js
+git add src/000_server/Code.js src/100_common scripts/test-app-api-runner.js scripts/test-api-contract-v1-common-frontend.js scripts/test-accounting-sidebar-group.js scripts/verify-server-architecture.js scripts/verify-ui-system-migration.js
 git commit -m "refactor: render accounting through shared app frame"
 ```
 
 ---
 
-### Task 4: Migrate Accounting Ledger to `AccountingLedgerPage` and shared UI APIs
+### Task 4: Migrate Ledger to `AccountingLedgerPage`
 
 **Files:**
-- Modify: `src/400_accounting/410_ledger/Accounting_Ledger_View.html`
-- Modify: `src/400_accounting/410_ledger/modals/Accounting_Ledger_Register_Modal.html`
-- Modify: `src/400_accounting/410_ledger/modals/Accounting_Ledger_Detail_Modal.html`
-- Modify: `src/400_accounting/410_ledger/accounting_ledger_js.html`
-- Modify: `scripts/verify-frontend-a-plus-accounting.js`
-- Test: `scripts/test-frontend-api-mapping.js`
-- Test: `scripts/test-api-contract-v1-accounting-frontend.js`
+- Modify: Ledger View, both Ledger modal partials, `accounting_ledger_js.html`, A+ verifier.
 
-**Interfaces:**
-- Produces one Ledger page root with page-local state.
-- Uses `accountingClient`, `App.core`, and `App.ui` only for cross-file dependencies.
+- [ ] **Step 1: Tighten Ledger controller assertions and prove RED**
 
-- [ ] **Step 1: Tighten the verifier for Ledger and prove RED**
-
-Require:
-
-```text
-AccountingLedgerPage = {
-  state,
-  init,
-  bindEvents,
-  refresh/load,
-  render,
-  actions,
-  modals/evidence helpers
-}
-```
-
-Reject standalone global `state`, `toast`, `escapeHtml`, `currency`, `openModal`, and `closeModal` definitions in the Ledger script.
-
-Run:
+Require `AccountingLedgerPage`, `state`, `init`, `bindEvents`, render/load behavior, actions, and modal/evidence lifecycle. Reject generic globals. Run:
 
 ```bash
 node scripts/verify-frontend-a-plus-accounting.js
 ```
 
-Expected: Ledger controller/global-helper failures.
+Expected: Ledger slice FAIL.
 
-- [ ] **Step 2: Add declarative component metadata without changing existing IDs**
+- [ ] **Step 2: Add component metadata without changing behavior hooks**
 
-Ledger view:
+Preserve every current ID/name. Add a `[data-ui="search"]` container around `#keyword`. Change pagination to:
 
 ```html
-<input class="ui-control" id="keyword" type="search" placeholder="거래처·적요 검색" data-ui-search-input>
-...
 <div class="accounting-ledger-pagination ui-pagination" id="ledgerPagination" data-ui="pagination">
   <button class="ui-page-btn" id="prevLedgerPage" data-ui-page="prev" type="button" aria-label="이전 페이지">‹</button>
   <span class="page-count" id="ledgerPageInfo" data-ui-page-info>1 / 1</span>
@@ -819,22 +752,11 @@ Ledger view:
 </div>
 ```
 
-Wrap the search input in/mark a `[data-ui="search"]` container while preserving `id="keyword"`.
+For both modals add `data-ui="modal"`; on close controls add `data-ui-modal-close` while retaining existing `data-close` during migration. Add `data-ui="button"` where loading behavior is used. Remove the Ledger View's page-owned `id="toast"`.
 
-Ledger modals:
+- [ ] **Step 3: Replace shared global state with page-local state**
 
-```text
-- add data-ui="modal" to both modal overlays,
-- keep every existing modal id,
-- add data-ui-modal-close while retaining data-close during compatibility,
-- add data-ui="button" to buttons whose loading state is controlled by App.ui.button.
-```
-
-Remove the Ledger View's page-owned `<div id="toast">`; the Frame/Header now owns the single shared toast.
-
-- [ ] **Step 3: Replace the global state with controller-local state**
-
-Start the script with:
+Start the page script:
 
 ```js
 <script>
@@ -856,9 +778,9 @@ var AccountingLedgerPage = (function () {
   };
 ```
 
-Move all Ledger functions inside this IIFE. Functions that are only used internally remain private; expose business actions under `page.actions` and modal lifecycle under `page.modals` where useful.
+Move all Ledger-only functions into this IIFE. Keep private helpers private; expose page business actions under `page.actions` and lifecycle under `page.modals` where needed.
 
-Map old generic calls exactly:
+Mechanical replacements:
 
 ```text
 escapeHtml(x)        -> App.core.escapeHtml(x)
@@ -872,24 +794,20 @@ state.ledgerPageSize -> page.state.pageSize
 state.items/events   -> page.state.items/events
 ```
 
-- [ ] **Step 4: Move button/loading mechanics to `App.ui.button`**
+- [ ] **Step 4: Move generic button/pagination mechanics to App.ui**
 
-For save/approve/delete/download operations, stop manually changing disabled/text when the behavior is generic. Example:
+Use:
 
 ```js
-App.ui.button.setLoading(submitButton, true, draft ? '임시저장 중...' : '저장 중...');
+App.ui.button.setLoading(button, true, draft ? '임시저장 중...' : '저장 중...');
 try {
-  // existing accountingClient call and business flow unchanged
+  // existing accountingClient mutation and workflow
 } finally {
-  App.ui.button.setLoading(submitButton, false);
+  App.ui.button.setLoading(button, false);
 }
 ```
 
-If two buttons must both be disabled during save, use `setLoading` on the active button and set the sibling's `disabled` property explicitly because sibling locking is page/business coordination, not Button component state.
-
-- [ ] **Step 5: Let pagination emit a UI event**
-
-Replace direct prev/next page behavior with:
+Pagination listens once:
 
 ```js
 App.core.byId('ledgerPagination').addEventListener('ui:page-change', function (event) {
@@ -898,18 +816,19 @@ App.core.byId('ledgerPagination').addEventListener('ui:page-change', function (e
 });
 ```
 
-Render pagination via:
+and render calls:
 
 ```js
-App.ui.pagination.update('ledgerPagination', {
-  page: page.state.page,
-  totalPages: totalPages
-});
+App.ui.pagination.update('ledgerPagination', { page: page.state.page, totalPages: totalPages });
 ```
 
-- [ ] **Step 6: Define explicit page initialization**
+Remove old direct prev/next handlers so the UI event is not double-bound.
 
-At minimum:
+- [ ] **Step 5: Let App.ui own modal close controls**
+
+Remove any Ledger page listener whose only job is reading `[data-close]` and toggling `.open`. Keep page listeners only when closing requires domain cleanup. If cleanup is needed, listen for `ui:modal-close` rather than binding the same close button a second time.
+
+- [ ] **Step 6: Explicit init**
 
 ```js
 page.bindEvents = function () {
@@ -918,26 +837,23 @@ page.bindEvents = function () {
   ['type','department','event','status'].forEach(function (id) {
     App.core.byId(id).addEventListener('change', function () { page.state.page = 1; render_(); });
   });
-  // preserve register/detail/evidence handlers using existing IDs/data attributes
+  // bind existing register/detail/evidence business actions once
 };
-
 page.init = function () {
   page.bindEvents();
   refresh_().catch(function (error) {
     App.ui.toast.error(error && error.message ? error.message : '장부를 불러오지 못했습니다.');
   });
 };
-
 return page;
 })();
-
 AccountingLedgerPage.init();
 </script>
 ```
 
-All existing API operations must remain present: list/summary/event options, create draft/create/update/delete/process approval, evidence file content, DB link behavior.
+Preserve all existing Ledger API calls: DB info, summary/list/event options, create draft/create/update/delete/process approval, and evidence file content.
 
-- [ ] **Step 7: Run Ledger-focused regression**
+- [ ] **Step 7: Verify and commit**
 
 ```bash
 node scripts/test-frontend-api-mapping.js
@@ -947,50 +863,38 @@ node scripts/verify-ui-system-migration.js
 node scripts/verify-frontend-a-plus-accounting.js
 ```
 
-Expected: Ledger-specific A+ failures gone; Reconciliation/Settlement may remain.
-
-- [ ] **Step 8: Commit**
+Expected: Ledger-specific failures gone; Reconciliation/Settlement/common cleanup may remain.
 
 ```bash
-git add src/400_accounting/410_ledger scripts/test-frontend-api-mapping.js scripts/test-api-contract-v1-accounting-frontend.js scripts/verify-frontend-a-plus-accounting.js
+git add src/400_accounting/410_ledger scripts/verify-frontend-a-plus-accounting.js
 git commit -m "refactor: migrate accounting ledger page controller"
 ```
 
 ---
 
-### Task 5: Migrate Accounting Reconciliation to `AccountingReconciliationPage`
+### Task 5: Migrate Reconciliation to `AccountingReconciliationPage`
 
 **Files:**
-- Modify: `src/400_accounting/420_reconciliation/Accounting_Reconciliation_View.html`
-- Modify: `src/400_accounting/420_reconciliation/accounting_reconciliation_js.html`
-- Modify: `scripts/verify-frontend-a-plus-accounting.js`
-- Test: `scripts/test-frontend-api-mapping.js`
+- Modify: `Accounting_Reconciliation_View.html`, `accounting_reconciliation_js.html`, A+ verifier.
 
-**Interfaces:**
-- Keeps bank-file import, reconciliation, manual link, ledger creation, detail/evidence, and filter behavior unchanged.
+- [ ] **Step 1: Require controller and prove RED**
 
-- [ ] **Step 1: Require the Reconciliation controller and prove RED**
+Require `AccountingReconciliationPage` and reject generic globals. Confirm the Reconciliation slice fails before production changes.
 
-Require `AccountingReconciliationPage` and reject generic globals in this script. Run the A+ verifier and confirm the Reconciliation slice fails.
+- [ ] **Step 2: Add component metadata**
 
-- [ ] **Step 2: Update markup contracts**
-
-Keep every existing ID. Add:
+Preserve every existing ID. Add:
 
 ```text
-reconciliationLedgerDetailModal -> data-ui="modal"
+#reconciliationLedgerDetailModal -> data-ui="modal"
 its close buttons -> data-ui-modal-close plus existing data-close
-reconciliationSearch container -> data-ui="search"
-runMissingCheck -> data-ui="button"
+search wrapper -> data-ui="search"
+#runMissingCheck -> data-ui="button"
 ```
 
-Remove the page-owned `id="toast"`.
+Remove the Reconciliation View's page-owned `id="toast"`. Keep the upload dropzone Accounting-specific.
 
-Do not convert the upload dropzone to a global FileUpload component in this plan.
-
-- [ ] **Step 3: Move all Reconciliation state under the page**
-
-Use:
+- [ ] **Step 3: Move state under the page root**
 
 ```js
 var AccountingReconciliationPage = (function () {
@@ -1006,23 +910,31 @@ var AccountingReconciliationPage = (function () {
   };
 ```
 
-Move old `state.reconciliationDetail`, `state.reconciliationRuns`, `state.reconciliationImporting`, `state.uploadFiles.reconciliation`, and preview state to these properties.
+Map old state:
 
-Replace generic helpers:
+```text
+state.reconciliationDetail         -> page.state.detail
+state.reconciliationRuns           -> page.state.runs
+state.reconciliationImporting      -> page.state.importing
+state.uploadFiles.reconciliation   -> page.state.files
+state reconciliation preview fields -> page.state evidence preview fields
+```
+
+Generic replacements:
 
 ```text
 escapeHtml -> App.core.escapeHtml
 currency   -> App.core.formatMoney
-toast      -> App.ui.toast.show/error/success
-modal add/remove open -> App.ui.modal.open/close
-button disabled/text during run -> App.ui.button.setLoading
+toast      -> App.ui.toast
+modal class toggling -> App.ui.modal.open/close
+run button generic loading -> App.ui.button.setLoading
 ```
 
-Keep Reconciliation-specific helpers such as `reconcileType`, `reconcileStatusClass`, evidence preview logic, import date aggregation, candidate selection, and reconciliation-result transformation local to this page because their semantics are domain-specific.
+Keep Reconciliation-specific functions local: bank payload parsing, transaction type/status mapping, evidence preview logic, import range aggregation, candidate selection, linking, and reconciliation result transformations.
 
-- [ ] **Step 4: Preserve the PR #31 response-unwrapping contract**
+- [ ] **Step 4: Preserve PR #31 create-response normalization**
 
-The ledger-from-reconciliation action must continue to normalize the create response before rendering:
+Keep:
 
 ```js
 var result = await accountingClient.createLedgerEntryFromReconciliation({ reconciliationItemId: itemId });
@@ -1030,38 +942,29 @@ var detail = result && result.snapshot ? result.snapshot : result;
 showCurrentReconciliationRun_(detail);
 ```
 
-Keep the current label behavior that does not claim the selector is a complete "대사 이력" history.
+Do not relabel the current-run selector as a complete reconciliation history.
 
-- [ ] **Step 5: Use shared modal/button/toast behavior without changing workflow decisions**
+- [ ] **Step 5: Remove duplicate modal close binding**
 
-Examples:
+Let `App.ui.modal` own close-button mechanics. If evidence object URLs must be revoked when the modal closes, attach one `ui:modal-close` listener to the modal root and perform only cleanup there.
 
-```js
-App.ui.modal.open('reconciliationLedgerDetailModal');
-App.ui.modal.close('reconciliationLedgerDetailModal');
-App.ui.button.setLoading('runMissingCheck', true, '점검 중...');
-App.ui.toast.success('누락 점검을 완료했습니다.');
-```
+- [ ] **Step 6: Explicit init**
 
-The page remains responsible for deciding when those commands occur and what message means success/failure.
-
-- [ ] **Step 6: Explicit init/binding**
-
-`page.init()` must bind exactly once:
+`page.init()` binds once:
 
 ```text
 file input/dropzone selection
 runMissingCheck click
 filter/search changes
-filter reset
+reset filter
 reconciliationHistory change
-row action delegation (detail/link/create/download)
-modal close lifecycle needed for evidence URL cleanup
+row action delegation: detail/link/create/download
+ui:modal-close cleanup for evidence previews
 ```
 
-Then initialize the empty/current run state without adding a server request not present today.
+Initialize current empty/run presentation without adding a new server request.
 
-- [ ] **Step 7: Run focused regression**
+- [ ] **Step 7: Verify and commit**
 
 ```bash
 node scripts/test-frontend-api-mapping.js
@@ -1071,46 +974,33 @@ node scripts/verify-ui-system-migration.js
 node scripts/verify-frontend-a-plus-accounting.js
 ```
 
-Expected: Reconciliation-specific A+ failures gone; Settlement/common cleanup may remain.
-
-- [ ] **Step 8: Commit**
+Expected: Reconciliation-specific failures gone.
 
 ```bash
-git add src/400_accounting/420_reconciliation scripts/test-frontend-api-mapping.js scripts/verify-frontend-a-plus-accounting.js
+git add src/400_accounting/420_reconciliation scripts/verify-frontend-a-plus-accounting.js
 git commit -m "refactor: migrate accounting reconciliation page controller"
 ```
 
 ---
 
-### Task 6: Migrate Accounting Settlement to `AccountingSettlementPage`
+### Task 6: Migrate Settlement to `AccountingSettlementPage`
 
 **Files:**
-- Modify: `src/400_accounting/430_settlement/Accounting_Settlement_View.html`
-- Modify: `src/400_accounting/430_settlement/accounting_settlement_js.html`
-- Modify: `scripts/verify-frontend-a-plus-accounting.js`
+- Modify: `Accounting_Settlement_View.html`, `accounting_settlement_js.html`, A+ verifier.
 
-**Interfaces:**
-- Keeps settlement summary, report history, report creation, detail rendering, and export API flow unchanged.
+- [ ] **Step 1: Require controller and prove RED**
 
-- [ ] **Step 1: Require the Settlement controller and prove RED**
-
-Require `AccountingSettlementPage` and reject generic globals in the Settlement script. Confirm the verifier fails before production changes.
+Require `AccountingSettlementPage` and reject generic globals. Confirm Settlement fails before migration.
 
 - [ ] **Step 2: Update markup**
 
-Preserve every current ID. Add `data-ui="button"` to `refreshSettlement`, `generateSettlement`, and `exportSettlement` where loading behavior is used. Remove the page-owned `id="toast"`.
+Preserve all existing IDs. Add `data-ui="button"` to `refreshSettlement`, `generateSettlement`, and `exportSettlement` where loading behavior is used. Remove the Settlement View's page-owned `id="toast"`.
 
-- [ ] **Step 3: Replace shared Accounting state with page-local state**
-
-Use:
+- [ ] **Step 3: Move shared state to page-local state**
 
 ```js
 var AccountingSettlementPage = (function () {
-  var page = {
-    state: {
-      reports: []
-    }
-  };
+  var page = { state: { reports: [] } };
 ```
 
 Replace:
@@ -1122,9 +1012,9 @@ escapeHtml              -> App.core.escapeHtml
 toast                    -> App.ui.toast
 ```
 
-Keep period validation, report selection, API calls, and export data formatting as page behavior.
+Keep period validation, summary rendering, report selection, API calls, and export preview formatting page-owned.
 
-- [ ] **Step 4: Use shared button loading on mutations/requests**
+- [ ] **Step 4: Shared button loading**
 
 For snapshot generation:
 
@@ -1142,13 +1032,13 @@ try {
 }
 ```
 
-Use the same pattern for export only if the current UX benefits from request-state feedback; do not change the exported payload or preview format.
+Do not change report payload/export format.
 
 - [ ] **Step 5: Explicit init**
 
-Bind `refreshSettlement`, `generateSettlement`, `settlementHistory`, and `exportSettlement` from `page.bindEvents()`. `page.init()` must call `refreshSettlementHistory_()` exactly once, preserving current behavior.
+Bind `refreshSettlement`, `generateSettlement`, `settlementHistory`, and `exportSettlement` in `page.bindEvents()`. `page.init()` calls `refreshSettlementHistory_()` exactly once, preserving current initial behavior.
 
-- [ ] **Step 6: Run focused regression**
+- [ ] **Step 6: Verify and commit**
 
 ```bash
 node scripts/test-api-contract-v1-accounting-frontend.js
@@ -1158,9 +1048,7 @@ node scripts/verify-ui-system-migration.js
 node scripts/verify-frontend-a-plus-accounting.js
 ```
 
-Expected: all three Accounting page-controller checks GREEN except shared `accounting_common_js`/legacy wrapper cleanup gates.
-
-- [ ] **Step 7: Commit**
+Expected: all three page-controller checks GREEN except cleanup gates.
 
 ```bash
 git add src/400_accounting/430_settlement scripts/verify-frontend-a-plus-accounting.js
@@ -1169,51 +1057,38 @@ git commit -m "refactor: migrate accounting settlement page controller"
 
 ---
 
-### Task 7: Remove Accounting-generic globals and legacy full-page shells
+### Task 7: Remove Accounting-generic globals and old full-document shells
 
 **Files:**
 - Create: `src/400_accounting/common/accounting_file_upload_js.html`
 - Modify: `src/000_server/Code.js`
-- Modify: `src/400_accounting/410_ledger/accounting_ledger_js.html`
-- Modify: `src/400_accounting/420_reconciliation/accounting_reconciliation_js.html`
-- Modify: `src/400_accounting/common/Accounting_Styles.html`
-- Delete: `src/400_accounting/common/accounting_common_js.html`
-- Delete: `src/400_accounting/410_ledger/Accounting_Ledger.html`
-- Delete: `src/400_accounting/420_reconciliation/Accounting_Reconciliation.html`
-- Delete: `src/400_accounting/430_settlement/Accounting_Settlement.html`
-- Modify: `scripts/test-api-contract-v1-accounting-frontend.js`
-- Modify: `scripts/verify-frontend-a-plus-accounting.js`
-- Modify: `scripts/verify-ui-system-migration.js`
+- Modify: Ledger/Reconciliation scripts, `Accounting_Styles.html`, Accounting frontend contract test, A+ verifier, UI migration verifier.
+- Delete: `accounting_common_js.html` and the three Accounting full shell HTML files.
 
-**Interfaces:**
-- Leaves only Accounting-specific shared code in Accounting common.
-- Makes the common Frame the only document shell for migrated Accounting routes.
-
-- [ ] **Step 1: Add cleanup assertions and prove RED**
+- [ ] **Step 1: Add cleanup gates and prove RED**
 
 Require:
 
 ```text
-- accounting_common_js.html absent,
-- three old full Accounting shell HTML files absent,
-- accounting_file_upload_js.html exists,
-- Code.js descriptors no longer include accounting_common_js,
-- no Accounting view contains id="toast",
-- Frame/Header composition supplies the one shared toast target.
+accounting_common_js.html absent
+Accounting_Ledger.html absent
+Accounting_Reconciliation.html absent
+Accounting_Settlement.html absent
+accounting_file_upload_js.html present
+Code.js descriptors contain no accounting_common_js
+Accounting Views contain no id="toast"
+Frame/Header composition owns the shared toast
 ```
 
-Update `test-api-contract-v1-accounting-frontend.js` so it no longer reads deleted `accounting_common_js.html`; instead assert `accounting_file_upload_js.html` contains no `google.script.run` and no `runAppApi` calls.
+Update `test-api-contract-v1-accounting-frontend.js` to stop reading `accounting_common_js.html` and instead assert `accounting_file_upload_js.html` contains neither `google.script.run` nor `runAppApi`.
 
-Run the verifier and confirm failures before deletion.
-
-- [ ] **Step 2: Extract Accounting-specific file selection helper**
+- [ ] **Step 2: Extract domain-specific file selection mechanics**
 
 Create:
 
 ```js
 <script>
 var Accounting = window.Accounting || {};
-
 Accounting.fileUpload = (function () {
   function bind(config) {
     var dropzone = document.getElementById(config.dropzoneId);
@@ -1236,24 +1111,21 @@ Accounting.fileUpload = (function () {
       event.preventDefault();
       dropzone.classList.add('drag-over');
     });
-    dropzone.addEventListener('dragleave', function () {
-      dropzone.classList.remove('drag-over');
-    });
+    dropzone.addEventListener('dragleave', function () { dropzone.classList.remove('drag-over'); });
     dropzone.addEventListener('drop', function (event) {
       event.preventDefault();
       dropzone.classList.remove('drag-over');
       apply(event.dataTransfer && event.dataTransfer.files);
     });
   }
-
   return { bind: bind };
 })();
 </script>
 ```
 
-This helper owns file-selection UI mechanics only. Ledger/Reconciliation callbacks store selected files in their own page state.
+This helper owns selection mechanics only; it owns no page state and calls no API.
 
-- [ ] **Step 3: Switch Ledger and Reconciliation to the helper**
+- [ ] **Step 3: Switch Ledger/Reconciliation upload state to callbacks**
 
 Ledger:
 
@@ -1280,11 +1152,9 @@ Accounting.fileUpload.bind({
 });
 ```
 
-Keep file-to-base64 parsing in the page where the domain workflow needs it.
+Keep base64 parsing/workflow logic in its owning page.
 
-- [ ] **Step 4: Replace descriptor scripts**
-
-Final Accounting descriptor script lists:
+- [ ] **Step 4: Finalize descriptor script lists**
 
 ```js
 accounting_ledger: [
@@ -1303,22 +1173,22 @@ accounting_settlement: [
 ]
 ```
 
-- [ ] **Step 5: Remove generic modal-state CSS from Accounting only when shared CSS is equivalent**
+- [ ] **Step 5: Remove only generic modal-state CSS from Accounting**
 
-Delete Accounting-only rules whose only purpose is:
+When shared behavior CSS is active, remove:
 
 ```css
 .accounting-page .accounting-modal-overlay { display: none; }
 .accounting-page .accounting-modal-overlay.open { display: flex; }
 ```
 
-because `App_UI_Styles.html` owns `.ui-modal-overlay` state. Retain all Accounting-specific modal sizing, layout, evidence preview, reconciliation layout, ledger column sizing, and settlement composition.
+Retain Accounting-specific modal sizing/layout, evidence preview, Ledger widths, Reconciliation layout, and Settlement composition.
 
-- [ ] **Step 6: Delete obsolete common/global and shell files**
+- [ ] **Step 6: Delete obsolete files**
 
-Delete the four files listed above. Do not delete `accounting_client_js.html` or `Accounting_Styles.html`.
+Delete the four files listed in the file map. Keep `accounting_client_js.html` and `Accounting_Styles.html`.
 
-- [ ] **Step 7: Run cleanup regression**
+- [ ] **Step 7: Verify and commit**
 
 ```bash
 node scripts/test-frontend-a-plus-foundation.js
@@ -1334,9 +1204,7 @@ node scripts/verify-ui-system-migration.js
 node scripts/verify-frontend-a-plus-accounting.js
 ```
 
-Expected: all GREEN.
-
-- [ ] **Step 8: Commit**
+Expected: all PASS.
 
 ```bash
 git add src/000_server/Code.js src/400_accounting scripts/test-api-contract-v1-accounting-frontend.js scripts/verify-ui-system-migration.js scripts/verify-frontend-a-plus-accounting.js
@@ -1348,7 +1216,7 @@ git commit -m "refactor: remove accounting frontend legacy shell globals"
 ### Task 8: Full regression and CI-facing verification
 
 **Files:**
-- Modify only tests/verifiers when an assertion still encodes the intentionally removed full-shell implementation rather than preserved behavior.
+- Modify tests/verifiers only if an assertion still encodes an intentionally removed implementation detail instead of preserved behavior.
 - Do not change production behavior in this task.
 
 - [ ] **Step 1: Run common/server regression**
@@ -1383,9 +1251,9 @@ node scripts/verify-frontend-a-plus-accounting.js
 
 Expected: all exit `0`.
 
-- [ ] **Step 3: Run repository syntax/static checks already used by the relevant workflows**
+- [ ] **Step 3: Run the existing frontend workflow commands exactly**
 
-Run the commands from `.github/workflows/frontend-api-mapping.yml` exactly:
+`.github/workflows/frontend-api-mapping.yml` currently executes:
 
 ```bash
 node scripts/test-frontend-api-mapping.js
@@ -1393,59 +1261,57 @@ node scripts/verify-frontend-api-mapping.js
 node scripts/verify-frontend-api-contract-v1.js
 ```
 
-Also run the Accounting DB workflow commands if its path filters include changed Accounting/server files. Do not claim workflow success without either these local commands or actual GitHub Actions results.
+Run them exactly. Also run the Accounting DB workflow commands when its path filters are triggered by changed server/Accounting files. Do not claim GitHub Actions success unless actual Actions results are checked.
 
-- [ ] **Step 4: Inspect architecture invariants manually**
+- [ ] **Step 4: Manually inspect architecture invariants**
 
-Verify with grep/search:
+Confirm:
 
 ```text
-- only app_api_runner_js.html contains google.script.run outside server code,
-- Accounting scripts contain the three Page controller names,
-- no Accounting page script declares generic global state/toast/escapeHtml/currency/openModal/closeModal,
-- no Accounting View defines id="toast",
-- only one common Frame includes Header + Sidebar for migrated routes,
-- Code.js keeps all original route names and access checks,
-- common core/ui/frame files contain no Accounting domain references.
+only app_api_runner_js.html contains google.script.run outside server code
+three Accounting scripts expose their Page controller roots
+no migrated Accounting script declares generic global state/toast/escapeHtml/currency/openModal/closeModal
+no Accounting View defines id="toast"
+Frame owns Header + Sidebar for the three migrated routes
+Code.js retains all route names and protected access checks
+core/ui/frame common files contain no Accounting/accountingClient reference
 ```
 
-- [ ] **Step 5: Final commit only if verification files needed corrections**
+- [ ] **Step 5: Commit verifier-only corrections if any**
 
-If test/verifier implementation-detail assertions needed legitimate migration updates, commit only those changes:
+If legitimate migration-related test/verifier corrections changed files:
 
 ```bash
 git add scripts .github/workflows
-ngit commit -m "test: finalize frontend a+ accounting verification"
+git commit -m "test: finalize frontend a+ accounting verification"
 ```
 
-If no files changed, do not create an empty commit.
+If nothing changed, do not create an empty commit.
 
 ---
 
-## Completion Criteria for This Plan
+## Completion Criteria
 
-This plan is complete only when all of the following are true:
-
-1. `accounting_ledger`, `accounting_reconciliation`, and `accounting_settlement` are still the public route names and retain existing authorization behavior.
-2. All three routes render through `src/100_common/frame/App_Frame.html` rather than page-owned full document shells.
-3. Header, Sidebar, common styles, transport, core, UI behavior, and bootstrap context are owned by the Frame/common layer.
-4. `APP_BOOTSTRAP` is populated from the already-authenticated server context and the shell does not unconditionally refetch `api_getCurrentUser()` on migrated pages.
-5. `App.ui` provides domain-neutral Button/Card/Search/Filter/Modal/Toast/Pagination behavior with idempotent initialization.
-6. Accounting Ledger, Reconciliation, and Settlement each own page-local state in a named Page controller.
-7. Accounting pages call `accountingClient` for domain APIs and use `App.core`/`App.ui` for generic frontend behavior.
-8. `accounting_common_js.html` and all three Accounting full-document shell files are removed.
-9. File-selection behavior that remains Accounting-specific is isolated in `Accounting.fileUpload` without a cross-page Accounting `state` object.
-10. There is one shared toast target in the migrated Frame composition.
-11. Existing Accounting workflows, evidence behavior, reconciliation response unwrapping, settlement behavior, API contracts, form names, and relevant behavior IDs remain intact.
+1. `accounting_ledger`, `accounting_reconciliation`, and `accounting_settlement` keep their public route names and authorization behavior.
+2. The three routes render through `src/100_common/frame/App_Frame.html` instead of page-owned full document shells.
+3. Header, Sidebar, common resources, `App.core`, `App.ui`, shell initialization, and bootstrap context are Frame/common-owned.
+4. `APP_BOOTSTRAP` comes from the already-authenticated server context; the shell does not unconditionally refetch the current user on migrated pages.
+5. `App.ui` provides domain-neutral Button/Card/Search/Filter/Modal/Toast/Pagination behavior with duplicate-binding protection.
+6. Ledger, Reconciliation, and Settlement each own page-local state in a named controller.
+7. Accounting pages use `accountingClient` for server APIs and `App.core`/`App.ui` for generic frontend behavior.
+8. `accounting_common_js.html` and all three Accounting full document shells are removed.
+9. Accounting file selection is isolated in `Accounting.fileUpload` without cross-page global state.
+10. The migrated Frame composition has one shared toast target.
+11. Existing Accounting workflows, evidence behavior, reconciliation response unwrapping, settlement behavior, API contracts, form names, and behavior IDs remain intact.
 12. Common code has no Accounting dependency and direct `google.script.run` remains isolated to `app_api_runner_js.html`.
-13. Every command in Task 8 that is applicable to changed paths exits successfully before merge-ready status is claimed.
+13. Every applicable verification command in Task 8 passes before merge-ready status is claimed.
 
-## Follow-up Plans After This One
+## Follow-up Plans
 
-After the Foundation + Accounting plan is verified, create separate plans in this order so each migration can be reviewed independently:
+After Foundation + Accounting is verified, create independently reviewable follow-up plans in this order:
 
 ```text
 Student Fee -> Event -> Settings/Main/MyPage -> final compatibility/CSS cleanup
 ```
 
-Those later plans must reuse the public `App.core`, `App.router`, `App.shell`, `App.ui`, Frame, and bootstrap contracts defined here rather than inventing parallel domain frontend frameworks.
+Each follow-up must reuse the public Frame, bootstrap, `App.core`, `App.router`, `App.shell`, and `App.ui` contracts from this plan instead of creating another domain frontend framework.
