@@ -8,6 +8,7 @@ const context = { console };
 vm.createContext(context);
 vm.runInContext(fs.readFileSync(path.join(root, 'src/000_server/010_core/config.gs'), 'utf8'), context);
 vm.runInContext(fs.readFileSync(path.join(root, 'src/000_server/020_schema/operation_db_schema.gs'), 'utf8'), context);
+vm.runInContext(fs.readFileSync(path.join(root, 'src/000_server/060_accounting/061_ledger/ledger_sheet_dao.gs'), 'utf8'), context);
 
 const schema = context.getOperationDbSchema_();
 
@@ -32,7 +33,18 @@ assert.strictEqual(schema.ledger.fields.bankTransactionId, '계좌거래ID');
 assert.strictEqual(schema.ledger.fields.balanceAfter, undefined);
 assert.strictEqual(schema.ledger.fields.expense, undefined);
 assert.strictEqual(schema.ledger.fields.transactionType, '거래구분');
+assert.strictEqual(schema.ledger.fields.approvalStatus, '승인상태');
+assert.strictEqual(schema.ledger.fields.approvedByEmail, '승인자이메일');
+assert.strictEqual(schema.ledger.fields.approvedAt, '승인일시');
+assert.strictEqual(schema.ledger.fields.rejectionReason, '반려사유');
+assert.deepStrictEqual(JSON.parse(JSON.stringify(schema.ledger.optionalFields)), [
+  'approvalStatus', 'approvedByEmail', 'approvedAt', 'rejectionReason'
+]);
 assert.ok(schema.ledger.foreignKeys.some(fk => fk.field === 'bankTransactionId' && fk.refTable === 'bankTransactions' && fk.refField === 'id' && fk.optional === true));
+
+assert.strictEqual(typeof context.resolveLegacyLedgerApprovalStatus_, 'function', 'legacy ledger approval migration helper must exist');
+assert.strictEqual(context.resolveLegacyLedgerApprovalStatus_({ recordStatus: '활성' }), '승인');
+assert.strictEqual(context.resolveLegacyLedgerApprovalStatus_({ recordStatus: '무효' }), '승인대기');
 
 assert.strictEqual(schema.evidence.fields.ocrStatus, 'OCR상태');
 assert.strictEqual(schema.evidence.fields.ocrValidationResult, 'OCR검증결과');
