@@ -54,11 +54,15 @@ result = verifier.auditSourcePair(
 assert.deepStrictEqual(result.dynamicCalls, []);
 
 const ledgerFrontend = fs.readFileSync(path.join(root, 'src/400_accounting/410_ledger/accounting_ledger_js.html'), 'utf8');
+const reconciliationFrontend = fs.readFileSync(path.join(root, 'src/400_accounting/420_reconciliation/accounting_reconciliation_js.html'), 'utf8');
+const reconciliationView = fs.readFileSync(path.join(root, 'src/400_accounting/420_reconciliation/Accounting_Reconciliation_View.html'), 'utf8');
 const accountingClient = fs.readFileSync(path.join(root, 'src/400_accounting/common/accounting_client_js.html'), 'utf8');
 assert.match(ledgerFrontend, /data-evidence-id/);
 assert.match(ledgerFrontend, /accountingClient\.getLedgerEvidenceFileContent/);
 assert.match(ledgerFrontend, /content_base64/);
 assert.match(accountingClient, /api_getLedgerEvidenceFileContent/);
+assert.match(reconciliationFrontend, /result\s*&&\s*result\.snapshot\s*\?\s*result\.snapshot\s*:\s*result/, 'reconciliation ledger creation must unwrap snapshot response before rendering');
+assert.doesNotMatch(reconciliationView, />대사 이력</, 'single-current-run selector must not be labeled as full reconciliation history');
 
 const repoResult = verifier.auditRepository(root);
 if (repoResult.missingServerApis.length || repoResult.dynamicCalls.length) {

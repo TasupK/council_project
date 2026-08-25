@@ -238,8 +238,10 @@ function getOperationDbSchema_() {
         id: '거래ID', bankTransactionId: '계좌거래ID', transactionAt: '거래일시', description: '거래내용',
         transactionType: '거래구분', amount: '거래금액', counterparty: '거래상대명', source: '유입경로',
         eventId: '행사ID', businessType: '업무구분', businessId: '업무ID', matchStatus: '일치상태',
-        recordStatus: '레코드상태', managerEmail: '담당자이메일', createdAt: '등록일시', updatedAt: '수정일시'
+        recordStatus: '레코드상태', managerEmail: '담당자이메일', createdAt: '등록일시', updatedAt: '수정일시',
+        approvalStatus: '승인상태', approvedByEmail: '승인자이메일', approvedAt: '승인일시', rejectionReason: '반려사유'
       },
+      optionalFields: ['approvalStatus', 'approvedByEmail', 'approvedAt', 'rejectionReason'],
       primaryKey: ['id'],
       foreignKeys: [
         { field: 'bankTransactionId', refDatabase: 'operation', refTable: 'bankTransactions', refField: 'id', optional: true },

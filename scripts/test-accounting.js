@@ -210,7 +210,7 @@ function testEvidenceAuditQuery_() {
 
 function testSettlementMetrics_() {
   var context = createContext_();
-  context.listLedgerRows_ = function () { return [
+  context.buildApprovedLedgerAccountingFacts_ = function () { return [
     { id: 'prior', transactionAt: '2026-07-31', transactionType: '수입', amount: 500, recordStatus: '활성', bankTransactionId: 'b0', matchStatus: '정상' },
     { id: 'i1', transactionAt: '2026-08-01', transactionType: '수입', amount: 3000, recordStatus: '활성', bankTransactionId: 'b1', matchStatus: '정상' },
     { id: 'e1', transactionAt: '2026-08-02', transactionType: '지출', amount: 1200, recordStatus: '활성', bankTransactionId: 'b2', matchStatus: '정상' },

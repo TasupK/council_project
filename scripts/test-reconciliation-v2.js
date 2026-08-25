@@ -16,18 +16,17 @@ const banks = [
   { id: 'B3', transactionAt: '2026-03-03 09:00:00', amount: 3000, recordStatus: '정상' }
 ];
 const ledgers = [
-  { id: 'L1', bankTransactionId: 'B1', transactionType: '수입', amount: 10000, recordStatus: '활성' },
-  { id: 'L2', bankTransactionId: 'B2', transactionType: '수입', amount: 5000, recordStatus: '활성' },
-  { id: 'L3', bankTransactionId: '', transactionType: '지출', amount: 7000, recordStatus: '활성' }
+  { id: 'L1', bankTransactionId: 'B1', transactionAt: '2026-03-01', transactionType: '수입', amount: 10000, recordStatus: '활성' },
+  { id: 'L2', bankTransactionId: 'B2', transactionAt: '2026-03-02', transactionType: '수입', amount: 5000, recordStatus: '활성' },
+  { id: 'L3', bankTransactionId: '', transactionAt: '2026-03-03', transactionType: '지출', amount: 7000, recordStatus: '활성' }
 ];
 
 const items = context.buildReconciliationSnapshotItems_(banks, ledgers);
 const byBank = Object.fromEntries(items.filter(x => x.bankTransactionId).map(x => [x.bankTransactionId, x]));
-const unlinked = items.find(x => x.ledgerId === 'L3');
 assert.strictEqual(byBank.B1.result, '정상');
 assert.strictEqual(byBank.B2.result, '확인필요');
 assert.strictEqual(byBank.B3.result, '원장누락');
-assert.strictEqual(unlinked.result, '계좌미확인');
+assert.strictEqual(items.some(x => x.ledgerId === 'L3'), false);
 assert.strictEqual('matchMethod' in byBank.B1, false);
 assert.strictEqual('updatedAt' in byBank.B1, false);
 
