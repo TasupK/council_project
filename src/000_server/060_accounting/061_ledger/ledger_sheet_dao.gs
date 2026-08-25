@@ -1,5 +1,9 @@
 /** 수입지출원장 Sheet DAO */
 
+function resolveLegacyLedgerApprovalStatus_(row) {
+  return String(row && row.recordStatus || '활성') === '무효' ? '승인대기' : '승인';
+}
+
 function ensureLedgerApprovalColumns_() {
   var table = getOperationDbTableSchema_('ledger');
   var sheet = openOperationSpreadsheet_().getSheetByName(table.sheetName);
@@ -22,14 +26,20 @@ function ensureLedgerApprovalColumns_() {
     }
 
     var approvalColumn = headers.indexOf(table.fields.approvalStatus) + 1;
+    var recordStatusColumn = headers.indexOf(table.fields.recordStatus) + 1;
     var rowCount = Math.max(0, sheet.getLastRow() - 1);
     if (!approvalColumn || !rowCount) return;
     var range = sheet.getRange(2, approvalColumn, rowCount, 1);
     var values = range.getValues();
+    var recordStatuses = recordStatusColumn
+      ? sheet.getRange(2, recordStatusColumn, rowCount, 1).getValues()
+      : [];
     var changed = false;
-    values.forEach(function (row) {
+    values.forEach(function (row, index) {
       if (String(row[0] || '').trim()) return;
-      row[0] = '승인대기';
+      row[0] = resolveLegacyLedgerApprovalStatus_({
+        recordStatus: recordStatuses[index] ? recordStatuses[index][0] : '활성'
+      });
       changed = true;
     });
     if (changed) {
