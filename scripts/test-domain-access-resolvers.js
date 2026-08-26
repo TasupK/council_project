@@ -7,8 +7,8 @@ var ROOT = path.resolve(__dirname, '..');
 var files = [
   'src/backend/domains/iam/application/permissions_access.gs',
   'src/backend/domains/event/application/event_access.gs',
-  'src/000_server/060_accounting/060_common/accounting_access.gs',
-  'src/000_server/080_student_fee/080_common/student_fee_access.gs'
+  'src/backend/domains/accounting/application/accounting_access.gs',
+  'src/backend/domains/student_fee/application/student_fee_access.gs'
 ].map(function (file) { return path.join(ROOT, file); });
 files.forEach(function (file) { assert.ok(fs.existsSync(file), path.basename(file) + ' must exist'); });
 
