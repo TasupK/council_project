@@ -279,7 +279,7 @@ frontend/shared/
 | `src/000_server/040_iam` | `src/backend/domains/iam/` | query service/DAO를 새 레이어로 재분류 |
 | `src/000_server/050_event` | `src/backend/domains/event/` | API→controllers, DAO→repositories, service 재분류 |
 | `src/000_server/060_accounting` | `src/backend/domains/accounting/` | API/Service/DAO를 새 레이어로 분리 |
-| `src/000_server/070_settings` | `src/backend/domains/iam/` 또는 app-level admin use case | Settings는 별도 business domain으로 만들지 않고 IAM 관리 use case로 흡수 |
+| `src/000_server/070_settings` | `src/backend/domains/iam/controllers/` + `application/` | Settings는 별도 business domain으로 만들지 않고 IAM 관리 use case로 흡수 |
 | `src/000_server/080_student_fee` | `src/backend/domains/student_fee/` | API/Service/DAO/policy를 새 레이어로 분리 |
 
 ### 7.2 Accounting Backend
@@ -292,7 +292,7 @@ frontend/shared/
 - 계산/검증/상태 전이/matching 규칙 → `business_rules/`로 추출
 - `accounting_entry_orchestration_service.gs` → `application/`
 - `accounting_access.gs` → IAM/core auth 정책과 accounting-specific permission requirement를 분리
-- `accounting_event_read_dao.gs`는 도메인 간 직접 persistence 참조 여부를 검토하고 Event의 공개 Application/API 경계로 대체하는 것을 원칙으로 한다.
+- `accounting_event_read_dao.gs`는 도메인 간 직접 persistence 참조 여부를 검토하고 Event의 공개 Application 경계로 대체하는 것을 원칙으로 한다.
 
 ### 7.3 Student Fee Backend
 
@@ -308,7 +308,7 @@ frontend/shared/
 
 IAM은 users/roles/permissions/departments를 하나의 business domain으로 유지한다.
 
-기존 Settings 서버 기능은 별도 `settings` domain을 만들기보다 IAM을 관리하는 application/controller로 흡수한다. 화면 이름은 Settings로 유지할 수 있으나 backend business boundary는 IAM이다.
+기존 Settings 서버 기능은 별도 `settings` domain을 만들지 않고 IAM을 관리하는 controller/application use case로 흡수한다. 화면 이름은 Settings로 유지하지만 backend business boundary는 IAM으로 고정한다.
 
 ## 8. Frontend Migration Map
 
@@ -367,9 +367,17 @@ student_fee → accounting/repositories/ledger_repository
 accounting → event/repositories/event_repository
 ```
 
-필요한 경우 공개된 Application use case 또는 외부 Controller/API 경계를 사용한다.
+Backend 내부의 cross-domain 호출은 상대 도메인이 공개한 **Application facade/use case**를 사용한다. Controller/API는 frontend 또는 외부 호출 경계로만 사용하며 backend 내부 통신에 사용하지 않는다.
 
-동일 Apps Script runtime에서 내부 호출이 필요하면 도메인이 공개하는 application facade/use case를 사용하며 persistence 구현은 숨긴다.
+```text
+Accounting Application
+        ↓
+Event public Application facade
+        ↓
+Event Repository
+```
+
+이를 통해 persistence 구현은 호출 도메인에서 숨긴다.
 
 ## 10. 테스트 전략
 
