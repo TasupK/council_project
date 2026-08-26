@@ -71,7 +71,7 @@ function testAuditAttribution_() {
   context.getCurrentIsoDateTime_ = function () { return '2026-08-17T21:00:00+09:00'; };
   context.getOperationDbSchema_ = function () { return { businessAuditLogs: {}, feeApplications: {} }; };
   context.appendOperationTableRow_ = function (table, row) { captured = { table: table, row: row }; return row; };
-  load_(context, 'src/000_server/010_core/business_audit.gs');
+  load_(context, 'src/backend/core/audit/business_audit.gs');
   load_(context, 'src/000_server/080_student_fee/080_common/student_fee_audit_sheet_dao.gs');
   var result = context.writeStudentFeeAudit_('staff@example.com', 'APPROVE', 'feeApplications', 'app-1', { status: '접수' }, { status: '승인' }, 'ok');
   assert.strictEqual(captured.table, 'businessAuditLogs');
