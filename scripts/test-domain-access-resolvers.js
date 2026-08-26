@@ -6,7 +6,7 @@ var vm = require('vm');
 var ROOT = path.resolve(__dirname, '..');
 var files = [
   'src/backend/domains/iam/application/permissions_access.gs',
-  'src/000_server/050_event/050_common/event_access.gs',
+  'src/backend/domains/event/application/event_access.gs',
   'src/000_server/060_accounting/060_common/accounting_access.gs',
   'src/000_server/080_student_fee/080_common/student_fee_access.gs'
 ].map(function (file) { return path.join(ROOT, file); });
