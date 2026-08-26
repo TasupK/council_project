@@ -6,8 +6,8 @@ const vm = require('vm');
 const root = path.resolve(__dirname, '..');
 const context = { console };
 vm.createContext(context);
-vm.runInContext(fs.readFileSync(path.join(root, 'src/000_server/010_core/config.gs'), 'utf8'), context);
-vm.runInContext(fs.readFileSync(path.join(root, 'src/000_server/020_schema/operation_db_schema.gs'), 'utf8'), context);
+vm.runInContext(fs.readFileSync(path.join(root, 'src/backend/app/config/config.gs'), 'utf8'), context);
+vm.runInContext(fs.readFileSync(path.join(root, 'src/backend/core/db/schema/operation_db_schema.gs'), 'utf8'), context);
 vm.runInContext(fs.readFileSync(path.join(root, 'src/000_server/060_accounting/061_ledger/ledger_sheet_dao.gs'), 'utf8'), context);
 
 const schema = context.getOperationDbSchema_();
@@ -100,7 +100,7 @@ assert.deepStrictEqual(JSON.parse(JSON.stringify(schema.settlementReports.fields
   note: '비고'
 });
 
-const integritySource = fs.readFileSync(path.join(root, 'src/000_server/020_schema/operation_db_integrity.gs'), 'utf8');
+const integritySource = fs.readFileSync(path.join(root, 'src/backend/core/db/schema/operation_db_integrity.gs'), 'utf8');
 assert.ok(integritySource.includes("{ tableKey: 'bankTransactions', fields: ['sourceHash'] }"), 'bank transaction sourceHash must be unique');
 assert.ok(integritySource.includes("{ tableKey: 'ledger', fields: ['bankTransactionId'] }"), 'ledger bankTransactionId must be unique when populated');
 
