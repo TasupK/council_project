@@ -2,7 +2,7 @@
 
 function getLedgerEntriesData_() {
   var evidenceByTransaction = groupBy_(buildEvidenceAccountingFacts_(), 'transactionId');
-  var eventsById = listAccountingEventRows_().reduce(function (index, event) {
+  var eventsById = listAccountingEventReferences_().reduce(function (index, event) {
     index[event.id] = event;
     return index;
   }, {});
@@ -123,7 +123,7 @@ function getLedgerEventOptionsData_() {
   var items = getLedgerEntriesData_().filter(function (item) {
     return item.record_status === '활성' && item.approval_status === '승인';
   });
-  return listAccountingEventRows_().map(function (event) {
+  return listAccountingEventReferences_().map(function (event) {
     var balance = items.reduce(function (sum, item) {
       if (String(item.event_id) !== String(event.id)) return sum;
       return sum + (item.transaction_type === '수입' ? Number(item.amount) : -Number(item.amount));
