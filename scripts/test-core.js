@@ -59,9 +59,9 @@ function testApiLifecycle_() {
   var context = createContext_();
   context.requireLoginContext_ = function () { calls.push('login'); return { ok: true }; };
   context.requirePermission_ = function () { calls.push('permission'); };
-  load_(context, 'src/000_server/010_core/api_request.gs');
-  load_(context, 'src/000_server/010_core/response.gs');
-  load_(context, 'src/000_server/010_core/api_handler.gs');
+  load_(context, 'src/backend/core/response/api_request.gs');
+  load_(context, 'src/backend/core/response/response.gs');
+  load_(context, 'src/backend/core/response/api_handler.gs');
 
   var result = context.apiHandler_({
     operation: 'test',
@@ -89,7 +89,7 @@ function testSheetCrud_() {
     return { name: '행사', sheetName: '행사', fields: { id: '행사ID', name: '행사명' }, primaryKey: ['id'] };
   };
   context.getUserDbTableSchema_ = context.getOperationDbTableSchema_;
-  load_(context, 'src/000_server/010_core/sheet_crud.gs');
+  load_(context, 'src/backend/core/db/sheet_crud.gs');
 
   assert.strictEqual(context.findSheetCrudItemById_('operation', 'events', 'event_1').name, '첫 행사');
   context.insertSheetCrudItem_('operation', 'events', { id: 'event_2', name: '둘째 행사' });
