@@ -45,41 +45,41 @@ assert.ok(common.indexOf('google.script.run') === -1, 'settings common frontend 
   assert.ok(source.indexOf('google.script.run') === -1, relativePath + ' must not call GAS directly');
 });
 
-var access = read_('src/000_server/070_settings/070_common/settings_access.gs');
+var access = read_('src/backend/domains/iam/application/settings_access.gs');
 assert.ok(access.indexOf('requireAuthenticatedUserData_') !== -1, 'Settings access must use internal auth data contract');
 assert.ok(access.indexOf('api_getCurrentUser()') === -1, 'Settings access must not chain through public Auth API');
 
 [
-  'src/000_server/070_settings/070_common/settings_shell_query_service.gs',
-  'src/000_server/070_settings/071_users/settings_users_api.gs',
-  'src/000_server/070_settings/072_roles/settings_roles_api.gs',
-  'src/000_server/070_settings/073_permissions/settings_permissions_api.gs',
-  'src/000_server/070_settings/074_departments/settings_departments_api.gs'
+  'src/backend/domains/iam/controllers/settings_home_controller.gs',
+  'src/backend/domains/iam/controllers/settings_users_controller.gs',
+  'src/backend/domains/iam/controllers/settings_roles_controller.gs',
+  'src/backend/domains/iam/controllers/settings_permissions_controller.gs',
+  'src/backend/domains/iam/controllers/settings_departments_controller.gs'
 ].forEach(function (relativePath) {
   var source = read_(relativePath);
   assert.ok(source.indexOf('apiHandler_') !== -1, relativePath + ' must expose canonical API boundary');
 });
 
-var usersApi = read_('src/000_server/070_settings/071_users/settings_users_api.gs');
+var usersApi = read_('src/backend/domains/iam/controllers/settings_users_controller.gs');
 ['api_applySettingsUserChanges', 'api_createSettingsUser', 'api_updateSettingsUser'].forEach(function (name) {
   assert.ok(usersApi.indexOf(name) !== -1, 'missing settings users API: ' + name);
 });
-var rolesApi = read_('src/000_server/070_settings/072_roles/settings_roles_api.gs');
+var rolesApi = read_('src/backend/domains/iam/controllers/settings_roles_controller.gs');
 ['api_applySettingsRoleChanges', 'api_createSettingsRole', 'api_updateSettingsRole'].forEach(function (name) {
   assert.ok(rolesApi.indexOf(name) !== -1, 'missing settings roles API: ' + name);
 });
-var permissionsApi = read_('src/000_server/070_settings/073_permissions/settings_permissions_api.gs');
+var permissionsApi = read_('src/backend/domains/iam/controllers/settings_permissions_controller.gs');
 assert.ok(permissionsApi.indexOf('api_updateSettingsRolePermissions') !== -1, 'missing settings permissions mutation API');
 
 [
-  'src/000_server/070_settings/071_users/settings_users_mutation_service.gs',
-  'src/000_server/070_settings/072_roles/settings_roles_mutation_service.gs',
-  'src/000_server/070_settings/073_permissions/settings_permissions_mutation_service.gs'
+  'src/backend/domains/iam/application/settings_users_mutation.gs',
+  'src/backend/domains/iam/application/settings_roles_mutation.gs',
+  'src/backend/domains/iam/application/settings_permissions_mutation.gs'
 ].forEach(function (relativePath) {
   assert.ok(fs.existsSync(path.join(ROOT, relativePath)), relativePath + ' must exist');
 });
 
-var config = read_('src/000_server/010_core/config.gs');
+var config = read_('src/backend/app/config/config.gs');
 assert.ok(config.indexOf('BOOTSTRAP_ADMIN_EMAILS') === -1, 'repository config must not hardcode bootstrap admin emails');
 var manifest = JSON.parse(read_('src/appsscript.json'));
 assert.strictEqual(manifest.webapp.access, 'MYSELF', 'PR #28 must not widen Apps Script webapp access policy');
