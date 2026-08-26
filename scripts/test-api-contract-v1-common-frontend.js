@@ -24,7 +24,7 @@ assert.ok(!/google\.script\.run/.test(mypage), 'MyPage must not call google.scri
 assert.match(mypage, /appClient\.getCurrentUser\(\)/);
 assert.match(mypage, /appClient\.getMyPermissions\(\)/);
 
-const authApi = read('src/000_server/030_auth/auth_api.gs');
+const authApi = read('src/backend/domains/iam/controllers/auth_controller.gs');
 assert.match(authApi, /function\s+api_getCurrentUser\s*\(\)[\s\S]*?wrapApiSuccess_/);
 assert.match(authApi, /function\s+api_getMyPermissions\s*\(\)[\s\S]*?wrapApiSuccess_/);
 
