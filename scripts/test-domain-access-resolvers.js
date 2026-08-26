@@ -5,7 +5,7 @@ var vm = require('vm');
 
 var ROOT = path.resolve(__dirname, '..');
 var files = [
-  'src/000_server/040_iam/043_permissions/permissions_access_service.gs',
+  'src/backend/domains/iam/application/permissions_access.gs',
   'src/000_server/050_event/050_common/event_access.gs',
   'src/000_server/060_accounting/060_common/accounting_access.gs',
   'src/000_server/080_student_fee/080_common/student_fee_access.gs'
