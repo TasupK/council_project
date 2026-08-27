@@ -8,6 +8,9 @@ const exists = p => fs.existsSync(path.join(root, p));
 
 const foundation = [
   'src/frontend/pages/access_denied/Access_Denied.html',
+  'src/frontend/pages/main/Main.html',
+  'src/frontend/pages/main/Main_Styles.html',
+  'src/frontend/pages/main/Main_View.html',
   'src/frontend/widgets/app_header/App_Header.html',
   'src/frontend/widgets/app_sidebar/App_Sidebar.html',
   'src/frontend/app/styles/App_Shell_Styles.html',
@@ -37,10 +40,16 @@ const accessDenied = read('src/frontend/pages/access_denied/Access_Denied.html')
 assert.ok(accessDenied.includes("include('frontend/shared/styles/App_Styles')"), 'Access Denied page must use shared styles from frontend foundation');
 assert.ok(!accessDenied.includes("include('100_common/"), 'Access Denied page must not use legacy common path');
 
-assertMigratedPage_('src/250_main/Main.html');
+assertMigratedPage_('src/frontend/pages/main/Main.html');
+assert.ok(read('src/frontend/pages/main/Main.html').includes("include('frontend/pages/main/Main_Styles')"), 'Main must include page-owned styles from its page slice');
+assert.ok(read('src/frontend/pages/main/Main.html').includes("include('frontend/pages/main/Main_View')"), 'Main must include page-owned view from its page slice');
+assert.ok(!exists('src/250_main'), 'legacy Main page directory must be removed');
+
+// MyPage has switched to the FSD foundation but its page-owned JS still needs feature extraction.
 assertMigratedPage_('src/270_mypage/MyPage.html');
 
 const router = read('src/backend/app/routing/Code.js');
+assert.ok(router.includes("main: 'frontend/pages/main/Main'"), 'router must use migrated Main page');
 assert.ok(router.includes("file = 'frontend/pages/access_denied/Access_Denied'"), 'router must use migrated Access Denied page');
 
 // Migration is intentionally incremental: remaining page shells may keep 100_common
