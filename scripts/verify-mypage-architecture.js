@@ -23,19 +23,21 @@ function listFiles_(directory) {
   }, []);
 }
 
-var code = read_('src/000_server/Code.js');
-var authApi = read_('src/000_server/030_auth/auth_api.gs');
-var permissionService = read_('src/000_server/040_iam/043_permissions/permissions_query_service.gs');
+var code = read_('src/backend/app/routing/Code.js');
+var authController = read_('src/backend/domains/iam/controllers/auth_controller.gs');
+var permissionQuery = read_('src/backend/domains/iam/application/permissions_query.gs');
+var authContext = read_('src/backend/core/auth/auth_context.gs');
 var header = read_('src/100_common/App_Header.html');
 var shell = read_('src/100_common/app_shell_js.html');
 var appClient = read_('src/100_common/app_client_js.html');
 var page = read_('src/270_mypage/MyPage.html');
 var client = read_('src/270_mypage/mypage_js.html');
 
-if (code.indexOf("mypage: '270_mypage/MyPage'") === -1) failures.push('MyPage route is not registered in Code.js.');
-if (code.indexOf("page === 'mypage'") === -1) failures.push('MyPage route is not protected by the login guard.');
-if (permissionService.indexOf('function buildEffectivePermissionDetails_(') === -1) failures.push('IAM must own buildEffectivePermissionDetails_.');
-if (authApi.indexOf('buildEffectivePermissionDetails_(current.permissions || {})') === -1) failures.push('Auth API must expose IAM-owned effective permission details.');
+if (code.indexOf("mypage: '270_mypage/MyPage'") === -1) failures.push('MyPage route is not registered in app routing/Code.js.');
+if (code.indexOf("page === 'mypage'") === -1 || code.indexOf('var isKnownProtectedPage') === -1) failures.push('MyPage route is not protected by the centralized login guard.');
+if (authContext.indexOf('function requireLoginContext_(') === -1) failures.push('Core Auth must own the shared login context guard.');
+if (permissionQuery.indexOf('function buildEffectivePermissionDetails_(') === -1) failures.push('IAM application must own buildEffectivePermissionDetails_.');
+if (authController.indexOf('buildEffectivePermissionDetails_(current.permissions || {})') === -1) failures.push('IAM Auth controller must expose application-owned effective permission details.');
 if (!/<button[^>]*id="appUserCard"[^>]*aria-haspopup="true"/.test(header)) failures.push('Header user card must be an accessible profile popup button.');
 if (header.indexOf('id="goMy"') === -1) failures.push('Profile popup must expose a MyPage navigation action.');
 if (shell.indexOf("var goMy = getAppElement('goMy')") === -1 || shell.indexOf("window.top.location.href = buildAppPageUrl('mypage')") === -1) failures.push('Shared shell must route the profile popup MyPage action to MyPage.');
@@ -44,10 +46,13 @@ if (shell.indexOf("var goMy = getAppElement('goMy')") === -1 || shell.indexOf("w
   if (page.indexOf(includePath) === -1) failures.push('MyPage must reuse shared shell/client include: ' + includePath);
 });
 
-if (fs.existsSync(path.join(ROOT, 'src', '000_server', '070_mypage'))) failures.push('MyPage must not introduce a server-owned domain directory.');
+if (fs.existsSync(path.join(ROOT, 'src', 'backend', 'domains', 'mypage'))) failures.push('MyPage must not introduce a backend-owned business domain.');
+if (fs.existsSync(path.join(ROOT, 'src', '000_server', '070_mypage'))) failures.push('Legacy MyPage server domain directory must not return.');
 
 var protectedSources = [
-  'src/000_server/030_auth',
+  'src/backend/core/auth',
+  'src/backend/domains/iam',
+  'src/backend/app/routing',
   'src/200_login',
   'src/270_mypage'
 ].reduce(function (sources, relativePath) {
@@ -76,5 +81,5 @@ if (failures.length) {
   failures.forEach(function (failure) { console.error(failure); });
   process.exitCode = 1;
 } else {
-  console.log('MyPage architecture verification passed.');
+  console.log('MyPage migrated architecture verification passed.');
 }
