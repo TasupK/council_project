@@ -7,7 +7,7 @@ function read_(relativePath) {
   return fs.readFileSync(path.join(ROOT, relativePath), 'utf8');
 }
 
-var code = read_('src/000_server/Code.js');
+var code = read_('src/backend/app/routing/Code.js');
 var header = read_('src/100_common/App_Header.html');
 var shell = read_('src/100_common/app_shell_js.html');
 
