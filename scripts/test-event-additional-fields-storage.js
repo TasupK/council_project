@@ -4,8 +4,8 @@ var path = require('path');
 var vm = require('vm');
 
 var ROOT = path.resolve(__dirname, '..');
-var schemaPath = path.join(ROOT, 'src/000_server/020_schema/operation_db_schema.gs');
-var crudPath = path.join(ROOT, 'src/000_server/010_core/sheet_crud.gs');
+var schemaPath = path.join(ROOT, 'src/backend/core/db/schema/operation_db_schema.gs');
+var crudPath = path.join(ROOT, 'src/backend/core/db/sheet_crud.gs');
 
 function testEventSchema_() {
   var tableNames = new Proxy({}, { get: function (_, key) { return String(key); } });
