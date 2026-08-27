@@ -4,7 +4,7 @@ const path = require('path');
 const vm = require('vm');
 
 const root = path.resolve(__dirname, '..');
-const runnerPath = path.join(root, 'src/100_common/app_api_runner_js.html');
+const runnerPath = path.join(root, 'src/frontend/shared/api/app_api_runner_js.html');
 assert.ok(fs.existsSync(runnerPath), 'shared app API runner must exist');
 
 function loadRunner(fakeGoogle) {
@@ -94,6 +94,7 @@ function makeGas(mode, value, received) {
     }
   );
 
+  const migrated = new Set(['src/250_main/Main.html', 'src/270_mypage/MyPage.html']);
   const templates = [
     'src/250_main/Main.html',
     'src/270_mypage/MyPage.html',
@@ -116,7 +117,10 @@ function makeGas(mode, value, received) {
   ];
   templates.forEach(function (relativePath) {
     const html = fs.readFileSync(path.join(root, relativePath), 'utf8');
-    assert.ok(html.indexOf("include('100_common/app_api_runner_js')") >= 0, relativePath + ' must include app_api_runner_js');
+    const expected = migrated.has(relativePath)
+      ? "include('frontend/shared/api/app_api_runner_js')"
+      : "include('100_common/app_api_runner_js')";
+    assert.ok(html.indexOf(expected) >= 0, relativePath + ' must include expected app_api_runner_js path');
   });
 
   console.log('Shared app API runner contract: PASS');
