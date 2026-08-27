@@ -94,7 +94,7 @@ function testBusyGuardPreventsDoubleSubmit_() {
 }
 
 function testStudentFeeRouteHelpers_() {
-  var code = read_('src/000_server/Code.js');
+  var code = read_('src/backend/app/routing/Code.js');
   ['student_fee', 'student_fee_payers', 'student_fee_payments', 'student_fee_refunds'].forEach(function (route) {
     assert.match(code, new RegExp('\\b' + route + '\\s*:'));
   });
