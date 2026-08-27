@@ -1,0 +1,211 @@
+<script>
+// 1. 공통 사용자 정보 표시
+var APP_SIDEBAR_STORAGE_KEY_ = 'council.appShell.sidebarHidden';
+
+function readAppSidebarHidden_() {
+  try {
+    return window.localStorage.getItem(APP_SIDEBAR_STORAGE_KEY_) === 'true';
+  } catch (error) {
+    return false;
+  }
+}
+
+function applyAppSidebarHidden_(hidden) {
+  var app = document.querySelector('.app');
+  var toggle = getAppElement('appSidebarToggle');
+  var sidebar = getAppElement('appSidebar');
+  if (!app || !toggle || !sidebar) return;
+
+  app.classList.toggle('sidebar-hidden', !!hidden);
+  toggle.setAttribute('aria-expanded', hidden ? 'false' : 'true');
+  toggle.setAttribute('aria-label', hidden ? '사이드바 열기' : '사이드바 숨기기');
+  sidebar.setAttribute('aria-hidden', hidden ? 'true' : 'false');
+}
+
+function applyInitialAppSidebarState_() {
+  applyAppSidebarHidden_(readAppSidebarHidden_());
+}
+
+function toggleAppSidebar_() {
+  var app = document.querySelector('.app');
+  if (!app) return;
+
+  var hidden = !app.classList.contains('sidebar-hidden');
+  applyAppSidebarHidden_(hidden);
+  try {
+    window.localStorage.setItem(APP_SIDEBAR_STORAGE_KEY_, hidden ? 'true' : 'false');
+  } catch (error) {}
+}
+
+applyInitialAppSidebarState_();
+var appSidebarToggle = getAppElement('appSidebarToggle');
+if (appSidebarToggle) {
+  appSidebarToggle.addEventListener('click', toggleAppSidebar_);
+}
+
+// 2. 공통 사용자 정보 및 프로필 팝업
+getAppElement('appUserName').textContent = APP_USER_NAME || '운영자';
+getAppElement('appUserTitle').textContent = APP_USER_TITLE || '사용자';
+
+function setProfilePopOpen_(open) {
+  var pop = getAppElement('profilePop');
+  var trigger = getAppElement('appUserCard');
+  if (!pop || !trigger) return;
+  pop.classList.toggle('open', !!open);
+  trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
+}
+
+var appUserCard = getAppElement('appUserCard');
+if (appUserCard) {
+  appUserCard.addEventListener('click', function () {
+    var pop = getAppElement('profilePop');
+    setProfilePopOpen_(!(pop && pop.classList.contains('open')));
+  });
+}
+
+document.addEventListener('click', function (e) {
+  var pop = getAppElement('profilePop');
+  var trigger = getAppElement('appUserCard');
+  if (pop && pop.classList.contains('open') && !pop.contains(e.target) && trigger && !trigger.contains(e.target)) {
+    setProfilePopOpen_(false);
+  }
+});
+
+var goMy = getAppElement('goMy');
+if (goMy) {
+  goMy.addEventListener('click', function () {
+    setProfilePopOpen_(false);
+    window.top.location.href = buildAppPageUrl('mypage');
+  });
+}
+
+// 3. 공통 페이지 링크 및 활성 메뉴 연결
+getAppElement('appNavMain').href = buildAppPageUrl('main');
+getAppElement('appNavAccountingLedger').href = buildAppPageUrl('accounting_ledger');
+getAppElement('appNavAccountingReconciliation').href = buildAppPageUrl('accounting_reconciliation');
+getAppElement('appNavAccountingSettlement').href = buildAppPageUrl('accounting_settlement');
+getAppElement('appNavStudentFeeHome').href = buildAppPageUrl('student_fee');
+getAppElement('appNavStudentFeePayers').href = buildAppPageUrl('student_fee_payers');
+getAppElement('appNavStudentFeePayments').href = buildAppPageUrl('student_fee_payments');
+getAppElement('appNavStudentFeeRefunds').href = buildAppPageUrl('student_fee_refunds');
+getAppElement('appNavEvent').href = buildAppPageUrl('event');
+getAppElement('appNavSettings').href = buildAppPageUrl('settings');
+setAppActiveNavigation(APP_CURRENT_PAGE);
+loadAppNavigationAccess_();
+
+getAppElement('appNavAccounting').addEventListener('click', function () {
+  var expanded = getAppElement('appNavAccounting').getAttribute('aria-expanded') === 'true';
+  setAccountingSubmenuExpanded_(!expanded);
+});
+
+getAppElement('appNavStudentFee').addEventListener('click', function () {
+  var expanded = getAppElement('appNavStudentFee').getAttribute('aria-expanded') === 'true';
+  setStudentFeeSubmenuExpanded_(!expanded);
+});
+
+function loadAppNavigationAccess_() {
+  appClient.getCurrentUser()
+    .then(function (current) {
+      if (!current) return;
+      
+      var user = current.user || {};
+      var name = user.name || APP_USER_NAME || '운영자';
+      var email = user.email || '';
+      var title = user.title || APP_USER_TITLE || '사용자';
+      var firstChar = name.charAt(0) || '-';
+      
+      if (getAppElement('appUserName')) getAppElement('appUserName').textContent = name;
+      if (getAppElement('appUserTitle')) getAppElement('appUserTitle').textContent = title;
+      if (getAppElement('appAvatar')) getAppElement('appAvatar').textContent = firstChar;
+      
+      if (getAppElement('popName')) getAppElement('popName').textContent = name;
+      if (getAppElement('popEmail')) getAppElement('popEmail').textContent = email;
+      if (getAppElement('popAvatar')) getAppElement('popAvatar').textContent = firstChar;
+
+      var access = current.domainAccess || {};
+      setAppDomainVisible_('main', !!access.main);
+      setAppDomainVisible_('accounting', !!access.accounting);
+      setAppDomainVisible_('student_fee', !!access.student_fee);
+      setAppDomainVisible_('event', !!access.event);
+      setAppDomainVisible_('settings', !!access.settings);
+    })
+    .catch(function () {});
+}
+
+function setAppDomainVisible_(domain, visible) {
+  var target = {
+    main: 'appNavMain',
+    accounting: 'appNavAccountingGroup',
+    student_fee: 'appNavStudentFeeGroup',
+    event: 'appNavEvent',
+    settings: 'appNavSettings'
+  }[domain];
+  if (!target) return;
+  getAppElement(target).classList.toggle('hidden', !visible);
+}
+
+function isAccountingPage_(page) {
+  return String(page || '').indexOf('accounting') === 0;
+}
+
+function setAccountingSubmenuExpanded_(expanded) {
+  var toggle = getAppElement('appNavAccounting');
+  var submenu = getAppElement('appAccountingSubmenu');
+  toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+  submenu.hidden = !expanded;
+}
+
+function isStudentFeePage_(page) {
+  return String(page || '').indexOf('student_fee') === 0;
+}
+
+function setStudentFeeSubmenuExpanded_(expanded) {
+  var toggle = getAppElement('appNavStudentFee');
+  var submenu = getAppElement('appStudentFeeSubmenu');
+  toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+  submenu.hidden = !expanded;
+}
+
+function setAppActiveNavigation(page) {
+  var current = String(page || '');
+  var mainLink = getAppElement('appNavMain');
+  var accountingParent = getAppElement('appNavAccounting');
+  var accountingLedger = getAppElement('appNavAccountingLedger');
+  var accountingReconciliation = getAppElement('appNavAccountingReconciliation');
+  var accountingSettlement = getAppElement('appNavAccountingSettlement');
+  var studentFeeParent = getAppElement('appNavStudentFee');
+  var studentFeeHome = getAppElement('appNavStudentFeeHome');
+  var studentFeePayers = getAppElement('appNavStudentFeePayers');
+  var studentFeePayments = getAppElement('appNavStudentFeePayments');
+  var studentFeeRefunds = getAppElement('appNavStudentFeeRefunds');
+  var eventLink = getAppElement('appNavEvent');
+  var settingsLink = getAppElement('appNavSettings');
+
+  mainLink.classList.toggle('active', current === 'main');
+  accountingParent.classList.toggle('active', isAccountingPage_(current));
+  accountingLedger.classList.toggle('active', current === 'accounting_ledger');
+  accountingReconciliation.classList.toggle('active', current === 'accounting_reconciliation');
+  accountingSettlement.classList.toggle('active', current === 'accounting_settlement');
+  studentFeeParent.classList.toggle('active', isStudentFeePage_(current));
+  studentFeeHome.classList.toggle('active', current === 'student_fee');
+  studentFeePayers.classList.toggle('active', current === 'student_fee_payers');
+  studentFeePayments.classList.toggle('active', current === 'student_fee_payments');
+  studentFeeRefunds.classList.toggle('active', current === 'student_fee_refunds');
+  eventLink.classList.toggle('active', current.indexOf('event') === 0);
+  settingsLink.classList.toggle('active', current.indexOf('settings') === 0);
+  setAccountingSubmenuExpanded_(isAccountingPage_(current));
+  setStudentFeeSubmenuExpanded_(isStudentFeePage_(current));
+}
+
+// 4. 공통 웹앱 페이지 URL 생성
+function buildAppPageUrl(page) {
+  var url = new URL(WEB_APP_URL || window.location.href);
+  url.searchParams.set('page', page);
+  return url.toString();
+}
+
+// 5. 공통 DOM 조회
+function getAppElement(id) {
+  return document.getElementById(id);
+}
+</script>
