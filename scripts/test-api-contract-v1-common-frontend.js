@@ -5,16 +5,16 @@ const path = require('path');
 const root = path.resolve(__dirname, '..');
 function read(relativePath) { return fs.readFileSync(path.join(root, relativePath), 'utf8'); }
 
-const clientPath = path.join(root, 'src/100_common/app_client_js.html');
-assert.ok(fs.existsSync(clientPath), 'app_client_js.html must exist');
+const clientPath = path.join(root, 'src/frontend/entities/user/api/app_client_js.html');
+assert.ok(fs.existsSync(clientPath), 'migrated app_client_js.html must exist');
 
-const client = read('src/100_common/app_client_js.html');
+const client = read('src/frontend/entities/user/api/app_client_js.html');
 assert.match(client, /getCurrentUser\s*:\s*function/);
 assert.match(client, /runAppApi\(['"]api_getCurrentUser['"]/);
 assert.match(client, /getMyPermissions\s*:\s*function/);
 assert.match(client, /runAppApi\(['"]api_getMyPermissions['"]/);
 
-const shell = read('src/100_common/app_shell_js.html');
+const shell = read('src/frontend/app/shell/app_shell_js.html');
 assert.ok(!/google\.script\.run/.test(shell), 'app shell must not call google.script.run directly');
 assert.match(shell, /appClient\.getCurrentUser\(\)/);
 
@@ -28,6 +28,7 @@ const authApi = read('src/backend/domains/iam/controllers/auth_controller.gs');
 assert.match(authApi, /function\s+api_getCurrentUser\s*\(\)[\s\S]*?wrapApiSuccess_/);
 assert.match(authApi, /function\s+api_getMyPermissions\s*\(\)[\s\S]*?wrapApiSuccess_/);
 
+const migrated = new Set(['src/250_main/Main.html', 'src/270_mypage/MyPage.html']);
 const templates = [
   'src/250_main/Main.html', 'src/270_mypage/MyPage.html',
   'src/300_settings/300_home/Settings_Home.html', 'src/300_settings/310_users/Settings_Users.html',
@@ -41,7 +42,10 @@ const templates = [
 ];
 templates.forEach(function (relativePath) {
   const html = read(relativePath);
-  assert.ok(html.indexOf("include('100_common/app_client_js')") >= 0, relativePath + ' must include app_client_js');
+  const expected = migrated.has(relativePath)
+    ? "include('frontend/entities/user/api/app_client_js')"
+    : "include('100_common/app_client_js')";
+  assert.ok(html.indexOf(expected) >= 0, relativePath + ' must include expected app client path');
 });
 
 console.log('API Contract v1 common frontend: PASS');
