@@ -23,7 +23,7 @@ const DOMAIN_SHELLS = {
     'src/300_settings/320_roles/Settings_Roles.html',
     'src/300_settings/330_permissions/Settings_Permissions.html'
   ],
-  main: ['src/250_main/Main.html'],
+  main: ['src/frontend/pages/main/Main.html'],
   accounting: [
     'src/400_accounting/410_ledger/Accounting_Ledger.html',
     'src/400_accounting/420_reconciliation/Accounting_Reconciliation.html',
@@ -141,7 +141,7 @@ function verifySettings() {
   requireClasses('src/300_settings/330_permissions/Settings_Permissions_View.html', ['ui-btn', 'ui-field', 'ui-table-wrap', 'ui-table', 'ui-loading']);
   if (!read('src/300_settings/common/Settings_Styles.html').includes('.perm-table')) failures.push('Settings_Styles.html missing permission-matrix layout ownership');
 }
-function verifyMain() { requireClasses('src/250_main/Main_View.html', ['ui-page-head', 'ui-stat-card', 'ui-card']); }
+function verifyMain() { requireClasses('src/frontend/pages/main/Main_View.html', ['ui-page-head', 'ui-stat-card', 'ui-card']); }
 function verifyAccounting() {
   const ledgerComposed = readMany(ACCOUNTING_LEDGER_PARTIALS);
   requireClassesInSource('Accounting Ledger composition', ledgerComposed, ['ui-page-head', 'ui-page-desc', 'ui-page-actions', 'ui-stat-card', 'ui-toolbar', 'ui-field', 'ui-table-wrap', 'ui-table', 'ui-pagination', 'ui-modal-overlay', 'ui-modal', 'ui-badge', 'ui-toast']);
