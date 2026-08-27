@@ -4,7 +4,7 @@ var path = require('path');
 var vm = require('vm');
 
 var ROOT = path.resolve(__dirname, '..');
-var ACCOUNTING_ROOT = path.join(ROOT, 'src', '000_server', '060_accounting');
+var ACCOUNTING_ROOT = path.join(ROOT, 'src', 'backend', 'domains', 'accounting');
 
 function listGsFiles_(directory) {
   return fs.readdirSync(directory, { withFileTypes: true }).reduce(function (files, entry) {
@@ -76,7 +76,7 @@ function testLedgerComposition_() {
       { id: 'trx-x', transactionAt: '2026-08-03T10:00:00', transactionType: '지출', amount: 999, recordStatus: '무효' }
     ];
   };
-  context.listAccountingEventRows_ = function () { return [{ id: 'evt-1', name: '개강 행사' }]; };
+  context.listAccountingEventReferences_ = function () { return [{ id: 'evt-1', name: '개강 행사' }]; };
   context.listLedgerEvidenceRows_ = function () {
     return [{ id: 'evd-1', transactionId: 'trx-1', driveFileId: 'file-1', fileName: '영수증.pdf', ocrStatus: '', ocrValidationResult: '', createdAt: '2026-08-01' }];
   };
@@ -153,8 +153,8 @@ function testEvidenceSaveBehavior_() {
 
 function createSchemaContext_() {
   var context = vm.createContext({ console: console });
-  vm.runInContext(fs.readFileSync(path.join(ROOT, 'src', '000_server', '010_core', 'config.gs'), 'utf8'), context);
-  vm.runInContext(fs.readFileSync(path.join(ROOT, 'src', '000_server', '020_schema', 'operation_db_schema.gs'), 'utf8'), context);
+  vm.runInContext(fs.readFileSync(path.join(ROOT, 'src', 'backend', 'app', 'config', 'config.gs'), 'utf8'), context);
+  vm.runInContext(fs.readFileSync(path.join(ROOT, 'src', 'backend', 'core', 'db', 'schema', 'operation_db_schema.gs'), 'utf8'), context);
   return context;
 }
 
