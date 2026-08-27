@@ -33,9 +33,9 @@ const context = {
 };
 vm.createContext(context);
 [
-  'src/000_server/060_accounting/061_ledger/ledger_read_service.gs',
-  'src/000_server/060_accounting/063_reconciliation/reconciliation_match_service.gs',
-  'src/000_server/060_accounting/061_ledger/ledger_service.gs'
+  'src/backend/domains/accounting/application/ledger_query.gs',
+  'src/backend/domains/accounting/application/reconciliation_match.gs',
+  'src/backend/domains/accounting/application/ledger_mutation.gs'
 ].forEach(file => vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context));
 
 function reset() { inserted = null; updated = null; existingRows = []; }
