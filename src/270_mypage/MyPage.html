@@ -8,10 +8,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <?!= include('100_common/App_Styles'); ?>
-  <?!= include('100_common/App_Shell_Styles'); ?>
-  <?!= include('100_common/app_api_runner_js'); ?>
-  <?!= include('100_common/app_client_js'); ?>
+  <?!= include('frontend/shared/styles/App_Styles'); ?>
+  <?!= include('frontend/app/styles/App_Shell_Styles'); ?>
+  <?!= include('frontend/shared/api/app_api_runner_js'); ?>
+  <?!= include('frontend/entities/user/api/app_client_js'); ?>
   <?!= include('270_mypage/MyPage_Styles'); ?>
   <script>
     var WEB_APP_URL = '<?= getWebAppUrl() ?>';
@@ -23,13 +23,13 @@
 </head>
 <body class="app-mode">
   <div class="app mypage-app">
-    <?!= include('100_common/App_Header'); ?>
+    <?!= include('frontend/widgets/app_header/App_Header'); ?>
     <div class="body">
-      <?!= include('100_common/App_Sidebar'); ?>
+      <?!= include('frontend/widgets/app_sidebar/App_Sidebar'); ?>
       <main class="main"><?!= include('270_mypage/MyPage_View'); ?></main>
     </div>
   </div>
-  <?!= include('100_common/app_shell_js'); ?>
+  <?!= include('frontend/app/shell/app_shell_js'); ?>
   <?!= include('270_mypage/mypage_js'); ?>
 </body>
 </html>
