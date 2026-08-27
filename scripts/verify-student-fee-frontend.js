@@ -64,7 +64,7 @@ REQUIRED_FILES.forEach(function (file) {
   if (!existsFrontend_(file)) failures.push('Missing Student Fee frontend file: ' + file);
 });
 
-var code = readRoot_('src/000_server/Code.js');
+var code = readRoot_('src/backend/app/routing/Code.js');
 var routes = {
   student_fee: '500_student_fee/500_home/Student_Fee_Home',
   student_fee_payers: '500_student_fee/510_payers/Student_Fee_Payers',
