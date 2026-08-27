@@ -3,7 +3,7 @@ function doGet(e) {
   var page = e && e.parameter && e.parameter.page ? String(e.parameter.page) : 'login';
   var routes = {
     login: '200_login/Login',
-    main: '250_main/Main',
+    main: 'frontend/pages/main/Main',
     mypage: '270_mypage/MyPage',
     accounting_ledger: '400_accounting/410_ledger/Accounting_Ledger',
     accounting_reconciliation: '400_accounting/420_reconciliation/Accounting_Reconciliation',
@@ -23,22 +23,14 @@ function doGet(e) {
   };
   var file = routes[page] || routes.login;
   var templateData = {
-    loginError: '',
-    accessError: '',
-    mainUserName: '',
-    mainUserTitle: '',
-    isAdmin: false,
+    loginError: '', accessError: '', mainUserName: '', mainUserTitle: '', isAdmin: false,
     currentPage: page,
     resourceId: e && e.parameter && e.parameter.id ? String(e.parameter.id) : ''
   };
 
   var isKnownProtectedPage = !!routes[page] && (
-    page === 'main' ||
-    page === 'mypage' ||
-    page.indexOf('accounting') === 0 ||
-    page.indexOf('student_fee') === 0 ||
-    page.indexOf('event') === 0 ||
-    page.indexOf('settings') === 0
+    page === 'main' || page === 'mypage' || page.indexOf('accounting') === 0 ||
+    page.indexOf('student_fee') === 0 || page.indexOf('event') === 0 || page.indexOf('settings') === 0
   );
   if (isKnownProtectedPage) {
     var login = api_checkLogin();
@@ -53,9 +45,7 @@ function doGet(e) {
       templateData.isAdmin = !!login.isAdmin;
     } else {
       templateData.mainUserName = login.user && login.user.name ? login.user.name : '운영자';
-      templateData.mainUserTitle = login.user && login.user.roles && login.user.roles.length
-        ? login.user.roles[0].name
-        : '사용자';
+      templateData.mainUserTitle = login.user && login.user.roles && login.user.roles.length ? login.user.roles[0].name : '사용자';
       templateData.isAdmin = !!login.isAdmin;
     }
   }
@@ -66,22 +56,17 @@ function doGet(e) {
     .addMetaTag('viewport', 'width=device-width, initial-scale=1');
 }
 
-/** HTML 템플릿에 페이지 데이터를 주입하여 반환 */
 function renderPage_(filename, data) {
   var template = HtmlService.createTemplateFromFile(filename);
   var values = data || {};
-  Object.keys(values).forEach(function (key) {
-    template[key] = values[key];
-  });
+  Object.keys(values).forEach(function (key) { template[key] = values[key]; });
   return template.evaluate();
 }
 
-/** HTML 조각 파일 포함 */
 function include(filename) {
   return HtmlService.createHtmlOutputFromFile(filename).getContent();
 }
 
-/** 현재 웹앱 URL 반환 */
 function getWebAppUrl() {
   return ScriptApp.getService().getUrl();
 }
