@@ -3,8 +3,8 @@ var path = require('path');
 var vm = require('vm');
 
 var ROOT = path.resolve(__dirname, '..');
-var SERVER_ROOT = path.join(ROOT, 'src', '000_server');
-var CODE_FILE = path.join(SERVER_ROOT, 'Code.js');
+var SERVER_ROOT = path.join(ROOT, 'src', 'backend');
+var CODE_FILE = path.join(SERVER_ROOT, 'app', 'routing', 'Code.js');
 
 var REQUIRED_PUBLIC_FUNCTIONS = [
   'api_checkLogin',
@@ -65,6 +65,7 @@ var REQUIRED_PUBLIC_FUNCTIONS = [
 var REQUIRED_ROUTES = {
   login: '200_login/Login',
   main: '250_main/Main',
+  mypage: '270_mypage/MyPage',
   accounting_ledger: '400_accounting/410_ledger/Accounting_Ledger',
   accounting_reconciliation: '400_accounting/420_reconciliation/Accounting_Reconciliation',
   accounting_settlement: '400_accounting/430_settlement/Accounting_Settlement',
@@ -76,12 +77,14 @@ var REQUIRED_ROUTES = {
   event_form: '600_event/620_form/Event_Form',
   event_detail: '600_event/630_detail/Event_Detail',
   settings: '300_settings/300_home/Settings_Home',
+  settings_departments: '300_settings/340_departments/Settings_Departments',
   settings_users: '300_settings/310_users/Settings_Users',
   settings_roles: '300_settings/320_roles/Settings_Roles',
   settings_permissions: '300_settings/330_permissions/Settings_Permissions'
 };
 
 function listFiles_(directory) {
+  if (!fs.existsSync(directory)) return [];
   return fs.readdirSync(directory, { withFileTypes: true }).reduce(function (files, entry) {
     var target = path.join(directory, entry.name);
     if (entry.isDirectory()) return files.concat(listFiles_(target));
@@ -103,7 +106,7 @@ function collectFunctions_(sources) {
     var match;
     while ((match = pattern.exec(item.source)) !== null) {
       if (!functions[match[1]]) functions[match[1]] = [];
-      functions[match[1]].push(path.relative(ROOT, item.file));
+      functions[match[1]].push(path.relative(ROOT, item.file).replace(/\\/g, '/'));
     }
   });
   return functions;
@@ -131,6 +134,10 @@ function verifyFunctions_(functions, failures) {
 }
 
 function verifyRoutes_(failures) {
+  if (!fs.existsSync(CODE_FILE)) {
+    failures.push('Missing routing entrypoint: src/backend/app/routing/Code.js');
+    return;
+  }
   var code = fs.readFileSync(CODE_FILE, 'utf8');
   Object.keys(REQUIRED_ROUTES).forEach(function (route) {
     var template = REQUIRED_ROUTES[route];
@@ -152,20 +159,35 @@ function verifyNoArrows_(sources, failures) {
 function verifyCoreBoundary_(sources, failures) {
   sources.forEach(function (item) {
     var relative = path.relative(ROOT, item.file).replace(/\\/g, '/');
-    if (relative.indexOf('src/000_server/010_core/') !== 0) return;
+    if (relative.indexOf('src/backend/core/') !== 0) return;
     if (relative.endsWith('/config.gs')) return;
-    // business_audit.gs is intentionally cross-domain Core infrastructure.
-    // Its domain neutrality is enforced by the dedicated audit taxonomy/schema tests.
     if (relative.endsWith('/business_audit.gs')) return;
-    if (/\b(event|accounting|settings)\b/i.test(item.source)) {
-      failures.push('Domain reference found in Core: ' + relative);
+    if (/\b(?:accounting|student[_ ]?fee|event)\b/i.test(item.source)) {
+      failures.push('Business-domain reference found in Core: ' + relative);
+    }
+  });
+}
+
+function verifyLayerRoots_(failures) {
+  ['app', 'core', 'domains'].forEach(function (name) {
+    var target = path.join(SERVER_ROOT, name);
+    if (!fs.existsSync(target) || !fs.statSync(target).isDirectory()) {
+      failures.push('Missing backend architecture root: src/backend/' + name);
+    }
+  });
+  ['accounting', 'event', 'iam', 'student_fee'].forEach(function (domain) {
+    var target = path.join(SERVER_ROOT, 'domains', domain);
+    if (!fs.existsSync(target) || !fs.statSync(target).isDirectory()) {
+      failures.push('Missing backend domain: src/backend/domains/' + domain);
     }
   });
 }
 
 function main_() {
-  var sources = readSources_(listFiles_(SERVER_ROOT));
   var failures = [];
+  verifyLayerRoots_(failures);
+  var sources = readSources_(listFiles_(SERVER_ROOT));
+  if (!sources.length) failures.push('No backend source files found under src/backend.');
   verifySyntax_(sources, failures);
   verifyFunctions_(collectFunctions_(sources), failures);
   verifyRoutes_(failures);
@@ -179,7 +201,7 @@ function main_() {
     process.exitCode = 1;
     return;
   }
-  console.log('Server architecture verification passed.');
+  console.log('Migrated backend architecture verification passed.');
 }
 
 main_();
