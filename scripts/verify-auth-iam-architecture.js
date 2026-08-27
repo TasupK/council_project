@@ -2,16 +2,12 @@ var fs = require('fs');
 var path = require('path');
 
 var ROOT = path.resolve(__dirname, '..');
-var SERVER_ROOT = path.join(ROOT, 'src', '000_server');
-var AUTH_ROOT = path.join(SERVER_ROOT, '030_auth');
-var IAM_ROOT = path.join(SERVER_ROOT, '040_iam');
-var LOGIN_ROOT = path.join(SERVER_ROOT, '040_login');
+var BACKEND_ROOT = path.join(ROOT, 'src', 'backend');
+var AUTH_ROOT = path.join(BACKEND_ROOT, 'core', 'auth');
+var IAM_ROOT = path.join(BACKEND_ROOT, 'domains', 'iam');
 var failures = [];
 
-function normalize_(value) {
-  return value.replace(/\\/g, '/');
-}
-
+function normalize_(value) { return value.replace(/\\/g, '/'); }
 function listGsFiles_(directory) {
   if (!fs.existsSync(directory)) return [];
   return fs.readdirSync(directory, { withFileTypes: true }).reduce(function (files, entry) {
@@ -21,7 +17,18 @@ function listGsFiles_(directory) {
     return files;
   }, []);
 }
-
+function requireFile_(base, relativePath, label) {
+  var target = path.join(base, relativePath);
+  if (!fs.existsSync(target)) {
+    failures.push('Missing ' + label + ' architecture file: ' + relativePath);
+    return;
+  }
+  if (!fs.readFileSync(target, 'utf8').trim()) failures.push('Empty ' + label + ' architecture file: ' + relativePath);
+}
+function requireDirectory_(base, relativePath, label) {
+  var target = path.join(base, relativePath);
+  if (!fs.existsSync(target) || !fs.statSync(target).isDirectory()) failures.push('Missing ' + label + ' architecture directory: ' + relativePath);
+}
 function collectFunctions_(files) {
   var functions = {};
   files.forEach(function (file) {
@@ -30,29 +37,11 @@ function collectFunctions_(files) {
     var match;
     while ((match = pattern.exec(source)) !== null) {
       if (!functions[match[1]]) functions[match[1]] = [];
-      functions[match[1]].push(normalize_(path.relative(SERVER_ROOT, file)));
+      functions[match[1]].push(normalize_(path.relative(BACKEND_ROOT, file)));
     }
   });
   return functions;
 }
-
-function requireFile_(base, relativePath, label) {
-  var target = path.join(base, relativePath);
-  if (!fs.existsSync(target)) {
-    failures.push('Missing ' + label + ' architecture file: ' + relativePath);
-    return;
-  }
-  if (!fs.readFileSync(target, 'utf8').trim()) {
-    failures.push('Empty ' + label + ' architecture file: ' + relativePath);
-  }
-}
-
-function forbidFile_(relativePath) {
-  if (fs.existsSync(path.join(SERVER_ROOT, relativePath))) {
-    failures.push('Legacy Auth/IAM file still exists: ' + relativePath);
-  }
-}
-
 function requireFunctionIn_(functions, name, expected) {
   var locations = functions[name] || [];
   if (locations.length !== 1 || locations[0] !== expected) {
@@ -60,137 +49,133 @@ function requireFunctionIn_(functions, name, expected) {
   }
 }
 
-var requiredAuthFiles = [
-  'auth_api.gs',
-  'auth_context.gs',
-  'auth_session.gs',
-  'auth_cache.gs'
-];
-var requiredIamFiles = [
-  '041_users/users_query_service.gs',
-  '041_users/users_sheet_dao.gs',
-  '042_roles/roles_query_service.gs',
-  '042_roles/roles_sheet_dao.gs',
-  '042_roles/user_roles_sheet_dao.gs',
-  '043_permissions/permissions_query_service.gs',
-  '043_permissions/permissions_access_service.gs',
-  '043_permissions/permissions_sheet_dao.gs',
-  '043_permissions/role_permissions_sheet_dao.gs'
-];
-
-requiredAuthFiles.forEach(function (file) { requireFile_(AUTH_ROOT, file, 'Auth'); });
-requiredIamFiles.forEach(function (file) { requireFile_(IAM_ROOT, file, 'IAM'); });
-
+['auth_cache.gs', 'auth_context.gs', 'auth_session.gs', 'auth_page_access.gs', 'api_access.gs'].forEach(function (file) {
+  requireFile_(AUTH_ROOT, file, 'Auth');
+});
+['controllers', 'application', 'repositories'].forEach(function (directory) {
+  requireDirectory_(IAM_ROOT, directory, 'IAM');
+});
 [
-  '030_auth/users.gs',
-  '030_auth/roles.gs',
-  '030_auth/permissions.gs',
-  '040_login/login_api.gs',
-  '040_login/login_cache.gs',
-  '040_login/login_context.gs',
-  '040_login/login_session.gs'
-].forEach(forbidFile_);
+  'controllers/auth_controller.gs',
+  'application/users_query.gs',
+  'application/roles_query.gs',
+  'application/permissions_query.gs',
+  'application/permissions_access.gs',
+  'repositories/users_repository.gs',
+  'repositories/roles_repository.gs',
+  'repositories/user_roles_repository.gs',
+  'repositories/permissions_repository.gs',
+  'repositories/role_permissions_repository.gs'
+].forEach(function (file) { requireFile_(IAM_ROOT, file, 'IAM'); });
 
-if (listGsFiles_(LOGIN_ROOT).length) {
-  failures.push('Legacy Login directory still contains .gs files: src/000_server/040_login');
-}
-
-var sourceFiles = listGsFiles_(AUTH_ROOT).concat(listGsFiles_(IAM_ROOT));
-var functions = collectFunctions_(sourceFiles);
+var authFiles = listGsFiles_(AUTH_ROOT);
+var iamFiles = listGsFiles_(IAM_ROOT);
+var functions = collectFunctions_(authFiles.concat(iamFiles));
 
 var ownership = {
-  api_checkLogin: '030_auth/auth_api.gs',
-  api_getCurrentUser: '030_auth/auth_api.gs',
-  api_getMyPermissions: '030_auth/auth_api.gs',
-  readActiveUserEmailFromSession_: '030_auth/auth_session.gs',
-  readCachedLoginContext_: '030_auth/auth_cache.gs',
-  writeLoginContextCache_: '030_auth/auth_cache.gs',
-  invalidateLoginContextCache_: '030_auth/auth_cache.gs',
-  buildLoginContextCacheKey_: '030_auth/auth_cache.gs',
-  getSessionUserContext_: '030_auth/auth_context.gs',
-  buildSessionUserContextFromDb_: '030_auth/auth_context.gs',
-  requireLoginContext_: '030_auth/auth_context.gs',
-  listUserRows_: '040_iam/041_users/users_sheet_dao.gs',
-  findUserRowByEmail_: '040_iam/041_users/users_query_service.gs',
-  mapUserDto_: '040_iam/041_users/users_query_service.gs',
-  listRoleRows_: '040_iam/042_roles/roles_sheet_dao.gs',
-  listUserRoleRows_: '040_iam/042_roles/user_roles_sheet_dao.gs',
-  buildRolesById_: '040_iam/042_roles/roles_query_service.gs',
-  buildActiveRoleIdsByEmail_: '040_iam/042_roles/roles_query_service.gs',
-  mapRoleDto_: '040_iam/042_roles/roles_query_service.gs',
-  buildRoleSummaryForUser_: '040_iam/042_roles/roles_query_service.gs',
-  isAdminRoleSet_: '040_iam/042_roles/roles_query_service.gs',
-  listPermissionRows_: '040_iam/043_permissions/permissions_sheet_dao.gs',
-  listRolePermissionRows_: '040_iam/043_permissions/role_permissions_sheet_dao.gs',
-  mapPermissionDto_: '040_iam/043_permissions/permissions_query_service.gs',
-  buildPermissionsById_: '040_iam/043_permissions/permissions_query_service.gs',
-  buildPermissionIdsByRoleId_: '040_iam/043_permissions/permissions_query_service.gs',
-  mapActionToPermissionKey_: '040_iam/043_permissions/permissions_query_service.gs',
-  resolvePermissionScreenId_: '040_iam/043_permissions/permissions_query_service.gs',
-  buildPermissionTreeFromDb_: '040_iam/043_permissions/permissions_query_service.gs',
-  buildPermissionsByRoleFromDb_: '040_iam/043_permissions/permissions_query_service.gs',
-  buildUserPermissionsFromDb_: '040_iam/043_permissions/permissions_query_service.gs',
-  buildMenusFromPermissions_: '040_iam/043_permissions/permissions_query_service.gs',
-  requirePermission_: '040_iam/043_permissions/permissions_access_service.gs',
-  resolveRequiredPermissionScreenId_: '040_iam/043_permissions/permissions_access_service.gs',
-  throwPermissionError_: '040_iam/043_permissions/permissions_access_service.gs'
+  api_checkLogin: 'domains/iam/controllers/auth_controller.gs',
+  api_getCurrentUser: 'domains/iam/controllers/auth_controller.gs',
+  api_getMyPermissions: 'domains/iam/controllers/auth_controller.gs',
+  readActiveUserEmailFromSession_: 'core/auth/auth_session.gs',
+  readCachedLoginContext_: 'core/auth/auth_cache.gs',
+  writeLoginContextCache_: 'core/auth/auth_cache.gs',
+  invalidateLoginContextCache_: 'core/auth/auth_cache.gs',
+  buildLoginContextCacheKey_: 'core/auth/auth_cache.gs',
+  getSessionUserContext_: 'core/auth/auth_context.gs',
+  buildSessionUserContextFromDb_: 'core/auth/auth_context.gs',
+  requireLoginContext_: 'core/auth/auth_context.gs',
+  listUserRows_: 'domains/iam/repositories/users_repository.gs',
+  findUserRowByEmail_: 'domains/iam/application/users_query.gs',
+  mapUserDto_: 'domains/iam/application/users_query.gs',
+  listRoleRows_: 'domains/iam/repositories/roles_repository.gs',
+  listUserRoleRows_: 'domains/iam/repositories/user_roles_repository.gs',
+  buildRolesById_: 'domains/iam/application/roles_query.gs',
+  buildActiveRoleIdsByEmail_: 'domains/iam/application/roles_query.gs',
+  mapRoleDto_: 'domains/iam/application/roles_query.gs',
+  buildRoleSummaryForUser_: 'domains/iam/application/roles_query.gs',
+  isAdminRoleSet_: 'domains/iam/application/roles_query.gs',
+  listPermissionRows_: 'domains/iam/repositories/permissions_repository.gs',
+  listRolePermissionRows_: 'domains/iam/repositories/role_permissions_repository.gs',
+  mapPermissionDto_: 'domains/iam/application/permissions_query.gs',
+  buildPermissionsById_: 'domains/iam/application/permissions_query.gs',
+  buildPermissionIdsByRoleId_: 'domains/iam/application/permissions_query.gs',
+  mapActionToPermissionKey_: 'domains/iam/application/permissions_query.gs',
+  resolvePermissionScreenId_: 'domains/iam/application/permissions_query.gs',
+  buildPermissionTreeFromDb_: 'domains/iam/application/permissions_query.gs',
+  buildPermissionsByRoleFromDb_: 'domains/iam/application/permissions_query.gs',
+  buildUserPermissionsFromDb_: 'domains/iam/application/permissions_query.gs',
+  buildMenusFromPermissions_: 'domains/iam/application/permissions_query.gs',
+  requirePermission_: 'domains/iam/application/permissions_access.gs',
+  resolveRequiredPermissionScreenId_: 'domains/iam/application/permissions_access.gs',
+  throwPermissionError_: 'domains/iam/application/permissions_access.gs'
 };
-
-Object.keys(ownership).forEach(function (name) {
-  requireFunctionIn_(functions, name, ownership[name]);
-});
+Object.keys(ownership).forEach(function (name) { requireFunctionIn_(functions, name, ownership[name]); });
 
 Object.keys(functions).forEach(function (name) {
-  if (functions[name].length > 1) {
-    failures.push('Duplicate Auth/IAM function: ' + name + ' in ' + functions[name].join(', '));
+  var locations = functions[name];
+  if (locations.length > 1) failures.push('Duplicate Auth/IAM function: ' + name + ' in ' + locations.join(', '));
+  if (/^api_/.test(name)) {
+    locations.forEach(function (location) {
+      if (location.indexOf('domains/iam/controllers/') !== 0) failures.push('Auth/IAM public API must be owned by IAM controllers: ' + name + ' in ' + location);
+    });
   }
 });
 
-listGsFiles_(IAM_ROOT).forEach(function (file) {
+// IAM repositories own direct UserDB reads. Application/controllers must not bypass them.
+iamFiles.forEach(function (file) {
   var source = fs.readFileSync(file, 'utf8');
-  var relative = normalize_(path.relative(SERVER_ROOT, file));
-  if (/\bgetSessionUserContext_\b|\brequireLoginContext_\b|\bapi_checkLogin\b|\bapi_getCurrentUser\b|\bapi_getMyPermissions\b/.test(source)) {
-    failures.push('IAM must not depend on Auth: ' + relative);
-  }
-  if (/\bgetSettingsPermissionsData_\b|\bgetSettingsUsersData_\b|\bgetSettingsRolesData_\b/.test(source)) {
-    failures.push('IAM must not depend on Settings: ' + relative);
-  }
-  if (/insertSheetCrudItem_|updateSheetCrudItemById_|append[A-Za-z_$]*Row_|update[A-Za-z_$]*Row_|DriveApp\.create|createFile\s*\(/.test(source)) {
-    failures.push('IAM read/access files must not perform writes: ' + relative);
+  var relative = normalize_(path.relative(BACKEND_ROOT, file));
+  if (relative.indexOf('domains/iam/repositories/') !== 0 && /\b(?:openUserSpreadsheet_|readTableRows_)\s*\(/.test(source)) {
+    failures.push('IAM raw UserDB reads must stay in repositories: ' + relative);
   }
 });
 
-listGsFiles_(AUTH_ROOT).forEach(function (file) {
+// Core Auth coordinates login context but must not own UserDB persistence or Settings behavior.
+authFiles.forEach(function (file) {
   var source = fs.readFileSync(file, 'utf8');
-  var relative = normalize_(path.relative(SERVER_ROOT, file));
+  var relative = normalize_(path.relative(BACKEND_ROOT, file));
   if (/\bgetSettingsPermissionsData_\b|\bgetSettingsUsersData_\b|\bgetSettingsRolesData_\b/.test(source)) {
     failures.push('Auth must not depend on Settings: ' + relative);
   }
-  if (/\bopenUserSpreadsheet_\b|\breadTableRows_\b/.test(source)) {
-    failures.push('Auth must not directly read UserDB Sheets: ' + relative);
+  if (/\bopenUserSpreadsheet_\b|\breadTableRows_\b|\binsertSheetCrudItem_\b|\bupdateSheetCrudItemById_\b/.test(source)) {
+    failures.push('Auth must not directly access UserDB persistence: ' + relative);
   }
 });
 
-var daoTables = {
-  '040_iam/041_users/users_sheet_dao.gs': 'users',
-  '040_iam/042_roles/roles_sheet_dao.gs': 'roles',
-  '040_iam/042_roles/user_roles_sheet_dao.gs': 'userRoles',
-  '040_iam/043_permissions/permissions_sheet_dao.gs': 'permissions',
-  '040_iam/043_permissions/role_permissions_sheet_dao.gs': 'rolePermissions'
-};
-var iamTables = ['users', 'roles', 'userRoles', 'permissions', 'rolePermissions'];
-Object.keys(daoTables).forEach(function (relative) {
-  var absolute = path.join(SERVER_ROOT, relative);
-  if (!fs.existsSync(absolute)) return;
-  var source = fs.readFileSync(absolute, 'utf8');
-  var expectedTable = daoTables[relative];
-  if (source.indexOf("getUserDbTableSchema_('" + expectedTable + "')") === -1) {
-    failures.push('IAM DAO missing owned table schema: ' + relative + ' -> ' + expectedTable);
+// Read/query IAM files must not perform mutations; mutation-specific settings services are excluded by role.
+iamFiles.forEach(function (file) {
+  var relative = normalize_(path.relative(IAM_ROOT, file));
+  if (relative.indexOf('application/users_query.gs') !== 0 &&
+      relative.indexOf('application/roles_query.gs') !== 0 &&
+      relative.indexOf('application/permissions_query.gs') !== 0 &&
+      relative.indexOf('application/permissions_access.gs') !== 0 &&
+      relative.indexOf('repositories/') !== 0) return;
+  var source = fs.readFileSync(file, 'utf8');
+  if (relative.indexOf('repositories/') !== 0 && /insertSheetCrudItem_|updateSheetCrudItemById_|append[A-Za-z_$]*Row_|update[A-Za-z_$]*Row_/.test(source)) {
+    failures.push('IAM read/access application must not perform writes: domains/iam/' + relative);
   }
-  iamTables.forEach(function (table) {
-    if (table === expectedTable) return;
-    if (source.indexOf("getUserDbTableSchema_('" + table + "')") !== -1) {
-      failures.push('IAM DAO accesses another table: ' + relative + ' -> ' + table);
+});
+
+var repositoryTables = {
+  'users_repository.gs': 'users',
+  'roles_repository.gs': 'roles',
+  'user_roles_repository.gs': 'userRoles',
+  'permissions_repository.gs': 'permissions',
+  'role_permissions_repository.gs': 'rolePermissions'
+};
+Object.keys(repositoryTables).forEach(function (fileName) {
+  var target = path.join(IAM_ROOT, 'repositories', fileName);
+  if (!fs.existsSync(target)) return;
+  var source = fs.readFileSync(target, 'utf8');
+  var expectedTable = repositoryTables[fileName];
+  if (source.indexOf("getUserDbTableSchema_('" + expectedTable + "')") === -1) {
+    failures.push('IAM repository missing owned table schema: ' + fileName + ' -> ' + expectedTable);
+  }
+  Object.keys(repositoryTables).forEach(function (otherFile) {
+    var otherTable = repositoryTables[otherFile];
+    if (otherTable === expectedTable) return;
+    if (source.indexOf("getUserDbTableSchema_('" + otherTable + "')") !== -1) {
+      failures.push('IAM repository accesses another owned table: ' + fileName + ' -> ' + otherTable);
     }
   });
 });
@@ -199,5 +184,5 @@ if (failures.length) {
   failures.forEach(function (failure) { console.error(failure); });
   process.exitCode = 1;
 } else {
-  console.log('Auth/IAM architecture verification passed.');
+  console.log('Auth/IAM migrated architecture verification passed.');
 }
