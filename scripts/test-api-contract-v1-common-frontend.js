@@ -28,9 +28,9 @@ const authApi = read('src/backend/domains/iam/controllers/auth_controller.gs');
 assert.match(authApi, /function\s+api_getCurrentUser\s*\(\)[\s\S]*?wrapApiSuccess_/);
 assert.match(authApi, /function\s+api_getMyPermissions\s*\(\)[\s\S]*?wrapApiSuccess_/);
 
-const migrated = new Set(['src/250_main/Main.html', 'src/270_mypage/MyPage.html']);
+const migrated = new Set(['src/frontend/pages/main/Main.html', 'src/270_mypage/MyPage.html']);
 const templates = [
-  'src/250_main/Main.html', 'src/270_mypage/MyPage.html',
+  'src/frontend/pages/main/Main.html', 'src/270_mypage/MyPage.html',
   'src/300_settings/300_home/Settings_Home.html', 'src/300_settings/310_users/Settings_Users.html',
   'src/300_settings/320_roles/Settings_Roles.html', 'src/300_settings/330_permissions/Settings_Permissions.html',
   'src/300_settings/340_departments/Settings_Departments.html',
