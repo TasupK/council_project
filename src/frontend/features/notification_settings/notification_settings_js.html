@@ -1,0 +1,98 @@
+<script>
+var notificationSettingsFeature = (function () {
+  var data = [];
+  var base = {};
+  var pending = {};
+  var getById = function (id) { return document.getElementById(id); };
+  var escapeHtml = function (value) { return String(value || '').replace(/[&<>"']/g, function (c) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]); }); };
+  var notify = function (text) { var el = getById('toast'); if (!el) { alert(text); return; } el.textContent = text; el.classList.add('show'); setTimeout(function () { el.classList.remove('show'); }, 2600); };
+
+  function renderSummary() {
+    var el = getById('summaryNotifications');
+    if (!el) return;
+    el.innerHTML = data.map(function (n) {
+      var v = base[n.id] || { inApp: false, gmail: false };
+      function channel(key) { return v[key] ? '<span style="font-size:16px" title="켜짐">🔔</span>' : '<span style="font-size:16px;opacity:.5" title="꺼짐">🔕</span>'; }
+      return '<div class="n-row"><span class="n-name">' + escapeHtml(n.name) + '</span><span class="n-desc">' + escapeHtml(n.description) + '</span><span>' + channel('inApp') + '</span><span>' + channel('gmail') + '</span><span class="tag ' + (n.required ? '' : 'optional') + '">' + (n.required ? '필수' : '선택') + '</span></div>';
+    }).join('');
+  }
+
+  function renderEditor() {
+    var el = getById('modalNotifications');
+    if (!el) return;
+    el.innerHTML = data.map(function (n) {
+      var p = pending[n.id];
+      var v = p || base[n.id] || { inApp: false, gmail: false };
+      var rowClass = 'n-row' + (p ? ' changed' : '') + (p && p.error ? ' failed' : '');
+      function channel(key) {
+        if (n.required) return '<span class="locked" style="font-size:16px" title="필수(잠금)">🔔🔒</span>';
+        var baseValue = base[n.id] || { inApp: false, gmail: false };
+        var changed = p && p[key] !== baseValue[key];
+        return '<span class="' + (changed ? 'changed-cell' : '') + '">' + (changed ? '변경&nbsp; ' : '') + '<label class="toggle"><input type="checkbox" data-id="' + n.id + '" data-channel="' + key + '" ' + (v[key] ? 'checked' : '') + '><span class="slider"></span></label></span>';
+      }
+      return '<div class="' + rowClass + '"><span class="n-name">' + escapeHtml(n.name) + '</span><span class="n-desc">' + escapeHtml(n.description) + '</span>' + channel('inApp') + channel('gmail') + '<span class="tag ' + (n.required ? '' : 'optional') + '">' + (n.required ? '필수' : '선택') + '</span></div>';
+    }).join('');
+    var count = Object.keys(pending).length;
+    var bar = getById('changeBar');
+    if (bar) bar.classList.toggle('has-changes', !!count);
+    var countEl = getById('changeCount');
+    if (countEl) countEl.textContent = count ? count + '개 변경됨' : '변경사항 없음';
+    var save = getById('save');
+    if (save) save.textContent = '알림 설정 저장' + (count ? ' (' + count + ')' : '');
+  }
+
+  function updateChannel(event) {
+    var target = event.target;
+    if (!target || target.tagName !== 'INPUT' || !target.dataset.id) return;
+    var id = target.dataset.id;
+    var item = pending[id];
+    var baseItem = base[id] || { inApp: false, gmail: false };
+    if (!item) item = { inApp: baseItem.inApp, gmail: baseItem.gmail };
+    item[target.dataset.channel] = target.checked;
+    delete item.error;
+    if (item.inApp === baseItem.inApp && item.gmail === baseItem.gmail) delete pending[id]; else pending[id] = item;
+    renderEditor();
+  }
+
+  function openSaveConfirmation() {
+    var ids = Object.keys(pending);
+    if (!ids.length) return;
+    var list = getById('saveList');
+    if (list) list.innerHTML = ids.map(function (id) { var n = data.find(function (x) { return x.id === id; }); var v = pending[id]; return n ? '<strong>' + escapeHtml(n.name) + '</strong><br>앱 내 알림: ' + (v.inApp ? '🔔' : '🔕') + ' · Gmail: ' + (v.gmail ? '🔔' : '🔕') : ''; }).join('<hr style="border:0;border-top:1px solid #dde1e6;margin:12px 0">');
+    var modal = getById('saveModal');
+    if (modal) modal.classList.add('open');
+  }
+
+  async function saveNotificationSettings() {
+    var changes = Object.keys(pending).map(function (id) { return { id: id, inApp: pending[id].inApp, gmail: pending[id].gmail }; });
+    var button = getById('confirmSave');
+    if (button) button.disabled = true;
+    try {
+      var result = await appClient.updateNotificationSettings(changes);
+      if (!result) throw new Error('저장 실패');
+      result.results.forEach(function (r) {
+        if (r.success) { base[r.id] = { inApp: pending[r.id].inApp, gmail: pending[r.id].gmail }; delete pending[r.id]; }
+        else if (pending[r.id]) pending[r.id].error = '저장에 실패했습니다.';
+      });
+      var saveModal = getById('saveModal'); if (saveModal) saveModal.classList.remove('open');
+      var modal = getById('notificationModal'); if (modal) modal.classList.remove('open');
+      renderSummary(); renderEditor();
+      notify(Object.keys(pending).length ? '일부 알림을 저장하지 못했습니다.' : '알림 설정을 성공적으로 저장했습니다.');
+    } catch (error) { notify(error.message || '저장 중 오류가 발생했습니다.'); }
+    finally { if (button) button.disabled = false; }
+  }
+
+  function initialize(notifications) {
+    data = notifications || []; base = {}; pending = {};
+    data.forEach(function (n) { base[n.id] = { inApp: n.inApp, gmail: n.gmail }; });
+    renderSummary(); renderEditor();
+    var editor = getById('modalNotifications'); if (editor) editor.addEventListener('change', updateChannel);
+    var discard = getById('discard'); if (discard) discard.addEventListener('click', function () { pending = {}; renderEditor(); });
+    var save = getById('save'); if (save) save.addEventListener('click', openSaveConfirmation);
+    var confirm = getById('confirmSave'); if (confirm) confirm.addEventListener('click', saveNotificationSettings);
+    var open = getById('openNotificationSettings'); if (open) open.addEventListener('click', function () { pending = {}; renderEditor(); var modal = getById('notificationModal'); if (modal) modal.classList.add('open'); });
+  }
+
+  return { initialize: initialize, saveNotificationSettings: saveNotificationSettings };
+})();
+</script>
