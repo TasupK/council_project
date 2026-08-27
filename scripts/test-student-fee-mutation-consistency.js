@@ -35,7 +35,7 @@ function load(file, extra) {
     A: { id: 'A', status: '접수', paymentDate: '2026-03-01', semesterCount: 1 },
     B: { id: 'B', status: '승인', paymentDate: '2026-03-01', semesterCount: 1 }
   };
-  var h = load('src/000_server/080_student_fee/082_payments/fee_payments_service.gs', {
+  var h = load('src/backend/domains/student_fee/application/fee_payments_mutation.gs', {
     findFeeApplicationRowById_: function (id) { return rows[id] || null; },
     findFeePaymentRowByApplicationId_: function () { return null; },
     resolveStudentFeeRate_: function () { return { amountPerSemester: 10000 }; },
@@ -54,7 +54,7 @@ function load(file, extra) {
 
 (function testPaymentDuplicateCheckInsideLock() {
   var inLock = false;
-  var h = load('src/000_server/080_student_fee/082_payments/fee_payments_service.gs', {
+  var h = load('src/backend/domains/student_fee/application/fee_payments_mutation.gs', {
     withOperationWriteLock_: function (fn) { h.state.lockCount += 1; inLock = true; try { return fn(); } finally { inLock = false; } },
     findFeeApplicationRowById_: function () { assert.ok(inLock, 'application re-read must occur inside lock'); return { id: 'A', status: '접수', paymentDate: '2026-03-01', semesterCount: 1 }; },
     findFeePaymentRowByApplicationId_: function () { assert.ok(inLock, 'duplicate payment check must occur inside lock'); return { id: 'EXISTING' }; },
@@ -74,7 +74,7 @@ function load(file, extra) {
     R1: { id: 'R1', status: '접수', paymentId: 'P1' },
     R2: { id: 'R2', status: '반려', paymentId: 'P2' }
   };
-  var h = load('src/000_server/080_student_fee/083_refunds/fee_refunds_service.gs', {
+  var h = load('src/backend/domains/student_fee/application/fee_refunds_mutation.gs', {
     findFeeRefundRequestRowById_: function (id) { return rows[id] || null; },
     findFeeRefundRowByRequestId_: function () { return null; },
     calculateRefundableAmount_: function () { return 10000; },
