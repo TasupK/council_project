@@ -8,7 +8,7 @@ const context = { console };
 vm.createContext(context);
 vm.runInContext(fs.readFileSync(path.join(root, 'src/backend/app/config/config.gs'), 'utf8'), context);
 vm.runInContext(fs.readFileSync(path.join(root, 'src/backend/core/db/schema/operation_db_schema.gs'), 'utf8'), context);
-vm.runInContext(fs.readFileSync(path.join(root, 'src/000_server/060_accounting/061_ledger/ledger_sheet_dao.gs'), 'utf8'), context);
+vm.runInContext(fs.readFileSync(path.join(root, 'src/backend/domains/accounting/repositories/ledger_repository.gs'), 'utf8'), context);
 
 const schema = context.getOperationDbSchema_();
 
