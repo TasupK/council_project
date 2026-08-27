@@ -102,7 +102,7 @@ var ownership = {
   assertLedgerBusinessSourceAvailable_: 'application/ledger_mutation.gs',
 
   api_getLedgerEvidenceAudits: 'controllers/evidence_controller.gs',
-  getEvidenceAuditListData_: 'application/evidence_query.gs',
+  getEvidenceAuditListData_: 'application/evidence_mutation.gs',
   validateEvidenceOcrData_: 'application/evidence_mutation.gs',
   extractEvidenceOcrText_: 'application/evidence_ocr.gs',
   parseEvidenceOcrCandidate_: 'application/evidence_ocr.gs',
