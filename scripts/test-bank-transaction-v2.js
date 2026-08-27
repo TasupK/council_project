@@ -6,7 +6,7 @@ const vm = require('vm');
 const root = path.resolve(__dirname, '..');
 const context = { console };
 vm.createContext(context);
-vm.runInContext(fs.readFileSync(path.join(root, 'src/000_server/060_accounting/063_reconciliation/bank_transaction_parser.gs'), 'utf8'), context);
+vm.runInContext(fs.readFileSync(path.join(root, 'src/backend/domains/accounting/business_rules/bank_transaction_parser.gs'), 'utf8'), context);
 
 assert.strictEqual(typeof context.parseTossBankTransactionRows_, 'function');
 assert.strictEqual(typeof context.buildBankTransactionSourceString_, 'function');
