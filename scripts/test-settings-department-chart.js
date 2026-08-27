@@ -1,8 +1,8 @@
 var fs = require('fs');
 var assert = require('assert');
 function read(path) { return fs.readFileSync(path, 'utf8'); }
-var apiPath = 'src/000_server/070_settings/074_departments/settings_departments_api.gs';
-var queryPath = 'src/000_server/070_settings/074_departments/settings_departments_query_service.gs';
+var apiPath = 'src/backend/domains/iam/controllers/settings_departments_controller.gs';
+var queryPath = 'src/backend/domains/iam/application/settings_departments_query.gs';
 var htmlPath = 'src/300_settings/340_departments/Settings_Departments.html';
 var viewPath = 'src/300_settings/340_departments/Settings_Departments_View.html';
 var jsPath = 'src/300_settings/340_departments/settings_departments_js.html';
