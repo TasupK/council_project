@@ -18,19 +18,22 @@ const shell = read('src/frontend/app/shell/app_shell_js.html');
 assert.ok(!/google\.script\.run/.test(shell), 'app shell must not call google.script.run directly');
 assert.match(shell, /appClient\.getCurrentUser\(\)/);
 
-const mypage = read('src/270_mypage/mypage_js.html');
-assert.ok(!/callMyPageApi_/.test(mypage), 'legacy MyPage wrapper must be removed');
-assert.ok(!/google\.script\.run/.test(mypage), 'MyPage must not call google.script.run directly');
-assert.match(mypage, /appClient\.getCurrentUser\(\)/);
-assert.match(mypage, /appClient\.getMyPermissions\(\)/);
+const mypageController = read('src/frontend/pages/mypage/mypage_controller_js.html');
+const notificationFeature = read('src/frontend/features/notification_settings/notification_settings_js.html');
+assert.ok(!/callMyPageApi_/.test(mypageController), 'legacy MyPage wrapper must be removed');
+assert.ok(!/google\.script\.run/.test(mypageController), 'MyPage controller must not call google.script.run directly');
+assert.ok(!/google\.script\.run/.test(notificationFeature), 'notification feature must not call google.script.run directly');
+assert.match(mypageController, /appClient\.getCurrentUser\(\)/);
+assert.match(mypageController, /appClient\.getMyPermissions\(\)/);
+assert.match(notificationFeature, /appClient\.updateNotificationSettings\(/);
 
 const authApi = read('src/backend/domains/iam/controllers/auth_controller.gs');
 assert.match(authApi, /function\s+api_getCurrentUser\s*\(\)[\s\S]*?wrapApiSuccess_/);
 assert.match(authApi, /function\s+api_getMyPermissions\s*\(\)[\s\S]*?wrapApiSuccess_/);
 
-const migrated = new Set(['src/frontend/pages/main/Main.html', 'src/270_mypage/MyPage.html']);
+const migrated = new Set(['src/frontend/pages/main/Main.html', 'src/frontend/pages/mypage/MyPage.html']);
 const templates = [
-  'src/frontend/pages/main/Main.html', 'src/270_mypage/MyPage.html',
+  'src/frontend/pages/main/Main.html', 'src/frontend/pages/mypage/MyPage.html',
   'src/300_settings/300_home/Settings_Home.html', 'src/300_settings/310_users/Settings_Users.html',
   'src/300_settings/320_roles/Settings_Roles.html', 'src/300_settings/330_permissions/Settings_Permissions.html',
   'src/300_settings/340_departments/Settings_Departments.html',
