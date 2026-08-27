@@ -11,10 +11,10 @@ var page = read_('src/270_mypage/MyPage.html');
 var view = read_('src/270_mypage/MyPage_View.html');
 var styles = read_('src/270_mypage/MyPage_Styles.html');
 var client = read_('src/270_mypage/mypage_js.html');
-var appClient = read_('src/100_common/app_client_js.html');
+var appClient = read_('src/frontend/entities/user/api/app_client_js.html');
 
-['100_common/App_Styles', '100_common/App_Header', '100_common/App_Sidebar', '100_common/app_api_runner_js', '100_common/app_client_js', '100_common/app_shell_js'].forEach(function (includePath) {
-  assert.ok(page.indexOf(includePath) !== -1, 'MyPage must reuse shared shell: ' + includePath);
+['frontend/shared/styles/App_Styles', 'frontend/widgets/app_header/App_Header', 'frontend/widgets/app_sidebar/App_Sidebar', 'frontend/shared/api/app_api_runner_js', 'frontend/entities/user/api/app_client_js', 'frontend/app/shell/app_shell_js'].forEach(function (includePath) {
+  assert.ok(page.indexOf(includePath) !== -1, 'MyPage must reuse FSD foundation: ' + includePath);
 });
 assert.ok(page.indexOf('270_mypage/MyPage_Styles') !== -1);
 assert.ok(page.indexOf('270_mypage/MyPage_View') !== -1);
