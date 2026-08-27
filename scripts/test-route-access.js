@@ -3,12 +3,12 @@ var path = require('path');
 var assert = require('assert');
 var vm = require('vm');
 function read(file) { return fs.readFileSync(file, 'utf8'); }
-var helperPath = 'src/000_server/030_auth/auth_page_access.gs';
+var helperPath = 'src/backend/core/auth/auth_page_access.gs';
 var deniedPath = 'src/100_common/Access_Denied.html';
 assert.ok(fs.existsSync(helperPath), 'auth page access helper missing');
 var helper = read(helperPath);
-var code = read('src/000_server/Code.js');
-var api = read('src/000_server/030_auth/auth_api.gs');
+var code = read('src/backend/app/routing/Code.js');
+var api = read('src/backend/domains/iam/controllers/auth_controller.gs');
 assert.ok(helper.includes('function resolvePageDomain_'), 'resolvePageDomain_ missing');
 assert.ok(helper.includes('function buildDomainAccess_'), 'buildDomainAccess_ missing');
 assert.ok(helper.includes('function canAccessPage_'), 'canAccessPage_ missing');
