@@ -46,7 +46,7 @@ function doGet(e) {
       file = routes.login;
       templateData.loginError = login.message || '로그인 정보를 확인할 수 없습니다.';
     } else if (!canAccessPage_(page, login)) {
-      file = '100_common/Access_Denied';
+      file = 'frontend/pages/access_denied/Access_Denied';
       templateData.accessError = '이 페이지에 접근할 권한이 없습니다.';
       templateData.mainUserName = login.user && login.user.name ? login.user.name : '사용자';
       templateData.mainUserTitle = login.user && login.user.roles && login.user.roles.length ? login.user.roles[0].name : '사용자';
