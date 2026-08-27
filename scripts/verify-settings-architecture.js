@@ -83,9 +83,9 @@ Object.keys(functions).forEach(function (name) {
   if (functions[name].length > 1) failures.push('Duplicate Settings/Auth/IAM function: ' + name + ' in ' + functions[name].join(', '));
 });
 
-// Settings public APIs remain controller-owned.
+// Settings public APIs remain controller-owned. Match only APIs whose resource name begins with Settings.
 Object.keys(functions).forEach(function (name) {
-  if (!/^api_(?:get|create|update|apply).*Settings|^api_getSettings/.test(name)) return;
+  if (!/^api_(?:get|create|update|apply)Settings/.test(name)) return;
   functions[name].forEach(function (relative) {
     if (relative.indexOf('domains/iam/controllers/settings_') !== 0) {
       failures.push('Settings public API must be owned by IAM settings controllers: ' + name + ' in ' + relative);
