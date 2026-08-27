@@ -1,0 +1,28 @@
+<div class="workspace">
+  <section class="section">
+    <h2>내 정보</h2>
+    <p class="desc">Google 계정과 관리자 기준정보를 표시합니다.</p>
+    <div class="profile-card">
+      <div class="profile-avatar" id="profileAvatar"></div>
+      <div class="profile-identity"><b id="mypageName"></b><span class="profile-status-active">●&nbsp; <span id="mypageStatus">활성 계정</span></span></div>
+      <dl class="facts">
+        <div><dt>Google 계정</dt><dd id="emailFact"></dd></div>
+        <div><dt>이메일</dt><dd id="mypageEmail"></dd></div>
+        <div><dt>직책</dt><dd id="mypageTitle"></dd></div>
+        <div><dt>소속 부서</dt><dd id="mypageDepartment"></dd></div>
+      </dl>
+      <p class="profile-note">정보 변경은 관리자에게 요청해 주세요.</p>
+    </div>
+  </section>
+  <section class="section">
+    <h2>내 권한</h2><p class="desc">여러 역할이 배정된 경우 각 역할의 권한이 합산되어 적용됩니다.</p>
+    <div id="mypageRoles"></div><span id="mypageMenus" style="display:none"></span>
+  </section>
+  <section class="section">
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:16px"><div><h2>알림 설정</h2><p class="desc" style="margin-bottom:0">앱 내 알림과 Gmail 수신 여부를 확인하고 상세히 관리합니다.</p></div><button id="openNotificationSettings" class="view" style="width:auto;padding:0 16px">자세히 보기&nbsp; →</button></div>
+    <div class="notification-table"><div class="n-head"><span>알림 항목</span><span>설명</span><span>앱 내 알림</span><span>Gmail</span><span>구분</span></div><div id="summaryNotifications"></div></div>
+  </section>
+  <div class="backdrop" id="permissionModal"><section class="modal"><button class="close" data-close="permissionModal">×</button><h2 id="modalTitle">권한 상세보기</h2><p class="modal-sub">기본 역할 · 활성 <span class="readonly">읽기 전용</span></p><div class="info">ⓘ 이 권한은 관리자 설정에 따라 적용되며, 마이페이지에서는 변경할 수 없습니다.</div><p class="desc" style="margin-top:16px;font-size:13px;color:#697077">여러 역할이 배정된 경우 각 역할의 권한이 합산되어 적용됩니다.</p><table class="permission-table"><thead><tr><th>화면·업무</th><th>메뉴 접근</th><th>조회</th><th>등록·수정</th><th>승인·처리</th><th>출력·다운로드</th></tr></thead><tbody id="mypagePermissions"></tbody></table><div class="modal-foot"><span id="permissionDate">권한 기준일</span><button data-close="permissionModal">닫기</button></div></section></div>
+  <div class="backdrop" id="notificationModal"><section class="modal" style="padding:32px 39px"><button class="close" data-close="notificationModal">×</button><h2>알림 상세 설정</h2><p class="desc" style="font-size:13px;color:#697077;margin:9px 0 24px">각 알림 채널별로 수신 여부를 직접 껐다 켤 수 있습니다.</p><div class="notification-table"><div class="n-head"><span>알림 항목</span><span>설명</span><span>앱 내 알림</span><span>Gmail</span><span>구분</span></div><div id="modalNotifications"></div></div><div class="bar" id="changeBar"><strong id="changeCount">변경사항 없음</strong><button class="cancel" id="discard">변경사항 취소</button><button class="save" id="save">알림 설정 저장</button></div></section></div>
+  <div class="backdrop" id="saveModal"><section class="modal small"><button class="close" data-close="saveModal">×</button><h2>변경사항 저장</h2><p class="desc" style="font-size:13px;color:#697077;margin-top:8px">선택 알림의 변경사항을 저장하시겠습니까?</p><div class="change-list" id="saveList"></div><div class="confirm-actions"><button data-close="saveModal">취소</button><button class="primary" id="confirmSave">변경사항 저장</button></div></section></div>
+</div>
