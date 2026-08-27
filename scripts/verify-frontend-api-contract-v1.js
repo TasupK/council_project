@@ -4,7 +4,10 @@ var path = require('path');
 var ROOT = path.resolve(__dirname, '..');
 var SRC = path.join(ROOT, 'src');
 var BACKEND_ROOTS = ['src/backend/', 'src/000_server/'];
-var ALLOWED_DIRECT_GAS = 'src/100_common/app_api_runner_js.html';
+var ALLOWED_DIRECT_GAS = [
+  'src/frontend/shared/api/app_api_runner_js.html',
+  'src/100_common/app_api_runner_js.html'
+];
 var failures = [];
 
 function listFiles_(directory) {
@@ -21,10 +24,12 @@ listFiles_(SRC).forEach(function (file) {
   var relative = path.relative(ROOT, file).replace(/\\/g, '/');
   if (BACKEND_ROOTS.some(function (prefix) { return relative.indexOf(prefix) === 0; })) return;
   var source = fs.readFileSync(file, 'utf8');
-  if (/google\.script\.run/.test(source) && relative !== ALLOWED_DIRECT_GAS) failures.push('Direct google.script.run outside shared runner: ' + relative);
+  if (/google\.script\.run/.test(source) && ALLOWED_DIRECT_GAS.indexOf(relative) < 0) failures.push('Direct google.script.run outside shared runner: ' + relative);
 });
 
 [
+  'src/frontend/shared/api/app_api_runner_js.html',
+  'src/frontend/entities/user/api/app_client_js.html',
   'src/100_common/app_api_runner_js.html',
   'src/100_common/app_client_js.html',
   'src/300_settings/common/settings_client_js.html',
