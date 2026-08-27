@@ -5,7 +5,7 @@ function read(file) { return fs.readFileSync(file, 'utf8'); }
 
 var pageAccessPath = 'src/backend/app/routing/page_access.gs';
 var domainAccessPath = 'src/backend/domains/iam/application/domain_access.gs';
-var deniedPath = 'src/100_common/Access_Denied.html';
+var deniedPath = 'src/frontend/pages/access_denied/Access_Denied.html';
 assert.ok(fs.existsSync(pageAccessPath), 'routing page access helper missing');
 assert.ok(fs.existsSync(domainAccessPath), 'IAM domain access helper missing');
 var pageAccess = read(pageAccessPath);
@@ -24,7 +24,7 @@ assert.ok(code.includes("accounting_ledger: '400_accounting/410_ledger/Accountin
 assert.ok(code.includes("accounting_reconciliation: '400_accounting/420_reconciliation/Accounting_Reconciliation'"), 'accounting_reconciliation route missing');
 assert.ok(code.includes("accounting_settlement: '400_accounting/430_settlement/Accounting_Settlement'"), 'accounting_settlement route missing');
 assert.ok(code.includes('canAccessPage_(page, login)'), 'router access guard missing');
-assert.ok(code.includes("file = '100_common/Access_Denied'"), 'access denied route missing');
+assert.ok(code.includes("file = 'frontend/pages/access_denied/Access_Denied'"), 'access denied route missing');
 assert.ok(api.includes('domainAccess:'), 'auth API domainAccess missing');
 assert.ok(fs.existsSync(deniedPath), 'Access_Denied view missing');
 
