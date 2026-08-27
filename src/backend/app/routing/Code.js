@@ -4,7 +4,7 @@ function doGet(e) {
   var routes = {
     login: '200_login/Login',
     main: 'frontend/pages/main/Main',
-    mypage: '270_mypage/MyPage',
+    mypage: 'frontend/pages/mypage/MyPage',
     accounting_ledger: '400_accounting/410_ledger/Accounting_Ledger',
     accounting_reconciliation: '400_accounting/420_reconciliation/Accounting_Reconciliation',
     accounting_settlement: '400_accounting/430_settlement/Accounting_Settlement',
