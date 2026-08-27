@@ -5,6 +5,7 @@ var ROOT = path.resolve(__dirname, '..');
 var BACKEND_ROOT = path.join(ROOT, 'src', 'backend');
 var AUTH_ROOT = path.join(BACKEND_ROOT, 'core', 'auth');
 var IAM_ROOT = path.join(BACKEND_ROOT, 'domains', 'iam');
+var ROUTING_ROOT = path.join(BACKEND_ROOT, 'app', 'routing');
 var failures = [];
 
 function normalize_(value) { return value.replace(/\\/g, '/'); }
@@ -49,14 +50,16 @@ function requireFunctionIn_(functions, name, expected) {
   }
 }
 
-['auth_cache.gs', 'auth_context.gs', 'auth_session.gs', 'auth_page_access.gs', 'api_access.gs'].forEach(function (file) {
+['auth_cache.gs', 'auth_context.gs', 'auth_session.gs', 'api_access.gs'].forEach(function (file) {
   requireFile_(AUTH_ROOT, file, 'Auth');
 });
+requireFile_(ROUTING_ROOT, 'page_access.gs', 'Routing');
 ['controllers', 'application', 'repositories'].forEach(function (directory) {
   requireDirectory_(IAM_ROOT, directory, 'IAM');
 });
 [
   'controllers/auth_controller.gs',
+  'application/domain_access.gs',
   'application/users_query.gs',
   'application/roles_query.gs',
   'application/permissions_query.gs',
@@ -70,7 +73,8 @@ function requireFunctionIn_(functions, name, expected) {
 
 var authFiles = listGsFiles_(AUTH_ROOT);
 var iamFiles = listGsFiles_(IAM_ROOT);
-var functions = collectFunctions_(authFiles.concat(iamFiles));
+var routingFiles = listGsFiles_(ROUTING_ROOT);
+var functions = collectFunctions_(authFiles.concat(iamFiles).concat(routingFiles));
 
 var ownership = {
   api_checkLogin: 'domains/iam/controllers/auth_controller.gs',
@@ -84,6 +88,9 @@ var ownership = {
   getSessionUserContext_: 'core/auth/auth_context.gs',
   buildSessionUserContextFromDb_: 'core/auth/auth_context.gs',
   requireLoginContext_: 'core/auth/auth_context.gs',
+  buildDomainAccess_: 'domains/iam/application/domain_access.gs',
+  resolvePageDomain_: 'app/routing/page_access.gs',
+  canAccessPage_: 'app/routing/page_access.gs',
   listUserRows_: 'domains/iam/repositories/users_repository.gs',
   findUserRowByEmail_: 'domains/iam/application/users_query.gs',
   mapUserDto_: 'domains/iam/application/users_query.gs',
@@ -113,7 +120,7 @@ Object.keys(ownership).forEach(function (name) { requireFunctionIn_(functions, n
 
 Object.keys(functions).forEach(function (name) {
   var locations = functions[name];
-  if (locations.length > 1) failures.push('Duplicate Auth/IAM function: ' + name + ' in ' + locations.join(', '));
+  if (locations.length > 1) failures.push('Duplicate Auth/IAM/routing function: ' + name + ' in ' + locations.join(', '));
   if (/^api_/.test(name)) {
     locations.forEach(function (location) {
       if (location.indexOf('domains/iam/controllers/') !== 0) failures.push('Auth/IAM public API must be owned by IAM controllers: ' + name + ' in ' + location);
@@ -121,7 +128,6 @@ Object.keys(functions).forEach(function (name) {
   }
 });
 
-// IAM repositories own direct UserDB reads. Application/controllers must not bypass them.
 iamFiles.forEach(function (file) {
   var source = fs.readFileSync(file, 'utf8');
   var relative = normalize_(path.relative(BACKEND_ROOT, file));
@@ -130,7 +136,6 @@ iamFiles.forEach(function (file) {
   }
 });
 
-// Core Auth coordinates login context but must not own UserDB persistence or Settings behavior.
 authFiles.forEach(function (file) {
   var source = fs.readFileSync(file, 'utf8');
   var relative = normalize_(path.relative(BACKEND_ROOT, file));
@@ -140,15 +145,18 @@ authFiles.forEach(function (file) {
   if (/\bopenUserSpreadsheet_\b|\breadTableRows_\b|\binsertSheetCrudItem_\b|\bupdateSheetCrudItemById_\b/.test(source)) {
     failures.push('Auth must not directly access UserDB persistence: ' + relative);
   }
+  if (/\b(?:accounting|student_fee|event|settings)\b/i.test(source)) {
+    failures.push('Core Auth must not know business domains: ' + relative);
+  }
 });
 
-// Read/query IAM files must not perform mutations; mutation-specific settings services are excluded by role.
 iamFiles.forEach(function (file) {
   var relative = normalize_(path.relative(IAM_ROOT, file));
   if (relative.indexOf('application/users_query.gs') !== 0 &&
       relative.indexOf('application/roles_query.gs') !== 0 &&
       relative.indexOf('application/permissions_query.gs') !== 0 &&
       relative.indexOf('application/permissions_access.gs') !== 0 &&
+      relative.indexOf('application/domain_access.gs') !== 0 &&
       relative.indexOf('repositories/') !== 0) return;
   var source = fs.readFileSync(file, 'utf8');
   if (relative.indexOf('repositories/') !== 0 && /insertSheetCrudItem_|updateSheetCrudItemById_|append[A-Za-z_$]*Row_|update[A-Za-z_$]*Row_/.test(source)) {
