@@ -14,7 +14,7 @@ var detailFiles = [
 var syncPath = path.join(detailDirectory, 'event_form_sync_js.html');
 var modalPath = path.join(detailDirectory, 'modals/Event_Applicant_Detail_Modal.html');
 var commonPath = path.join(ROOT, 'src/600_event/600_common/event_common_js.html');
-var servicePath = path.join(ROOT, 'src/000_server/050_event/052_applicants/applicants_service.gs');
+var servicePath = path.join(ROOT, 'src/backend/domains/event/application/applicants_mutation.gs');
 
 var detailSource = detailFiles.map(function (fileName) {
   return fs.readFileSync(path.join(detailDirectory, fileName), 'utf8');
