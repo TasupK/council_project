@@ -12,11 +12,13 @@ function read(rel) {
 const studentFeeCommon = read('src/500_student_fee/common/student_fee_common_js.html');
 const studentFeeClient = read('src/500_student_fee/common/student_fee_client_js.html');
 const studentFeePayerClient = read('src/frontend/entities/student_fee_payer/api/student_fee_payer_client_js.html');
+const studentFeePaymentClient = read('src/frontend/entities/student_fee_payment/api/student_fee_payment_client_js.html');
 const studentFeePages = [
   'src/frontend/pages/student_fee_home/student_fee_home_controller_js.html',
   'src/frontend/features/student_fee_payer_manage/student_fee_payer_manage_js.html',
   'src/frontend/pages/student_fee_payers/student_fee_payers_controller_js.html',
-  'src/500_student_fee/520_payments/student_fee_payments_js.html',
+  'src/frontend/features/student_fee_payment_manage/student_fee_payment_manage_js.html',
+  'src/frontend/pages/student_fee_payments/student_fee_payments_controller_js.html',
   'src/500_student_fee/530_refunds/student_fee_refunds_js.html'
 ].map(read).join('\n');
 
@@ -28,6 +30,11 @@ assert.match(studentFeePayerClient, /var\s+studentFeePayerClient\s*=\s*\{/, 'Stu
 assert.match(studentFeePayerClient, /getPayers\s*:\s*function/);
 assert.match(studentFeePayerClient, /createPayer\s*:\s*function/);
 assert.match(studentFeePayerClient, /updatePayer\s*:\s*function/);
+assert.match(studentFeePaymentClient, /var\s+studentFeePaymentClient\s*=\s*\{/, 'Student Fee payment semantic client must exist');
+assert.match(studentFeePaymentClient, /getApplications\s*:\s*function/);
+assert.match(studentFeePaymentClient, /calculateAmount\s*:\s*function/);
+assert.match(studentFeePaymentClient, /processApplications\s*:\s*function/);
+assert.match(studentFeePaymentClient, /confirmPayment\s*:\s*function/);
 
 const eventCommon = read('src/600_event/600_common/event_common_js.html');
 const eventClient = read('src/600_event/600_common/event_client_js.html');
