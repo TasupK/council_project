@@ -2,7 +2,7 @@
 function doGet(e) {
   var page = e && e.parameter && e.parameter.page ? String(e.parameter.page) : 'login';
   var routes = {
-    login: '200_login/Login',
+    login: 'frontend/pages/login/Login',
     main: 'frontend/pages/main/Main',
     mypage: 'frontend/pages/mypage/MyPage',
     accounting_ledger: 'frontend/pages/accounting_ledger/Accounting_Ledger',
