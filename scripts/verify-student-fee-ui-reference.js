@@ -19,7 +19,7 @@ function includePath_(relativePath) {
 var VIEW_FILES = [
   'src/frontend/pages/student_fee_home/Student_Fee_Home_View.html',
   'src/frontend/pages/student_fee_payers/Student_Fee_Payers_View.html',
-  '520_payments/Student_Fee_Payments_View.html',
+  'src/frontend/pages/student_fee_payments/Student_Fee_Payments_View.html',
   '530_refunds/Student_Fee_Refunds_View.html'
 ];
 
@@ -33,7 +33,7 @@ VIEW_FILES.forEach(function (file) {
 
 [
   'src/frontend/pages/student_fee_payers/Student_Fee_Payers_View.html',
-  '520_payments/Student_Fee_Payments_View.html',
+  'src/frontend/pages/student_fee_payments/Student_Fee_Payments_View.html',
   '530_refunds/Student_Fee_Refunds_View.html'
 ].forEach(function (file) {
   var source = readAny_(file);
@@ -49,9 +49,9 @@ var MODAL_PAGES = [
     partials: ['src/frontend/pages/student_fee_payers/modals/Student_Fee_Payer_Edit_Modal.html']
   },
   {
-    shell: '520_payments/Student_Fee_Payments.html',
-    view: '520_payments/Student_Fee_Payments_View.html',
-    partials: ['520_payments/modals/Student_Fee_Payment_Detail_Modal.html','520_payments/modals/Student_Fee_Payment_Confirm_Modal.html']
+    shell: 'src/frontend/pages/student_fee_payments/Student_Fee_Payments.html',
+    view: 'src/frontend/pages/student_fee_payments/Student_Fee_Payments_View.html',
+    partials: ['src/frontend/pages/student_fee_payments/modals/Student_Fee_Payment_Detail_Modal.html','src/frontend/pages/student_fee_payments/modals/Student_Fee_Payment_Confirm_Modal.html']
   },
   {
     shell: '530_refunds/Student_Fee_Refunds.html',
@@ -86,9 +86,9 @@ requireIds_(payerModal, ['sf-payer-modal','sf-payer-modal-title','sf-payer-modal
 requireNames_(payerModal, ['studentId','name','affiliation','startSemesterId'], 'Payer modal');
 requireActions_(payerModal, ['close-payer-modal'], 'Payer modal');
 
-var paymentDetail = readOptionalAny_('520_payments/modals/Student_Fee_Payment_Detail_Modal.html');
+var paymentDetail = readOptionalAny_('src/frontend/pages/student_fee_payments/modals/Student_Fee_Payment_Detail_Modal.html');
 requireIds_(paymentDetail, ['sf-payment-detail-modal','sf-payment-detail-title','sf-payment-detail-content','sf-payment-detail-actions'], 'Payment detail modal');
-var paymentConfirm = readOptionalAny_('520_payments/modals/Student_Fee_Payment_Confirm_Modal.html');
+var paymentConfirm = readOptionalAny_('src/frontend/pages/student_fee_payments/modals/Student_Fee_Payment_Confirm_Modal.html');
 requireIds_(paymentConfirm, ['sf-payment-confirm-modal','sf-payment-confirm-title','sf-payment-confirm-form','sf-payment-depositor','sf-payment-confirm-reason'], 'Payment confirm modal');
 requireNames_(paymentConfirm, ['depositorName','reason'], 'Payment confirm modal');
 requireActions_(paymentConfirm, ['close-payment-confirm','confirm-payment'], 'Payment confirm modal');
@@ -115,7 +115,7 @@ var homeJs = readAny_('src/frontend/pages/student_fee_home/student_fee_home_cont
 ['ui-card', 'ui-stat-card', 'ui-stat-grid'].forEach(function (primitive) { if (homeJs.indexOf(primitive) < 0) failures.push('Student Fee home must render shared primitive: ' + primitive); });
 
 var payerJs = readAny_('src/frontend/features/student_fee_payer_manage/student_fee_payer_manage_js.html');
-var paymentJs = readAny_('520_payments/student_fee_payments_js.html');
+var paymentJs = readAny_('src/frontend/features/student_fee_payment_manage/student_fee_payment_manage_js.html');
 var refundJs = readAny_('530_refunds/student_fee_refunds_js.html');
 [payerJs, paymentJs, refundJs].forEach(function (source, index) { if (source.indexOf('ui-table') < 0) failures.push('Student Fee list renderer ' + index + ' must render ui-table.'); });
 
