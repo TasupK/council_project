@@ -6,7 +6,7 @@ var ROOT = path.resolve(__dirname, '..');
 function read_(relativePath) { return fs.readFileSync(path.join(ROOT, relativePath), 'utf8'); }
 
 var clientPath = path.join(ROOT, 'src/300_settings/common/settings_client_js.html');
-assert.ok(fs.existsSync(clientPath), 'settings_client_js.html must exist');
+assert.ok(fs.existsSync(clientPath), 'settings_client_js.html must exist while legacy Settings pages still consume it');
 var client = fs.readFileSync(clientPath, 'utf8');
 [
   ['getHome', 'api_getSettingsHome'],
@@ -20,14 +20,18 @@ var client = fs.readFileSync(clientPath, 'utf8');
   ['createRole', 'api_createSettingsRole'],
   ['updateRole', 'api_updateSettingsRole'],
   ['getPermissions', 'api_getSettingsPermissions'],
-  ['saveRolePermissions', 'api_updateSettingsRolePermissions'],
-  ['getDepartments', 'api_getSettingsDepartments']
+  ['saveRolePermissions', 'api_updateSettingsRolePermissions']
 ].forEach(function (pair) {
   assert.ok(client.indexOf(pair[0]) !== -1, 'missing settings client method: ' + pair[0]);
   assert.ok(client.indexOf(pair[1]) !== -1, 'missing settings API mapping: ' + pair[1]);
 });
 assert.ok(client.indexOf('runAppApi') !== -1, 'settings client must use shared runner');
 assert.ok(client.indexOf('google.script.run') === -1, 'settings client must not own GAS transport');
+
+var departmentClient = read_('src/frontend/entities/department/api/department_client_js.html');
+assert.ok(departmentClient.indexOf('getDepartments') !== -1, 'department entity client must expose getDepartments');
+assert.ok(departmentClient.indexOf('api_getSettingsDepartments') !== -1, 'department entity client must own departments API mapping');
+assert.ok(departmentClient.indexOf('google.script.run') === -1, 'department entity client must not own GAS transport');
 
 var common = read_('src/300_settings/common/settings_common_js.html');
 assert.ok(common.indexOf('callSettingsApi') === -1, 'legacy callSettingsApi wrapper must be removed');
@@ -38,10 +42,11 @@ assert.ok(common.indexOf('google.script.run') === -1, 'settings common frontend 
   'src/300_settings/310_users/settings_users_js.html',
   'src/300_settings/320_roles/settings_roles_js.html',
   'src/300_settings/330_permissions/settings_permissions_js.html',
-  'src/300_settings/340_departments/settings_departments_js.html'
+  'src/frontend/pages/settings_departments/settings_departments_controller_js.html',
+  'src/frontend/features/department_directory/department_directory_js.html'
 ].forEach(function (relativePath) {
   var source = read_(relativePath);
-  assert.ok(source.indexOf('callSettingsApi') === -1, relativePath + ' must use semantic settings client');
+  assert.ok(source.indexOf('callSettingsApi') === -1, relativePath + ' must use semantic client boundaries');
   assert.ok(source.indexOf('google.script.run') === -1, relativePath + ' must not call GAS directly');
 });
 
