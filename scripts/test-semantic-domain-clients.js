@@ -12,7 +12,7 @@ function read(rel) {
 const studentFeeCommon = read('src/500_student_fee/common/student_fee_common_js.html');
 const studentFeeClient = read('src/500_student_fee/common/student_fee_client_js.html');
 const studentFeePages = [
-  'src/500_student_fee/500_home/student_fee_home_js.html',
+  'src/frontend/pages/student_fee_home/student_fee_home_controller_js.html',
   'src/500_student_fee/510_payers/student_fee_payers_js.html',
   'src/500_student_fee/520_payments/student_fee_payments_js.html',
   'src/500_student_fee/530_refunds/student_fee_refunds_js.html'
