@@ -21,9 +21,9 @@ var pages = [
   },
   {
     name: 'Student Fee Payers',
-    shell: 'src/500_student_fee/510_payers/Student_Fee_Payers.html',
-    view: 'src/500_student_fee/510_payers/Student_Fee_Payers_View.html',
-    partials: ['src/500_student_fee/510_payers/modals/Student_Fee_Payer_Edit_Modal.html']
+    shell: 'src/frontend/pages/student_fee_payers/Student_Fee_Payers.html',
+    view: 'src/frontend/pages/student_fee_payers/Student_Fee_Payers_View.html',
+    partials: ['src/frontend/pages/student_fee_payers/modals/Student_Fee_Payer_Edit_Modal.html']
   },
   {
     name: 'Student Fee Payments',
