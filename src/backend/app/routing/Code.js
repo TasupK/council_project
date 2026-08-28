@@ -5,7 +5,7 @@ function doGet(e) {
     login: '200_login/Login',
     main: 'frontend/pages/main/Main',
     mypage: 'frontend/pages/mypage/MyPage',
-    accounting_ledger: '400_accounting/410_ledger/Accounting_Ledger',
+    accounting_ledger: 'frontend/pages/accounting_ledger/Accounting_Ledger',
     accounting_reconciliation: 'frontend/pages/accounting_reconciliation/Accounting_Reconciliation',
     accounting_settlement: 'frontend/pages/accounting_settlement/Accounting_Settlement',
     student_fee: '500_student_fee/500_home/Student_Fee_Home',
