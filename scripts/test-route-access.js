@@ -18,7 +18,7 @@ assert.ok(pageAccess.includes('function canAccessPage_'), 'canAccessPage_ missin
 assert.ok(!pageAccess.includes('function buildDomainAccess_'), 'routing must not build IAM domain access');
 assert.ok(domainAccess.includes('function buildDomainAccess_'), 'buildDomainAccess_ missing from IAM application');
 assert.ok(!domainAccess.includes('function canAccessPage_'), 'IAM application must not own page routing guard');
-assert.ok(code.includes("settings_departments: '300_settings/340_departments/Settings_Departments'"), 'settings_departments route missing');
+assert.ok(code.includes("settings_departments: 'frontend/pages/settings_departments/Settings_Departments'"), 'settings_departments route missing');
 assert.ok(!code.includes("accounting: '400_accounting/400_home/Accounting_Home'"), 'accounting overview route must be removed');
 assert.ok(code.includes("accounting_ledger: '400_accounting/410_ledger/Accounting_Ledger'"), 'accounting_ledger route missing');
 assert.ok(code.includes("accounting_reconciliation: '400_accounting/420_reconciliation/Accounting_Reconciliation'"), 'accounting_reconciliation route missing');
