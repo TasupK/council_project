@@ -12,11 +12,11 @@ function readOptional_(relativePath) {
 var pages = [
   {
     name: 'Accounting Ledger',
-    shell: 'src/400_accounting/410_ledger/Accounting_Ledger.html',
-    view: 'src/400_accounting/410_ledger/Accounting_Ledger_View.html',
+    shell: 'src/frontend/pages/accounting_ledger/Accounting_Ledger.html',
+    view: 'src/frontend/pages/accounting_ledger/Accounting_Ledger_View.html',
     partials: [
-      'src/400_accounting/410_ledger/modals/Accounting_Ledger_Register_Modal.html',
-      'src/400_accounting/410_ledger/modals/Accounting_Ledger_Detail_Modal.html'
+      'src/frontend/pages/accounting_ledger/modals/Accounting_Ledger_Register_Modal.html',
+      'src/frontend/pages/accounting_ledger/modals/Accounting_Ledger_Detail_Modal.html'
     ]
   },
   {
