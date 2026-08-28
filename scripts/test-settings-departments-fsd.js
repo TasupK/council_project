@@ -13,7 +13,6 @@ var required = [
   'src/frontend/pages/settings_departments/settings_departments_controller_js.html',
   'src/frontend/features/department_directory/department_directory_js.html',
   'src/frontend/entities/department/api/department_client_js.html',
-  'src/frontend/widgets/settings_shell/Settings_Styles.html',
   'src/frontend/widgets/settings_shell/settings_shell_js.html'
 ];
 required.forEach(function (p) { assert.ok(exists_(p), 'missing Settings Departments FSD file: ' + p); });
@@ -25,7 +24,6 @@ var page = read_('src/frontend/pages/settings_departments/Settings_Departments.h
   "include('frontend/shared/api/app_api_runner_js')",
   "include('frontend/entities/user/api/app_client_js')",
   "include('frontend/entities/department/api/department_client_js')",
-  "include('frontend/widgets/settings_shell/Settings_Styles')",
   "include('frontend/widgets/settings_shell/settings_shell_js')",
   "include('frontend/features/department_directory/department_directory_js')",
   "include('frontend/pages/settings_departments/settings_departments_controller_js')"
