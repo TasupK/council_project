@@ -10,9 +10,14 @@ assert.ok(client.indexOf('runAppApi') !== -1, 'accounting client must use shared
 assert.ok(client.indexOf('google.script.run') === -1, 'accounting client must not own GAS transport');
 assert.doesNotMatch(client, /runAppApi\(\s*['"][^'"]+['"]\s*\)/, 'Accounting client must always send an object request');
 assert.doesNotMatch(client, /runAppApi\(\s*['"]api_getReconciliation['"]\s*,\s*id\b/, 'reconciliation detail must not send a scalar id');
-assert.doesNotMatch(client, /runAppApi\(\s*['"]api_getSettlementReport['"]\s*,\s*id\b/, 'settlement detail must not send a scalar id');
 assert.match(client, /getReconciliation:\s*function\s*\(request\)[\s\S]*?runAppApi\(['"]api_getReconciliation['"],\s*request\s*\|\|\s*\{\}\)/, 'reconciliation detail client must accept an object request');
-assert.match(client, /getSettlementReport:\s*function\s*\(request\)[\s\S]*?runAppApi\(['"]api_getSettlementReport['"],\s*request\s*\|\|\s*\{\}\)/, 'settlement detail client must accept an object request');
+
+var settlementClient = read_('src/frontend/entities/settlement/api/settlement_client_js.html');
+assert.ok(settlementClient.indexOf('runAppApi') !== -1, 'settlement entity client must use shared runner');
+assert.ok(settlementClient.indexOf('google.script.run') === -1, 'settlement entity client must not own GAS transport');
+assert.doesNotMatch(settlementClient, /runAppApi\(\s*['"]api_getSettlementReport['"]\s*,\s*id\b/, 'settlement detail must not send a scalar id');
+assert.match(settlementClient, /getSettlementReport:\s*function\s*\(request\)[\s\S]*?runAppApi\(['"]api_getSettlementReport['"],\s*request\s*\|\|\s*\{\}\)/, 'settlement detail client must accept an object request');
+
 var ledgerApi = read_('src/backend/domains/accounting/controllers/ledger_controller.gs');
 var reconciliationApi = read_('src/backend/domains/accounting/controllers/reconciliation_controller.gs');
 var settlementApi = read_('src/backend/domains/accounting/controllers/settlement_controller.gs');
@@ -27,10 +32,10 @@ assert.ok(common.indexOf('function callServer') === -1, 'legacy Accounting wrapp
 [
   'src/400_accounting/410_ledger/accounting_ledger_js.html',
   'src/400_accounting/420_reconciliation/accounting_reconciliation_js.html',
-  'src/400_accounting/430_settlement/accounting_settlement_js.html'
+  'src/frontend/features/accounting_settlement_manage/accounting_settlement_manage_js.html'
 ].forEach(function (relativePath) {
   var source = read_(relativePath);
-  assert.ok(source.indexOf('callServer(') === -1, relativePath + ' must use accounting client');
+  assert.ok(source.indexOf('callServer(') === -1, relativePath + ' must use semantic client boundaries');
   assert.ok(source.indexOf('google.script.run') === -1, relativePath + ' must not call GAS directly');
 });
 console.log('API Contract v1 Accounting frontend: PASS');
