@@ -1,0 +1,44 @@
+<div class="sf-workspace">
+  <section class="ui-page-head">
+    <div>
+      <small>학생회비관리 / 납부 관리</small>
+      <h1>납부 관리</h1>
+      <p class="ui-page-desc">납부신청을 승인·반려하고 입금 확인 상태를 처리합니다.</p>
+    </div>
+  </section>
+
+  <section class="ui-card sf-table-card">
+    <form id="sf-payment-search" class="ui-toolbar sf-table-toolbar">
+      <div class="ui-field grow sf-search">
+        <label for="sf-payment-keyword">학번·성명 검색</label>
+        <input id="sf-payment-keyword" name="keyword" type="search" placeholder="학번 또는 성명">
+      </div>
+      <div class="ui-field">
+        <label for="sf-payment-status">신청 상태</label>
+        <select id="sf-payment-status" name="status">
+          <option value="">전체</option>
+          <option value="접수">접수</option>
+          <option value="승인">승인</option>
+          <option value="반려">반려</option>
+        </select>
+      </div>
+      <button type="button" class="ui-btn outline" id="sf-payment-reset">초기화</button>
+      <button type="submit" class="ui-btn">검색</button>
+      <span class="ui-count" id="sf-payment-count">0건</span>
+    </form>
+
+    <div id="sf-payment-bulk" class="ui-bulk-bar">
+      <strong><span id="sf-payment-selected-count">0</span>건 선택</strong>
+      <span class="spacer"></span>
+      <button type="button" class="ui-btn success small" data-action="bulk-approve-payment">선택 승인</button>
+      <button type="button" class="ui-btn danger small" data-action="bulk-reject-payment">선택 반려</button>
+    </div>
+
+    <div id="sf-payment-table" class="ui-table-wrap"></div>
+    <div id="sf-payment-pagination" class="sf-table-footer"></div>
+    <div id="sf-payment-loading" class="ui-loading">불러오는 중입니다.</div>
+    <div id="sf-payment-error" class="sf-error-state" hidden></div>
+  </section>
+
+  <div id="sf-toast" class="ui-toast" role="status" hidden></div>
+</div>
