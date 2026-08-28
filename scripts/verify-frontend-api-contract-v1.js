@@ -34,9 +34,12 @@ listFiles_(SRC).forEach(function (file) {
   'src/frontend/entities/ledger/api/ledger_client_js.html',
   'src/frontend/entities/reconciliation/api/reconciliation_client_js.html',
   'src/frontend/entities/settlement/api/settlement_client_js.html',
+  'src/frontend/entities/student_fee/api/student_fee_client_js.html',
+  'src/frontend/entities/student_fee_payer/api/student_fee_payer_client_js.html',
+  'src/frontend/entities/student_fee_payment/api/student_fee_payment_client_js.html',
+  'src/frontend/entities/student_fee_refund/api/student_fee_refund_client_js.html',
   'src/100_common/app_api_runner_js.html',
-  'src/100_common/app_client_js.html',
-  'src/500_student_fee/common/student_fee_client_js.html'
+  'src/100_common/app_client_js.html'
 ].forEach(function (relative) {
   if (!fs.existsSync(path.join(ROOT, relative))) failures.push('Missing API contract file: ' + relative);
 });
