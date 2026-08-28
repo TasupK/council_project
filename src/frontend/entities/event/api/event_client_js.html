@@ -1,0 +1,18 @@
+<script>
+var eventClient = {
+  getEvents: function (request) { return runAppApi('api_getEvents', request || {}); },
+  closeEvent: function (request) { return runAppApi('api_closeEvent', request || {}); },
+  updateEventStatus: function (request) { return runAppApi('api_updateEventStatus', request || {}); },
+  getEvent: function (request) { return runAppApi('api_getEvent', request || {}); },
+  createEvent: function (request) { return runAppApi('api_createEvent', request || {}); },
+  updateEvent: function (request) { return runAppApi('api_updateEvent', request || {}); },
+  getOverview: function (request) { return runAppApi('api_getEventOverview', request || {}); },
+  getApplicants: function (request) { return runAppApi('api_getEventApplicants', request || {}); },
+  getApplicant: function (request) { return runAppApi('api_getEventApplicant', request || {}); },
+  processApplicant: function (request) { return runAppApi('api_processEventApplicant', request || {}); },
+  getAttendances: function (request) { return runAppApi('api_getEventAttendances', request || {}); },
+  applyAttendanceChanges: function (request) { return runAppApi('api_applyEventAttendanceChanges', request || {}); },
+  getRefunds: function (request) { return runAppApi('api_getEventRefunds', request || {}); },
+  syncApplicantsFromForms: function (request) { return runAppApi('api_syncEventApplicantsFromForms', request || {}); }
+};
+</script>
