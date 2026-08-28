@@ -26,7 +26,7 @@ var REQUIRED_ROUTES = {
   student_fee: 'frontend/pages/student_fee_home/Student_Fee_Home',
   student_fee_payers: 'frontend/pages/student_fee_payers/Student_Fee_Payers',
   student_fee_payments: 'frontend/pages/student_fee_payments/Student_Fee_Payments',
-  student_fee_refunds: '500_student_fee/530_refunds/Student_Fee_Refunds',
+  student_fee_refunds: 'frontend/pages/student_fee_refunds/Student_Fee_Refunds',
   event: '600_event/610_home/Event_Home',
   event_form: '600_event/620_form/Event_Form',
   event_detail: '600_event/630_detail/Event_Detail',
