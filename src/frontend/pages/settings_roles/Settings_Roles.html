@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <base target="_top" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>역할 관리</title>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <?!= include('frontend/shared/styles/App_Styles'); ?>
+    <?!= include('frontend/app/styles/App_Shell_Styles'); ?>
+    <?!= include('frontend/shared/api/app_api_runner_js'); ?>
+    <?!= include('frontend/entities/user/api/app_client_js'); ?>
+    <?!= include('frontend/entities/iam/api/settings_client_js'); ?>
+    <?!= include('frontend/widgets/settings_shell/Settings_Styles'); ?>
+    <script>
+      var WEB_APP_URL = "<?= getWebAppUrl() ?>";
+      var APP_USER_NAME = <?!= JSON.stringify(mainUserName || '') ?>;
+      var APP_USER_TITLE = <?!= JSON.stringify(mainUserTitle || '') ?>;
+      var APP_IS_ADMIN = <?!= JSON.stringify(!!isAdmin) ?>;
+      var APP_CURRENT_PAGE = <?!= JSON.stringify(currentPage || 'settings_roles') ?>;
+    </script>
+  </head>
+  <body class="app-mode">
+    <div class="app">
+      <?!= include('frontend/widgets/app_header/App_Header'); ?>
+      <div class="body">
+        <?!= include('frontend/widgets/app_sidebar/App_Sidebar'); ?>
+        <main class="main"><?!= include('frontend/pages/settings_roles/Settings_Roles_View'); ?></main>
+      </div>
+    </div>
+    <?!= include('frontend/app/shell/app_shell_js'); ?>
+    <?!= include('frontend/widgets/settings_shell/settings_shell_js'); ?>
+    <?!= include('frontend/features/settings_roles_manage/settings_roles_manage_js'); ?>
+    <?!= include('frontend/pages/settings_roles/settings_roles_controller_js'); ?>
+  </body>
+</html>
