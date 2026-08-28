@@ -26,7 +26,7 @@ const DOMAIN_SHELLS = {
   main: ['src/frontend/pages/main/Main.html'],
   accounting: [
     'src/400_accounting/410_ledger/Accounting_Ledger.html',
-    'src/400_accounting/420_reconciliation/Accounting_Reconciliation.html',
+    'src/frontend/pages/accounting_reconciliation/Accounting_Reconciliation.html',
     'src/frontend/pages/accounting_settlement/Accounting_Settlement.html'
   ],
   event: [
@@ -42,6 +42,7 @@ const FSD_SHELLS = new Set([
   'src/frontend/pages/settings_users/Settings_Users.html',
   'src/frontend/pages/settings_roles/Settings_Roles.html',
   'src/frontend/pages/settings_permissions/Settings_Permissions.html',
+  'src/frontend/pages/accounting_reconciliation/Accounting_Reconciliation.html',
   'src/frontend/pages/accounting_settlement/Accounting_Settlement.html'
 ]);
 
@@ -158,13 +159,17 @@ function verifyMain() { requireClasses('src/frontend/pages/main/Main_View.html',
 function verifyAccounting() {
   const ledgerComposed = readMany(ACCOUNTING_LEDGER_PARTIALS);
   requireClassesInSource('Accounting Ledger composition', ledgerComposed, ['ui-page-head', 'ui-page-desc', 'ui-page-actions', 'ui-stat-card', 'ui-toolbar', 'ui-field', 'ui-table-wrap', 'ui-table', 'ui-pagination', 'ui-modal-overlay', 'ui-modal', 'ui-badge', 'ui-toast']);
-  requireClasses('src/400_accounting/420_reconciliation/Accounting_Reconciliation_View.html', ['ui-page-head', 'ui-page-desc', 'ui-card', 'ui-toolbar', 'ui-table-wrap', 'ui-table', 'ui-toast']);
+  requireClasses('src/frontend/pages/accounting_reconciliation/Accounting_Reconciliation_View.html', ['ui-page-head', 'ui-page-desc', 'ui-card', 'ui-toolbar', 'ui-table-wrap', 'ui-table', 'ui-toast']);
   requireClasses('src/frontend/pages/accounting_settlement/Accounting_Settlement_View.html', ['ui-page-head', 'ui-page-desc', 'ui-stat-card', 'ui-card', 'ui-field', 'ui-btn', 'ui-toast']);
 }
 function verifyAccountingServerContracts() {
-  const client = read('src/400_accounting/common/accounting_client_js.html');
-  ['api_getLedgerSummary','api_getLedgerEntries','api_createLedgerDraft','api_updateLedgerEntry','api_deleteLedgerEntry','api_processBankTransactionUpload','api_processReconciliation','api_getReconciliations','api_getReconciliation','api_getReconciliationCandidates','api_applyReconciliationLink','api_createLedgerEntryFromReconciliation'].forEach((name) => { if (!client.includes(name)) failures.push(`Accounting semantic client missing ${name}`); });
-  if (client.includes('apiV1_')) failures.push('Accounting semantic client still references legacy apiV1_ contract');
+  const legacyClient = read('src/400_accounting/common/accounting_client_js.html');
+  ['api_getLedgerSummary','api_getLedgerEntries','api_createLedgerDraft','api_updateLedgerEntry','api_deleteLedgerEntry'].forEach((name) => { if (!legacyClient.includes(name)) failures.push(`Accounting semantic client missing ${name}`); });
+  if (legacyClient.includes('apiV1_')) failures.push('Accounting semantic client still references legacy apiV1_ contract');
+
+  const reconciliationClient = read('src/frontend/entities/reconciliation/api/reconciliation_client_js.html');
+  ['api_processBankTransactionUpload','api_processReconciliation','api_getReconciliations','api_getReconciliation','api_getReconciliationCandidates','api_applyReconciliationLink','api_createLedgerEntryFromReconciliation'].forEach((name) => { if (!reconciliationClient.includes(name)) failures.push(`Reconciliation semantic client missing ${name}`); });
+
   const settlementClient = read('src/frontend/entities/settlement/api/settlement_client_js.html');
   ['api_getSettlementSummary','api_createSettlementReport','api_getSettlementReports','api_getSettlementReport','api_exportSettlementReport'].forEach((name) => { if (!settlementClient.includes(name)) failures.push(`Settlement semantic client missing ${name}`); });
   const settlement = read('src/frontend/features/accounting_settlement_manage/accounting_settlement_manage_js.html');
