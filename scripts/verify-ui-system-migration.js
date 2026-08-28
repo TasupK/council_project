@@ -18,9 +18,9 @@ const REQUIRED_SHARED_PRIMITIVES = [
 
 const DOMAIN_SHELLS = {
   settings: [
-    'src/300_settings/300_home/Settings_Home.html',
-    'src/300_settings/310_users/Settings_Users.html',
-    'src/300_settings/320_roles/Settings_Roles.html',
+    'src/frontend/pages/settings_home/Settings_Home.html',
+    'src/frontend/pages/settings_users/Settings_Users.html',
+    'src/frontend/pages/settings_roles/Settings_Roles.html',
     'src/frontend/pages/settings_permissions/Settings_Permissions.html'
   ],
   main: ['src/frontend/pages/main/Main.html'],
@@ -38,6 +38,9 @@ const DOMAIN_SHELLS = {
 
 const FSD_SHELLS = new Set([
   'src/frontend/pages/main/Main.html',
+  'src/frontend/pages/settings_home/Settings_Home.html',
+  'src/frontend/pages/settings_users/Settings_Users.html',
+  'src/frontend/pages/settings_roles/Settings_Roles.html',
   'src/frontend/pages/settings_permissions/Settings_Permissions.html'
 ]);
 
@@ -50,7 +53,7 @@ const EVENT_DETAIL_MODAL = 'src/600_event/630_detail/modals/Event_Applicant_Deta
 
 const REQUIRED_IDS = {
   settings: {
-    'src/300_settings/310_users/Settings_Users_View.html': ['userQ', 'userRole', 'userStatus', 'userReset', 'userCountLabel', 'userTbody', 'userFooterTotal']
+    'src/frontend/pages/settings_users/Settings_Users_View.html': ['userQ', 'userRole', 'userStatus', 'userReset', 'userCountLabel', 'userTbody', 'userFooterTotal']
   },
   accounting: {
     'src/400_accounting/410_ledger/Accounting_Ledger_View.html': ['ledgerDbLink', 'openRegister', 'sumIncome', 'sumExpense', 'sumPending', 'sumReview', 'keyword', 'type', 'department', 'event', 'status', 'rows', 'ledgerPagination', 'prevLedgerPage', 'ledgerPageInfo', 'nextLedgerPage', 'toast'],
@@ -144,9 +147,9 @@ function verifyHooks(domain) {
 }
 
 function verifySettings() {
-  ['src/300_settings/300_home/Settings_Home_View.html','src/300_settings/310_users/Settings_Users_View.html','src/300_settings/320_roles/Settings_Roles_View.html','src/frontend/pages/settings_permissions/Settings_Permissions_View.html'].forEach((rel) => requireClasses(rel, ['ui-page-head']));
-  requireClasses('src/300_settings/310_users/Settings_Users_View.html', ['ui-btn', 'ui-toolbar', 'ui-field', 'ui-table-wrap', 'ui-table', 'ui-loading']);
-  requireClasses('src/300_settings/320_roles/Settings_Roles_View.html', ['ui-btn', 'ui-toolbar', 'ui-field', 'ui-table-wrap', 'ui-table', 'ui-loading']);
+  ['src/frontend/pages/settings_home/Settings_Home_View.html','src/frontend/pages/settings_users/Settings_Users_View.html','src/frontend/pages/settings_roles/Settings_Roles_View.html','src/frontend/pages/settings_permissions/Settings_Permissions_View.html'].forEach((rel) => requireClasses(rel, ['ui-page-head']));
+  requireClasses('src/frontend/pages/settings_users/Settings_Users_View.html', ['ui-btn', 'ui-toolbar', 'ui-field', 'ui-table-wrap', 'ui-table', 'ui-loading']);
+  requireClasses('src/frontend/pages/settings_roles/Settings_Roles_View.html', ['ui-btn', 'ui-toolbar', 'ui-field', 'ui-table-wrap', 'ui-table', 'ui-loading']);
   requireClasses('src/frontend/pages/settings_permissions/Settings_Permissions_View.html', ['ui-btn', 'ui-field', 'ui-table-wrap', 'ui-table', 'ui-loading']);
   if (!read('src/frontend/widgets/settings_shell/Settings_Styles.html').includes('.perm-table')) failures.push('Settings_Styles.html missing permission-matrix layout ownership');
 }
