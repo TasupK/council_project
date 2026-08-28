@@ -19,7 +19,7 @@ function doGet(e) {
     settings_departments: 'frontend/pages/settings_departments/Settings_Departments',
     settings_users: 'frontend/pages/settings_users/Settings_Users',
     settings_roles: 'frontend/pages/settings_roles/Settings_Roles',
-    settings_permissions: '300_settings/330_permissions/Settings_Permissions'
+    settings_permissions: 'frontend/pages/settings_permissions/Settings_Permissions'
   };
   var file = routes[page] || routes.login;
   var templateData = {
