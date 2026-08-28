@@ -107,10 +107,10 @@ function testStudentFeeRouteHelpers_() {
 }
 
 function testPayerEditUsesLookupKey_() {
-  var source = read_('src/500_student_fee/510_payers/student_fee_payers_js.html');
-  var client = read_('src/500_student_fee/common/student_fee_client_js.html');
+  var source = read_('src/frontend/features/student_fee_payer_manage/student_fee_payer_manage_js.html');
+  var client = read_('src/frontend/entities/student_fee_payer/api/student_fee_payer_client_js.html');
   assert.match(source, /studentIdKey/);
-  assert.match(source, /studentFeeClient\.getPayer/);
+  assert.match(source, /studentFeePayerClient\.getPayer/);
   assert.match(client, /api_getStudentFeePayer/);
   assert.doesNotMatch(source, /textContent\s*=\s*[^;]*studentIdKey/);
 }
@@ -141,7 +141,7 @@ function testBulkRefundApprovalOmitsSharedApprovedAmount_() {
 }
 
 function testModalFailureKeepsDialogOpen_() {
-  var payer = read_('src/500_student_fee/510_payers/student_fee_payers_js.html');
+  var payer = read_('src/frontend/features/student_fee_payer_manage/student_fee_payer_manage_js.html');
   var payment = read_('src/500_student_fee/520_payments/student_fee_payments_js.html');
   var refund = read_('src/500_student_fee/530_refunds/student_fee_refunds_js.html');
   [payer, payment, refund].forEach(function (source) {
@@ -152,7 +152,7 @@ function testModalFailureKeepsDialogOpen_() {
 
 function testStudentFeeViewsDoNotOwnModalsAfterMigration_() {
   [
-    'src/500_student_fee/510_payers/Student_Fee_Payers_View.html',
+    'src/frontend/pages/student_fee_payers/Student_Fee_Payers_View.html',
     'src/500_student_fee/520_payments/Student_Fee_Payments_View.html',
     'src/500_student_fee/530_refunds/Student_Fee_Refunds_View.html'
   ].forEach(function (file) {
