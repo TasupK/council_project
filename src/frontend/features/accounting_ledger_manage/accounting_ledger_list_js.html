@@ -1,0 +1,75 @@
+<script>
+function optionHtml(values) {
+  return values.map(function (item) {
+    if (typeof item === 'string') return '<option value="' + escapeHtml(item) + '">' + escapeHtml(item) + '</option>';
+    return '<option value="' + escapeHtml(item.value) + '">' + escapeHtml(item.label) + '</option>';
+  }).join('');
+}
+function ledgerFilter() {
+  return { keyword: document.getElementById('keyword').value.trim(), transaction_type: document.getElementById('type').value, event_name: document.getElementById('event').value, status: document.getElementById('status').value };
+}
+function filteredItems() {
+  const f = ledgerFilter(); const keyword = f.keyword.toLowerCase();
+  return state.items.filter(function (item) {
+    const haystack = [item.counterparty, item.description, item.event_name, item.manager].join(' ').toLowerCase();
+    return (!keyword || haystack.includes(keyword)) && (f.transaction_type === '전체' || item.transaction_type === f.transaction_type) && (f.event_name === '전체' || item.event_name === f.event_name) && (f.status === '전체' || item.status === f.status);
+  });
+}
+function badgeClass(status) { if (status === '승인') return 'success'; if (status === '반려') return 'danger'; return 'warning'; }
+function renderLedgerSummary(summary) {
+  summary = summary || {};
+  document.getElementById('sumIncome').textContent = currency(summary.totalIncome || 0);
+  document.getElementById('sumExpense').textContent = currency(summary.totalExpense || 0);
+  document.getElementById('sumPending').textContent = (summary.pendingCount || 0) + '건';
+  document.getElementById('sumReview').textContent = (summary.reviewCount || 0) + '건';
+}
+function renderPagination(totalItems, totalPages) {
+  document.getElementById('ledgerPageInfo').textContent = state.ledgerPage + ' / ' + totalPages;
+  document.getElementById('prevLedgerPage').disabled = state.ledgerPage <= 1;
+  document.getElementById('nextLedgerPage').disabled = state.ledgerPage >= totalPages;
+}
+function render() {
+  const items = filteredItems(); const totalPages = Math.max(1, Math.ceil(items.length / state.ledgerPageSize));
+  state.ledgerPage = Math.min(Math.max(1, state.ledgerPage), totalPages);
+  const start = (state.ledgerPage - 1) * state.ledgerPageSize; const pageItems = items.slice(start, start + state.ledgerPageSize);
+  document.getElementById('rows').innerHTML = pageItems.length ? pageItems.map(function (item) {
+    const income = item.transaction_type === '수입';
+    return '<tr><td>' + escapeHtml(String(item.transaction_date || '').slice(0, 10)) + '</td><td class="' + (income ? 'income' : 'expense') + '">' + escapeHtml(item.transaction_type) + '</td><td>-</td><td>' + escapeHtml(item.counterparty || '') + '</td><td class="' + (income ? 'income' : 'muted') + '">' + (income ? won.format(item.amount || 0) : '-') + '</td><td class="' + (income ? 'muted' : 'expense') + '">' + (income ? '-' : won.format(item.amount || 0)) + '</td><td>' + escapeHtml(item.event_name || '해당없음') + '</td><td><strong>' + (item.has_evidence ? 'O' : 'X') + '</strong></td><td><span class="ui-badge ' + badgeClass(item.status) + '">' + escapeHtml(item.status || '') + '</span></td><td>' + escapeHtml(item.manager || '') + '</td><td><button class="ui-btn outline small" type="button" data-id="' + escapeHtml(item.transaction_id) + '">상세보기</button></td></tr>';
+  }).join('') : '<tr><td colspan="11" class="ui-empty">표시할 수입·지출 내역이 없습니다.</td></tr>';
+  renderPagination(items.length, totalPages);
+}
+function goLedgerPage(page) { state.ledgerPage = page; render(); }
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); if (id === 'detailModal') clearEvidencePreviewUrls(); }
+function setType(type) {
+  state.selectedType = type;
+  document.getElementById('expenseBtn').className = type === '지출' ? 'segment expense-on' : 'segment';
+  document.getElementById('incomeBtn').className = type === '수입' ? 'segment income-on' : 'segment';
+}
+function fillControls() {
+  const eventOptions = [{ value: '', label: '해당없음' }].concat(state.events.map(function (e) { return { value: e.event_id, label: e.event_name }; }));
+  document.getElementById('event').innerHTML = optionHtml(['전체'].concat(state.events.map(function (e) { return e.event_name; })));
+  document.getElementById('formEvent').innerHTML = optionHtml(eventOptions);
+  document.getElementById('department').innerHTML = '<option value="전체">부서 미사용</option>';
+  document.getElementById('formDepartment').innerHTML = '<option value="">미사용</option>';
+  updateBalance();
+}
+function updateBalance() {
+  const eventId = document.getElementById('formEvent').value;
+  const found = state.events.find(function (e) { return String(e.event_id) === String(eventId); });
+  document.getElementById('eventBalance').textContent = '선택한 행사 잔액: ' + currency(found ? found.balance : 0);
+}
+async function refreshLedger() {
+  const results = await Promise.all([ledgerClient.getLedgerEntries({}), ledgerClient.getLedgerSummary({}), ledgerClient.getLedgerEventOptions({})]);
+  state.items = (results[0] && results[0].items) || []; state.events = results[2] || [];
+  fillControls(); renderLedgerSummary(results[1] || {}); render();
+}
+async function updateDatabaseLink() {
+  const link = document.getElementById('ledgerDbLink');
+  try {
+    const info = await ledgerClient.getLedgerDatabaseInfo();
+    if (!info || !info.spreadsheetUrl) { link.removeAttribute('href'); link.textContent = 'DB 시트 확인 불가'; return; }
+    link.href = info.spreadsheetUrl; link.textContent = 'DB 시트 확인 (' + info.transactionRowCount + '건)';
+  } catch (error) { link.removeAttribute('href'); link.textContent = 'DB 시트 확인 불가'; }
+}
+</script>
