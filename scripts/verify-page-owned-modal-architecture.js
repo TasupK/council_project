@@ -27,11 +27,11 @@ var pages = [
   },
   {
     name: 'Student Fee Payments',
-    shell: 'src/500_student_fee/520_payments/Student_Fee_Payments.html',
-    view: 'src/500_student_fee/520_payments/Student_Fee_Payments_View.html',
+    shell: 'src/frontend/pages/student_fee_payments/Student_Fee_Payments.html',
+    view: 'src/frontend/pages/student_fee_payments/Student_Fee_Payments_View.html',
     partials: [
-      'src/500_student_fee/520_payments/modals/Student_Fee_Payment_Detail_Modal.html',
-      'src/500_student_fee/520_payments/modals/Student_Fee_Payment_Confirm_Modal.html'
+      'src/frontend/pages/student_fee_payments/modals/Student_Fee_Payment_Detail_Modal.html',
+      'src/frontend/pages/student_fee_payments/modals/Student_Fee_Payment_Confirm_Modal.html'
     ]
   },
   {
