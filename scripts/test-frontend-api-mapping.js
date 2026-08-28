@@ -54,8 +54,8 @@ result = verifier.auditSourcePair(
 assert.deepStrictEqual(result.dynamicCalls, []);
 
 const ledgerFrontend = fs.readFileSync(path.join(root, 'src/400_accounting/410_ledger/accounting_ledger_js.html'), 'utf8');
-const reconciliationFrontend = fs.readFileSync(path.join(root, 'src/400_accounting/420_reconciliation/accounting_reconciliation_js.html'), 'utf8');
-const reconciliationView = fs.readFileSync(path.join(root, 'src/400_accounting/420_reconciliation/Accounting_Reconciliation_View.html'), 'utf8');
+const reconciliationFrontend = fs.readFileSync(path.join(root, 'src/frontend/features/accounting_reconciliation_manage/accounting_reconciliation_actions_js.html'), 'utf8');
+const reconciliationView = fs.readFileSync(path.join(root, 'src/frontend/pages/accounting_reconciliation/Accounting_Reconciliation_View.html'), 'utf8');
 const accountingClient = fs.readFileSync(path.join(root, 'src/400_accounting/common/accounting_client_js.html'), 'utf8');
 assert.match(ledgerFrontend, /data-evidence-id/);
 assert.match(ledgerFrontend, /accountingClient\.getLedgerEvidenceFileContent/);
