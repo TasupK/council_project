@@ -43,7 +43,8 @@ const migrated = new Set([
   'src/frontend/pages/accounting_reconciliation/Accounting_Reconciliation.html',
   'src/frontend/pages/accounting_settlement/Accounting_Settlement.html',
   'src/frontend/pages/student_fee_home/Student_Fee_Home.html',
-  'src/frontend/pages/student_fee_payers/Student_Fee_Payers.html'
+  'src/frontend/pages/student_fee_payers/Student_Fee_Payers.html',
+  'src/frontend/pages/student_fee_payments/Student_Fee_Payments.html'
 ]);
 const templates = [
   'src/frontend/pages/main/Main.html', 'src/frontend/pages/mypage/MyPage.html',
@@ -53,7 +54,7 @@ const templates = [
   'src/frontend/pages/accounting_ledger/Accounting_Ledger.html',
   'src/frontend/pages/accounting_reconciliation/Accounting_Reconciliation.html', 'src/frontend/pages/accounting_settlement/Accounting_Settlement.html',
   'src/frontend/pages/student_fee_home/Student_Fee_Home.html', 'src/frontend/pages/student_fee_payers/Student_Fee_Payers.html',
-  'src/500_student_fee/520_payments/Student_Fee_Payments.html', 'src/500_student_fee/530_refunds/Student_Fee_Refunds.html',
+  'src/frontend/pages/student_fee_payments/Student_Fee_Payments.html', 'src/500_student_fee/530_refunds/Student_Fee_Refunds.html',
   'src/600_event/610_home/Event_Home.html', 'src/600_event/620_form/Event_Form.html', 'src/600_event/630_detail/Event_Detail.html'
 ];
 templates.forEach(function (relativePath) {
