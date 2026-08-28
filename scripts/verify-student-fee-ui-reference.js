@@ -2,19 +2,12 @@ var fs = require('fs');
 var path = require('path');
 
 var ROOT = path.resolve(__dirname, '..');
-var FRONTEND_ROOT = path.join(ROOT, 'src', '500_student_fee');
 var failures = [];
 
-function target_(relativePath) {
-  return relativePath.indexOf('src/') === 0 ? path.join(ROOT, relativePath) : path.join(FRONTEND_ROOT, relativePath);
-}
+function target_(relativePath) { return path.join(ROOT, relativePath); }
 function readAny_(relativePath) { return fs.readFileSync(target_(relativePath), 'utf8'); }
 function readOptionalAny_(relativePath) { var target = target_(relativePath); return fs.existsSync(target) ? fs.readFileSync(target, 'utf8') : ''; }
-function includePath_(relativePath) {
-  return relativePath.indexOf('src/') === 0
-    ? relativePath.replace(/^src\//, '').replace(/\.html$/, '')
-    : '500_student_fee/' + relativePath.replace(/\.html$/, '');
-}
+function includePath_(relativePath) { return relativePath.replace(/^src\//, '').replace(/\.html$/, ''); }
 
 var VIEW_FILES = [
   'src/frontend/pages/student_fee_home/Student_Fee_Home_View.html',
@@ -106,7 +99,7 @@ requireNames_(refundTransfer, ['transferDate','transferEvidenceId','reason'], 'R
 requireActions_(refundTransfer, ['close-refund-transfer','confirm-refund-transfer'], 'Refund transfer modal');
 if (refundTransfer && (refundTransfer.indexOf('data-result="FAILED"') < 0 || refundTransfer.indexOf('data-result="DONE"') < 0)) failures.push('Refund transfer modal must preserve FAILED and DONE results.');
 
-var styles = readAny_('common/Student_Fee_Styles.html');
+var styles = readAny_('src/frontend/entities/student_fee/ui/Student_Fee_Styles.html');
 if (/#[0-9a-fA-F]{3,8}\b/.test(styles)) failures.push('Student Fee domain styles must use canonical --ui-* tokens instead of literal hex colors.');
 if (/^\s*\.ui-[^{,\s]+\s*\{/m.test(styles)) failures.push('Student Fee domain styles must not own shared .ui-* primitives.');
 if (styles.indexOf('.sf-table-toolbar') < 0) failures.push('Student Fee domain styles must provide sf-table-toolbar for list-page spacing.');
@@ -119,7 +112,7 @@ var paymentJs = readAny_('src/frontend/features/student_fee_payment_manage/stude
 var refundJs = readAny_('src/frontend/features/student_fee_refund_manage/student_fee_refund_manage_js.html');
 [payerJs, paymentJs, refundJs].forEach(function (source, index) { if (source.indexOf('ui-table') < 0) failures.push('Student Fee list renderer ' + index + ' must render ui-table.'); });
 
-var commonJs = readAny_('common/student_fee_common_js.html');
+var commonJs = readAny_('src/frontend/entities/student_fee/ui/student_fee_common_js.html');
 if (commonJs.indexOf('ui-badge') < 0) failures.push('Student Fee status helper must render ui-badge.');
 if (commonJs.indexOf('ui-pagination') < 0 || commonJs.indexOf('ui-page-btn') < 0) failures.push('Student Fee pagination helper must use shared pagination primitives.');
 
