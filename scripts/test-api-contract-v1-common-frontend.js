@@ -39,6 +39,7 @@ const migrated = new Set([
   'src/frontend/pages/settings_roles/Settings_Roles.html',
   'src/frontend/pages/settings_permissions/Settings_Permissions.html',
   'src/frontend/pages/settings_departments/Settings_Departments.html',
+  'src/frontend/pages/accounting_ledger/Accounting_Ledger.html',
   'src/frontend/pages/accounting_reconciliation/Accounting_Reconciliation.html',
   'src/frontend/pages/accounting_settlement/Accounting_Settlement.html'
 ]);
@@ -47,7 +48,7 @@ const templates = [
   'src/frontend/pages/settings_home/Settings_Home.html', 'src/frontend/pages/settings_users/Settings_Users.html',
   'src/frontend/pages/settings_roles/Settings_Roles.html', 'src/frontend/pages/settings_permissions/Settings_Permissions.html',
   'src/frontend/pages/settings_departments/Settings_Departments.html',
-  'src/400_accounting/400_home/Accounting_Home.html', 'src/400_accounting/410_ledger/Accounting_Ledger.html',
+  'src/400_accounting/400_home/Accounting_Home.html', 'src/frontend/pages/accounting_ledger/Accounting_Ledger.html',
   'src/frontend/pages/accounting_reconciliation/Accounting_Reconciliation.html', 'src/frontend/pages/accounting_settlement/Accounting_Settlement.html',
   'src/500_student_fee/500_home/Student_Fee_Home.html', 'src/500_student_fee/510_payers/Student_Fee_Payers.html',
   'src/500_student_fee/520_payments/Student_Fee_Payments.html', 'src/500_student_fee/530_refunds/Student_Fee_Refunds.html',
