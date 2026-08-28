@@ -5,8 +5,8 @@ var path = require('path');
 var ROOT = path.resolve(__dirname, '..');
 function read_(relativePath) { return fs.readFileSync(path.join(ROOT, relativePath), 'utf8'); }
 
-var clientPath = path.join(ROOT, 'src/300_settings/common/settings_client_js.html');
-assert.ok(fs.existsSync(clientPath), 'settings_client_js.html must exist while legacy Settings pages still consume it');
+var clientPath = path.join(ROOT, 'src/frontend/entities/iam/api/settings_client_js.html');
+assert.ok(fs.existsSync(clientPath), 'migrated Settings IAM client must exist');
 var client = fs.readFileSync(clientPath, 'utf8');
 [
   ['getHome', 'api_getSettingsHome'],
@@ -28,24 +28,21 @@ var client = fs.readFileSync(clientPath, 'utf8');
 assert.ok(client.indexOf('runAppApi') !== -1, 'settings client must use shared runner');
 assert.ok(client.indexOf('google.script.run') === -1, 'settings client must not own GAS transport');
 
-var iamClient = read_('src/frontend/entities/iam/api/settings_client_js.html');
-assert.ok(iamClient.indexOf('getPermissions') !== -1 && iamClient.indexOf('api_getSettingsPermissions') !== -1, 'IAM entity client must own permissions query mapping');
-assert.ok(iamClient.indexOf('saveRolePermissions') !== -1 && iamClient.indexOf('api_updateSettingsRolePermissions') !== -1, 'IAM entity client must own permissions mutation mapping');
-assert.ok(iamClient.indexOf('google.script.run') === -1, 'IAM entity client must not own GAS transport');
-
 var departmentClient = read_('src/frontend/entities/department/api/department_client_js.html');
 assert.ok(departmentClient.indexOf('getDepartments') !== -1, 'department entity client must expose getDepartments');
 assert.ok(departmentClient.indexOf('api_getSettingsDepartments') !== -1, 'department entity client must own departments API mapping');
 assert.ok(departmentClient.indexOf('google.script.run') === -1, 'department entity client must not own GAS transport');
 
-var common = read_('src/300_settings/common/settings_common_js.html');
-assert.ok(common.indexOf('callSettingsApi') === -1, 'legacy callSettingsApi wrapper must be removed');
-assert.ok(common.indexOf('google.script.run') === -1, 'settings common frontend must not call GAS directly');
+var shell = read_('src/frontend/widgets/settings_shell/settings_shell_js.html');
+assert.ok(shell.indexOf('callSettingsApi') === -1, 'legacy callSettingsApi wrapper must be removed');
+assert.ok(shell.indexOf('google.script.run') === -1, 'settings shell must not call GAS directly');
 
 [
-  'src/300_settings/300_home/settings_home_js.html',
-  'src/300_settings/310_users/settings_users_js.html',
-  'src/300_settings/320_roles/settings_roles_js.html',
+  'src/frontend/pages/settings_home/settings_home_controller_js.html',
+  'src/frontend/pages/settings_users/settings_users_controller_js.html',
+  'src/frontend/features/settings_users_manage/settings_users_manage_js.html',
+  'src/frontend/pages/settings_roles/settings_roles_controller_js.html',
+  'src/frontend/features/settings_roles_manage/settings_roles_manage_js.html',
   'src/frontend/pages/settings_permissions/settings_permissions_controller_js.html',
   'src/frontend/features/settings_permissions_manage/settings_permissions_manage_js.html',
   'src/frontend/pages/settings_departments/settings_departments_controller_js.html',
