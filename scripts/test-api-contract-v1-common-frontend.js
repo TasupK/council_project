@@ -31,12 +31,16 @@ const authApi = read('src/backend/domains/iam/controllers/auth_controller.gs');
 assert.match(authApi, /function\s+api_getCurrentUser\s*\(\)[\s\S]*?wrapApiSuccess_/);
 assert.match(authApi, /function\s+api_getMyPermissions\s*\(\)[\s\S]*?wrapApiSuccess_/);
 
-const migrated = new Set(['src/frontend/pages/main/Main.html', 'src/frontend/pages/mypage/MyPage.html']);
+const migrated = new Set([
+  'src/frontend/pages/main/Main.html',
+  'src/frontend/pages/mypage/MyPage.html',
+  'src/frontend/pages/settings_departments/Settings_Departments.html'
+]);
 const templates = [
   'src/frontend/pages/main/Main.html', 'src/frontend/pages/mypage/MyPage.html',
   'src/300_settings/300_home/Settings_Home.html', 'src/300_settings/310_users/Settings_Users.html',
   'src/300_settings/320_roles/Settings_Roles.html', 'src/300_settings/330_permissions/Settings_Permissions.html',
-  'src/300_settings/340_departments/Settings_Departments.html',
+  'src/frontend/pages/settings_departments/Settings_Departments.html',
   'src/400_accounting/400_home/Accounting_Home.html', 'src/400_accounting/410_ledger/Accounting_Ledger.html',
   'src/400_accounting/420_reconciliation/Accounting_Reconciliation.html', 'src/400_accounting/430_settlement/Accounting_Settlement.html',
   'src/500_student_fee/500_home/Student_Fee_Home.html', 'src/500_student_fee/510_payers/Student_Fee_Payers.html',
