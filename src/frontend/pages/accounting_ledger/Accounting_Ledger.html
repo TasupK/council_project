@@ -13,7 +13,7 @@
   <?!= include('frontend/shared/api/app_api_runner_js'); ?>
   <?!= include('frontend/entities/user/api/app_client_js'); ?>
   <?!= include('frontend/entities/ledger/api/ledger_client_js'); ?>
-  <?!= include('400_accounting/common/Accounting_Styles'); ?>
+  <?!= include('frontend/widgets/accounting_shell/Accounting_Styles'); ?>
   <script>
     var WEB_APP_URL = '<?= getWebAppUrl() ?>';
     var APP_USER_NAME = <?!= JSON.stringify(mainUserName || '') ?>;
@@ -37,7 +37,7 @@
     </div>
   </div>
   <?!= include('frontend/app/shell/app_shell_js'); ?>
-  <?!= include('400_accounting/common/accounting_common_js'); ?>
+  <?!= include('frontend/widgets/accounting_shell/accounting_common_js'); ?>
   <?!= include('frontend/features/accounting_ledger_manage/accounting_ledger_list_js'); ?>
   <?!= include('frontend/features/accounting_ledger_manage/accounting_ledger_form_js'); ?>
   <?!= include('frontend/features/accounting_ledger_manage/accounting_ledger_detail_js'); ?>
