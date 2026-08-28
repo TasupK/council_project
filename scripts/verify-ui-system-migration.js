@@ -25,7 +25,7 @@ const DOMAIN_SHELLS = {
   ],
   main: ['src/frontend/pages/main/Main.html'],
   accounting: [
-    'src/400_accounting/410_ledger/Accounting_Ledger.html',
+    'src/frontend/pages/accounting_ledger/Accounting_Ledger.html',
     'src/frontend/pages/accounting_reconciliation/Accounting_Reconciliation.html',
     'src/frontend/pages/accounting_settlement/Accounting_Settlement.html'
   ],
@@ -42,14 +42,15 @@ const FSD_SHELLS = new Set([
   'src/frontend/pages/settings_users/Settings_Users.html',
   'src/frontend/pages/settings_roles/Settings_Roles.html',
   'src/frontend/pages/settings_permissions/Settings_Permissions.html',
+  'src/frontend/pages/accounting_ledger/Accounting_Ledger.html',
   'src/frontend/pages/accounting_reconciliation/Accounting_Reconciliation.html',
   'src/frontend/pages/accounting_settlement/Accounting_Settlement.html'
 ]);
 
 const ACCOUNTING_LEDGER_PARTIALS = [
-  'src/400_accounting/410_ledger/Accounting_Ledger_View.html',
-  'src/400_accounting/410_ledger/modals/Accounting_Ledger_Register_Modal.html',
-  'src/400_accounting/410_ledger/modals/Accounting_Ledger_Detail_Modal.html'
+  'src/frontend/pages/accounting_ledger/Accounting_Ledger_View.html',
+  'src/frontend/pages/accounting_ledger/modals/Accounting_Ledger_Register_Modal.html',
+  'src/frontend/pages/accounting_ledger/modals/Accounting_Ledger_Detail_Modal.html'
 ];
 const EVENT_DETAIL_MODAL = 'src/600_event/630_detail/modals/Event_Applicant_Detail_Modal.html';
 
@@ -58,9 +59,9 @@ const REQUIRED_IDS = {
     'src/frontend/pages/settings_users/Settings_Users_View.html': ['userQ', 'userRole', 'userStatus', 'userReset', 'userCountLabel', 'userTbody', 'userFooterTotal']
   },
   accounting: {
-    'src/400_accounting/410_ledger/Accounting_Ledger_View.html': ['ledgerDbLink', 'openRegister', 'sumIncome', 'sumExpense', 'sumPending', 'sumReview', 'keyword', 'type', 'department', 'event', 'status', 'rows', 'ledgerPagination', 'prevLedgerPage', 'ledgerPageInfo', 'nextLedgerPage', 'toast'],
-    'src/400_accounting/410_ledger/modals/Accounting_Ledger_Register_Modal.html': ['registerModal', 'entryForm', 'expenseBtn', 'incomeBtn', 'formDepartment', 'formEvent', 'eventBalance', 'entryEvidenceDropzone', 'entryEvidenceFile', 'entryEvidenceFileName', 'draft', 'create'],
-    'src/400_accounting/410_ledger/modals/Accounting_Ledger_Detail_Modal.html': ['detailModal', 'detailTitle', 'detailStatus', 'detailAlert', 'detailRows', 'detailEvidenceList', 'editLedger', 'deleteLedger', 'approve']
+    'src/frontend/pages/accounting_ledger/Accounting_Ledger_View.html': ['ledgerDbLink', 'openRegister', 'sumIncome', 'sumExpense', 'sumPending', 'sumReview', 'keyword', 'type', 'department', 'event', 'status', 'rows', 'ledgerPagination', 'prevLedgerPage', 'ledgerPageInfo', 'nextLedgerPage', 'toast'],
+    'src/frontend/pages/accounting_ledger/modals/Accounting_Ledger_Register_Modal.html': ['registerModal', 'entryForm', 'expenseBtn', 'incomeBtn', 'formDepartment', 'formEvent', 'eventBalance', 'entryEvidenceDropzone', 'entryEvidenceFile', 'entryEvidenceFileName', 'draft', 'create'],
+    'src/frontend/pages/accounting_ledger/modals/Accounting_Ledger_Detail_Modal.html': ['detailModal', 'detailTitle', 'detailStatus', 'detailAlert', 'detailRows', 'detailEvidenceList', 'editLedger', 'deleteLedger', 'approve']
   },
   event: {
     'src/600_event/610_home/Event_Home_View.html': ['ew-event-search', 'ew-managerEmail-filter', 'ew-type-filter', 'ew-status-filter', 'ew-event-summary', 'ew-event-table', 'ew-loading', 'ew-modal-root', 'ew-toast'],
@@ -72,7 +73,7 @@ const REQUIRED_IDS = {
 
 const REQUIRED_FORM_NAMES = {
   accounting: {
-    'src/400_accounting/410_ledger/modals/Accounting_Ledger_Register_Modal.html': ['transaction_date', 'department_name', 'amount', 'counterparty', 'event_name', 'description', 'note']
+    'src/frontend/pages/accounting_ledger/modals/Accounting_Ledger_Register_Modal.html': ['transaction_date', 'department_name', 'amount', 'counterparty', 'event_name', 'description', 'note']
   },
   event: {
     'src/600_event/620_form/Event_Form_View.html': ['name', 'category', 'description', 'applicationStartAt', 'applicationEndAt', 'eventStartAt', 'eventEndAt', 'capacity', 'applicationEnabled', 'feeEnabled', 'attendanceEnabled', 'balanceDistributionEnabled', 'payerFee', 'nonPayerFee', 'status']
@@ -102,52 +103,26 @@ function read(rel) {
 }
 function readMany(rels) { return rels.map((rel) => read(rel)).join('\n'); }
 function hasClass(source, className) { return new RegExp(`(?:^|[\\s\"'])${className}(?:[\\s\"']|$)`).test(source); }
-function requireClasses(rel, classes) {
-  const source = read(rel);
-  classes.forEach((className) => { if (!hasClass(source, className)) failures.push(`${rel}: missing class ${className}`); });
-}
-function requireClassesInSource(label, source, classes) {
-  classes.forEach((className) => { if (!hasClass(source, className)) failures.push(`${label}: missing class ${className}`); });
-}
-function verifyLiteralMap(map, attribute) {
-  Object.entries(map || {}).forEach(([rel, values]) => {
-    const source = read(rel);
-    values.forEach((value) => { if (!new RegExp(`${attribute}=[\"']${value}[\"']`).test(source)) failures.push(`${rel}: missing ${attribute} ${value}`); });
-  });
-}
+function requireClasses(rel, classes) { const source = read(rel); classes.forEach((className) => { if (!hasClass(source, className)) failures.push(`${rel}: missing class ${className}`); }); }
+function requireClassesInSource(label, source, classes) { classes.forEach((className) => { if (!hasClass(source, className)) failures.push(`${label}: missing class ${className}`); }); }
+function verifyLiteralMap(map, attribute) { Object.entries(map || {}).forEach(([rel, values]) => { const source = read(rel); values.forEach((value) => { if (!new RegExp(`${attribute}=[\"']${value}[\"']`).test(source)) failures.push(`${rel}: missing ${attribute} ${value}`); }); }); }
 
 function verifySharedSystem() {
   const css = read('src/frontend/shared/styles/App_Styles.html');
   REQUIRED_SHARED_PRIMITIVES.forEach((name) => { if (!new RegExp(`\\.${name}(?:[\\s:{,.>#\\[])`).test(css)) failures.push(`App_Styles.html missing shared primitive .${name}`); });
-  FORBIDDEN_GLOBAL_SELECTORS.forEach((selector) => {
-    const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    if (new RegExp(`(^|[},\\n]\\s*)${escaped}(?=[\\s:{,.>#\\[])`, 'm').test(css)) failures.push(`App_Styles.html owns domain selector ${selector}`);
-  });
+  FORBIDDEN_GLOBAL_SELECTORS.forEach((selector) => { const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); if (new RegExp(`(^|[},\\n]\\s*)${escaped}(?=[\\s:{,.>#\\[])`, 'm').test(css)) failures.push(`App_Styles.html owns domain selector ${selector}`); });
 }
-
 function verifyShells(domain) {
   (DOMAIN_SHELLS[domain] || []).forEach((rel) => {
-    const source = read(rel);
-    const fsd = FSD_SHELLS.has(rel);
-    const appStylesInclude = fsd ? "include('frontend/shared/styles/App_Styles')" : "include('100_common/App_Styles')";
+    const source = read(rel); const fsd = FSD_SHELLS.has(rel); const appStylesInclude = fsd ? "include('frontend/shared/styles/App_Styles')" : "include('100_common/App_Styles')";
     if (!source.includes(appStylesInclude)) failures.push(`${rel}: missing App_Styles include`);
-    if (domain === 'settings') {
-      const settingsStylesInclude = fsd ? "include('frontend/widgets/settings_shell/Settings_Styles')" : "include('300_settings/common/Settings_Styles')";
-      if (!source.includes(settingsStylesInclude)) failures.push(`${rel}: missing Settings_Styles include`);
-    }
+    if (domain === 'settings') { const settingsStylesInclude = fsd ? "include('frontend/widgets/settings_shell/Settings_Styles')" : "include('300_settings/common/Settings_Styles')"; if (!source.includes(settingsStylesInclude)) failures.push(`${rel}: missing Settings_Styles include`); }
   });
 }
-
 function verifyHooks(domain) {
-  verifyLiteralMap(REQUIRED_IDS[domain], 'id');
-  verifyLiteralMap(REQUIRED_FORM_NAMES[domain], 'name');
-  verifyLiteralMap(REQUIRED_DATA_ACTIONS[domain], 'data-action');
-  if (domain === 'event') {
-    const detail = read('src/600_event/630_detail/Event_Detail_View.html');
-    ['basic', 'applicants', 'attendance', 'ledger', 'refund'].forEach((tab) => { if (!new RegExp(`data-tab=[\"']${tab}[\"']`).test(detail)) failures.push(`Event_Detail_View.html: missing data-tab ${tab}`); });
-  }
+  verifyLiteralMap(REQUIRED_IDS[domain], 'id'); verifyLiteralMap(REQUIRED_FORM_NAMES[domain], 'name'); verifyLiteralMap(REQUIRED_DATA_ACTIONS[domain], 'data-action');
+  if (domain === 'event') { const detail = read('src/600_event/630_detail/Event_Detail_View.html'); ['basic', 'applicants', 'attendance', 'ledger', 'refund'].forEach((tab) => { if (!new RegExp(`data-tab=[\"']${tab}[\"']`).test(detail)) failures.push(`Event_Detail_View.html: missing data-tab ${tab}`); }); }
 }
-
 function verifySettings() {
   ['src/frontend/pages/settings_home/Settings_Home_View.html','src/frontend/pages/settings_users/Settings_Users_View.html','src/frontend/pages/settings_roles/Settings_Roles_View.html','src/frontend/pages/settings_permissions/Settings_Permissions_View.html'].forEach((rel) => requireClasses(rel, ['ui-page-head']));
   requireClasses('src/frontend/pages/settings_users/Settings_Users_View.html', ['ui-btn', 'ui-toolbar', 'ui-field', 'ui-table-wrap', 'ui-table', 'ui-loading']);
@@ -163,15 +138,13 @@ function verifyAccounting() {
   requireClasses('src/frontend/pages/accounting_settlement/Accounting_Settlement_View.html', ['ui-page-head', 'ui-page-desc', 'ui-stat-card', 'ui-card', 'ui-field', 'ui-btn', 'ui-toast']);
 }
 function verifyAccountingServerContracts() {
-  const legacyClient = read('src/400_accounting/common/accounting_client_js.html');
-  ['api_getLedgerSummary','api_getLedgerEntries','api_createLedgerDraft','api_updateLedgerEntry','api_deleteLedgerEntry'].forEach((name) => { if (!legacyClient.includes(name)) failures.push(`Accounting semantic client missing ${name}`); });
-  if (legacyClient.includes('apiV1_')) failures.push('Accounting semantic client still references legacy apiV1_ contract');
-
+  const ledgerClient = read('src/frontend/entities/ledger/api/ledger_client_js.html');
+  ['api_getLedgerSummary','api_getLedgerEntries','api_createLedgerDraft','api_updateLedgerEntry','api_deleteLedgerEntry','api_getLedgerEvidenceFileContent','api_getLedgerDatabaseInfo','api_getLedgerEventOptions','api_createLedgerEntry','api_processLedgerEntry'].forEach((name) => { if (!ledgerClient.includes(name)) failures.push(`Ledger semantic client missing ${name}`); });
   const reconciliationClient = read('src/frontend/entities/reconciliation/api/reconciliation_client_js.html');
   ['api_processBankTransactionUpload','api_processReconciliation','api_getReconciliations','api_getReconciliation','api_getReconciliationCandidates','api_applyReconciliationLink','api_createLedgerEntryFromReconciliation'].forEach((name) => { if (!reconciliationClient.includes(name)) failures.push(`Reconciliation semantic client missing ${name}`); });
-
   const settlementClient = read('src/frontend/entities/settlement/api/settlement_client_js.html');
   ['api_getSettlementSummary','api_createSettlementReport','api_getSettlementReports','api_getSettlementReport','api_exportSettlementReport'].forEach((name) => { if (!settlementClient.includes(name)) failures.push(`Settlement semantic client missing ${name}`); });
+  [ledgerClient, reconciliationClient, settlementClient].forEach((client) => { if (client.includes('apiV1_')) failures.push('Accounting semantic client still references legacy apiV1_ contract'); });
   const settlement = read('src/frontend/features/accounting_settlement_manage/accounting_settlement_manage_js.html');
   if (/generateSettlement['"]\)\.disabled\s*=\s*true/.test(settlement)) failures.push('Settlement generation remains forcibly disabled');
 }
