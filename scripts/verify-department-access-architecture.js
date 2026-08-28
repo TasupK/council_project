@@ -47,7 +47,7 @@ assert.ok(controller.includes('renderDepartmentDirectory'), 'Settings Department
 assert.ok(!/runAppApi|google\.script\.run/.test(directoryFeature), 'Department directory feature must not own transport');
 assert.ok(departmentClient.includes("runAppApi('api_getSettingsDepartments'"), 'Department entity API must own departments transport mapping');
 
-var newSources = required.map(read).join('\n') + read('src/300_settings/310_users/settings_users_js.html');
+var newSources = required.map(read).join('\n') + read('src/frontend/features/settings_users_manage/settings_users_manage_js.html');
 ['apiV1_', 'loadAllData(', 'sessionStorage', 'DB_URL'].forEach(function (legacy) {
   assert.strictEqual(newSources.indexOf(legacy), -1, 'legacy pattern must not be ported: ' + legacy);
 });
