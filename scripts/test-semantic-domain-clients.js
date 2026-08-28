@@ -9,8 +9,8 @@ function read(rel) {
   return fs.readFileSync(file, 'utf8');
 }
 
-const studentFeeCommon = read('src/500_student_fee/common/student_fee_common_js.html');
-const studentFeeClient = read('src/500_student_fee/common/student_fee_client_js.html');
+const studentFeeCommon = read('src/frontend/entities/student_fee/ui/student_fee_common_js.html');
+const studentFeeClient = read('src/frontend/entities/student_fee/api/student_fee_client_js.html');
 const studentFeePayerClient = read('src/frontend/entities/student_fee_payer/api/student_fee_payer_client_js.html');
 const studentFeePaymentClient = read('src/frontend/entities/student_fee_payment/api/student_fee_payment_client_js.html');
 const studentFeeRefundClient = read('src/frontend/entities/student_fee_refund/api/student_fee_refund_client_js.html');
@@ -28,6 +28,8 @@ assert.doesNotMatch(studentFeeCommon, /function\s+studentFeeApi\s*\(/, 'studentF
 assert.doesNotMatch(studentFeePages, /\bstudentFeeApi\s*\(/, 'Student Fee UI code must use semantic clients');
 assert.doesNotMatch(studentFeePages, /['"]api_[A-Za-z0-9_]+['"]/, 'Student Fee UI code must not own raw server API names');
 assert.match(studentFeeClient, /var\s+studentFeeClient\s*=\s*\{/, 'Student Fee semantic client must exist');
+assert.match(studentFeeClient, /getSummary\s*:\s*function/);
+assert.doesNotMatch(studentFeeClient, /api_(?:getStudentFeePayers|getStudentFeeApplications|getStudentFeeRefundRequests)/, 'general Student Fee client must only own summary API');
 assert.match(studentFeePayerClient, /var\s+studentFeePayerClient\s*=\s*\{/, 'Student Fee payer semantic client must exist');
 assert.match(studentFeePayerClient, /getPayers\s*:\s*function/);
 assert.match(studentFeePayerClient, /createPayer\s*:\s*function/);
