@@ -21,7 +21,7 @@ assert.ok(!domainAccess.includes('function canAccessPage_'), 'IAM application mu
 assert.ok(code.includes("settings_departments: 'frontend/pages/settings_departments/Settings_Departments'"), 'settings_departments route missing');
 assert.ok(!code.includes("accounting: '400_accounting/400_home/Accounting_Home'"), 'accounting overview route must be removed');
 assert.ok(code.includes("accounting_ledger: '400_accounting/410_ledger/Accounting_Ledger'"), 'accounting_ledger route missing');
-assert.ok(code.includes("accounting_reconciliation: '400_accounting/420_reconciliation/Accounting_Reconciliation'"), 'accounting_reconciliation route missing');
+assert.ok(code.includes("accounting_reconciliation: 'frontend/pages/accounting_reconciliation/Accounting_Reconciliation'"), 'accounting_reconciliation route missing');
 assert.ok(code.includes("accounting_settlement: 'frontend/pages/accounting_settlement/Accounting_Settlement'"), 'accounting_settlement route missing');
 assert.ok(code.includes('canAccessPage_(page, login)'), 'router access guard missing');
 assert.ok(code.includes("file = 'frontend/pages/access_denied/Access_Denied'"), 'access denied route missing');
