@@ -36,12 +36,12 @@ var pages = [
   },
   {
     name: 'Student Fee Refunds',
-    shell: 'src/500_student_fee/530_refunds/Student_Fee_Refunds.html',
-    view: 'src/500_student_fee/530_refunds/Student_Fee_Refunds_View.html',
+    shell: 'src/frontend/pages/student_fee_refunds/Student_Fee_Refunds.html',
+    view: 'src/frontend/pages/student_fee_refunds/Student_Fee_Refunds_View.html',
     partials: [
-      'src/500_student_fee/530_refunds/modals/Student_Fee_Refund_Detail_Modal.html',
-      'src/500_student_fee/530_refunds/modals/Student_Fee_Refund_Approval_Modal.html',
-      'src/500_student_fee/530_refunds/modals/Student_Fee_Refund_Transfer_Modal.html'
+      'src/frontend/pages/student_fee_refunds/modals/Student_Fee_Refund_Detail_Modal.html',
+      'src/frontend/pages/student_fee_refunds/modals/Student_Fee_Refund_Approval_Modal.html',
+      'src/frontend/pages/student_fee_refunds/modals/Student_Fee_Refund_Transfer_Modal.html'
     ]
   },
   {
