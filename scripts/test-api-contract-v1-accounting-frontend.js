@@ -32,7 +32,7 @@ assert.match(reconciliationApi, /getReconciliationDetailData_\(input\.id\)/, 're
 assert.match(settlementApi, /function\s+api_getSettlementReport\s*\(request\)/, 'settlement API must accept request object');
 assert.match(settlementApi, /getSettlementReportData_\(input\.id\)/, 'settlement API must unwrap id at the public boundary');
 
-var common = read_('src/400_accounting/common/accounting_common_js.html');
+var common = read_('src/frontend/widgets/accounting_shell/accounting_common_js.html');
 assert.ok(common.indexOf('function callServer') === -1, 'legacy Accounting wrapper must be removed');
 [
   'src/frontend/features/accounting_ledger_manage/accounting_ledger_list_js.html',
