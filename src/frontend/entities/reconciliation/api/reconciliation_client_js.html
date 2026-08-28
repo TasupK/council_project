@@ -1,0 +1,11 @@
+<script>
+var reconciliationClient = {
+  getReconciliations: function () { return runAppApi('api_getReconciliations', {}); },
+  getReconciliation: function (request) { return runAppApi('api_getReconciliation', request || {}); },
+  processBankTransactionUpload: function (request) { return runAppApi('api_processBankTransactionUpload', request || {}); },
+  processReconciliation: function (request) { return runAppApi('api_processReconciliation', request || {}); },
+  getReconciliationCandidates: function (request) { return runAppApi('api_getReconciliationCandidates', request || {}); },
+  applyReconciliationLink: function (request) { return runAppApi('api_applyReconciliationLink', request || {}); },
+  createLedgerEntryFromReconciliation: function (request) { return runAppApi('api_createLedgerEntryFromReconciliation', request || {}); }
+};
+</script>
