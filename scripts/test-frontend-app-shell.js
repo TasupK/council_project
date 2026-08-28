@@ -31,7 +31,7 @@ assert.match(shellJs, /aria-hidden/);
 
 const templates = [
   'src/frontend/pages/main/Main.html','src/frontend/pages/mypage/MyPage.html',
-  'src/300_settings/300_home/Settings_Home.html','src/300_settings/310_users/Settings_Users.html','src/300_settings/320_roles/Settings_Roles.html','src/300_settings/330_permissions/Settings_Permissions.html','src/frontend/pages/settings_departments/Settings_Departments.html',
+  'src/300_settings/300_home/Settings_Home.html','src/300_settings/310_users/Settings_Users.html','src/300_settings/320_roles/Settings_Roles.html','src/frontend/pages/settings_permissions/Settings_Permissions.html','src/frontend/pages/settings_departments/Settings_Departments.html',
   'src/400_accounting/400_home/Accounting_Home.html','src/400_accounting/410_ledger/Accounting_Ledger.html','src/400_accounting/420_reconciliation/Accounting_Reconciliation.html','src/400_accounting/430_settlement/Accounting_Settlement.html',
   'src/500_student_fee/500_home/Student_Fee_Home.html','src/500_student_fee/510_payers/Student_Fee_Payers.html','src/500_student_fee/520_payments/Student_Fee_Payments.html','src/500_student_fee/530_refunds/Student_Fee_Refunds.html',
   'src/600_event/610_home/Event_Home.html','src/600_event/620_form/Event_Form.html','src/600_event/630_detail/Event_Detail.html'
@@ -39,7 +39,8 @@ const templates = [
 const migrated = new Set([
   'src/frontend/pages/main/Main.html',
   'src/frontend/pages/mypage/MyPage.html',
-  'src/frontend/pages/settings_departments/Settings_Departments.html'
+  'src/frontend/pages/settings_departments/Settings_Departments.html',
+  'src/frontend/pages/settings_permissions/Settings_Permissions.html'
 ]);
 
 templates.forEach(file => {
