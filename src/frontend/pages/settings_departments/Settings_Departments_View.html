@@ -1,0 +1,21 @@
+<header class="page-header ui-page-head">
+  <div>
+    <p class="crumb">설정 / 사용자·권한 / 부서</p>
+    <h1 class="page-title">부서 조직도</h1>
+  </div>
+</header>
+<div class="workspace">
+  <div class="page-panel active" id="panel-loading">
+    <div class="loading ui-loading">부서 정보를 불러오는 중…</div>
+  </div>
+  <div class="page-panel" id="panel-content">
+    <div class="department-summary" id="departmentSummary"></div>
+    <div class="department-groups" id="departmentGroups"></div>
+    <section class="ui-card department-group hidden" id="unassignedGroup">
+      <div class="department-group-head">
+        <div><strong>미배정</strong><span id="unassignedCount"></span></div>
+      </div>
+      <div class="department-members" id="unassignedMembers"></div>
+    </section>
+  </div>
+</div>
