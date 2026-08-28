@@ -8,6 +8,9 @@ var failures = [];
 function read_(relativePath) {
   return fs.readFileSync(path.join(FRONTEND_ROOT, relativePath), 'utf8');
 }
+function readRoot_(relativePath) {
+  return fs.readFileSync(path.join(ROOT, relativePath), 'utf8');
+}
 
 function readOptional_(relativePath) {
   var target = path.join(FRONTEND_ROOT, relativePath);
@@ -52,23 +55,20 @@ function requireNames_(source, label, names) {
 }
 
 var views = [
-  '410_ledger/Accounting_Ledger_View.html',
-  '420_reconciliation/Accounting_Reconciliation_View.html',
-  '430_settlement/Accounting_Settlement_View.html'
+  { label: '410_ledger/Accounting_Ledger_View.html', source: read_('410_ledger/Accounting_Ledger_View.html') },
+  { label: '420_reconciliation/Accounting_Reconciliation_View.html', source: read_('420_reconciliation/Accounting_Reconciliation_View.html') },
+  { label: 'frontend/pages/accounting_settlement/Accounting_Settlement_View.html', source: readRoot_('src/frontend/pages/accounting_settlement/Accounting_Settlement_View.html') }
 ];
 
-views.forEach(function (file) {
-  var source = read_(file);
-  if (/accounting-tabs|data-accounting-page/.test(source)) {
-    failures.push(file + ' must not contain internal Accounting navigation; use the sidebar only.');
-  }
+views.forEach(function (view) {
+  var source = view.source;
+  var file = view.label;
+  if (/accounting-tabs|data-accounting-page/.test(source)) failures.push(file + ' must not contain internal Accounting navigation; use the sidebar only.');
   if (source.indexOf('ui-page-head') < 0) failures.push(file + ' must use ui-page-head.');
   if (source.indexOf('ui-page-desc') < 0) failures.push(file + ' must use ui-page-desc.');
   if (source.indexOf('ui-btn') < 0) failures.push(file + ' must use ui-btn.');
   if (source.indexOf('ui-toast') < 0) failures.push(file + ' must use ui-toast.');
-  if (hasExactClassToken_(source, ['breadcrumb', 'desc'])) {
-    failures.push(file + ' must not keep legacy breadcrumb/desc presentation classes.');
-  }
+  if (hasExactClassToken_(source, ['breadcrumb', 'desc'])) failures.push(file + ' must not keep legacy breadcrumb/desc presentation classes.');
 });
 
 var ledger = read_('410_ledger/Accounting_Ledger_View.html');
@@ -77,29 +77,13 @@ var registerModal = readOptional_('410_ledger/modals/Accounting_Ledger_Register_
 var detailModal = readOptional_('410_ledger/modals/Accounting_Ledger_Detail_Modal.html');
 var ledgerComposed = [ledger, registerModal, detailModal].join('\n');
 
-if (/ui-modal-overlay|id=["'](?:registerModal|detailModal)["']/.test(ledger)) {
-  failures.push('Ledger View must not own modal markup; page-specific modals belong in modals/*.html partials.');
-}
-if (ledgerShell.indexOf("include('400_accounting/410_ledger/modals/Accounting_Ledger_Register_Modal')") < 0) {
-  failures.push('Ledger shell must include the register modal partial.');
-}
-if (ledgerShell.indexOf("include('400_accounting/410_ledger/modals/Accounting_Ledger_Detail_Modal')") < 0) {
-  failures.push('Ledger shell must include the detail modal partial.');
-}
-if (registerModal && hasExactClassToken_(registerModal, ['field'])) {
-  failures.push('Ledger register modal must not use legacy .field because App_Styles gives it fixed height/border/padding.');
-}
-requireIds_(registerModal, 'Ledger register modal', [
-  'registerModal', 'entryForm', 'expenseBtn', 'incomeBtn', 'formDepartment', 'formEvent', 'eventBalance',
-  'entryEvidenceDropzone', 'entryEvidenceFile', 'entryEvidenceFileName', 'draft', 'create'
-]);
-requireNames_(registerModal, 'Ledger register modal', [
-  'transaction_date', 'department_name', 'amount', 'counterparty', 'event_name', 'description', 'note'
-]);
-requireIds_(detailModal, 'Ledger detail modal', [
-  'detailModal', 'detailTitle', 'detailStatus', 'detailAlert', 'detailRows', 'detailEvidenceList',
-  'editLedger', 'deleteLedger', 'approve'
-]);
+if (/ui-modal-overlay|id=["'](?:registerModal|detailModal)["']/.test(ledger)) failures.push('Ledger View must not own modal markup; page-specific modals belong in modals/*.html partials.');
+if (ledgerShell.indexOf("include('400_accounting/410_ledger/modals/Accounting_Ledger_Register_Modal')") < 0) failures.push('Ledger shell must include the register modal partial.');
+if (ledgerShell.indexOf("include('400_accounting/410_ledger/modals/Accounting_Ledger_Detail_Modal')") < 0) failures.push('Ledger shell must include the detail modal partial.');
+if (registerModal && hasExactClassToken_(registerModal, ['field'])) failures.push('Ledger register modal must not use legacy .field because App_Styles gives it fixed height/border/padding.');
+requireIds_(registerModal, 'Ledger register modal', ['registerModal', 'entryForm', 'expenseBtn', 'incomeBtn', 'formDepartment', 'formEvent', 'eventBalance', 'entryEvidenceDropzone', 'entryEvidenceFile', 'entryEvidenceFileName', 'draft', 'create']);
+requireNames_(registerModal, 'Ledger register modal', ['transaction_date', 'department_name', 'amount', 'counterparty', 'event_name', 'description', 'note']);
+requireIds_(detailModal, 'Ledger detail modal', ['detailModal', 'detailTitle', 'detailStatus', 'detailAlert', 'detailRows', 'detailEvidenceList', 'editLedger', 'deleteLedger', 'approve']);
 
 ['ui-stat-card', 'ui-toolbar', 'ui-table', 'ui-pagination', 'ui-modal', 'ui-badge'].forEach(function (primitive) {
   if (ledgerComposed.indexOf(primitive) < 0) failures.push('Ledger must use shared primitive: ' + primitive);
@@ -110,40 +94,26 @@ var reconciliation = read_('420_reconciliation/Accounting_Reconciliation_View.ht
   if (reconciliation.indexOf(primitive) < 0) failures.push('Reconciliation must use shared primitive: ' + primitive);
 });
 
-var settlement = read_('430_settlement/Accounting_Settlement_View.html');
+var settlement = readRoot_('src/frontend/pages/accounting_settlement/Accounting_Settlement_View.html');
 ['ui-stat-card', 'ui-card'].forEach(function (primitive) {
   if (settlement.indexOf(primitive) < 0) failures.push('Settlement must use shared primitive: ' + primitive);
 });
 
 var styles = read_('common/Accounting_Styles.html');
-if (/#[0-9a-fA-F]{3,8}\b/.test(styles)) {
-  failures.push('Accounting domain styles must use canonical --ui-* tokens instead of literal hex colors.');
-}
-if (/\.accounting-page\s+\.(?:small|badge)\b/.test(styles)) {
-  failures.push('Accounting domain styles must not own button/badge primitives.');
-}
-if (/\.accounting-page\s+\.(?:page-head|breadcrumb|desc)\b/.test(styles)) {
-  failures.push('Accounting domain styles must not own shared page-header presentation.');
-}
-if (/\.accounting-page\s+\.(?:match-pill|match-ok|match-check|match-bad)\b/.test(styles)) {
-  failures.push('Accounting reconciliation status styling must use shared ui-badge variants.');
-}
+if (/#[0-9a-fA-F]{3,8}\b/.test(styles)) failures.push('Accounting domain styles must use canonical --ui-* tokens instead of literal hex colors.');
+if (/\.accounting-page\s+\.(?:small|badge)\b/.test(styles)) failures.push('Accounting domain styles must not own button/badge primitives.');
+if (/\.accounting-page\s+\.(?:page-head|breadcrumb|desc)\b/.test(styles)) failures.push('Accounting domain styles must not own shared page-header presentation.');
+if (/\.accounting-page\s+\.(?:match-pill|match-ok|match-check|match-bad)\b/.test(styles)) failures.push('Accounting reconciliation status styling must use shared ui-badge variants.');
 
 var commonJs = read_('common/accounting_common_js.html');
-if (/function\s+setupAccountingPageLinks\s*\(/.test(commonJs) || /data-accounting-page/.test(commonJs)) {
-  failures.push('Accounting common JS must not provide internal page-link navigation.');
-}
+if (/function\s+setupAccountingPageLinks\s*\(/.test(commonJs) || /data-accounting-page/.test(commonJs)) failures.push('Accounting common JS must not provide internal page-link navigation.');
 
 var ledgerJs = read_('410_ledger/accounting_ledger_js.html');
 var reconciliationJs = read_('420_reconciliation/accounting_reconciliation_js.html');
-var settlementJs = read_('430_settlement/accounting_settlement_js.html');
+var settlementJs = readRoot_('src/frontend/features/accounting_settlement_manage/accounting_settlement_manage_js.html');
 var combinedJs = [ledgerJs, reconciliationJs, settlementJs].join('\n');
-if (hasLegacyDynamicPrimitive_(combinedJs)) {
-  failures.push('Accounting dynamic markup must use shared ui-badge/ui-btn variants instead of legacy badge/small classes.');
-}
-if (/match-pill|match-ok|match-check|match-bad/.test(reconciliationJs) || reconciliationJs.indexOf('ui-badge') < 0) {
-  failures.push('Accounting reconciliation dynamic statuses must use ui-badge semantic variants.');
-}
+if (hasLegacyDynamicPrimitive_(combinedJs)) failures.push('Accounting dynamic markup must use shared ui-badge/ui-btn variants instead of legacy badge/small classes.');
+if (/match-pill|match-ok|match-check|match-bad/.test(reconciliationJs) || reconciliationJs.indexOf('ui-badge') < 0) failures.push('Accounting reconciliation dynamic statuses must use ui-badge semantic variants.');
 
 if (failures.length) {
   failures.forEach(function (failure) { console.error(failure); });
