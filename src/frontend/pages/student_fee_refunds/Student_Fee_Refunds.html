@@ -13,7 +13,7 @@
   <?!= include('frontend/shared/api/app_api_runner_js'); ?>
   <?!= include('frontend/entities/user/api/app_client_js'); ?>
   <?!= include('frontend/entities/student_fee_refund/api/student_fee_refund_client_js'); ?>
-  <?!= include('500_student_fee/common/Student_Fee_Styles'); ?>
+  <?!= include('frontend/entities/student_fee/ui/Student_Fee_Styles'); ?>
   <script>
     var WEB_APP_URL = '<?= getWebAppUrl() ?>';
     var APP_USER_NAME = <?!= JSON.stringify(mainUserName || '') ?>;
@@ -36,7 +36,7 @@
     </div>
   </div>
   <?!= include('frontend/app/shell/app_shell_js'); ?>
-  <?!= include('500_student_fee/common/student_fee_common_js'); ?>
+  <?!= include('frontend/entities/student_fee/ui/student_fee_common_js'); ?>
   <?!= include('frontend/features/student_fee_refund_manage/student_fee_refund_manage_js'); ?>
   <?!= include('frontend/pages/student_fee_refunds/student_fee_refunds_controller_js'); ?>
 </body>
