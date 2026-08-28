@@ -2,15 +2,12 @@ var fs = require('fs');
 var path = require('path');
 
 var ROOT = path.resolve(__dirname, '..');
-var FRONTEND_ROOT = path.join(ROOT, 'src', '500_student_fee');
 var failures = [];
 
-var REQUIRED_LEGACY_FILES = [
-  'common/Student_Fee_Styles.html',
-  'common/student_fee_common_js.html',
-  'common/student_fee_client_js.html'
-];
 var REQUIRED_FSD_FILES = [
+  'src/frontend/entities/student_fee/api/student_fee_client_js.html',
+  'src/frontend/entities/student_fee/ui/student_fee_common_js.html',
+  'src/frontend/entities/student_fee/ui/Student_Fee_Styles.html',
   'src/frontend/pages/student_fee_home/Student_Fee_Home.html',
   'src/frontend/pages/student_fee_home/Student_Fee_Home_View.html',
   'src/frontend/pages/student_fee_home/student_fee_home_controller_js.html',
@@ -38,18 +35,11 @@ var REQUIRED_FSD_FILES = [
 ];
 
 function readRoot_(relativePath) { return fs.readFileSync(path.join(ROOT, relativePath), 'utf8'); }
-function readFrontend_(relativePath) { return fs.readFileSync(path.join(FRONTEND_ROOT, relativePath), 'utf8'); }
-function existsFrontend_(relativePath) { return fs.existsSync(path.join(FRONTEND_ROOT, relativePath)); }
 
-REQUIRED_LEGACY_FILES.forEach(function (file) {
-  if (!existsFrontend_(file)) failures.push('Missing Student Fee frontend file: ' + file);
-});
 REQUIRED_FSD_FILES.forEach(function (file) {
   if (!fs.existsSync(path.join(ROOT, file))) failures.push('Missing Student Fee FSD file: ' + file);
 });
-['500_home', '510_payers', '520_payments', '530_refunds'].forEach(function (legacySlice) {
-  if (fs.existsSync(path.join(FRONTEND_ROOT, legacySlice))) failures.push('Legacy Student Fee slice must be removed: ' + legacySlice);
-});
+if (fs.existsSync(path.join(ROOT, 'src', '500_student_fee'))) failures.push('Legacy Student Fee root must be removed: src/500_student_fee');
 
 var code = readRoot_('src/backend/app/routing/Code.js');
 var routes = {
@@ -72,7 +62,7 @@ var shellJs = readRoot_('src/frontend/app/shell/app_shell_js.html');
 if (shellJs.indexOf('student_fee') < 0 || shellJs.indexOf('appNavStudentFee') < 0 || shellJs.indexOf('setStudentFeeSubmenuExpanded_') < 0) failures.push('Student Fee navigation active/expand logic missing from shell JS.');
 
 [
-  ['src/frontend/pages/student_fee_home/Student_Fee_Home.html', null],
+  ['src/frontend/pages/student_fee_home/Student_Fee_Home.html', "include('frontend/entities/student_fee/api/student_fee_client_js')"],
   ['src/frontend/pages/student_fee_payers/Student_Fee_Payers.html', "include('frontend/entities/student_fee_payer/api/student_fee_payer_client_js')"],
   ['src/frontend/pages/student_fee_payments/Student_Fee_Payments.html', "include('frontend/entities/student_fee_payment/api/student_fee_payment_client_js')"],
   ['src/frontend/pages/student_fee_refunds/Student_Fee_Refunds.html', "include('frontend/entities/student_fee_refund/api/student_fee_refund_client_js')"]
@@ -82,14 +72,23 @@ if (shellJs.indexOf('student_fee') < 0 || shellJs.indexOf('appNavStudentFee') < 
     "include('frontend/shared/styles/App_Styles')",
     "include('frontend/widgets/app_header/App_Header')",
     "include('frontend/widgets/app_sidebar/App_Sidebar')",
-    "include('500_student_fee/common/Student_Fee_Styles')",
+    "include('frontend/entities/student_fee/ui/Student_Fee_Styles')",
     "include('frontend/app/shell/app_shell_js')",
-    "include('500_student_fee/common/student_fee_common_js')"
+    "include('frontend/entities/student_fee/ui/student_fee_common_js')"
   ].forEach(function (needle) {
     if (source.indexOf(needle) < 0) failures.push(entry[0] + ' missing include: ' + needle);
   });
-  if (entry[1] && source.indexOf(entry[1]) < 0) failures.push(entry[0] + ' missing include: ' + entry[1]);
+  if (source.indexOf(entry[1]) < 0) failures.push(entry[0] + ' missing include: ' + entry[1]);
+  if (source.indexOf('500_student_fee/') >= 0) failures.push(entry[0] + ' contains legacy Student Fee include path.');
 });
+
+var generalClient = readRoot_('src/frontend/entities/student_fee/api/student_fee_client_js.html');
+if (generalClient.indexOf('api_getStudentFeeSummary') < 0) failures.push('Student Fee summary client missing API mapping.');
+if (/api_(?:getStudentFeePayers|getStudentFeeApplications|getStudentFeeRefundRequests)/.test(generalClient)) failures.push('Student Fee summary client must not duplicate slice API mappings.');
+
+var commonJs = readRoot_('src/frontend/entities/student_fee/ui/student_fee_common_js.html');
+if (/api_[A-Za-z0-9_]+/.test(commonJs)) failures.push('Student Fee UI helpers must not hard-code server API names.');
+if (commonJs.indexOf('studentFeeRunBusy') < 0 || commonJs.indexOf('studentFeeSetBusy') < 0) failures.push('Student Fee UI helpers must provide busy helpers.');
 
 var homeController = readRoot_('src/frontend/pages/student_fee_home/student_fee_home_controller_js.html');
 if (/['"]api_[A-Za-z0-9_]+['"]/.test(homeController)) failures.push('Student Fee Home controller must not own raw server API names.');
@@ -125,13 +124,7 @@ if (/['"]api_[A-Za-z0-9_]+['"]/.test(refundFeature)) failures.push('Student Fee 
   if (refundClient.indexOf(apiName) < 0) failures.push('Student Fee Refund client missing API mapping: ' + apiName);
 });
 
-if (existsFrontend_('common/student_fee_common_js.html')) {
-  var commonJs = readFrontend_('common/student_fee_common_js.html');
-  if (/api_get|api_create|api_update|api_process|api_calculate|api_confirm/.test(commonJs)) failures.push('Student Fee common JS must remain generic and not hard-code domain API names.');
-  if (commonJs.indexOf('studentFeeRunBusy') < 0 || commonJs.indexOf('studentFeeSetBusy') < 0) failures.push('Student Fee common JS must provide busy helpers.');
-}
-
-var combined = REQUIRED_LEGACY_FILES.filter(existsFrontend_).map(readFrontend_).concat(REQUIRED_FSD_FILES.map(readRoot_)).join('\n');
+var combined = REQUIRED_FSD_FILES.map(readRoot_).join('\n');
 [
   ['apiV1_', 'Legacy apiV1_ found'],
   ['hasFullAccess', 'Client-controlled hasFullAccess found'],
