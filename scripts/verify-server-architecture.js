@@ -30,7 +30,7 @@ var REQUIRED_ROUTES = {
   event: '600_event/610_home/Event_Home',
   event_form: '600_event/620_form/Event_Form',
   event_detail: '600_event/630_detail/Event_Detail',
-  settings: '300_settings/300_home/Settings_Home',
+  settings: 'frontend/pages/settings_home/Settings_Home',
   settings_departments: '300_settings/340_departments/Settings_Departments',
   settings_users: '300_settings/310_users/Settings_Users',
   settings_roles: '300_settings/320_roles/Settings_Roles',
