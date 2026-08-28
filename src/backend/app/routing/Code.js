@@ -17,7 +17,7 @@ function doGet(e) {
     event_detail: '600_event/630_detail/Event_Detail',
     settings: 'frontend/pages/settings_home/Settings_Home',
     settings_departments: '300_settings/340_departments/Settings_Departments',
-    settings_users: '300_settings/310_users/Settings_Users',
+    settings_users: 'frontend/pages/settings_users/Settings_Users',
     settings_roles: '300_settings/320_roles/Settings_Roles',
     settings_permissions: '300_settings/330_permissions/Settings_Permissions'
   };
