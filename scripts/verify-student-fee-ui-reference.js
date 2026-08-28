@@ -20,7 +20,7 @@ var VIEW_FILES = [
   'src/frontend/pages/student_fee_home/Student_Fee_Home_View.html',
   'src/frontend/pages/student_fee_payers/Student_Fee_Payers_View.html',
   'src/frontend/pages/student_fee_payments/Student_Fee_Payments_View.html',
-  '530_refunds/Student_Fee_Refunds_View.html'
+  'src/frontend/pages/student_fee_refunds/Student_Fee_Refunds_View.html'
 ];
 
 VIEW_FILES.forEach(function (file) {
@@ -34,7 +34,7 @@ VIEW_FILES.forEach(function (file) {
 [
   'src/frontend/pages/student_fee_payers/Student_Fee_Payers_View.html',
   'src/frontend/pages/student_fee_payments/Student_Fee_Payments_View.html',
-  '530_refunds/Student_Fee_Refunds_View.html'
+  'src/frontend/pages/student_fee_refunds/Student_Fee_Refunds_View.html'
 ].forEach(function (file) {
   var source = readAny_(file);
   ['ui-card', 'ui-toolbar', 'ui-table-wrap', 'ui-btn'].forEach(function (primitive) {
@@ -54,9 +54,9 @@ var MODAL_PAGES = [
     partials: ['src/frontend/pages/student_fee_payments/modals/Student_Fee_Payment_Detail_Modal.html','src/frontend/pages/student_fee_payments/modals/Student_Fee_Payment_Confirm_Modal.html']
   },
   {
-    shell: '530_refunds/Student_Fee_Refunds.html',
-    view: '530_refunds/Student_Fee_Refunds_View.html',
-    partials: ['530_refunds/modals/Student_Fee_Refund_Detail_Modal.html','530_refunds/modals/Student_Fee_Refund_Approval_Modal.html','530_refunds/modals/Student_Fee_Refund_Transfer_Modal.html']
+    shell: 'src/frontend/pages/student_fee_refunds/Student_Fee_Refunds.html',
+    view: 'src/frontend/pages/student_fee_refunds/Student_Fee_Refunds_View.html',
+    partials: ['src/frontend/pages/student_fee_refunds/modals/Student_Fee_Refund_Detail_Modal.html','src/frontend/pages/student_fee_refunds/modals/Student_Fee_Refund_Approval_Modal.html','src/frontend/pages/student_fee_refunds/modals/Student_Fee_Refund_Transfer_Modal.html']
   }
 ];
 MODAL_PAGES.forEach(function (page) {
@@ -94,13 +94,13 @@ requireNames_(paymentConfirm, ['depositorName','reason'], 'Payment confirm modal
 requireActions_(paymentConfirm, ['close-payment-confirm','confirm-payment'], 'Payment confirm modal');
 if (paymentConfirm && (paymentConfirm.indexOf('data-result="MISMATCH"') < 0 || paymentConfirm.indexOf('data-result="DONE"') < 0)) failures.push('Payment confirm modal must preserve MISMATCH and DONE results.');
 
-var refundDetail = readOptionalAny_('530_refunds/modals/Student_Fee_Refund_Detail_Modal.html');
+var refundDetail = readOptionalAny_('src/frontend/pages/student_fee_refunds/modals/Student_Fee_Refund_Detail_Modal.html');
 requireIds_(refundDetail, ['sf-refund-detail-modal','sf-refund-detail-title','sf-refund-detail-content','sf-refund-detail-actions'], 'Refund detail modal');
-var refundApproval = readOptionalAny_('530_refunds/modals/Student_Fee_Refund_Approval_Modal.html');
+var refundApproval = readOptionalAny_('src/frontend/pages/student_fee_refunds/modals/Student_Fee_Refund_Approval_Modal.html');
 requireIds_(refundApproval, ['sf-refund-approval-modal','sf-refund-approval-title','sf-refund-approval-form','sf-refund-maximum','sf-refund-approved-amount','sf-refund-approval-reason','sf-refund-approve-submit'], 'Refund approval modal');
 requireNames_(refundApproval, ['approvedAmount','reason'], 'Refund approval modal');
 requireActions_(refundApproval, ['close-refund-approval'], 'Refund approval modal');
-var refundTransfer = readOptionalAny_('530_refunds/modals/Student_Fee_Refund_Transfer_Modal.html');
+var refundTransfer = readOptionalAny_('src/frontend/pages/student_fee_refunds/modals/Student_Fee_Refund_Transfer_Modal.html');
 requireIds_(refundTransfer, ['sf-refund-transfer-modal','sf-refund-transfer-title','sf-refund-transfer-form','sf-refund-transfer-date','sf-refund-transfer-file','sf-refund-transfer-reason'], 'Refund transfer modal');
 requireNames_(refundTransfer, ['transferDate','transferEvidenceId','reason'], 'Refund transfer modal');
 requireActions_(refundTransfer, ['close-refund-transfer','confirm-refund-transfer'], 'Refund transfer modal');
@@ -116,7 +116,7 @@ var homeJs = readAny_('src/frontend/pages/student_fee_home/student_fee_home_cont
 
 var payerJs = readAny_('src/frontend/features/student_fee_payer_manage/student_fee_payer_manage_js.html');
 var paymentJs = readAny_('src/frontend/features/student_fee_payment_manage/student_fee_payment_manage_js.html');
-var refundJs = readAny_('530_refunds/student_fee_refunds_js.html');
+var refundJs = readAny_('src/frontend/features/student_fee_refund_manage/student_fee_refund_manage_js.html');
 [payerJs, paymentJs, refundJs].forEach(function (source, index) { if (source.indexOf('ui-table') < 0) failures.push('Student Fee list renderer ' + index + ' must render ui-table.'); });
 
 var commonJs = readAny_('common/student_fee_common_js.html');
