@@ -17,7 +17,7 @@ var REQUIRED_PUBLIC_FUNCTIONS = [
 ];
 
 var REQUIRED_ROUTES = {
-  login: '200_login/Login',
+  login: 'frontend/pages/login/Login',
   main: 'frontend/pages/main/Main',
   mypage: 'frontend/pages/mypage/MyPage',
   accounting_ledger: 'frontend/pages/accounting_ledger/Accounting_Ledger',
