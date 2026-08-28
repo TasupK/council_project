@@ -1,0 +1,163 @@
+<script>
+'use strict';
+
+var state = {
+  view: 'list', currentEventId: '', eventList: null, eventFilters: { includeClosed: false }, eventPage: 1,
+  detail: null, detailSections: {}, activeTab: 'basic', applicantPage: 1, applicantFilters: {}, attendancePage: 1,
+  attendanceFilters: {}, refundPage: 1, dirtyAttendance: {}, loadingCount: 0
+};
+var modalRoot = document.getElementById('ew-modal-root');
+var loading = document.getElementById('ew-loading');
+var toast = document.getElementById('ew-toast');
+
+function runEventBusy(task) {
+  setLoading(true);
+  var result;
+  try {
+    result = task();
+  } catch (error) {
+    setLoading(false);
+    return Promise.reject(error);
+  }
+  return Promise.resolve(result).then(function (value) {
+    setLoading(false);
+    return value;
+  }, function (error) {
+    setLoading(false);
+    throw error;
+  });
+}
+
+function setLoading(isLoading) {
+  state.loadingCount = Math.max(0, state.loadingCount + (isLoading ? 1 : -1));
+  loading.hidden = state.loadingCount === 0;
+}
+
+function showToast(message, isError) {
+  toast.textContent = message;
+  toast.classList.toggle('error', Boolean(isError));
+  toast.hidden = false;
+  window.clearTimeout(showToast.timer);
+  showToast.timer = window.setTimeout(function () { toast.hidden = true; }, 4200);
+}
+
+function handleError(error) {
+  var prefix = error && error.code ? '[' + error.code + '] ' : '';
+  showToast(prefix + (error && error.message ? error.message : '오류가 발생했습니다.'), true);
+}
+
+function escapeHtml(value) {
+  return String(value === null || typeof value === 'undefined' ? '' : value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function money(value) {
+  if (value === null || value === '' || typeof value === 'undefined') return '확인 필요';
+  var number = Number(value);
+  return isFinite(number) ? number.toLocaleString('ko-KR') + '원' : escapeHtml(value);
+}
+
+function displayDate(value) {
+  return value ? escapeHtml(String(value).slice(0, 10).replace(/-/g, '.')) : '-';
+}
+
+function safeRelatedMaterialLink(url) {
+  var text = String(url || '').trim();
+  if (!text) return '';
+  if (!/^https:\/\/(drive|docs)\.google\.com\//i.test(text)) return escapeHtml(text);
+  return '<a href="' + escapeHtml(text) + '" target="_blank" rel="noopener noreferrer">관련자료 열기</a>';
+}
+
+function statusClass(value) {
+  var text = String(value || '');
+  if (['승인', '납부', '출석', '진행', '입금 완료', '처리 완료'].indexOf(text) >= 0) return 'ew-status-green';
+  if (['반려', '미납', '미참석'].indexOf(text) >= 0) return 'ew-status-red';
+  if (['모집', '대기', '입금 대기', '처리 대기'].indexOf(text) >= 0) return 'ew-status-blue';
+  if (text === '예정') return 'ew-status-purple';
+  if (text === '동기화 필요') return 'ew-status-orange';
+  return 'ew-status-gray';
+}
+
+function sharedStatusClass(value) {
+  var text = String(value || '');
+  if (['승인', '납부', '출석', '진행', '입금 완료', '처리 완료'].indexOf(text) >= 0) return 'success';
+  if (['반려', '미납', '미참석'].indexOf(text) >= 0) return 'danger';
+  if (['모집', '대기', '입금 대기', '처리 대기', '예정'].indexOf(text) >= 0) return 'info';
+  if (text === '동기화 필요') return 'warning';
+  return 'neutral';
+}
+
+function statusBadge(value, fallback) {
+  var label = value || fallback || '확인 필요';
+  return '<span class="ew-status ' + statusClass(label) + ' ui-badge ' + sharedStatusClass(label) + '">' + escapeHtml(label) + '</span>';
+}
+
+function paginationHtml(data, action) {
+  if (!data || data.totalPages <= 1) return '<div class="ew-pagination ui-pagination"></div>';
+  var buttons = '';
+  var start = Math.max(1, data.page - 2);
+  var end = Math.min(data.totalPages, start + 4);
+  for (var page = start; page <= end; page += 1) {
+    buttons += '<button type="button" class="ew-page-btn ui-page-btn ' + (page === data.page ? 'active' : '') +
+      '" data-action="' + action + '" data-page="' + page + '">' + page + '</button>';
+  }
+  return '<div class="ew-pagination ui-pagination">' +
+    '<button type="button" class="ew-page-btn ui-page-btn" data-action="' + action + '" data-page="' +
+    Math.max(1, data.page - 1) + '" ' + (data.page === 1 ? 'disabled' : '') + '>‹</button>' +
+    buttons +
+    '<button type="button" class="ew-page-btn ui-page-btn" data-action="' + action + '" data-page="' +
+    Math.min(data.totalPages, data.page + 1) + '" ' + (data.page === data.totalPages ? 'disabled' : '') + '>›</button>' +
+    '</div>';
+}
+
+function readForm(form) {
+  var data = {};
+  new FormData(form).forEach(function (value, key) {
+    if (data[key]) data[key] = [].concat(data[key], value);
+    else data[key] = value;
+  });
+  form.querySelectorAll('input[type="checkbox"]').forEach(function (input) {
+    data[input.name] = input.checked;
+  });
+  return data;
+}
+
+function goList() {
+  window.top.location.href = WEB_APP_URL + '?page=event';
+}
+
+function goEventBack_() {
+  if (window.history.length > 1) {
+    window.history.back();
+    return;
+  }
+  var fallbackPage = APP_CURRENT_PAGE === 'event' ? 'main' : 'event';
+  window.top.location.href = WEB_APP_URL + '?page=' + fallbackPage;
+}
+
+function goEventForm(eventId) {
+  var query = '?page=event_form';
+  if (eventId) query += '&id=' + encodeURIComponent(eventId);
+  window.top.location.href = WEB_APP_URL + query;
+}
+
+function goDetail(eventId, tab) {
+  if (!eventId) {
+    showToast('행사 목록에서 상세 행사를 먼저 선택해주세요.', true);
+    return;
+  }
+  var query = '?page=event_detail&id=' + encodeURIComponent(eventId);
+  if (tab && tab !== 'basic') query += '&tab=' + encodeURIComponent(tab);
+  window.top.location.href = WEB_APP_URL + query;
+}
+
+document.addEventListener('click', function (event) {
+  var button = event.target.closest('[data-action="go-back"]');
+  if (!button || button.disabled) return;
+  goEventBack_();
+});
+</script>
