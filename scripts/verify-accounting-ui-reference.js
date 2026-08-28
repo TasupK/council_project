@@ -2,10 +2,8 @@ var fs = require('fs');
 var path = require('path');
 
 var ROOT = path.resolve(__dirname, '..');
-var FRONTEND_ROOT = path.join(ROOT, 'src', '400_accounting');
 var failures = [];
 
-function read_(relativePath) { return fs.readFileSync(path.join(FRONTEND_ROOT, relativePath), 'utf8'); }
 function readRoot_(relativePath) { return fs.readFileSync(path.join(ROOT, relativePath), 'utf8'); }
 function hasExactClassToken_(source, forbiddenTokens) {
   var classPattern = /class=["']([^"']*)["']/g; var match;
@@ -52,12 +50,12 @@ requireIds_(detailModal, 'Ledger detail modal', ['detailModal', 'detailTitle', '
 ['ui-card', 'ui-toolbar', 'ui-table'].forEach(function (primitive) { if (reconciliation.indexOf(primitive) < 0) failures.push('Reconciliation must use shared primitive: ' + primitive); });
 ['ui-stat-card', 'ui-card'].forEach(function (primitive) { if (settlement.indexOf(primitive) < 0) failures.push('Settlement must use shared primitive: ' + primitive); });
 
-var styles = read_('common/Accounting_Styles.html');
+var styles = readRoot_('src/frontend/widgets/accounting_shell/Accounting_Styles.html');
 if (/#[0-9a-fA-F]{3,8}\b/.test(styles)) failures.push('Accounting domain styles must use canonical --ui-* tokens instead of literal hex colors.');
 if (/\.accounting-page\s+\.(?:small|badge)\b/.test(styles)) failures.push('Accounting domain styles must not own button/badge primitives.');
 if (/\.accounting-page\s+\.(?:page-head|breadcrumb|desc)\b/.test(styles)) failures.push('Accounting domain styles must not own shared page-header presentation.');
 if (/\.accounting-page\s+\.(?:match-pill|match-ok|match-check|match-bad)\b/.test(styles)) failures.push('Accounting reconciliation status styling must use shared ui-badge variants.');
-var commonJs = read_('common/accounting_common_js.html');
+var commonJs = readRoot_('src/frontend/widgets/accounting_shell/accounting_common_js.html');
 if (/function\s+setupAccountingPageLinks\s*\(/.test(commonJs) || /data-accounting-page/.test(commonJs)) failures.push('Accounting common JS must not provide internal page-link navigation.');
 
 var ledgerJs = [
