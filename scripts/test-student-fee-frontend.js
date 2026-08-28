@@ -65,18 +65,18 @@ function createFrontendContext_() {
 }
 
 function loadCommon_(fixture) {
-  vm.runInContext(scriptBody_('src/100_common/app_api_runner_js.html'), fixture.context);
-  vm.runInContext(scriptBody_('src/500_student_fee/common/student_fee_client_js.html'), fixture.context);
-  vm.runInContext(scriptBody_('src/500_student_fee/common/student_fee_common_js.html'), fixture.context);
+  vm.runInContext(scriptBody_('src/frontend/shared/api/app_api_runner_js.html'), fixture.context);
+  vm.runInContext(scriptBody_('src/frontend/entities/student_fee/api/student_fee_client_js.html'), fixture.context);
+  vm.runInContext(scriptBody_('src/frontend/entities/student_fee/ui/student_fee_common_js.html'), fixture.context);
 }
 
 function testStudentFeeSemanticClient_() {
   var fixture = createFrontendContext_();
   loadCommon_(fixture);
-  return fixture.context.studentFeeClient.getApplications({ page: 1 }).then(function () {
+  return fixture.context.studentFeeClient.getSummary().then(function () {
     assert.strictEqual(fixture.calls.length, 1);
-    assert.strictEqual(fixture.calls[0].name, 'api_getStudentFeeApplications');
-    assert.deepStrictEqual(JSON.parse(JSON.stringify(fixture.calls[0].payload)), { request: { page: 1 } });
+    assert.strictEqual(fixture.calls[0].name, 'api_getStudentFeeSummary');
+    assert.deepStrictEqual(JSON.parse(JSON.stringify(fixture.calls[0].payload)), { request: {} });
   });
 }
 
@@ -99,7 +99,7 @@ function testStudentFeeRouteHelpers_() {
     assert.match(code, new RegExp('\\b' + route + '\\s*:'));
   });
   assert.match(code, /page\.indexOf\(['"]student_fee['"]\)\s*===\s*0/);
-  var shell = read_('src/100_common/app_shell_js.html');
+  var shell = read_('src/frontend/app/shell/app_shell_js.html');
   assert.match(shell, /appNavStudentFee/);
   assert.match(shell, /student_fee_payers/);
   assert.match(shell, /student_fee_payments/);
