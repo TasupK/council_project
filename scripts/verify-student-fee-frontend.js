@@ -8,13 +8,7 @@ var failures = [];
 var REQUIRED_LEGACY_FILES = [
   'common/Student_Fee_Styles.html',
   'common/student_fee_common_js.html',
-  'common/student_fee_client_js.html',
-  '530_refunds/Student_Fee_Refunds.html',
-  '530_refunds/Student_Fee_Refunds_View.html',
-  '530_refunds/modals/Student_Fee_Refund_Detail_Modal.html',
-  '530_refunds/modals/Student_Fee_Refund_Approval_Modal.html',
-  '530_refunds/modals/Student_Fee_Refund_Transfer_Modal.html',
-  '530_refunds/student_fee_refunds_js.html'
+  'common/student_fee_client_js.html'
 ];
 var REQUIRED_FSD_FILES = [
   'src/frontend/pages/student_fee_home/Student_Fee_Home.html',
@@ -32,15 +26,16 @@ var REQUIRED_FSD_FILES = [
   'src/frontend/pages/student_fee_payments/modals/Student_Fee_Payment_Confirm_Modal.html',
   'src/frontend/pages/student_fee_payments/student_fee_payments_controller_js.html',
   'src/frontend/features/student_fee_payment_manage/student_fee_payment_manage_js.html',
-  'src/frontend/entities/student_fee_payment/api/student_fee_payment_client_js.html'
+  'src/frontend/entities/student_fee_payment/api/student_fee_payment_client_js.html',
+  'src/frontend/pages/student_fee_refunds/Student_Fee_Refunds.html',
+  'src/frontend/pages/student_fee_refunds/Student_Fee_Refunds_View.html',
+  'src/frontend/pages/student_fee_refunds/modals/Student_Fee_Refund_Detail_Modal.html',
+  'src/frontend/pages/student_fee_refunds/modals/Student_Fee_Refund_Approval_Modal.html',
+  'src/frontend/pages/student_fee_refunds/modals/Student_Fee_Refund_Transfer_Modal.html',
+  'src/frontend/pages/student_fee_refunds/student_fee_refunds_controller_js.html',
+  'src/frontend/features/student_fee_refund_manage/student_fee_refund_manage_js.html',
+  'src/frontend/entities/student_fee_refund/api/student_fee_refund_client_js.html'
 ];
-
-var LEGACY_PAGE_SHELLS = ['530_refunds/Student_Fee_Refunds.html'];
-var PAGE_JS_ALLOWLIST = {
-  '530_refunds/student_fee_refunds_js.html': [
-    'api_getStudentFeeRefundRequests', 'api_getStudentFeeRefundRequest', 'api_processStudentFeeRefundRequests', 'api_calculateStudentFeeRefund', 'api_confirmStudentFeeRefund'
-  ]
-};
 
 function readRoot_(relativePath) { return fs.readFileSync(path.join(ROOT, relativePath), 'utf8'); }
 function readFrontend_(relativePath) { return fs.readFileSync(path.join(FRONTEND_ROOT, relativePath), 'utf8'); }
@@ -52,7 +47,7 @@ REQUIRED_LEGACY_FILES.forEach(function (file) {
 REQUIRED_FSD_FILES.forEach(function (file) {
   if (!fs.existsSync(path.join(ROOT, file))) failures.push('Missing Student Fee FSD file: ' + file);
 });
-['500_home', '510_payers', '520_payments'].forEach(function (legacySlice) {
+['500_home', '510_payers', '520_payments', '530_refunds'].forEach(function (legacySlice) {
   if (fs.existsSync(path.join(FRONTEND_ROOT, legacySlice))) failures.push('Legacy Student Fee slice must be removed: ' + legacySlice);
 });
 
@@ -61,7 +56,7 @@ var routes = {
   student_fee: 'frontend/pages/student_fee_home/Student_Fee_Home',
   student_fee_payers: 'frontend/pages/student_fee_payers/Student_Fee_Payers',
   student_fee_payments: 'frontend/pages/student_fee_payments/Student_Fee_Payments',
-  student_fee_refunds: '500_student_fee/530_refunds/Student_Fee_Refunds'
+  student_fee_refunds: 'frontend/pages/student_fee_refunds/Student_Fee_Refunds'
 };
 Object.keys(routes).forEach(function (route) {
   var pattern = new RegExp('\\b' + route + '\\s*:\\s*[\'\"]' + routes[route].replace(/\//g, '\\/') + '[\'\"]');
@@ -79,7 +74,8 @@ if (shellJs.indexOf('student_fee') < 0 || shellJs.indexOf('appNavStudentFee') < 
 [
   ['src/frontend/pages/student_fee_home/Student_Fee_Home.html', null],
   ['src/frontend/pages/student_fee_payers/Student_Fee_Payers.html', "include('frontend/entities/student_fee_payer/api/student_fee_payer_client_js')"],
-  ['src/frontend/pages/student_fee_payments/Student_Fee_Payments.html', "include('frontend/entities/student_fee_payment/api/student_fee_payment_client_js')"]
+  ['src/frontend/pages/student_fee_payments/Student_Fee_Payments.html', "include('frontend/entities/student_fee_payment/api/student_fee_payment_client_js')"],
+  ['src/frontend/pages/student_fee_refunds/Student_Fee_Refunds.html', "include('frontend/entities/student_fee_refund/api/student_fee_refund_client_js')"]
 ].forEach(function (entry) {
   var source = readRoot_(entry[0]);
   [
@@ -93,21 +89,6 @@ if (shellJs.indexOf('student_fee') < 0 || shellJs.indexOf('appNavStudentFee') < 
     if (source.indexOf(needle) < 0) failures.push(entry[0] + ' missing include: ' + needle);
   });
   if (entry[1] && source.indexOf(entry[1]) < 0) failures.push(entry[0] + ' missing include: ' + entry[1]);
-});
-
-LEGACY_PAGE_SHELLS.forEach(function (file) {
-  if (!existsFrontend_(file)) return;
-  var source = readFrontend_(file);
-  [
-    "include('100_common/App_Styles')",
-    "include('100_common/App_Header')",
-    "include('100_common/App_Sidebar')",
-    "include('500_student_fee/common/Student_Fee_Styles')",
-    "include('100_common/app_shell_js')",
-    "include('500_student_fee/common/student_fee_common_js')"
-  ].forEach(function (needle) {
-    if (source.indexOf(needle) < 0) failures.push(file + ' missing include: ' + needle);
-  });
 });
 
 var homeController = readRoot_('src/frontend/pages/student_fee_home/student_fee_home_controller_js.html');
@@ -134,14 +115,14 @@ if (/['"]api_[A-Za-z0-9_]+['"]/.test(paymentFeature)) failures.push('Student Fee
   if (paymentClient.indexOf(apiName) < 0) failures.push('Student Fee Payment client missing API mapping: ' + apiName);
 });
 
-Object.keys(PAGE_JS_ALLOWLIST).forEach(function (file) {
-  if (!existsFrontend_(file)) return;
-  var source = readFrontend_(file);
-  var matches = source.match(/api_[A-Za-z0-9_]+/g) || [];
-  var unique = matches.filter(function (name, index) { return matches.indexOf(name) === index; });
-  unique.forEach(function (name) {
-    if (PAGE_JS_ALLOWLIST[file].indexOf(name) < 0) failures.push(file + ' calls unapproved API: ' + name);
-  });
+var refundFeature = readRoot_('src/frontend/features/student_fee_refund_manage/student_fee_refund_manage_js.html');
+var refundClient = readRoot_('src/frontend/entities/student_fee_refund/api/student_fee_refund_client_js.html');
+if (/['"]api_[A-Za-z0-9_]+['"]/.test(refundFeature)) failures.push('Student Fee Refunds feature must not own raw server API names.');
+['getRefundRequests', 'getRefundRequest', 'calculateRefund', 'processRefundRequests', 'confirmRefund'].forEach(function (method) {
+  if (refundFeature.indexOf('studentFeeRefundClient.' + method) < 0) failures.push('Student Fee Refunds feature missing semantic client method: ' + method);
+});
+['api_getStudentFeeRefundRequests', 'api_getStudentFeeRefundRequest', 'api_calculateStudentFeeRefund', 'api_processStudentFeeRefundRequests', 'api_confirmStudentFeeRefund'].forEach(function (apiName) {
+  if (refundClient.indexOf(apiName) < 0) failures.push('Student Fee Refund client missing API mapping: ' + apiName);
 });
 
 if (existsFrontend_('common/student_fee_common_js.html')) {
@@ -167,24 +148,18 @@ if (/class=[\'\"][^\'\"]*(topbar|standalone-sidebar|shell-copy)/.test(combined))
   ['src/frontend/pages/student_fee_payments/Student_Fee_Payments_View.html', /bulk/i, 'Payment bulk action structure missing'],
   ['src/frontend/pages/student_fee_payments/modals/Student_Fee_Payment_Detail_Modal.html', /ui-modal-overlay/i, 'Payment detail modal structure missing'],
   ['src/frontend/pages/student_fee_payments/modals/Student_Fee_Payment_Confirm_Modal.html', /ui-modal-overlay/i, 'Payment confirm modal structure missing'],
-  ['530_refunds/Student_Fee_Refunds_View.html', /bulk/i, 'Refund bulk action structure missing'],
-  ['530_refunds/modals/Student_Fee_Refund_Detail_Modal.html', /ui-modal-overlay/i, 'Refund detail modal structure missing'],
-  ['530_refunds/modals/Student_Fee_Refund_Approval_Modal.html', /ui-modal-overlay/i, 'Refund approval modal structure missing'],
-  ['530_refunds/modals/Student_Fee_Refund_Transfer_Modal.html', /ui-modal-overlay/i, 'Refund transfer modal structure missing']
+  ['src/frontend/pages/student_fee_refunds/Student_Fee_Refunds_View.html', /bulk/i, 'Refund bulk action structure missing'],
+  ['src/frontend/pages/student_fee_refunds/modals/Student_Fee_Refund_Detail_Modal.html', /ui-modal-overlay/i, 'Refund detail modal structure missing'],
+  ['src/frontend/pages/student_fee_refunds/modals/Student_Fee_Refund_Approval_Modal.html', /ui-modal-overlay/i, 'Refund approval modal structure missing'],
+  ['src/frontend/pages/student_fee_refunds/modals/Student_Fee_Refund_Transfer_Modal.html', /ui-modal-overlay/i, 'Refund transfer modal structure missing']
 ].forEach(function (rule) {
-  var isRoot = rule[0].indexOf('src/') === 0;
-  var exists = isRoot ? fs.existsSync(path.join(ROOT, rule[0])) : existsFrontend_(rule[0]);
-  if (!exists) return;
-  var source = isRoot ? readRoot_(rule[0]) : readFrontend_(rule[0]);
+  var source = readRoot_(rule[0]);
   if (!rule[1].test(source)) failures.push(rule[2]);
 });
 
 if (!/studentFeeRunBusy\s*\(/.test(payerFeature)) failures.push('Student Fee Payers feature missing busy/double-submit protection');
 if (!/studentFeeRunBusy\s*\(/.test(paymentFeature)) failures.push('Student Fee Payments feature missing busy/double-submit protection');
-['530_refunds/student_fee_refunds_js.html'].forEach(function (file) {
-  if (!existsFrontend_(file)) return;
-  if (!/studentFeeRunBusy\s*\(/.test(readFrontend_(file))) failures.push(file + ' missing busy/double-submit protection');
-});
+if (!/studentFeeRunBusy\s*\(/.test(refundFeature)) failures.push('Student Fee Refunds feature missing busy/double-submit protection');
 
 if (failures.length) {
   failures.forEach(function (failure) { console.error(failure); });
