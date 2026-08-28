@@ -59,13 +59,16 @@ function makeGas(mode, value, received) {
   const migrated = new Set([
     'src/frontend/pages/main/Main.html',
     'src/frontend/pages/mypage/MyPage.html',
-    'src/frontend/pages/settings_departments/Settings_Departments.html',
-    'src/frontend/pages/settings_permissions/Settings_Permissions.html'
+    'src/frontend/pages/settings_home/Settings_Home.html',
+    'src/frontend/pages/settings_users/Settings_Users.html',
+    'src/frontend/pages/settings_roles/Settings_Roles.html',
+    'src/frontend/pages/settings_permissions/Settings_Permissions.html',
+    'src/frontend/pages/settings_departments/Settings_Departments.html'
   ]);
   const templates = [
     'src/frontend/pages/main/Main.html', 'src/frontend/pages/mypage/MyPage.html',
-    'src/300_settings/300_home/Settings_Home.html', 'src/300_settings/310_users/Settings_Users.html',
-    'src/300_settings/320_roles/Settings_Roles.html', 'src/frontend/pages/settings_permissions/Settings_Permissions.html',
+    'src/frontend/pages/settings_home/Settings_Home.html', 'src/frontend/pages/settings_users/Settings_Users.html',
+    'src/frontend/pages/settings_roles/Settings_Roles.html', 'src/frontend/pages/settings_permissions/Settings_Permissions.html',
     'src/frontend/pages/settings_departments/Settings_Departments.html',
     'src/400_accounting/400_home/Accounting_Home.html', 'src/400_accounting/410_ledger/Accounting_Ledger.html',
     'src/400_accounting/420_reconciliation/Accounting_Reconciliation.html', 'src/400_accounting/430_settlement/Accounting_Settlement.html',
