@@ -5,12 +5,10 @@ var ROOT = path.resolve(__dirname, '..');
 var FRONTEND_ROOT = path.join(ROOT, 'src', '500_student_fee');
 var failures = [];
 
-var REQUIRED_FILES = [
+var REQUIRED_LEGACY_FILES = [
   'common/Student_Fee_Styles.html',
   'common/student_fee_common_js.html',
-  '500_home/Student_Fee_Home.html',
-  '500_home/Student_Fee_Home_View.html',
-  '500_home/student_fee_home_js.html',
+  'common/student_fee_client_js.html',
   '510_payers/Student_Fee_Payers.html',
   '510_payers/Student_Fee_Payers_View.html',
   '510_payers/modals/Student_Fee_Payer_Edit_Modal.html',
@@ -27,16 +25,19 @@ var REQUIRED_FILES = [
   '530_refunds/modals/Student_Fee_Refund_Transfer_Modal.html',
   '530_refunds/student_fee_refunds_js.html'
 ];
+var REQUIRED_FSD_HOME_FILES = [
+  'src/frontend/pages/student_fee_home/Student_Fee_Home.html',
+  'src/frontend/pages/student_fee_home/Student_Fee_Home_View.html',
+  'src/frontend/pages/student_fee_home/student_fee_home_controller_js.html'
+];
 
-var PAGE_SHELLS = [
-  '500_home/Student_Fee_Home.html',
+var LEGACY_PAGE_SHELLS = [
   '510_payers/Student_Fee_Payers.html',
   '520_payments/Student_Fee_Payments.html',
   '530_refunds/Student_Fee_Refunds.html'
 ];
 
 var PAGE_JS_ALLOWLIST = {
-  '500_home/student_fee_home_js.html': ['api_getStudentFeeSummary'],
   '510_payers/student_fee_payers_js.html': [
     'api_getStudentFeeReference', 'api_getStudentFeePayers', 'api_getStudentFeePayer', 'api_createStudentFeePayer', 'api_updateStudentFeePayer'
   ],
@@ -48,25 +49,21 @@ var PAGE_JS_ALLOWLIST = {
   ]
 };
 
-function readRoot_(relativePath) {
-  return fs.readFileSync(path.join(ROOT, relativePath), 'utf8');
-}
+function readRoot_(relativePath) { return fs.readFileSync(path.join(ROOT, relativePath), 'utf8'); }
+function readFrontend_(relativePath) { return fs.readFileSync(path.join(FRONTEND_ROOT, relativePath), 'utf8'); }
+function existsFrontend_(relativePath) { return fs.existsSync(path.join(FRONTEND_ROOT, relativePath)); }
 
-function readFrontend_(relativePath) {
-  return fs.readFileSync(path.join(FRONTEND_ROOT, relativePath), 'utf8');
-}
-
-function existsFrontend_(relativePath) {
-  return fs.existsSync(path.join(FRONTEND_ROOT, relativePath));
-}
-
-REQUIRED_FILES.forEach(function (file) {
+REQUIRED_LEGACY_FILES.forEach(function (file) {
   if (!existsFrontend_(file)) failures.push('Missing Student Fee frontend file: ' + file);
 });
+REQUIRED_FSD_HOME_FILES.forEach(function (file) {
+  if (!fs.existsSync(path.join(ROOT, file))) failures.push('Missing Student Fee FSD Home file: ' + file);
+});
+if (fs.existsSync(path.join(FRONTEND_ROOT, '500_home'))) failures.push('Legacy Student Fee Home slice must be removed.');
 
 var code = readRoot_('src/backend/app/routing/Code.js');
 var routes = {
-  student_fee: '500_student_fee/500_home/Student_Fee_Home',
+  student_fee: 'frontend/pages/student_fee_home/Student_Fee_Home',
   student_fee_payers: '500_student_fee/510_payers/Student_Fee_Payers',
   student_fee_payments: '500_student_fee/520_payments/Student_Fee_Payments',
   student_fee_refunds: '500_student_fee/530_refunds/Student_Fee_Refunds'
@@ -75,21 +72,28 @@ Object.keys(routes).forEach(function (route) {
   var pattern = new RegExp('\\b' + route + '\\s*:\\s*[\'\"]' + routes[route].replace(/\//g, '\\/') + '[\'\"]');
   if (!pattern.test(code)) failures.push('Missing Student Fee route: ' + route);
 });
-if (!/page\.indexOf\(['\"]student_fee['\"]\)\s*===\s*0/.test(code)) {
-  failures.push('Student Fee route prefix is not login protected.');
-}
+if (!/page\.indexOf\(['\"]student_fee['\"]\)\s*===\s*0/.test(code)) failures.push('Student Fee route prefix is not login protected.');
 
-var sidebar = readRoot_('src/100_common/App_Sidebar.html');
+var sidebar = readRoot_('src/frontend/widgets/app_sidebar/App_Sidebar.html');
 ['appNavStudentFee', 'appStudentFeeSubmenu', 'appNavStudentFeeHome', 'appNavStudentFeePayers', 'appNavStudentFeePayments', 'appNavStudentFeeRefunds'].forEach(function (id) {
   if (sidebar.indexOf('id="' + id + '"') < 0) failures.push('Missing sidebar navigation element: ' + id);
 });
+var shellJs = readRoot_('src/frontend/app/shell/app_shell_js.html');
+if (shellJs.indexOf('student_fee') < 0 || shellJs.indexOf('appNavStudentFee') < 0 || shellJs.indexOf('setStudentFeeSubmenuExpanded_') < 0) failures.push('Student Fee navigation active/expand logic missing from shell JS.');
 
-var shellJs = readRoot_('src/100_common/app_shell_js.html');
-if (shellJs.indexOf('student_fee') < 0 || shellJs.indexOf('appNavStudentFee') < 0 || shellJs.indexOf('setStudentFeeSubmenuExpanded_') < 0) {
-  failures.push('Student Fee navigation active/expand logic missing from shell JS.');
-}
+var homeShell = readRoot_('src/frontend/pages/student_fee_home/Student_Fee_Home.html');
+[
+  "include('frontend/shared/styles/App_Styles')",
+  "include('frontend/widgets/app_header/App_Header')",
+  "include('frontend/widgets/app_sidebar/App_Sidebar')",
+  "include('500_student_fee/common/Student_Fee_Styles')",
+  "include('frontend/app/shell/app_shell_js')",
+  "include('500_student_fee/common/student_fee_common_js')"
+].forEach(function (needle) {
+  if (homeShell.indexOf(needle) < 0) failures.push('FSD Student Fee Home missing include: ' + needle);
+});
 
-PAGE_SHELLS.forEach(function (file) {
+LEGACY_PAGE_SHELLS.forEach(function (file) {
   if (!existsFrontend_(file)) return;
   var source = readFrontend_(file);
   [
@@ -104,6 +108,10 @@ PAGE_SHELLS.forEach(function (file) {
   });
 });
 
+var homeController = readRoot_('src/frontend/pages/student_fee_home/student_fee_home_controller_js.html');
+if (/['"]api_[A-Za-z0-9_]+['"]/.test(homeController)) failures.push('Student Fee Home controller must not own raw server API names.');
+if (homeController.indexOf('studentFeeClient.getSummary()') < 0) failures.push('Student Fee Home controller must use semantic summary client.');
+
 Object.keys(PAGE_JS_ALLOWLIST).forEach(function (file) {
   if (!existsFrontend_(file)) return;
   var source = readFrontend_(file);
@@ -116,29 +124,21 @@ Object.keys(PAGE_JS_ALLOWLIST).forEach(function (file) {
 
 if (existsFrontend_('common/student_fee_common_js.html')) {
   var commonJs = readFrontend_('common/student_fee_common_js.html');
-  if (/api_get|api_create|api_update|api_process|api_calculate|api_confirm/.test(commonJs)) {
-    failures.push('Student Fee common JS must remain generic and not hard-code domain API names.');
-  }
-  if (commonJs.indexOf('studentFeeRunBusy') < 0 || commonJs.indexOf('studentFeeSetBusy') < 0) {
-    failures.push('Student Fee common JS must provide busy helpers.');
-  }
+  if (/api_get|api_create|api_update|api_process|api_calculate|api_confirm/.test(commonJs)) failures.push('Student Fee common JS must remain generic and not hard-code domain API names.');
+  if (commonJs.indexOf('studentFeeRunBusy') < 0 || commonJs.indexOf('studentFeeSetBusy') < 0) failures.push('Student Fee common JS must provide busy helpers.');
 }
 
-if (fs.existsSync(FRONTEND_ROOT)) {
-  var combined = REQUIRED_FILES.filter(existsFrontend_).map(readFrontend_).join('\n');
-  [
-    ['apiV1_', 'Legacy apiV1_ found'],
-    ['hasFullAccess', 'Client-controlled hasFullAccess found'],
-    ['FormApp', 'FormApp found in frontend'],
-    ['newTrigger', 'Trigger creation found in frontend'],
-    ['적용종료학기', 'Forbidden feature-only field found: 적용종료학기'],
-    ['보관여부', 'Forbidden feature-only field found: 보관여부']
-  ].forEach(function (entry) {
-    if (combined.indexOf(entry[0]) >= 0) failures.push(entry[1]);
-  });
-  if (/name=[\'\"]유형[\'\"]|>\s*유형\s*</.test(combined)) failures.push('Forbidden feature-only UI field found: 유형');
-  if (/class=[\'\"][^\'\"]*(topbar|standalone-sidebar|shell-copy)/.test(combined)) failures.push('Copied standalone shell markup found.');
-}
+var combined = REQUIRED_LEGACY_FILES.filter(existsFrontend_).map(readFrontend_).concat(REQUIRED_FSD_HOME_FILES.map(readRoot_)).join('\n');
+[
+  ['apiV1_', 'Legacy apiV1_ found'],
+  ['hasFullAccess', 'Client-controlled hasFullAccess found'],
+  ['FormApp', 'FormApp found in frontend'],
+  ['newTrigger', 'Trigger creation found in frontend'],
+  ['적용종료학기', 'Forbidden feature-only field found: 적용종료학기'],
+  ['보관여부', 'Forbidden feature-only field found: 보관여부']
+].forEach(function (entry) { if (combined.indexOf(entry[0]) >= 0) failures.push(entry[1]); });
+if (/name=[\'\"]유형[\'\"]|>\s*유형\s*</.test(combined)) failures.push('Forbidden feature-only UI field found: 유형');
+if (/class=[\'\"][^\'\"]*(topbar|standalone-sidebar|shell-copy)/.test(combined)) failures.push('Copied standalone shell markup found.');
 
 [
   ['510_payers/modals/Student_Fee_Payer_Edit_Modal.html', /ui-modal-overlay/i, 'Payer modal structure missing'],
@@ -149,14 +149,11 @@ if (fs.existsSync(FRONTEND_ROOT)) {
   ['530_refunds/modals/Student_Fee_Refund_Detail_Modal.html', /ui-modal-overlay/i, 'Refund detail modal structure missing'],
   ['530_refunds/modals/Student_Fee_Refund_Approval_Modal.html', /ui-modal-overlay/i, 'Refund approval modal structure missing'],
   ['530_refunds/modals/Student_Fee_Refund_Transfer_Modal.html', /ui-modal-overlay/i, 'Refund transfer modal structure missing']
-].forEach(function (rule) {
-  if (existsFrontend_(rule[0]) && !rule[1].test(readFrontend_(rule[0]))) failures.push(rule[2]);
-});
+].forEach(function (rule) { if (existsFrontend_(rule[0]) && !rule[1].test(readFrontend_(rule[0]))) failures.push(rule[2]); });
 
 ['510_payers/student_fee_payers_js.html', '520_payments/student_fee_payments_js.html', '530_refunds/student_fee_refunds_js.html'].forEach(function (file) {
   if (!existsFrontend_(file)) return;
-  var source = readFrontend_(file);
-  if (!/studentFeeRunBusy\s*\(/.test(source)) failures.push(file + ' missing busy/double-submit protection');
+  if (!/studentFeeRunBusy\s*\(/.test(readFrontend_(file))) failures.push(file + ' missing busy/double-submit protection');
 });
 
 if (failures.length) {
