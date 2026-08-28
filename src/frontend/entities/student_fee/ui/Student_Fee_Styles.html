@@ -1,0 +1,36 @@
+<style>
+.sf-main { background: var(--ui-bg); }
+.sf-workspace { padding: 22px 28px 56px; overflow: auto; }
+.sf-section { margin-bottom: 14px; }
+.sf-section-title { margin: 0 0 10px; color: var(--ui-text); font-size: 13px; font-weight: 700; }
+.sf-summary-groups { display: grid; gap: 14px; }
+.sf-table-card { padding: 0; overflow: hidden; }
+.sf-table-toolbar { padding: 16px 16px 4px; }
+.sf-table-card .ui-table-wrap { border: 0; border-radius: 0; }
+.sf-table-footer { padding: 10px 12px 12px; }
+.sf-search { min-width: 220px; flex: 1; }
+.sf-checkbox-cell { width: 34px; text-align: center !important; }
+.sf-actions-cell { white-space: nowrap; }
+.sf-muted { color: var(--ui-muted); font-size: 12px; }
+.sf-money { font-variant-numeric: tabular-nums; font-weight: 700; }
+.sf-detail-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 14px; }
+.sf-detail-box { padding: 11px 12px; border-radius: var(--ui-radius-md); background: var(--ui-bg); }
+.sf-detail-box small { display: block; margin-bottom: 4px; color: var(--ui-muted); font-size: 11px; }
+.sf-detail-box strong { color: var(--ui-text); font-size: 12.5px; overflow-wrap: anywhere; }
+.sf-modal-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.sf-modal-grid .wide { grid-column: 1 / -1; }
+.sf-evidence-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 12px; }
+.sf-evidence { padding: 10px 12px; border: 1px dashed var(--ui-border-strong); border-radius: var(--ui-radius-md); background: var(--ui-surface); }
+.sf-evidence small { display: block; margin-bottom: 4px; color: var(--ui-muted); }
+.sf-loading-wrap { position: relative; }
+.sf-checkbox { width: 16px; height: 16px; accent-color: var(--ui-primary); }
+.sf-error-state { padding: 28px 16px; text-align: center; color: var(--ui-danger-fg); }
+.sf-modal-amount { margin: 12px 0; padding: 12px 14px; border-radius: var(--ui-radius-md); background: var(--ui-info-bg); color: var(--ui-info-fg); }
+.sf-modal-amount strong { display: block; margin-top: 4px; font-size: 18px; }
+
+@media (max-width: 760px) {
+  .sf-workspace { padding: 16px; }
+  .sf-detail-grid, .sf-modal-grid, .sf-evidence-grid { grid-template-columns: 1fr; }
+  .sf-modal-grid .wide { grid-column: auto; }
+}
+</style>
