@@ -1,0 +1,78 @@
+<!--
+  [Settings_Roles_View] Figma 역할 관리 UI
+-->
+<header class="page-header ui-page-head">
+  <div>
+    <p class="crumb">설정 / 사용자·권한 / 역할 관리</p>
+    <div class="settings-title-row">
+      <a class="back-btn show settings-back-link" id="settingsBackLink" href="#" target="_top" aria-label="설정으로 돌아가기">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </a>
+      <h1 class="page-title">역할 관리</h1>
+    </div>
+  </div>
+  <button class="ui-btn primary settings-primary-btn" type="button" id="btnAddRole">+ 역할 추가</button>
+</header>
+<div class="workspace settings-figma">
+  <div class="page-panel active" id="panel-loading">
+    <div class="loading ui-loading">역할 불러오는 중…</div>
+  </div>
+  <div class="page-panel" id="panel-content">
+    <div class="settings-dirty-bar" id="roleDirtyBar">
+      <strong id="roleDirtyLabel">0개 변경됨</strong>
+      <div class="ui-page-actions">
+        <button class="ui-btn outline" type="button" id="btnDiscardRoles">변경사항 취소</button>
+        <button class="ui-btn primary" type="button" id="btnSaveRoles">변경사항 저장 (0)</button>
+      </div>
+    </div>
+    <div class="toolbar ui-toolbar">
+      <div class="ui-field grow">
+        <input class="search-field ui-control" id="roleQ" type="search" placeholder="역할명 또는 설명 검색" />
+      </div>
+      <div class="ui-field">
+        <select class="select ui-control" id="roleType">
+          <option value="">구분 전체</option>
+          <option value="default">기본 역할</option>
+          <option value="custom">사용자 정의</option>
+        </select>
+      </div>
+      <div class="ui-field">
+        <select class="select ui-control" id="roleStatus">
+          <option value="">상태 전체</option>
+          <option value="active">활성</option>
+          <option value="inactive">비활성</option>
+        </select>
+      </div>
+      <button class="ui-btn outline" id="roleReset" type="button">초기화</button>
+      <div class="count-label ui-count" id="roleCountLabel">역할 0개</div>
+      <div class="count-label ui-count" id="roleMutationStatus" aria-live="polite"></div>
+    </div>
+    <p class="settings-edit-hint">행을 클릭하면 편집 모드(파란 표시)로 바뀌고, 칸을 수정하면 변경됨(노란 표시)으로 표시됩니다. 변경 후 상단에서 저장하세요.</p>
+    <div class="table-wrap ui-table-wrap">
+      <table class="data ui-table">
+        <thead>
+          <tr>
+            <th>역할명</th><th>구분</th><th>설명</th><th>배정 사용자</th><th>상태</th><th>최근 변경</th>
+          </tr>
+        </thead>
+        <tbody id="roleTbody"></tbody>
+      </table>
+      <div class="table-footer"><span id="roleFooterTotal">총 0개</span><span>1 / 1</span></div>
+    </div>
+  </div>
+</div>
+<div class="settings-modal-backdrop" id="roleSaveModal" role="dialog" aria-modal="true">
+  <div class="settings-modal">
+    <div class="settings-modal-head">
+      <div><h2>변경사항 저장</h2><p id="roleSaveModalSub">역할 변경사항을 저장하시겠습니까?</p></div>
+      <button class="settings-modal-close" type="button" id="roleSaveModalClose" aria-label="닫기">✕</button>
+    </div>
+    <div class="settings-modal-body" id="roleSaveModalBody"></div>
+    <div class="settings-modal-foot">
+      <button class="ui-btn outline" type="button" id="roleSaveModalCancel">취소</button>
+      <button class="ui-btn primary" type="button" id="roleSaveModalConfirm"><span class="btn-ico" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M2 2h9.5L14 4.5V14H2V2zm2 1v4h7V3H4zm0 6v4h8V9H4z"/></svg></span>변경사항 저장</button>
+    </div>
+  </div>
+</div>
