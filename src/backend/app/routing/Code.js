@@ -9,7 +9,7 @@ function doGet(e) {
     accounting_reconciliation: 'frontend/pages/accounting_reconciliation/Accounting_Reconciliation',
     accounting_settlement: 'frontend/pages/accounting_settlement/Accounting_Settlement',
     student_fee: 'frontend/pages/student_fee_home/Student_Fee_Home',
-    student_fee_payers: '500_student_fee/510_payers/Student_Fee_Payers',
+    student_fee_payers: 'frontend/pages/student_fee_payers/Student_Fee_Payers',
     student_fee_payments: '500_student_fee/520_payments/Student_Fee_Payments',
     student_fee_refunds: '500_student_fee/530_refunds/Student_Fee_Refunds',
     event: '600_event/610_home/Event_Home',
