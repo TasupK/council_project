@@ -116,9 +116,9 @@ function testPayerEditUsesLookupKey_() {
 }
 
 function testPaymentApprovalCalculatesBeforeMutation_() {
-  var source = read_('src/500_student_fee/520_payments/student_fee_payments_js.html');
-  var calculateIndex = source.indexOf('studentFeeClient.calculateAmount');
-  var processIndex = source.indexOf('studentFeeClient.processApplications');
+  var source = read_('src/frontend/features/student_fee_payment_manage/student_fee_payment_manage_js.html');
+  var calculateIndex = source.indexOf('studentFeePaymentClient.calculateAmount');
+  var processIndex = source.indexOf('studentFeePaymentClient.processApplications');
   assert.ok(calculateIndex >= 0 && processIndex > calculateIndex);
 }
 
@@ -142,7 +142,7 @@ function testBulkRefundApprovalOmitsSharedApprovedAmount_() {
 
 function testModalFailureKeepsDialogOpen_() {
   var payer = read_('src/frontend/features/student_fee_payer_manage/student_fee_payer_manage_js.html');
-  var payment = read_('src/500_student_fee/520_payments/student_fee_payments_js.html');
+  var payment = read_('src/frontend/features/student_fee_payment_manage/student_fee_payment_manage_js.html');
   var refund = read_('src/500_student_fee/530_refunds/student_fee_refunds_js.html');
   [payer, payment, refund].forEach(function (source) {
     assert.match(source, /catch\s*\(/);
@@ -153,7 +153,7 @@ function testModalFailureKeepsDialogOpen_() {
 function testStudentFeeViewsDoNotOwnModalsAfterMigration_() {
   [
     'src/frontend/pages/student_fee_payers/Student_Fee_Payers_View.html',
-    'src/500_student_fee/520_payments/Student_Fee_Payments_View.html',
+    'src/frontend/pages/student_fee_payments/Student_Fee_Payments_View.html',
     'src/500_student_fee/530_refunds/Student_Fee_Refunds_View.html'
   ].forEach(function (file) {
     assert.doesNotMatch(read_(file), /ui-modal-overlay/);
