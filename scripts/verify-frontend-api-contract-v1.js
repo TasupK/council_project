@@ -3,10 +3,9 @@ var path = require('path');
 
 var ROOT = path.resolve(__dirname, '..');
 var SRC = path.join(ROOT, 'src');
-var BACKEND_ROOTS = ['src/backend/', 'src/000_server/'];
+var BACKEND_ROOTS = ['src/backend/'];
 var ALLOWED_DIRECT_GAS = [
-  'src/frontend/shared/api/app_api_runner_js.html',
-  'src/100_common/app_api_runner_js.html'
+  'src/frontend/shared/api/app_api_runner_js.html'
 ];
 var failures = [];
 
@@ -38,8 +37,7 @@ listFiles_(SRC).forEach(function (file) {
   'src/frontend/entities/student_fee_payer/api/student_fee_payer_client_js.html',
   'src/frontend/entities/student_fee_payment/api/student_fee_payment_client_js.html',
   'src/frontend/entities/student_fee_refund/api/student_fee_refund_client_js.html',
-  'src/100_common/app_api_runner_js.html',
-  'src/100_common/app_client_js.html'
+  'src/frontend/entities/event/api/event_client_js.html'
 ].forEach(function (relative) {
   if (!fs.existsSync(path.join(ROOT, relative))) failures.push('Missing API contract file: ' + relative);
 });
