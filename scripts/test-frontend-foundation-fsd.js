@@ -62,6 +62,6 @@ assert.ok(router.includes("main: 'frontend/pages/main/Main'"), 'router must use 
 assert.ok(router.includes("mypage: 'frontend/pages/mypage/MyPage'"), 'router must use migrated MyPage page');
 assert.ok(router.includes("file = 'frontend/pages/access_denied/Access_Denied'"), 'router must use migrated Access Denied page');
 
-assert.ok(exists('src/100_common'), 'legacy common must remain while unmigrated page shells still consume it');
+assert.ok(!exists('src/100_common'), 'legacy common must be removed after all page shells migrate');
 
 console.log('Frontend FSD foundation migration contract: PASS');
