@@ -2,28 +2,24 @@
 
 Google Apps Script와 clasp를 기반으로 만드는 학생회 통합 업무관리 웹앱입니다.
 
-현재 목표는 여러 기능 브랜치에 나뉘어 있던 로그인, 설정, 회계, 행사복지 기능을 하나의 Apps Script 웹앱 구조로 통합하는 것입니다. 기능을 새로 늘리기보다, 화면과 서버 코드를 유지보수하기 쉬운 단위로 분리하고 운영 DB 스키마에 맞춰 연결하는 것을 우선합니다.
+로그인, 설정, 회계, 학생회비, 행사복지 기능을 하나의 Apps Script 웹앱으로 통합합니다. 서버와 프론트엔드를 물리적으로 분리하고, 공개 API 계약과 사용자 동작을 유지하면서 업무 책임별 구조를 적용합니다.
 
 ## 현재 구성
 
 ```text
 src/
-├─ 000_server/           Apps Script 서버 코드
-│  ├─ 001_init/          최초 권한 승인과 초기화
-│  ├─ 010_core/          전역 설정, 응답, Sheets 공통 함수
-│  ├─ 020_schema/        UserDB와 운영 DB 스키마, 무결성 검증
-│  ├─ 030_auth/          로그인 사용자, 역할, 권한 조회
-│  ├─ 040_login/         로그인 API, 세션 컨텍스트, 캐시
-│  ├─ 050_event/         행사복지관리 서버 기능
-│  ├─ 060_accounting/    회계관리 서버 기능
-│  └─ Code.js            doGet 라우팅과 HTML 조립
-├─ 100_common/           앱 공통 레이아웃, 스타일, 클라이언트 공통 JS
-├─ 200_login/            로그인 페이지
-├─ 250_main/             메인 페이지
-├─ 300_settings/         설정 페이지
-├─ 400_accounting/       회계관리 페이지
-├─ 500_studentFee/       학생회비관리 영역
-└─ 600_event/            행사복지관리 페이지
+├─ appsscript.json
+├─ backend/
+│  ├─ app/               부트스트랩, 설정, 라우팅
+│  ├─ core/              인증, 응답, DB·스키마, 감사 공통 기반
+│  └─ domains/           accounting, event, iam, student_fee
+└─ frontend/
+   ├─ app/               앱 shell과 전역 스타일
+   ├─ pages/             라우트 단위 화면과 Page Controller
+   ├─ widgets/           여러 기능을 조합하는 UI 블록
+   ├─ features/          사용자 행동 단위 로직
+   ├─ entities/          업무 엔티티별 API·표현
+   └─ shared/            업무 비의존 RPC transport와 공통 스타일
 ```
 
 ## 서버 구조 원칙
@@ -32,20 +28,22 @@ src/
 - 서버 내부 함수는 이름 끝에 `_`를 붙입니다.
 - `ew`, `acc`처럼 폴더 역할과 중복되는 축약 접두사는 사용하지 않습니다.
 - 단순히 다른 함수를 호출하기만 하는 wrapper는 만들지 않습니다.
-- 로그인 확인은 `030_auth/auth_context.gs`의 `requireLoginContext_()`를 공통으로 사용합니다.
+- 로그인 확인은 `backend/core/auth/auth_context.gs`의 `requireLoginContext_()`를 공통으로 사용합니다.
 - 시트 탭 이름과 필드 이름은 schema 파일에서 관리하고, 기능 파일에는 흩뿌리지 않습니다.
 
-행사복지관리처럼 서버 기능이 커지는 경우 기능 영역 안에서도 번호 하위 폴더를 둡니다.
+각 업무 도메인은 필요한 계층만 생성합니다.
 
 ```text
-src/000_server/050_event/
-├─ 050_common/       행사 공통 상수, 요청 검증, 페이지네이션, 결제 합계
-├─ 051_events/       행사 목록, 상세, 생성, 수정, 상태 변경
-├─ 052_applicants/   신청자 목록, 상세, 처리
-├─ 053_attendance/   출석 목록, 변경, 검색
-├─ 054_refunds/      환불 대상 조회
-└─ 055_files/        행사 관련자료 업로드
+src/backend/domains/<domain>/
+├─ controllers/       공개 API와 요청·응답 경계
+├─ application/       유스케이스와 업무 흐름 조정
+├─ business_rules/    Apps Script 인프라에 의존하지 않는 순수 규칙
+└─ repositories/      Sheets, Drive, Forms 등 영속성·외부 서비스 접근
 ```
+
+의존 방향은 `Controller → Application → Business Rules / Repository`입니다. 공통 기능은 상속하지 않고 조합하며, 다른 도메인의 Repository나 Controller를 직접 호출하지 않습니다. 도메인 간 연동은 Application facade를 사용합니다.
+
+프론트엔드 의존 방향은 `app → pages → widgets/features → entities → shared`입니다. `shared`는 업무 지식을 갖지 않으며, `google.script.run` 직접 호출은 `frontend/shared/api`의 RPC transport만 담당합니다.
 
 ## 라우팅 방식
 
@@ -76,8 +74,8 @@ Apps Script 웹앱은 iframe 안에서 실행되므로, 로그인 이후 페이�
 DB의 탭 이름과 필드 이름은 다음 schema 파일을 기준으로 관리합니다.
 
 ```text
-src/000_server/020_schema/user_db_schema.gs
-src/000_server/020_schema/operation_db_schema.gs
+src/backend/core/db/schema/user_db_schema.gs
+src/backend/core/db/schema/operation_db_schema.gs
 ```
 
 탭 이름이나 필드 이름이 바뀌면 기능 파일이 아니라 schema 파일을 먼저 수정합니다.

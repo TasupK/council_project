@@ -1,16 +1,10 @@
-# 100_common
+# frontend 공통 기반
 
 앱 전체에서 공유하는 클라이언트 레이아웃과 브라우저 공통 코드 영역이다. 특정 업무 기능의 데이터 처리나 화면 전용 로직은 이곳에 두지 않는다.
 
 ## 구성
 
-```text
-src/100_common/
-├─ App_Header.html
-├─ App_Sidebar.html
-├─ App_Styles.html
-└─ app_shell_js.html
-```
+공통 기반은 `src/frontend/app`, `shared`, `widgets/app_header`, `widgets/app_sidebar`에 책임별로 나뉜다.
 
 ## 역할
 

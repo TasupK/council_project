@@ -58,6 +58,24 @@ if (!fs.existsSync(routerPath)) {
   });
 }
 
+[
+  'README.md',
+  'scripts/audit-function-naming.js',
+  'scripts/verify-mypage-architecture.js',
+  '.github/workflows/frontend-api-mapping.yml',
+  '.github/workflows/student-fee.yml'
+].forEach(function (relativePath) {
+  var target = path.join(ROOT, relativePath);
+  if (!fs.existsSync(target)) {
+    failures.push('missing architecture-sensitive file: ' + relativePath);
+    return;
+  }
+  var source = fs.readFileSync(target, 'utf8');
+  if (/src\/(?:000_server|100_common|200_login|250_main|270_mypage|300_settings|400_accounting|500_student_fee|600_event)(?:\/|['"])/.test(source)) {
+    failures.push('legacy source path remains in architecture-sensitive file: ' + relativePath);
+  }
+});
+
 if (failures.length) {
   failures.forEach(function (failure) { console.error(failure); });
   process.exitCode = 1;

@@ -1,20 +1,10 @@
-# 000_server
+# backend
 
 Apps Script에서 실행되는 서버 코드 영역이다. `doGet(e)` 라우팅, 로그인 확인, 권한 조회, Google Sheets/Drive 접근, schema 기반 데이터 처리, 서버 공개 API를 담당한다.
 
 ## 구성
 
-```text
-src/000_server/
-├─ 001_init/          최초 권한 승인과 초기화
-├─ 010_core/          전역 설정, 응답, Sheets 공통 함수
-├─ 020_schema/        UserDB와 운영 DB 스키마, 무결성 검증
-├─ 030_auth/          사용자, 역할, 권한 조회
-├─ 040_login/         로그인 API, 세션 컨텍스트, 캐시
-├─ 050_event/         행사복지관리 서버 기능
-├─ 060_accounting/    회계관리 서버 기능
-└─ Code.js            doGet 라우팅과 HTML 조립
-```
+`src/backend/app`은 부트스트랩·설정·라우팅, `core`는 인증·응답·DB·감사 기반, `domains`는 IAM·회계·학생회비·행사 업무를 담당한다.
 
 ## 규칙
 
@@ -24,6 +14,8 @@ src/000_server/
 - 시트 탭 이름과 필드 이름은 schema 파일에서 관리한다.
 - 기능별 권한 검사는 로그인 확인 이후 각 기능 영역에서 추가한다.
 - Apps Script 전역 스코프에서 실행되므로 함수명 충돌을 반드시 확인한다.
+- 도메인은 Controller → Application → Business Rules/Repository 방향을 따른다.
+- 다른 도메인의 Repository나 Controller를 직접 호출하지 않고 Application facade를 사용한다.
 
 ## 검수
 
