@@ -3,8 +3,8 @@ var path = require('path');
 
 var ROOT = path.resolve(__dirname, '..');
 var EVENT = path.join(ROOT, 'src/backend/domains/event');
-var DETAIL = path.join(ROOT, 'src/600_event/630_detail');
-var CLIENT = path.join(ROOT, 'src/600_event/600_common/event_client_js.html');
+var FRONTEND = path.join(ROOT, 'src/frontend');
+var CLIENT = path.join(FRONTEND, 'entities/event/api/event_client_js.html');
 var failures = [];
 
 function read_(file) { return fs.readFileSync(file, 'utf8'); }
@@ -16,8 +16,8 @@ var mapper = path.join(EVENT, 'repositories/applicant_form_mapper.gs');
 var service = path.join(EVENT, 'application/applicant_form_sync.gs');
 var access = path.join(EVENT, 'application/event_access.gs');
 var api = path.join(EVENT, 'controllers/applicants_controller.gs');
-var frontend = path.join(DETAIL, 'event_form_sync_js.html');
-var page = path.join(DETAIL, 'Event_Detail.html');
+var frontend = path.join(FRONTEND, 'features/event_form_sync/event_form_sync_js.html');
+var page = path.join(FRONTEND, 'pages/event_detail/Event_Detail.html');
 [reader, mapper, service, access, api, frontend, page, CLIENT].forEach(requireFile_);
 
 if (!failures.length) {
@@ -43,8 +43,8 @@ if (!failures.length) {
   if (!/function\s+resolveEventFormResponseSource_\s*\(/.test(readerSource)) failures.push('External source resolution must live in repositories/applicant_form_reader.gs');
   if (!/function\s+buildEventFormCandidates_\s*\(/.test(mapperSource)) failures.push('Response mapping must live in repositories/applicant_form_mapper.gs');
   if (!/access\s*:\s*eventApiAccess_\s*\(\s*['"]edit['"]\s*\)/.test(apiSource)) failures.push('Sync API must use Event access override helper');
-  if (!/event_form_sync_js/.test(pageSource)) failures.push('Event Detail must include focused Forms module');
-  if (!/event_client_js/.test(pageSource)) failures.push('Event Detail must include Event semantic client');
+  if (!/frontend\/features\/event_form_sync\/event_form_sync_js/.test(pageSource)) failures.push('Event Detail must include focused Forms module');
+  if (!/frontend\/entities\/event\/api\/event_client_js/.test(pageSource)) failures.push('Event Detail must include Event semantic client');
   if (!/eventClient\.syncApplicantsFromForms\s*\(/.test(frontendSource)) failures.push('Frontend must call semantic Forms sync method');
   if (!/api_syncEventApplicantsFromForms/.test(clientSource)) failures.push('Event client must own sync API mapping');
 }
