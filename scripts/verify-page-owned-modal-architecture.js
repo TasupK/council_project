@@ -46,9 +46,9 @@ var pages = [
   },
   {
     name: 'Event Detail',
-    shell: 'src/600_event/630_detail/Event_Detail.html',
-    view: 'src/600_event/630_detail/Event_Detail_View.html',
-    partials: ['src/600_event/630_detail/modals/Event_Applicant_Detail_Modal.html']
+    shell: 'src/frontend/pages/event_detail/Event_Detail.html',
+    view: 'src/frontend/pages/event_detail/Event_Detail_View.html',
+    partials: ['src/frontend/pages/event_detail/modals/Event_Applicant_Detail_Modal.html']
   }
 ];
 
@@ -77,10 +77,10 @@ pages.forEach(function (page) {
   });
 });
 
-var eventApplicantJs = readOptional_('src/600_event/630_detail/event_detail_applicants_js.html');
-var eventCoreJs = readOptional_('src/600_event/630_detail/event_detail_core_js.html');
-var eventBootstrapJs = readOptional_('src/600_event/630_detail/event_detail_bootstrap_js.html');
-var eventJs = [eventApplicantJs, eventCoreJs, eventBootstrapJs].join('\n');
+var eventApplicantJs = readOptional_('src/frontend/features/event_applicant_manage/event_applicant_manage_js.html');
+var eventCoreJs = readOptional_('src/frontend/features/event_detail_core/event_detail_core_js.html');
+var eventControllerJs = readOptional_('src/frontend/pages/event_detail/event_detail_controller_js.html');
+var eventJs = [eventApplicantJs, eventCoreJs, eventControllerJs].join('\n');
 if (/ui-modal-overlay/.test(eventJs) || /<section[^>]+ui-modal/.test(eventJs)) {
   failures.push('Migrated Event JS must not construct a complete modal shell.');
 }
