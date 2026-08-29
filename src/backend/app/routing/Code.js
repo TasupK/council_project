@@ -13,7 +13,7 @@ function doGet(e) {
     student_fee_payments: 'frontend/pages/student_fee_payments/Student_Fee_Payments',
     student_fee_refunds: 'frontend/pages/student_fee_refunds/Student_Fee_Refunds',
     event: 'frontend/pages/event_home/Event_Home',
-    event_form: '600_event/620_form/Event_Form',
+    event_form: 'frontend/pages/event_form/Event_Form',
     event_detail: '600_event/630_detail/Event_Detail',
     settings: 'frontend/pages/settings_home/Settings_Home',
     settings_departments: 'frontend/pages/settings_departments/Settings_Departments',
