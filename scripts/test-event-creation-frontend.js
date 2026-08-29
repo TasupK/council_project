@@ -6,7 +6,7 @@ var vm = require('vm');
 var ROOT = path.resolve(__dirname, '..');
 var view = fs.readFileSync(path.join(ROOT, 'src/frontend/pages/event_form/Event_Form_View.html'), 'utf8');
 var script = fs.readFileSync(path.join(ROOT, 'src/frontend/features/event_form_manage/event_form_manage_js.html'), 'utf8');
-var detailScript = fs.readFileSync(path.join(ROOT, 'src/600_event/630_detail/event_detail_core_js.html'), 'utf8');
+var detailScript = fs.readFileSync(path.join(ROOT, 'src/frontend/features/event_detail_core/event_detail_core_js.html'), 'utf8');
 
 function testCategoryDropdown_() {
   assert.match(view, /<select[^>]+name="category"[^>]+required/);
