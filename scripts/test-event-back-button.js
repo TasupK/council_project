@@ -4,7 +4,7 @@ var path = require('path');
 
 var ROOT = path.resolve(__dirname, '..');
 var views = [
-  'src/600_event/610_home/Event_Home_View.html',
+  'src/frontend/pages/event_home/Event_Home_View.html',
   'src/600_event/620_form/Event_Form_View.html',
   'src/600_event/630_detail/Event_Detail_View.html'
 ];
@@ -19,7 +19,7 @@ views.forEach(function (relativePath) {
   assert.ok(source.indexOf('← 뒤로') < 0, relativePath + ' back button must not render a text label');
 });
 
-var commonSource = fs.readFileSync(path.join(ROOT, 'src/600_event/600_common/event_common_js.html'), 'utf8');
+var commonSource = fs.readFileSync(path.join(ROOT, 'src/frontend/entities/event/ui/event_common_js.html'), 'utf8');
 var stylesSource = fs.readFileSync(path.join(ROOT, 'src/600_event/600_common/Event_Styles.html'), 'utf8');
 assert.ok(/function\s+goEventBack_\s*\(/.test(commonSource), 'Event common client must own back navigation');
 assert.ok(/window\.history\.back\s*\(/.test(commonSource), 'back action must use browser history');
