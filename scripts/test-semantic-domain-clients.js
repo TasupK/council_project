@@ -45,17 +45,19 @@ assert.match(studentFeeRefundClient, /calculateRefund\s*:\s*function/);
 assert.match(studentFeeRefundClient, /processRefundRequests\s*:\s*function/);
 assert.match(studentFeeRefundClient, /confirmRefund\s*:\s*function/);
 
-const eventCommon = read('src/600_event/600_common/event_common_js.html');
-const eventClient = read('src/600_event/600_common/event_client_js.html');
+const eventCommon = read('src/frontend/entities/event/ui/event_common_js.html');
+const eventClient = read('src/frontend/entities/event/api/event_client_js.html');
 const eventPages = [
-  'src/600_event/610_home/event_home_js.html',
-  'src/600_event/620_form/event_form_js.html',
-  'src/600_event/630_detail/event_detail_core_js.html',
-  'src/600_event/630_detail/event_detail_applicants_js.html',
-  'src/600_event/630_detail/event_detail_attendance_js.html',
-  'src/600_event/630_detail/event_detail_refunds_js.html',
-  'src/600_event/630_detail/event_form_sync_js.html',
-  'src/600_event/630_detail/event_detail_bootstrap_js.html'
+  'src/frontend/features/event_list/event_list_js.html',
+  'src/frontend/pages/event_home/event_home_controller_js.html',
+  'src/frontend/features/event_form_manage/event_form_manage_js.html',
+  'src/frontend/pages/event_form/event_form_controller_js.html',
+  'src/frontend/features/event_detail_core/event_detail_core_js.html',
+  'src/frontend/features/event_applicant_manage/event_applicant_manage_js.html',
+  'src/frontend/features/event_attendance_manage/event_attendance_manage_js.html',
+  'src/frontend/features/event_refund_view/event_refund_view_js.html',
+  'src/frontend/features/event_form_sync/event_form_sync_js.html',
+  'src/frontend/pages/event_detail/event_detail_controller_js.html'
 ].map(read).join('\n');
 
 assert.doesNotMatch(eventCommon, /function\s+api\s*\(/, 'Event api compatibility wrapper must be removed');
