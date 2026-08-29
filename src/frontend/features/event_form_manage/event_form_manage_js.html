@@ -1,0 +1,127 @@
+<script>
+function renderEventForm(event) {
+  var isEdit = Boolean(event);
+  var value = event || {
+    status: '예정',
+    applicationEnabled: true,
+    feeEnabled: false,
+    attendanceEnabled: true,
+    balanceDistributionEnabled: false,
+    payerFee: 0,
+    nonPayerFee: 0
+  };
+  populateEventForm(document.getElementById('ew-event-form'), value, isEdit);
+}
+
+function populateEventForm(form, value, isEdit) {
+  var fields = ['name', 'category', 'department', 'description', 'applicationStartAt', 'applicationEndAt', 'eventStartAt', 'eventEndAt', 'location', 'capacity', 'payerFee', 'nonPayerFee', 'note'];
+  var optionFields = ['applicationEnabled', 'feeEnabled', 'attendanceEnabled', 'balanceDistributionEnabled'];
+  fields.forEach(function (name) {
+    if (form.elements[name]) form.elements[name].value = value[name] == null ? '' : value[name];
+  });
+  optionFields.forEach(function (name) {
+    if (form.elements[name]) form.elements[name].checked = isEventOptionEnabled(value[name]);
+  });
+  var managerDisplay = document.getElementById('ew-manager-display');
+  if (managerDisplay) managerDisplay.value = APP_USER_NAME || '-';
+  form.dataset.id = value.id || '';
+  document.getElementById('ew-form-title').textContent = isEdit ? '행사 수정' : '행사 생성';
+  var selectedStatus = value.status || '예정';
+  form.querySelectorAll('[name="status"]').forEach(function (radio) {
+    radio.checked = radio.value === selectedStatus;
+  });
+  var existingMaterial = document.getElementById('ew-existing-material');
+  var materialLink = safeRelatedMaterialLink(value.evidenceFolderId);
+  existingMaterial.hidden = !materialLink;
+  existingMaterial.innerHTML = materialLink ? '기존 자료: ' + materialLink : '';
+  syncEventFeeFields(form);
+}
+
+function isEventOptionEnabled(value) {
+  var normalized = String(value === null || typeof value === 'undefined' ? '' : value).trim().toLowerCase();
+  return value === true || value === 1 || normalized === 'true' || normalized === '1';
+}
+
+function syncEventFeeFields(form) {
+  var feeEnabled = Boolean(form.elements.feeEnabled && form.elements.feeEnabled.checked);
+  var feeRow = document.getElementById('ew-fee-row');
+  var feeInputs = [form.elements.payerFee, form.elements.nonPayerFee];
+  feeRow.hidden = !feeEnabled;
+  feeInputs.forEach(function (input) {
+    input.disabled = !feeEnabled;
+    input.required = feeEnabled;
+  });
+}
+
+function readRelatedMaterialFile(form) {
+  var input = form.querySelector('#ew-related-material-file');
+  var file = input && input.files ? input.files[0] : null;
+  if (!file) return Promise.resolve(null);
+  if (file.size > 5 * 1024 * 1024) {
+    return Promise.reject(new Error('관련자료 파일은 최대 5MB까지 업로드할 수 있습니다.'));
+  }
+  return new Promise(function (resolve, reject) {
+    var reader = new FileReader();
+    reader.onload = function () {
+      var result = String(reader.result || '');
+      var commaIndex = result.indexOf(',');
+      if (commaIndex < 0) {
+        reject(new Error('관련자료 파일을 읽을 수 없습니다.'));
+        return;
+      }
+      resolve({
+        name: file.name,
+        mimeType: file.type || 'application/octet-stream',
+        size: file.size,
+        base64: result.slice(commaIndex + 1)
+      });
+    };
+    reader.onerror = function () { reject(new Error('관련자료 파일을 읽을 수 없습니다.')); };
+    reader.readAsDataURL(file);
+  });
+}
+
+function initializeEventForm() {
+  var form = document.getElementById('ew-event-form');
+  form.addEventListener('submit', function (event) {
+    event.preventDefault();
+    var payload = readForm(form);
+    var id = form.dataset.id;
+    var saveButton = form.querySelector('button[type="submit"]');
+    saveButton.disabled = true;
+    readRelatedMaterialFile(form).then(function (fileInput) {
+      if (fileInput) payload.relatedMaterialFile = fileInput;
+      return runEventBusy(function () {
+        return id
+          ? eventClient.updateEvent({ id: id, payload: payload })
+          : eventClient.createEvent({ payload: payload });
+      });
+    }).then(function (saved) {
+      showToast('행사 정보가 저장되었습니다.');
+      goDetail(saved.id, 'basic');
+    }).catch(handleError).finally(function () {
+      if (document.contains(saveButton)) saveButton.disabled = false;
+    });
+  });
+
+  document.addEventListener('click', function (event) {
+    var button = event.target.closest('[data-action="go-list"]');
+    if (button) goList();
+  });
+
+  document.getElementById('ew-related-material-file').addEventListener('change', function (event) {
+    var file = event.target.files && event.target.files[0];
+    document.getElementById('ew-related-material-name').textContent = file ? file.name + ' (' + Math.ceil(file.size / 1024) + 'KB)' : '선택된 파일 없음';
+  });
+  document.querySelector('[name="feeEnabled"]').addEventListener('change', function () {
+    syncEventFeeFields(form);
+  });
+
+  if (APP_RESOURCE_ID) {
+    return runEventBusy(function () { return eventClient.getEvent({ id: APP_RESOURCE_ID }); })
+      .then(renderEventForm).catch(handleError);
+  }
+  renderEventForm(null);
+  return Promise.resolve(null);
+}
+</script>
