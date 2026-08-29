@@ -28,30 +28,13 @@ var SHELL_TEMPLATES = [
   'src/frontend/pages/settings_home/Settings_Home.html','src/frontend/pages/settings_users/Settings_Users.html','src/frontend/pages/settings_roles/Settings_Roles.html','src/frontend/pages/settings_permissions/Settings_Permissions.html','src/frontend/pages/settings_departments/Settings_Departments.html',
   'src/frontend/pages/accounting_ledger/Accounting_Ledger.html','src/frontend/pages/accounting_reconciliation/Accounting_Reconciliation.html','src/frontend/pages/accounting_settlement/Accounting_Settlement.html',
   'src/frontend/pages/student_fee_home/Student_Fee_Home.html','src/frontend/pages/student_fee_payers/Student_Fee_Payers.html','src/frontend/pages/student_fee_payments/Student_Fee_Payments.html','src/frontend/pages/student_fee_refunds/Student_Fee_Refunds.html',
-  'src/600_event/610_home/Event_Home.html','src/600_event/620_form/Event_Form.html','src/600_event/630_detail/Event_Detail.html'
+  'src/frontend/pages/event_home/Event_Home.html','src/frontend/pages/event_form/Event_Form.html','src/frontend/pages/event_detail/Event_Detail.html'
 ];
-var MIGRATED = {
-  'src/frontend/pages/main/Main.html': true,
-  'src/frontend/pages/mypage/MyPage.html': true,
-  'src/frontend/pages/settings_home/Settings_Home.html': true,
-  'src/frontend/pages/settings_users/Settings_Users.html': true,
-  'src/frontend/pages/settings_roles/Settings_Roles.html': true,
-  'src/frontend/pages/settings_departments/Settings_Departments.html': true,
-  'src/frontend/pages/settings_permissions/Settings_Permissions.html': true,
-  'src/frontend/pages/accounting_ledger/Accounting_Ledger.html': true,
-  'src/frontend/pages/accounting_reconciliation/Accounting_Reconciliation.html': true,
-  'src/frontend/pages/accounting_settlement/Accounting_Settlement.html': true,
-  'src/frontend/pages/student_fee_home/Student_Fee_Home.html': true,
-  'src/frontend/pages/student_fee_payers/Student_Fee_Payers.html': true,
-  'src/frontend/pages/student_fee_payments/Student_Fee_Payments.html': true,
-  'src/frontend/pages/student_fee_refunds/Student_Fee_Refunds.html': true
-};
 SHELL_TEMPLATES.forEach(function (file) {
   var source = read_(file);
-  var stylePath = MIGRATED[file] ? 'frontend/shared/styles/App_Styles' : '100_common/App_Styles';
-  var shellStylePath = MIGRATED[file] ? 'frontend/app/styles/App_Shell_Styles' : '100_common/App_Shell_Styles';
-  if (source.indexOf(stylePath) === -1) fail_('App shell page missing App_Styles include: ' + file);
-  if (source.indexOf(shellStylePath) === -1) fail_('App shell page missing App_Shell_Styles include: ' + file);
+  if (source.indexOf('frontend/shared/styles/App_Styles') === -1) fail_('App shell page missing App_Styles include: ' + file);
+  if (source.indexOf('frontend/app/styles/App_Shell_Styles') === -1) fail_('App shell page missing App_Shell_Styles include: ' + file);
+  if (source.indexOf('100_common/') !== -1) fail_('App shell page contains legacy common include: ' + file);
 });
 
 if (failures.length) { failures.forEach(function (failure) { console.error(failure); }); process.exitCode = 1; }
