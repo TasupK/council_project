@@ -3,8 +3,8 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.resolve(__dirname, '..');
-const sidebar = fs.readFileSync(path.join(ROOT, 'src/100_common/App_Sidebar.html'), 'utf8');
-const shell = fs.readFileSync(path.join(ROOT, 'src/100_common/app_shell_js.html'), 'utf8');
+const sidebar = fs.readFileSync(path.join(ROOT, 'src/frontend/widgets/app_sidebar/App_Sidebar.html'), 'utf8');
+const shell = fs.readFileSync(path.join(ROOT, 'src/frontend/app/shell/app_shell_js.html'), 'utf8');
 
 function tagById(source, id) {
   const match = source.match(new RegExp(`<[^>]+id=["']${id}["'][^>]*>`));
