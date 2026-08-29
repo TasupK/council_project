@@ -4,7 +4,7 @@ const path = require('path');
 const vm = require('vm');
 
 const source = fs
-  .readFileSync(path.resolve(__dirname, '../src/100_common/app_shell_js.html'), 'utf8')
+  .readFileSync(path.resolve(__dirname, '../src/frontend/app/shell/app_shell_js.html'), 'utf8')
   .replace(/^\s*<script>\s*/, '')
   .replace(/\s*<\/script>\s*$/, '');
 
