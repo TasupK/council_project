@@ -13,7 +13,8 @@ function testRenderedStatusAndRowMetadata_() {
   var target = { innerHTML: '' };
   var executable = script
     .replace(/^\s*<script>\s*/, '')
-    .split("document.getElementById('ew-event-search').addEventListener")[0];
+    .replace(/\s*<\/script>\s*$/, '')
+    .split('function closeEvent')[0];
   var context = vm.createContext({
     document: { getElementById: function () { return target; } },
     state: { eventFilters: {}, eventPage: 1 },
