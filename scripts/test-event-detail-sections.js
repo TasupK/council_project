@@ -3,21 +3,20 @@ var fs = require('fs');
 var path = require('path');
 
 var ROOT = path.resolve(__dirname, '..');
-var detailDirectory = path.join(ROOT, 'src/600_event/630_detail');
 var detailFiles = [
-  'event_detail_core_js.html',
-  'event_detail_applicants_js.html',
-  'event_detail_attendance_js.html',
-  'event_detail_refunds_js.html',
-  'event_detail_bootstrap_js.html'
+  'src/frontend/features/event_detail_core/event_detail_core_js.html',
+  'src/frontend/features/event_applicant_manage/event_applicant_manage_js.html',
+  'src/frontend/features/event_attendance_manage/event_attendance_manage_js.html',
+  'src/frontend/features/event_refund_view/event_refund_view_js.html',
+  'src/frontend/pages/event_detail/event_detail_controller_js.html'
 ];
-var syncPath = path.join(detailDirectory, 'event_form_sync_js.html');
-var modalPath = path.join(detailDirectory, 'modals/Event_Applicant_Detail_Modal.html');
-var commonPath = path.join(ROOT, 'src/600_event/600_common/event_common_js.html');
+var syncPath = path.join(ROOT, 'src/frontend/features/event_form_sync/event_form_sync_js.html');
+var modalPath = path.join(ROOT, 'src/frontend/pages/event_detail/modals/Event_Applicant_Detail_Modal.html');
+var commonPath = path.join(ROOT, 'src/frontend/entities/event/ui/event_common_js.html');
 var servicePath = path.join(ROOT, 'src/backend/domains/event/application/applicants_mutation.gs');
 
-var detailSource = detailFiles.map(function (fileName) {
-  return fs.readFileSync(path.join(detailDirectory, fileName), 'utf8');
+var detailSource = detailFiles.map(function (relativePath) {
+  return fs.readFileSync(path.join(ROOT, relativePath), 'utf8');
 }).join('\n');
 var modalSource = fs.existsSync(modalPath) ? fs.readFileSync(modalPath, 'utf8') : '';
 var composedDetailSource = detailSource + '\n' + modalSource;
