@@ -26,9 +26,7 @@ function makeHarness(dtos, existingRows) {
     getCurrentIsoDateTime_: () => '2026-08-19T23:30:00+09:00',
     isTruthyValue_: (value) => value === true || String(value).toLowerCase() === 'true',
     withOperationWriteLock_: (fn) => { state.lockCount += 1; return fn(); },
-    getStudentFeeFormSettings_: () => ({
-      googleFormId: 'FORM-ID', enabled: true, currentSemesterId: '20262', lastSyncedAt: ''
-    }),
+    getStudentFeeFormSettings_: () => ({ googleFormId: 'FORM-ID', enabled: true, currentSemesterId: '20262', lastSyncedAt: '' }),
     updateStudentFeeFormLastSyncedAt_: (value) => { state.lastSyncedAt = value; },
     readStudentFeeFormResponses_: () => responses,
     mapStudentFeeFormResponse_: (response) => response._dto,
@@ -36,15 +34,12 @@ function makeHarness(dtos, existingRows) {
       if (id !== '20262') throw new Error('invalid semester');
       return { id };
     },
-    calculateStudentFeeCoverage_: (input) => ({
-      startSemesterId: input.currentSemesterId,
-      semesterCount: input.coverageMode === 'BROAD_FIRST_YEAR' ? 2 : 7
-    }),
+    calculateStudentFeeCoverage_: (input) => ({ startSemesterId: input.currentSemesterId, semesterCount: input.coverageMode === 'BROAD_FIRST_YEAR' ? 2 : 7 }),
     findFeeApplicationRowBySourceResponseId_: (sourceId) => state.rows.find((row) => row.sourceResponseId === sourceId) || null,
     insertFeeApplicationRow_: (row) => { state.rows.push(plain(row)); return row; },
     writeStudentFeeAudit_: (...args) => state.audits.push(plain(args))
   });
-  load(ctx, 'src/000_server/080_student_fee/082_payments/fee_form_import_service.gs');
+  load(ctx, 'src/backend/domains/student_fee/application/fee_form_import.gs');
   return { ctx, state };
 }
 
@@ -115,7 +110,7 @@ function dto(id, studentId) {
     syncStudentFeeFormApplicationsData_: () => ({ ok: true }),
     apiHandler_: (config) => config
   });
-  load(ctx, 'src/000_server/080_student_fee/082_payments/fee_payments_api.gs');
+  load(ctx, 'src/backend/domains/student_fee/controllers/fee_payments_controller.gs');
   const config = ctx.api_syncStudentFeeFormApplications({});
   assert.strictEqual(config.requireLogin, true);
   assert.strictEqual(config.access.action, 'edit');

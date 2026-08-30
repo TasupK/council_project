@@ -4,8 +4,8 @@ var path = require('path');
 var vm = require('vm');
 
 var ROOT = path.resolve(__dirname, '..');
-var scriptPath = path.join(ROOT, 'src/600_event/610_home/event_home_js.html');
-var viewPath = path.join(ROOT, 'src/600_event/610_home/Event_Home_View.html');
+var scriptPath = path.join(ROOT, 'src/frontend/features/event_list/event_list_js.html');
+var viewPath = path.join(ROOT, 'src/frontend/pages/event_home/Event_Home_View.html');
 var script = fs.readFileSync(scriptPath, 'utf8');
 var view = fs.readFileSync(viewPath, 'utf8');
 
@@ -13,7 +13,8 @@ function testRenderedStatusAndRowMetadata_() {
   var target = { innerHTML: '' };
   var executable = script
     .replace(/^\s*<script>\s*/, '')
-    .split("document.getElementById('ew-event-search').addEventListener")[0];
+    .replace(/\s*<\/script>\s*$/, '')
+    .split('function closeEvent')[0];
   var context = vm.createContext({
     document: { getElementById: function () { return target; } },
     state: { eventFilters: {}, eventPage: 1 },

@@ -1,0 +1,51 @@
+<script>
+function fileToBankPayload(file) {
+  return new Promise(function (resolve, reject) {
+    const reader = new FileReader();
+    reader.onload = function () { const value = String(reader.result || ''); resolve({ file_name: file.name, file_type: file.type || 'application/octet-stream', file_size: file.size, content_base64: value.includes(',') ? value.split(',')[1] : value }); };
+    reader.onerror = function () { reject(new Error(file.name + ' 파일을 읽을 수 없습니다.')); };
+    reader.readAsDataURL(file);
+  });
+}
+function showCurrentReconciliationRun(detail) {
+  state.reconciliationRuns = detail && detail.header ? [detail.header] : [];
+  const select = document.getElementById('reconciliationHistory');
+  select.innerHTML = state.reconciliationRuns.length ? state.reconciliationRuns.map(function (row) { return '<option value="' + escapeHtml(row.id) + '">' + escapeHtml(String(row.auditStartDate || '').slice(0, 10) + ' ~ ' + String(row.auditEndDate || '').slice(0, 10) + ' · ' + row.status) + '</option>'; }).join('') : '<option value="">현재 대사 결과 없음</option>';
+  renderReconciliationDetail(detail || null);
+}
+function resetCurrentReconciliation(files) {
+  document.getElementById('reconciliationStartDate').value = ''; document.getElementById('reconciliationEndDate').value = ''; document.getElementById('reconciliationSearch').value = ''; document.getElementById('reconciliationStatus').value = '전체';
+  document.getElementById('ocrResultSummary').textContent = files && files.length ? '선택한 파일 ' + files.length + '개 · 누락 점검을 시작해 주세요.' : '점검 전';
+  showCurrentReconciliationRun(null);
+}
+function extendImportDateRange(summary, result) { if (result.startDate && (!summary.startDate || result.startDate < summary.startDate)) summary.startDate = result.startDate; if (result.endDate && (!summary.endDate || result.endDate > summary.endDate)) summary.endDate = result.endDate; }
+async function runMissingCheck() {
+  if (state.reconciliationImporting) return;
+  const files = state.uploadFiles.reconciliation || []; if (!files.length) return toast('점검할 거래내역 파일을 선택해 주세요.');
+  const checkButton = document.getElementById('runMissingCheck'); const summaryElement = document.getElementById('ocrResultSummary'); const originalLabel = checkButton.textContent;
+  const summary = { extractedCount: 0, savedCount: 0, duplicateCount: 0, failedFileCount: 0, failedFiles: [], startDate: '', endDate: '', bankTransactionIds: [] };
+  state.reconciliationImporting = true; checkButton.disabled = true;
+  try {
+    for (let index = 0; index < files.length; index += 1) {
+      const file = files[index]; checkButton.textContent = '파일 분석 ' + (index + 1) + '/' + files.length; summaryElement.textContent = file.name + ' 분석 중';
+      try { const payload = await fileToBankPayload(file); const result = await uploadReconciliationBankTransactions({ files: [payload] }); summary.extractedCount += Number(result.extractedCount || 0); summary.savedCount += Number(result.savedCount || 0); summary.duplicateCount += Number(result.duplicateCount || 0); summary.failedFileCount += Number(result.failedFileCount || 0); summary.failedFiles = summary.failedFiles.concat(result.failedFiles || []); summary.bankTransactionIds = summary.bankTransactionIds.concat((result.items || []).map(function (item) { return item.id; }).filter(Boolean)); extendImportDateRange(summary, result); }
+      catch (error) { summary.failedFileCount += 1; summary.failedFiles.push({ file_name: file.name, reason: error && error.message ? error.message : '파일 분석에 실패했습니다.' }); }
+    }
+    summary.bankTransactionIds = Array.from(new Set(summary.bankTransactionIds));
+    if (!summary.extractedCount || !summary.startDate || !summary.endDate || !summary.bankTransactionIds.length) throw new Error(summary.failedFiles[0] && summary.failedFiles[0].reason ? summary.failedFiles[0].reason : '점검할 거래를 찾지 못했습니다.');
+    document.getElementById('reconciliationStartDate').value = summary.startDate; document.getElementById('reconciliationEndDate').value = summary.endDate; checkButton.textContent = '장부 대조 중'; summaryElement.textContent = summary.startDate + ' ~ ' + summary.endDate + ' 승인 장부 대조 중';
+    const detail = await processAccountingReconciliation({ startDate: summary.startDate, endDate: summary.endDate, bankTransactionIds: summary.bankTransactionIds }); showCurrentReconciliationRun(detail);
+    summaryElement.textContent = '점검 기간 ' + summary.startDate + ' ~ ' + summary.endDate + ' · 추출 ' + summary.extractedCount + '건 · 신규 ' + summary.savedCount + '건 · 중복 ' + summary.duplicateCount + '건 · 실패 ' + summary.failedFileCount + '개'; summaryElement.title = summary.failedFiles.map(function (item) { return (item.file_name || '파일') + ': ' + (item.reason || '분석 실패'); }).join('\n'); toast(summary.failedFileCount ? '일부 파일을 제외하고 누락 점검을 완료했습니다.' : '누락 점검을 완료했습니다.');
+  } catch (error) { showCurrentReconciliationRun(null); summaryElement.textContent = error && error.message ? error.message : '누락 점검에 실패했습니다.'; toast(summaryElement.textContent); }
+  finally { state.reconciliationImporting = false; checkButton.disabled = false; checkButton.textContent = originalLabel; }
+}
+async function manuallyLink(itemId) {
+  try { const result = await getAccountingReconciliationCandidates({ reconciliationItemId: itemId }); const candidates = (result && result.items) || []; if (!candidates.length) return toast('연결할 수 있는 원장 후보가 없습니다.'); const message = candidates.map(function (c, i) { return (i + 1) + '. ' + String(c.transactionAt || '').slice(0,10) + ' / ' + c.counterparty + ' / ' + currency(c.amount) + ' / ' + c.matchDetail; }).join('\n'); const selected = Number(window.prompt('연결할 후보 번호를 입력하세요.\n' + message, '1')) - 1; if (selected < 0 || selected >= candidates.length) return; const detail = await applyAccountingReconciliationLink({ reconciliationItemId: itemId, ledgerId: candidates[selected].ledgerId }); showCurrentReconciliationRun(detail); toast('수동 연결되었습니다.'); }
+  catch (error) { toast(error && error.message ? error.message : '수동 연결에 실패했습니다.'); }
+}
+async function createLedgerForItem(itemId) {
+  if (!window.confirm('이 계좌 거래를 기준으로 새 원장을 만들까요?')) return;
+  try { const result = await createAccountingLedgerFromReconciliation({ reconciliationItemId: itemId }); const detail = result && result.snapshot ? result.snapshot : result; showCurrentReconciliationRun(detail); toast('원장을 생성하고 연결했습니다.'); }
+  catch (error) { toast(error && error.message ? error.message : '원장 생성에 실패했습니다.'); }
+}
+</script>

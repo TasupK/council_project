@@ -21,7 +21,7 @@ function digestBytes(text) {
     getCurrentIsoDateTime_: function () { return '2026-08-18T21:00:00+09:00'; },
     throwEventError_: function (code, message) { var e = new Error(message); e.code = code; throw e; }
   });
-  var file = path.join(ROOT, 'src/000_server/050_event/052_applicants/applicants_form_mapper.gs');
+  var file = path.join(ROOT, 'src/backend/domains/event/repositories/applicant_form_mapper.gs');
   vm.runInContext(fs.readFileSync(file, 'utf8'), ctx, { filename: file });
   var source = {
     responseSheetId: 'SHEET-1', sheetId: 10,
@@ -67,7 +67,7 @@ function digestBytes(text) {
     writeBusinessAudit_: function (event) { audits.push(event); return event; },
     throwEventError_: function (code, message) { var e = new Error(message); e.code = code; throw e; }
   });
-  var file = path.join(ROOT, 'src/000_server/050_event/052_applicants/applicants_form_sync_service.gs');
+  var file = path.join(ROOT, 'src/backend/domains/event/application/applicant_form_sync.gs');
   vm.runInContext(fs.readFileSync(file, 'utf8'), ctx, { filename: file });
   ctx.applyApplicantFormSyncData_({ id: 'EVT-1', payload: { googleFormId: 'FORM', responseSheetId: 'SHEET' } }, { email: 'staff@example.com' });
   assert.ok(findCalls >= 2, 'form row must be re-read after entering lock');
@@ -94,7 +94,7 @@ function digestBytes(text) {
     writeBusinessAudit_: function (event) { audits.push(event); return event; },
     throwEventError_: function (code, message) { var e = new Error(message); e.code = code; throw e; }
   });
-  var file = path.join(ROOT, 'src/000_server/050_event/052_applicants/applicants_service.gs');
+  var file = path.join(ROOT, 'src/backend/domains/event/application/applicants_mutation.gs');
   vm.runInContext(fs.readFileSync(file, 'utf8'), ctx, { filename: file });
   var result = ctx.processApplicantData_({ id: 'APP-1', action: 'reject' }, { email: 'staff@example.com' });
   assert.strictEqual(result.status, '반려');

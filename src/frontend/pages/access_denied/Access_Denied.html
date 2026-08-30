@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <base target="_top" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>접근 권한 없음</title>
+    <?!= include('frontend/shared/styles/App_Styles'); ?>
+  </head>
+  <body class="app-mode">
+    <main class="main" style="max-width:720px;margin:80px auto;padding:24px;">
+      <section class="ui-card" style="padding:32px;">
+        <p class="crumb">권한 확인</p>
+        <h1 class="page-title">접근 권한이 없습니다</h1>
+        <p style="margin:14px 0 24px;color:var(--text-3);">
+          <?= accessError || '이 페이지에 접근할 권한이 없습니다.' ?>
+        </p>
+        <a class="ui-btn primary" target="_top" href="<?= getWebAppUrl() ?>?page=mypage">내 정보로 이동</a>
+      </section>
+    </main>
+  </body>
+</html>

@@ -3,7 +3,10 @@ var path = require('path');
 
 var ROOT = path.resolve(__dirname, '..');
 var SRC = path.join(ROOT, 'src');
-var ALLOWED_DIRECT_GAS = 'src/100_common/app_api_runner_js.html';
+var BACKEND_ROOTS = ['src/backend/'];
+var ALLOWED_DIRECT_GAS = [
+  'src/frontend/shared/api/rpc/app_api_runner_js.html'
+];
 var failures = [];
 
 function listFiles_(directory) {
@@ -18,19 +21,23 @@ function listFiles_(directory) {
 
 listFiles_(SRC).forEach(function (file) {
   var relative = path.relative(ROOT, file).replace(/\\/g, '/');
-  if (relative.indexOf('src/000_server/') === 0) return;
+  if (BACKEND_ROOTS.some(function (prefix) { return relative.indexOf(prefix) === 0; })) return;
   var source = fs.readFileSync(file, 'utf8');
-  if (/google\.script\.run/.test(source) && relative !== ALLOWED_DIRECT_GAS) {
-    failures.push('Direct google.script.run outside shared runner: ' + relative);
-  }
+  if (/google\.script\.run/.test(source) && ALLOWED_DIRECT_GAS.indexOf(relative) < 0) failures.push('Direct google.script.run outside shared runner: ' + relative);
 });
 
 [
-  'src/100_common/app_api_runner_js.html',
-  'src/100_common/app_client_js.html',
-  'src/300_settings/common/settings_client_js.html',
-  'src/400_accounting/common/accounting_client_js.html',
-  'src/500_student_fee/common/student_fee_client_js.html'
+  'src/frontend/shared/api/rpc/app_api_runner_js.html',
+  'src/frontend/entities/user/api/app_client_js.html',
+  'src/frontend/entities/iam/api/settings_client_js.html',
+  'src/frontend/entities/ledger/api/ledger_client_js.html',
+  'src/frontend/entities/reconciliation/api/reconciliation_client_js.html',
+  'src/frontend/entities/settlement/api/settlement_client_js.html',
+  'src/frontend/entities/student_fee/api/student_fee_client_js.html',
+  'src/frontend/entities/student_fee_payer/api/student_fee_payer_client_js.html',
+  'src/frontend/entities/student_fee_payment/api/student_fee_payment_client_js.html',
+  'src/frontend/entities/student_fee_refund/api/student_fee_refund_client_js.html',
+  'src/frontend/entities/event/api/event_client_js.html'
 ].forEach(function (relative) {
   if (!fs.existsSync(path.join(ROOT, relative))) failures.push('Missing API contract file: ' + relative);
 });

@@ -1,0 +1,86 @@
+<script>
+var myPageState = { data: null };
+var myPageById_ = function (id) { return document.getElementById(id); };
+var myPageEscape_ = function (value) { return String(value || '').replace(/[&<>"']/g, function (c) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]); }); };
+
+function setMyPageText_(id, value, fallback) {
+  var element = myPageById_(id);
+  if (element) element.textContent = value || fallback || '-';
+}
+
+function renderMyPageProfile_() {
+  if (!myPageState.data) return;
+  var user = myPageState.data.user || {};
+  var name = user.name || '이름 미등록';
+  setMyPageText_('mypageName', name);
+  setMyPageText_('mypageEmail', user.email, '이메일 미등록');
+  setMyPageText_('emailFact', user.email, '-');
+  setMyPageText_('mypageDepartment', user.department, '소속 미등록');
+  setMyPageText_('mypageTitle', user.title, '역할 미등록');
+  setMyPageText_('mypageStatus', user.status === 'active' || user.status === '활성' ? '활성 계정' : (user.status || '상태 미등록'));
+  var avatar = myPageById_('profileAvatar');
+  if (avatar) avatar.textContent = name.charAt(0) || '-';
+
+  var roles = myPageById_('mypageRoles');
+  if (roles) {
+    var roleData = myPageState.data.roles || [];
+    roles.innerHTML = roleData.length ? roleData.map(function (role, index) {
+      return '<div class="role-row"><span class="role-name">' + myPageEscape_(role.name) + '</span><span class="role-tag">기본 역할</span><span class="role-status">●&nbsp; 활성</span><button class="view" data-role="' + index + '">권한 보기&nbsp; →</button></div>';
+    }).join('') : '<span class="muted" style="color:#697077">배정된 역할이 없습니다.</span>';
+  }
+
+  var menus = myPageById_('mypageMenus');
+  if (menus) {
+    menus.innerHTML = '';
+    (user.menus || []).forEach(function (menu) {
+      var chip = document.createElement('span');
+      chip.className = 'mypage-chip';
+      chip.textContent = menu.name || menu.group || menu.id || '업무영역';
+      menus.appendChild(chip);
+    });
+  }
+}
+
+function renderMyPagePermissions_(permissionDetails) {
+  var tbody = myPageById_('mypagePermissions');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+  if (!permissionDetails || !permissionDetails.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:#697077">표시할 유효 권한이 없습니다.</td></tr>';
+    return;
+  }
+  function cell(hasAccess) { return '<td>' + (hasAccess ? '<span class="yes">✓</span>' : '<span class="no"></span>') + '</td>'; }
+  permissionDetails.forEach(function (permission) {
+    var grants = permission.grants || {};
+    var name = (permission.area ? '[' + permission.area + '] ' : '') + (permission.name || permission.action || permission.id || '권한');
+    tbody.insertAdjacentHTML('beforeend', '<tr class="group no-subs"><td>' + myPageEscape_(name) + '</td>' + cell(grants.menu) + cell(grants.view) + cell(grants.edit) + cell(grants.approve) + cell(grants.export) + '</tr>');
+  });
+}
+
+function bindMyPageInteractions_() {
+  var roles = myPageById_('mypageRoles');
+  if (roles) roles.addEventListener('click', function (event) { if (event.target.dataset.role !== undefined) { var modal = myPageById_('permissionModal'); if (modal) modal.classList.add('open'); } });
+  document.querySelectorAll('[data-close]').forEach(function (button) { button.addEventListener('click', function () { var element = myPageById_(button.dataset.close); if (element) element.classList.remove('open'); }); });
+}
+
+async function initializeMyPage() {
+  try {
+    var results = await Promise.all([appClient.getCurrentUser(), appClient.getMyPermissions()]);
+    var current = results[0];
+    var permissions = results[1];
+    if (!current) throw new Error('사용자 정보를 불러오지 못했습니다.');
+    myPageState.data = { user: current.user, roles: permissions.roles || [], permissions: permissions.permissions || {} };
+    renderMyPageProfile_();
+    renderMyPagePermissions_(permissions.permissionDetails || []);
+    notificationSettingsFeature.initialize(current.notifications || []);
+    var date = myPageById_('permissionDate');
+    if (date) { var today = new Date(); date.textContent = '권한 기준일 ' + today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0'); }
+    bindMyPageInteractions_();
+  } catch (error) {
+    var errorElement = myPageById_('mypageError');
+    if (errorElement) { errorElement.textContent = error.message; errorElement.classList.remove('hidden'); }
+  }
+}
+
+document.addEventListener('DOMContentLoaded', initializeMyPage);
+</script>

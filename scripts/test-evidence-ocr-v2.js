@@ -14,8 +14,8 @@ const context = {
   writeAccountingAudit_: () => {}
 };
 vm.createContext(context);
-vm.runInContext(fs.readFileSync(path.join(root, 'src/000_server/060_accounting/062_evidence/evidence_ocr_service.gs'), 'utf8'), context);
-vm.runInContext(fs.readFileSync(path.join(root, 'src/000_server/060_accounting/062_evidence/evidence_service.gs'), 'utf8'), context);
+vm.runInContext(fs.readFileSync(path.join(root, 'src/backend/domains/accounting/application/evidence_ocr.gs'), 'utf8'), context);
+vm.runInContext(fs.readFileSync(path.join(root, 'src/backend/domains/accounting/application/evidence_mutation.gs'), 'utf8'), context);
 context.extractEvidenceOcrText_ = () => '+1,151,683원\n2026-02-01 18:21\n학생회비 이월\n입금';
 
 assert.strictEqual(typeof context.validateEvidenceOcrData_, 'function');

@@ -1,0 +1,14 @@
+<script>
+async function initializeSettingsDepartmentsPage() {
+  try {
+    var data = await departmentClient.getDepartments();
+    applySettingsShell(data);
+    renderDepartmentDirectory(data);
+    showSettingsContent();
+  } catch (error) {
+    showSettingsError(error);
+  }
+}
+
+initializeSettingsDepartmentsPage();
+</script>

@@ -4,9 +4,11 @@ var path = require('path');
 var vm = require('vm');
 
 var ROOT = path.resolve(__dirname, '..');
-var SERVER_ROOT = path.join(ROOT, 'src', '000_server');
+var BACKEND_ROOT = path.join(ROOT, 'src', 'backend');
+var LEGACY_SERVER_ROOT = path.join(ROOT, 'src', '000_server');
 
 function listGsFiles_(directory) {
+  if (!fs.existsSync(directory)) return [];
   return fs.readdirSync(directory, { withFileTypes: true }).reduce(function (files, entry) {
     var target = path.join(directory, entry.name);
     if (entry.isDirectory()) return files.concat(listGsFiles_(target));
@@ -16,12 +18,12 @@ function listGsFiles_(directory) {
 }
 
 var schemaContext = vm.createContext({ console: console });
-vm.runInContext(fs.readFileSync(path.join(SERVER_ROOT, '010_core', 'config.gs'), 'utf8'), schemaContext);
-vm.runInContext(fs.readFileSync(path.join(SERVER_ROOT, '020_schema', 'operation_db_schema.gs'), 'utf8'), schemaContext);
+vm.runInContext(fs.readFileSync(path.join(BACKEND_ROOT, 'app', 'config', 'config.gs'), 'utf8'), schemaContext);
+vm.runInContext(fs.readFileSync(path.join(BACKEND_ROOT, 'core', 'db', 'schema', 'operation_db_schema.gs'), 'utf8'), schemaContext);
 var schemaKeys = Object.keys(schemaContext.getOperationDbSchema_());
 
 var invalid = [];
-listGsFiles_(SERVER_ROOT).forEach(function (file) {
+listGsFiles_(BACKEND_ROOT).concat(listGsFiles_(LEGACY_SERVER_ROOT)).forEach(function (file) {
   var source = fs.readFileSync(file, 'utf8');
   if (!/write(?:Business|Accounting|StudentFee)Audit_\s*\(/.test(source)) return;
 

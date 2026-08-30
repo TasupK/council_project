@@ -29,7 +29,7 @@ function createContext_() {
 }
 
 function plain_(value) { return JSON.parse(JSON.stringify(value)); }
-function loadRequest_(context) { load_(context, 'src/000_server/080_student_fee/080_common/student_fee_request.gs'); }
+function loadRequest_(context) { load_(context, 'src/backend/domains/student_fee/controllers/student_fee_request.gs'); }
 
 function testFeeRateResolution_() {
   var context = createContext_();
@@ -42,7 +42,7 @@ function testFeeRateResolution_() {
     return [];
   };
   context.findOperationTableRowById_ = function () { return null; };
-  load_(context, 'src/000_server/080_student_fee/080_common/student_fee_reference_query_service.gs');
+  load_(context, 'src/backend/domains/student_fee/application/student_fee_reference_query.gs');
   assert.strictEqual(context.resolveStudentFeeRate_('2026-08-17').id, 'current');
   assert.throws(function () { context.resolveStudentFeeRate_('2027-01-01'); }, /회비금액기준/);
 }
@@ -58,7 +58,7 @@ function testStudentFeeReferenceData_() {
   };
   context.isTruthyValue_ = function (value) { return value === true; };
   context.findOperationTableRowById_ = function () { return null; };
-  load_(context, 'src/000_server/080_student_fee/080_common/student_fee_reference_query_service.gs');
+  load_(context, 'src/backend/domains/student_fee/application/student_fee_reference_query.gs');
   var data = context.getStudentFeeReferenceData_();
   assert.strictEqual(data.semesters[0].id, '20262');
   assert.strictEqual(data.semesters[0].label, '2026학년도 2학기');
@@ -71,8 +71,8 @@ function testAuditAttribution_() {
   context.getCurrentIsoDateTime_ = function () { return '2026-08-17T21:00:00+09:00'; };
   context.getOperationDbSchema_ = function () { return { businessAuditLogs: {}, feeApplications: {} }; };
   context.appendOperationTableRow_ = function (table, row) { captured = { table: table, row: row }; return row; };
-  load_(context, 'src/000_server/010_core/business_audit.gs');
-  load_(context, 'src/000_server/080_student_fee/080_common/student_fee_audit_sheet_dao.gs');
+  load_(context, 'src/backend/core/audit/business_audit.gs');
+  load_(context, 'src/backend/domains/student_fee/repositories/student_fee_audit_repository.gs');
   var result = context.writeStudentFeeAudit_('staff@example.com', 'APPROVE', 'feeApplications', 'app-1', { status: '접수' }, { status: '승인' }, 'ok');
   assert.strictEqual(captured.table, 'businessAuditLogs');
   assert.strictEqual(result.actorEmail, 'staff@example.com');
@@ -100,7 +100,7 @@ function testPayerBehavior_() {
   context.updateFeePayerRowById_ = function (id, changes) { updated = { id: id, changes: plain_(changes) }; return true; };
   context.getCurrentIsoDateTime_ = function () { return '2026-08-17T21:00:00+09:00'; };
   context.writeStudentFeeAudit_ = function () { audits.push(Array.prototype.slice.call(arguments)); };
-  load_(context, 'src/000_server/080_student_fee/081_payers/fee_payers_service.gs');
+  load_(context, 'src/backend/domains/student_fee/application/fee_payers_mutation.gs');
 
   assert.throws(function () {
     context.createFeePayerData_({ studentId: 'existing', name: 'A', affiliation: 'B', startSemesterId: '20261' }, { email: 'staff@example.com' });
@@ -146,13 +146,12 @@ function testPaymentBehavior_() {
   context.getCurrentIsoDateTime_ = function () { return '2026-08-17T21:00:00+09:00'; };
   context.writeStudentFeeAudit_ = function () { audits.push(Array.prototype.slice.call(arguments)); };
 
-  // 승인에 따른 feePayers upsert를 검증하기 위한 mock
   context.findFeePayerRowById_ = function () { return existingPayer; };
   context.insertFeePayerRow_ = function (row) { payerRow = plain_(row); existingPayer = payerRow; return row; };
   context.updateFeePayerRowById_ = function (id, changes) { payerUpdated = { id: id, changes: plain_(changes) }; existingPayer = Object.assign({}, existingPayer, changes); return true; };
 
-  load_(context, 'src/000_server/080_student_fee/081_payers/fee_payers_service.gs');
-  load_(context, 'src/000_server/080_student_fee/082_payments/fee_payments_service.gs');
+  load_(context, 'src/backend/domains/student_fee/application/fee_payers_mutation.gs');
+  load_(context, 'src/backend/domains/student_fee/application/fee_payments_mutation.gs');
 
   var approved = context.processFeeApplicationsData_({ ids: ['app-1'], action: 'APPROVE' }, { email: 'staff@example.com' });
   assert.strictEqual(approved[0].success, true);
@@ -164,7 +163,6 @@ function testPaymentBehavior_() {
   assert.strictEqual(payerRow.managerEmail, 'staff@example.com');
   assert.strictEqual(audits.length, 3);
 
-  // 동일 학번으로 재승인 시 회비납부자 정보가 갱신되는지 검증
   application = {
     id: 'app-2', paymentDate: '2026-08-11', semesterCount: 1, status: '접수',
     studentId: '60201234', name: '김철수', affiliation: '경영대학', startSemesterId: '20261'
@@ -183,7 +181,7 @@ function testPaymentBehavior_() {
   confirmation.updateFeePaymentRowById_ = function (id, changes) { updatedPayment = plain_(changes); payment = Object.assign({}, payment, changes); return true; };
   confirmation.getCurrentIsoDateTime_ = function () { return '2026-08-17T21:00:00+09:00'; };
   confirmation.writeStudentFeeAudit_ = function () {};
-  load_(confirmation, 'src/000_server/080_student_fee/082_payments/fee_payments_service.gs');
+  load_(confirmation, 'src/backend/domains/student_fee/application/fee_payments_mutation.gs');
   var confirmed = confirmation.confirmFeePaymentData_({ paymentId: 'pay-1', result: 'MISMATCH', depositorName: '홍길동' }, { email: 'staff@example.com' });
   assert.strictEqual(confirmed.moneyStatus, '불일치');
   assert.strictEqual(updatedPayment.managerEmail, 'staff@example.com');
@@ -202,7 +200,7 @@ function testRefundBehavior_() {
   context.getCurrentIsoDateTime_ = function () { return '2026-08-17T21:00:00+09:00'; };
   context.writeStudentFeeAudit_ = function () { audits.push(Array.prototype.slice.call(arguments)); };
   context.parseStudentFeeAmount_ = function (value, fieldName, minimum) { var amount = Number(value); if (!isFinite(amount) || amount < minimum) throw new Error(fieldName); return amount; };
-  load_(context, 'src/000_server/080_student_fee/083_refunds/fee_refunds_service.gs');
+  load_(context, 'src/backend/domains/student_fee/application/fee_refunds_mutation.gs');
 
   var approved = context.processFeeRefundRequestsData_({ ids: ['req-1'], action: 'APPROVE' }, { email: 'staff@example.com' });
   assert.strictEqual(approved[0].refund.approvedAmount, 12000);
@@ -217,7 +215,7 @@ function testRefundBehavior_() {
   confirmation.updateFeeRefundRowById_ = function (id, update) { changes = plain_(update); refund = Object.assign({}, refund, update); return true; };
   confirmation.getCurrentIsoDateTime_ = function () { return '2026-08-17T21:00:00+09:00'; };
   confirmation.writeStudentFeeAudit_ = function () {};
-  load_(confirmation, 'src/000_server/080_student_fee/083_refunds/fee_refunds_service.gs');
+  load_(confirmation, 'src/backend/domains/student_fee/application/fee_refunds_mutation.gs');
   var confirmed = confirmation.confirmFeeRefundData_({ refundId: 'ref-1', result: 'DONE', transferEvidenceId: 'file-1' }, { email: 'staff@example.com' });
   assert.strictEqual(confirmed.moneyStatus, '완료');
   assert.strictEqual(changes.managerEmail, 'staff@example.com');
@@ -230,7 +228,7 @@ function testSummary_() {
   context.listFeePaymentRows_ = function () { return [{ moneyStatus: '대기', amount: 20000 }, { moneyStatus: '완료', amount: 20000 }]; };
   context.listFeeRefundRequestRows_ = function () { return [{ status: '접수' }, { status: '승인' }]; };
   context.listFeeRefundRows_ = function () { return [{ moneyStatus: '대기', approvedAmount: 10000 }]; };
-  load_(context, 'src/000_server/080_student_fee/082_payments/fee_payments_query_service.gs');
+  load_(context, 'src/backend/domains/student_fee/application/fee_payments_query.gs');
   assert.deepStrictEqual(plain_(context.getStudentFeeSummaryData_()), {
     payers: { total: 2 }, applications: { total: 3, pending: 1, approved: 1, rejected: 1 },
     payments: { total: 2, pending: 1, completed: 1, mismatch: 0, completedAmount: 20000 },

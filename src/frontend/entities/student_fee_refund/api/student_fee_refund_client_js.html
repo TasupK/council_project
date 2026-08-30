@@ -1,0 +1,9 @@
+<script>
+var studentFeeRefundClient = {
+  getRefundRequests: function (request) { return runAppApi('api_getStudentFeeRefundRequests', request || {}); },
+  getRefundRequest: function (request) { return runAppApi('api_getStudentFeeRefundRequest', request || {}); },
+  calculateRefund: function (request) { return runAppApi('api_calculateStudentFeeRefund', request || {}); },
+  processRefundRequests: function (request) { return runAppApi('api_processStudentFeeRefundRequests', request || {}); },
+  confirmRefund: function (request) { return runAppApi('api_confirmStudentFeeRefund', request || {}); }
+};
+</script>

@@ -4,8 +4,8 @@ var path = require('path');
 var vm = require('vm');
 
 var ROOT = path.resolve(__dirname, '..');
-var servicePath = path.join(ROOT, 'src/000_server/050_event/052_applicants/applicants_form_sync_service.gs');
-assert.ok(fs.existsSync(servicePath), 'applicants_form_sync_service.gs must exist');
+var servicePath = path.join(ROOT, 'src/backend/domains/event/application/applicant_form_sync.gs');
+assert.ok(fs.existsSync(servicePath), 'applicant_form_sync.gs must exist');
 
 var insertedApplications = [];
 var insertedAnswers = [];

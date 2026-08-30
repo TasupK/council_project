@@ -2,7 +2,10 @@ var fs = require('fs');
 var path = require('path');
 
 var ROOT = path.resolve(__dirname, '..');
-var SERVER = path.join(ROOT, 'src', '000_server');
+var SERVER_ROOTS = [
+  path.join(ROOT, 'src', 'backend'),
+  path.join(ROOT, 'src', '000_server')
+].filter(function (root) { return fs.existsSync(root); });
 var failures = [];
 
 var RENAMED_SYMBOLS = [
@@ -47,11 +50,11 @@ var RENAMED_SYMBOLS = [
 ];
 
 var PUBLIC_ALLOWLIST = {
-  authorizeApp: true,
-
+  authorizeApp: true
 };
 
 function listFiles_(directory) {
+  if (!fs.existsSync(directory)) return [];
   return fs.readdirSync(directory, { withFileTypes: true }).reduce(function (files, entry) {
     var target = path.join(directory, entry.name);
     if (entry.isDirectory()) return files.concat(listFiles_(target));
@@ -68,7 +71,10 @@ function collectFunctionsFromSource_(source) {
   return names;
 }
 
-listFiles_(SERVER).forEach(function (file) {
+var serverFiles = [];
+SERVER_ROOTS.forEach(function (root) { serverFiles = serverFiles.concat(listFiles_(root)); });
+
+serverFiles.forEach(function (file) {
   var relative = path.relative(ROOT, file).replace(/\\/g, '/');
   var source = fs.readFileSync(file, 'utf8');
 

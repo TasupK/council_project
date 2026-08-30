@@ -1,0 +1,9 @@
+<script>
+var settlementClient = {
+  getSettlementSummary: function (request) { return runAppApi('api_getSettlementSummary', request || {}); },
+  getSettlementReports: function () { return runAppApi('api_getSettlementReports', {}); },
+  getSettlementReport: function (request) { return runAppApi('api_getSettlementReport', request || {}); },
+  createSettlementReport: function (request) { return runAppApi('api_createSettlementReport', request || {}); },
+  exportSettlementReport: function (request) { return runAppApi('api_exportSettlementReport', request || {}); }
+};
+</script>

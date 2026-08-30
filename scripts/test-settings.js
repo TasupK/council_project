@@ -28,19 +28,19 @@ function installValueStubs_(context) {
   context.formatDateValue_ = function (value) { return String(value || ''); };
 }
 function installApiContract_(context) {
-  load_(context, 'src/000_server/010_core/api_request.gs');
-  load_(context, 'src/000_server/010_core/response.gs');
+  load_(context, 'src/backend/core/response/api_request.gs');
+  load_(context, 'src/backend/core/response/response.gs');
   context.requireLoginContext_ = function () { return {}; };
   context.requirePermission_ = function () {};
   context.resolveApiAccess_ = function () {};
-  load_(context, 'src/000_server/010_core/api_handler.gs');
+  load_(context, 'src/backend/core/response/api_handler.gs');
 }
 
 function testAdminSettingsAccess_() {
   var context = createContext_();
   context.failResponse_ = function (code, message) { return { ok: false, code: code, message: message }; };
   context.requireAuthenticatedUserData_ = function () { return { isAdmin: true, user: { email: 'admin@example.com' }, domainAccess: { settings: true } }; };
-  load_(context, 'src/000_server/070_settings/070_common/settings_access.gs');
+  load_(context, 'src/backend/domains/iam/application/settings_access.gs');
   assert.strictEqual(context.getAdminSettingsCurrent_().isAdmin, true);
   context.requireAuthenticatedUserData_ = function () { return { isAdmin: false, user: { email: 'user@example.com' }, domainAccess: { settings: true } }; };
   assert.deepStrictEqual(plain_(context.getAdminSettingsCurrent_()), { ok: false, code: 'FORBIDDEN', message: '설정 화면은 시스템 관리자만 이용할 수 있습니다.' });
@@ -53,8 +53,8 @@ function testSettingsHomeData_() {
   context.requireAuthenticatedUserData_ = function () {
     return { isAdmin: true, user: { email: 'admin@example.com', name: '관리자' }, domainAccess: { settings: true } };
   };
-  load_(context, 'src/000_server/070_settings/070_common/settings_access.gs');
-  load_(context, 'src/000_server/070_settings/070_common/settings_shell_query_service.gs');
+  load_(context, 'src/backend/domains/iam/application/settings_access.gs');
+  load_(context, 'src/backend/domains/iam/controllers/settings_home_controller.gs');
   var result = context.api_getSettingsHome();
   assert.strictEqual(result.ok, true);
   assert.strictEqual(result.data.app.version, 'v0.7');
@@ -67,12 +67,13 @@ function testUsersSettingsComposition_() {
   var context = createContext_();
   installValueStubs_(context);
   context.getUserDbFields_ = function () { return { email: 'Google이메일', name: '성명', studentId: '학번', phone: '연락처', active: '활성여부', updatedAt: '최종수정일시', updatedBy: '등록자이메일' }; };
-  load_(context, 'src/000_server/040_iam/041_users/users_query_service.gs');
-  load_(context, 'src/000_server/070_settings/071_users/settings_users_query_service.gs');
+  load_(context, 'src/backend/domains/iam/application/users_query.gs');
+  load_(context, 'src/backend/domains/iam/application/settings_users_query.gs');
   context.listUserRows_ = function () { return [{ 'Google이메일': 'Student@Example.com ', '성명': '김학생', '학번': '6001', '연락처': '010-1111-2222', '활성여부': 'TRUE', '최종수정일시': '2026-08-17T12:00:00', '등록자이메일': 'admin@example.com' }]; };
   context.buildRolesById_ = function () { return { ROLE_ADMIN: { id: 'ROLE_ADMIN', name: '관리자' } }; };
   context.buildActiveRoleIdsByEmail_ = function () { return { 'student@example.com': ['ROLE_ADMIN'] }; };
   context.buildRoleSummaryForUser_ = function (role) { return { id: role.id, name: role.name }; };
+  context.buildDepartmentsById_ = function () { return {}; };
   assert.deepStrictEqual(plain_(context.getSettingsUsersData_()), [{
     id: 'student@example.com', name: '김학생', email: 'student@example.com', studentId: '6001', phone: '010-1111-2222', department: '',
     roleIds: ['ROLE_ADMIN'], roles: [{ id: 'ROLE_ADMIN', name: '관리자' }], status: 'active', updatedAt: '2026-08-17T12:00:00', updatedBy: 'admin@example.com'
@@ -83,7 +84,7 @@ function testRolesSettingsComposition_() {
   var context = createContext_();
   installValueStubs_(context);
   context.getUserDbFields_ = function () { return { roleId: '역할ID', assignedStatus: '배정상태' }; };
-  load_(context, 'src/000_server/070_settings/072_roles/settings_roles_query_service.gs');
+  load_(context, 'src/backend/domains/iam/application/settings_roles_query.gs');
   context.buildRolesById_ = function () { return { ROLE_ADMIN: { id: 'ROLE_ADMIN', assignedCount: 0 }, ROLE_STAFF: { id: 'ROLE_STAFF', assignedCount: 0 } }; };
   context.listUserRoleRows_ = function () { return [
     { '역할ID': 'ROLE_ADMIN', '배정상태': '활성' }, { '역할ID': 'ROLE_ADMIN', '배정상태': '활성' },
@@ -98,7 +99,7 @@ function testPermissionsIamAndSettingsComposition_() {
   var context = createContext_();
   installValueStubs_(context);
   context.getUserDbFields_ = function () { return { id: '권한ID', area: '업무영역', action: '행위', name: '권한명', description: '권한설명', active: '활성여부' }; };
-  load_(context, 'src/000_server/040_iam/043_permissions/permissions_query_service.gs');
+  load_(context, 'src/backend/domains/iam/application/permissions_query.gs');
   var rows = [
     { '권한ID': 'EVENT_VIEW', '업무영역': '행사', '행위': '조회', '권한명': '행사 조회', '권한설명': '', '활성여부': true },
     { '권한ID': 'EVENT_EDIT', '업무영역': '행사', '행위': '수정', '권한명': '행사 수정', '권한설명': '', '활성여부': true }
@@ -115,7 +116,7 @@ function testPermissionsIamAndSettingsComposition_() {
   context.okResponse_ = function (payload) { return Object.assign({ ok: true }, payload); };
   context.buildSettingsBaseView_ = function (current) { return { currentUser: current.user, shell: true }; };
   context.getSettingsRolesData_ = function () { return [{ id: 'ROLE_ADMIN', name: '관리자' }]; };
-  load_(context, 'src/000_server/070_settings/073_permissions/settings_permissions_query_service.gs');
+  load_(context, 'src/backend/domains/iam/application/settings_permissions_query.gs');
   var serviceResult = context.getSettingsPermissionsData_({ user: { email: 'admin@example.com' } });
   assert.strictEqual(serviceResult.ok, true);
   assert.strictEqual(serviceResult.permissionTree[0].children[0].id, 'screen_EVENT');

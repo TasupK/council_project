@@ -1,0 +1,38 @@
+<script>
+function loadAttendance(panel) {
+  panel.innerHTML = attendanceToolbar() + '<div id="ew-attendance-table" class="ew-card ew-table-card ui-card"></div><div id="ew-dirty-bar"></div>';
+  var filter = state.attendanceFilters || {};
+  var rows = getCachedDetailItems_('attendance').filter(function (item) {
+    if (!includesDetailKeyword_([item.name, item.studentId, item.phone], filter.keyword)) return false;
+    var isPaid = Number(item.paidAmount || 0) >= Number(item.appliedFee || 0);
+    if (filter.feeStatus === 'paid' && !isPaid) return false;
+    if (filter.feeStatus === 'unpaid' && isPaid) return false;
+    if (filter.status && item.status !== filter.status) return false;
+    return true;
+  });
+  renderAttendanceTable(paginateCachedDetailItems_(rows, state.attendancePage, 10));
+}
+function attendanceToolbar() {
+  var filter = state.attendanceFilters;
+  return '<form id="ew-attendance-search" class="ew-card ew-tab-toolbar ui-card ui-toolbar"><strong>▣　출석 체크 시트 (Google Forms)</strong><button type="button" class="ew-btn ew-btn-small ui-btn outline small" disabled title="출석 원본 연동 계약 확인 필요">↻ 명단 동기화</button><span class="ew-spacer"></span>' +
+    '<input class="ui-control" name="keyword" type="search" value="' + escapeHtml(filter.keyword || '') + '" placeholder="이름, 학번, 연락처 검색">' +
+    '<select class="ui-control" name="feeStatus"><option value="">참가비 상태</option><option value="paid" ' + selected(filter.feeStatus, 'paid') + '>입금 완료</option><option value="unpaid" ' + selected(filter.feeStatus, 'unpaid') + '>미입금</option></select>' +
+    '<select class="ui-control" name="status"><option value="">출석 상태</option><option value="출석" ' + selected(filter.status, '출석') + '>출석</option><option value="미참석" ' + selected(filter.status, '미참석') + '>미참석</option></select>' +
+    '<button class="ew-btn ew-btn-primary ew-btn-small ui-btn primary small" type="submit">검색</button><span class="ew-last-sync">마지막 동기화: 확인 필요</span></form>';
+}
+function renderAttendanceTable(data) {
+  var target = document.getElementById('ew-attendance-table'); if (!target) return;
+  var body = (data.items || []).length ? data.items.map(function (item) {
+    var paid = Number(item.paidAmount || 0) >= Number(item.appliedFee || 0), dirty = state.dirtyAttendance[item.applicationId], status = dirty ? dirty.status : item.status, checked = status === '출석';
+    return '<tr class="' + (dirty ? 'selected' : '') + '"><td>□</td><td>' + escapeHtml(item.name) + '</td><td>' + escapeHtml(item.studentId) + '</td><td>' + escapeHtml(item.phone) + '</td><td>' + statusBadge(item.applicantType) + '</td><td>' + (paid ? 'O' : 'X') + '</td><td><input type="checkbox" data-role="attendance-toggle" data-id="' + escapeHtml(item.applicationId) + '" ' + (checked ? 'checked' : '') + ' aria-label="' + escapeHtml(item.name) + ' 출석"></td><td>' + statusBadge(checked ? '출석' : '미참석') + '</td></tr>';
+  }).join('') : '<tr><td colspan="8" class="ew-table-empty ui-empty">출석 관리 대상이 없습니다.</td></tr>';
+  target.innerHTML = '<table class="ew-table ui-table"><thead><tr><th>□</th><th>이름</th><th>학번</th><th>연락처</th><th>학생회비</th><th>참가비</th><th>출석 상태</th><th>비고</th></tr></thead><tbody>' + body + '</tbody></table>' + paginationHtml(data, 'attendance-page'); renderDirtyBar();
+}
+function renderDirtyBar() { var target = document.getElementById('ew-dirty-bar'); if (!target) return; var count = Object.keys(state.dirtyAttendance).length; target.innerHTML = count ? '<div class="ew-dirty-bar"><div class="ew-dirty-message"><strong>ⓘ 변경사항 ' + count + '건이 있습니다.</strong>선택한 출석 상태가 아직 저장되지 않았습니다.</div><button type="button" class="ew-btn ew-btn-small ui-btn outline small" data-action="cancel-attendance">변경 취소</button><button type="button" class="ew-btn ew-btn-primary ew-btn-small ui-btn primary small" data-action="apply-attendance">변경사항 적용</button></div>' : ''; }
+function updateCachedAttendance_(savedItems) {
+  var attendance = getCachedDetailItems_('attendance'), applicants = getCachedDetailItems_('applicants');
+  (savedItems || []).forEach(function (saved) { var found = false; attendance.forEach(function (item, index) { if (String(item.applicationId) !== String(saved.applicationId)) return; attendance[index] = Object.assign({}, item, saved); found = true; }); if (!found) attendance.push(Object.assign({}, saved)); applicants.forEach(function (applicant) { if (String(applicant.id) === String(saved.applicationId)) applicant.attendance = Object.assign({}, saved); }); });
+  if (state.detail && state.detail.summary) state.detail.summary.actualAttendees = attendance.filter(function (item) { return item.status === '출석'; }).length;
+}
+function applyAttendance() { var items = Object.keys(state.dirtyAttendance).map(function (key) { return state.dirtyAttendance[key]; }); runEventBusy(function () { return eventClient.applyAttendanceChanges({ id: state.currentEventId, payload: { items: items } }); }).then(function (savedItems) { updateCachedAttendance_(savedItems); state.dirtyAttendance = {}; showToast('출석 변경사항을 저장했습니다.'); renderDetailShell(); loadAttendance(document.getElementById('ew-tab-panel')); }).catch(handleError); }
+</script>

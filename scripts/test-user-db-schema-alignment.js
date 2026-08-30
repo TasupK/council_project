@@ -2,7 +2,7 @@ const fs = require('fs');
 const vm = require('vm');
 const assert = require('assert');
 
-const source = fs.readFileSync('src/000_server/020_schema/user_db_schema.gs', 'utf8');
+const source = fs.readFileSync('src/backend/core/db/schema/user_db_schema.gs', 'utf8');
 const context = {};
 vm.createContext(context);
 vm.runInContext(source, context, { filename: 'user_db_schema.gs' });

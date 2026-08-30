@@ -4,10 +4,10 @@ var path = require('path');
 var vm = require('vm');
 
 var ROOT = path.resolve(__dirname, '..');
-var iamAccessPath = path.join(ROOT, 'src/000_server/040_iam/043_permissions/permissions_access_service.gs');
-var accessPath = path.join(ROOT, 'src/000_server/050_event/050_common/event_access.gs');
-var apiPath = path.join(ROOT, 'src/000_server/050_event/052_applicants/applicants_api.gs');
-var queryPath = path.join(ROOT, 'src/000_server/050_event/051_events/events_query_service.gs');
+var iamAccessPath = path.join(ROOT, 'src/backend/domains/iam/application/permissions_access.gs');
+var accessPath = path.join(ROOT, 'src/backend/domains/event/application/event_access.gs');
+var apiPath = path.join(ROOT, 'src/backend/domains/event/controllers/applicants_controller.gs');
+var queryPath = path.join(ROOT, 'src/backend/domains/event/application/events_query.gs');
 assert.ok(fs.existsSync(accessPath), 'event_access.gs must exist');
 
 var apiSource = fs.readFileSync(apiPath, 'utf8');

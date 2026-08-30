@@ -5,8 +5,11 @@ on:
     branches:
       - main
     paths:
-      - 'src/000_server/080_student_fee/**'
-      - 'src/000_server/020_schema/operation_db_schema.gs'
+      - 'src/backend/domains/student_fee/**'
+      - 'src/backend/core/db/schema/operation_db_schema.gs'
+      - 'src/frontend/pages/student_fee_*/**'
+      - 'src/frontend/entities/student_fee*/**'
+      - 'src/frontend/features/student_fee_*/**'
       - 'scripts/test-student-fee*.js'
       - 'scripts/verify-student-fee-architecture.js'
       - '.github/workflows/student-fee.yml'
@@ -14,8 +17,11 @@ on:
     branches:
       - design/student-fee-form-source
     paths:
-      - 'src/000_server/080_student_fee/**'
-      - 'src/000_server/020_schema/operation_db_schema.gs'
+      - 'src/backend/domains/student_fee/**'
+      - 'src/backend/core/db/schema/operation_db_schema.gs'
+      - 'src/frontend/pages/student_fee_*/**'
+      - 'src/frontend/entities/student_fee*/**'
+      - 'src/frontend/features/student_fee_*/**'
       - 'scripts/test-student-fee*.js'
       - 'scripts/verify-student-fee-architecture.js'
       - '.github/workflows/student-fee.yml'

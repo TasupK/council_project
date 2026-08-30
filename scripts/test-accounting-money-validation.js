@@ -4,7 +4,7 @@ var path = require('path');
 var vm = require('vm');
 
 var ROOT = path.resolve(__dirname, '..');
-var file = path.join(ROOT, 'src/000_server/060_accounting/061_ledger/ledger_service.gs');
+var file = path.join(ROOT, 'src/backend/domains/accounting/application/ledger_mutation.gs');
 
 function makeContext() {
   var inserted;

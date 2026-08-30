@@ -12,43 +12,43 @@ function readOptional_(relativePath) {
 var pages = [
   {
     name: 'Accounting Ledger',
-    shell: 'src/400_accounting/410_ledger/Accounting_Ledger.html',
-    view: 'src/400_accounting/410_ledger/Accounting_Ledger_View.html',
+    shell: 'src/frontend/pages/accounting_ledger/Accounting_Ledger.html',
+    view: 'src/frontend/pages/accounting_ledger/Accounting_Ledger_View.html',
     partials: [
-      'src/400_accounting/410_ledger/modals/Accounting_Ledger_Register_Modal.html',
-      'src/400_accounting/410_ledger/modals/Accounting_Ledger_Detail_Modal.html'
+      'src/frontend/pages/accounting_ledger/modals/Accounting_Ledger_Register_Modal.html',
+      'src/frontend/pages/accounting_ledger/modals/Accounting_Ledger_Detail_Modal.html'
     ]
   },
   {
     name: 'Student Fee Payers',
-    shell: 'src/500_student_fee/510_payers/Student_Fee_Payers.html',
-    view: 'src/500_student_fee/510_payers/Student_Fee_Payers_View.html',
-    partials: ['src/500_student_fee/510_payers/modals/Student_Fee_Payer_Edit_Modal.html']
+    shell: 'src/frontend/pages/student_fee_payers/Student_Fee_Payers.html',
+    view: 'src/frontend/pages/student_fee_payers/Student_Fee_Payers_View.html',
+    partials: ['src/frontend/pages/student_fee_payers/modals/Student_Fee_Payer_Edit_Modal.html']
   },
   {
     name: 'Student Fee Payments',
-    shell: 'src/500_student_fee/520_payments/Student_Fee_Payments.html',
-    view: 'src/500_student_fee/520_payments/Student_Fee_Payments_View.html',
+    shell: 'src/frontend/pages/student_fee_payments/Student_Fee_Payments.html',
+    view: 'src/frontend/pages/student_fee_payments/Student_Fee_Payments_View.html',
     partials: [
-      'src/500_student_fee/520_payments/modals/Student_Fee_Payment_Detail_Modal.html',
-      'src/500_student_fee/520_payments/modals/Student_Fee_Payment_Confirm_Modal.html'
+      'src/frontend/pages/student_fee_payments/modals/Student_Fee_Payment_Detail_Modal.html',
+      'src/frontend/pages/student_fee_payments/modals/Student_Fee_Payment_Confirm_Modal.html'
     ]
   },
   {
     name: 'Student Fee Refunds',
-    shell: 'src/500_student_fee/530_refunds/Student_Fee_Refunds.html',
-    view: 'src/500_student_fee/530_refunds/Student_Fee_Refunds_View.html',
+    shell: 'src/frontend/pages/student_fee_refunds/Student_Fee_Refunds.html',
+    view: 'src/frontend/pages/student_fee_refunds/Student_Fee_Refunds_View.html',
     partials: [
-      'src/500_student_fee/530_refunds/modals/Student_Fee_Refund_Detail_Modal.html',
-      'src/500_student_fee/530_refunds/modals/Student_Fee_Refund_Approval_Modal.html',
-      'src/500_student_fee/530_refunds/modals/Student_Fee_Refund_Transfer_Modal.html'
+      'src/frontend/pages/student_fee_refunds/modals/Student_Fee_Refund_Detail_Modal.html',
+      'src/frontend/pages/student_fee_refunds/modals/Student_Fee_Refund_Approval_Modal.html',
+      'src/frontend/pages/student_fee_refunds/modals/Student_Fee_Refund_Transfer_Modal.html'
     ]
   },
   {
     name: 'Event Detail',
-    shell: 'src/600_event/630_detail/Event_Detail.html',
-    view: 'src/600_event/630_detail/Event_Detail_View.html',
-    partials: ['src/600_event/630_detail/modals/Event_Applicant_Detail_Modal.html']
+    shell: 'src/frontend/pages/event_detail/Event_Detail.html',
+    view: 'src/frontend/pages/event_detail/Event_Detail_View.html',
+    partials: ['src/frontend/pages/event_detail/modals/Event_Applicant_Detail_Modal.html']
   }
 ];
 
@@ -77,10 +77,10 @@ pages.forEach(function (page) {
   });
 });
 
-var eventApplicantJs = readOptional_('src/600_event/630_detail/event_detail_applicants_js.html');
-var eventCoreJs = readOptional_('src/600_event/630_detail/event_detail_core_js.html');
-var eventBootstrapJs = readOptional_('src/600_event/630_detail/event_detail_bootstrap_js.html');
-var eventJs = [eventApplicantJs, eventCoreJs, eventBootstrapJs].join('\n');
+var eventApplicantJs = readOptional_('src/frontend/features/event_applicant_manage/event_applicant_manage_js.html');
+var eventCoreJs = readOptional_('src/frontend/features/event_detail_core/event_detail_core_js.html');
+var eventControllerJs = readOptional_('src/frontend/pages/event_detail/event_detail_controller_js.html');
+var eventJs = [eventApplicantJs, eventCoreJs, eventControllerJs].join('\n');
 if (/ui-modal-overlay/.test(eventJs) || /<section[^>]+ui-modal/.test(eventJs)) {
   failures.push('Migrated Event JS must not construct a complete modal shell.');
 }

@@ -2,7 +2,10 @@ var fs = require('fs');
 var path = require('path');
 
 var ROOT = path.resolve(__dirname, '..');
-var SERVER = path.join(ROOT, 'src', '000_server');
+var SERVER_ROOTS = [
+  path.join(ROOT, 'src', 'backend'),
+  path.join(ROOT, 'src', '000_server')
+].filter(function (root) { return fs.existsSync(root); });
 var CODE_ROOTS = [path.join(ROOT, 'src'), path.join(ROOT, 'scripts')];
 var failures = [];
 
@@ -31,6 +34,7 @@ var NON_API_PUBLIC_ALLOWLIST = {
 };
 
 function listFiles_(directory, matcher) {
+  if (!fs.existsSync(directory)) return [];
   return fs.readdirSync(directory, { withFileTypes: true }).reduce(function (files, entry) {
     var target = path.join(directory, entry.name);
     if (entry.isDirectory()) return files.concat(listFiles_(target, matcher));
@@ -57,26 +61,23 @@ codeFiles.forEach(function (file) {
   var relative = path.relative(ROOT, file).replace(/\\/g, '/');
   var source = fs.readFileSync(file, 'utf8');
   LEGACY_PUBLIC_SYMBOLS.forEach(function (name) {
-    if (source.indexOf(name) >= 0) {
-      failures.push('Legacy public API symbol remains: ' + name + ' in ' + relative);
-    }
+    if (source.indexOf(name) >= 0) failures.push('Legacy public API symbol remains: ' + name + ' in ' + relative);
   });
 });
 
-listFiles_(SERVER, function (name) { return /\.gs$/.test(name); }).forEach(function (file) {
+var serverFiles = [];
+SERVER_ROOTS.forEach(function (root) {
+  serverFiles = serverFiles.concat(listFiles_(root, function (name) { return /\.gs$/.test(name); }));
+});
+
+serverFiles.forEach(function (file) {
   var relative = path.relative(ROOT, file).replace(/\\/g, '/');
   var source = fs.readFileSync(file, 'utf8');
-
   collectFunctions_(source).forEach(function (name) {
     if (NON_API_PUBLIC_ALLOWLIST[name]) return;
     if (!/^api_/.test(name)) return;
-
-    if (/(List|Detail|Data)$/.test(name)) {
-      failures.push('Public API must use resource semantics instead of output suffix: ' + name + ' in ' + relative);
-    }
-    if (/^api_(load|save|run|generate)[A-Z_]/.test(name)) {
-      failures.push('Disallowed generic public API verb: ' + name + ' in ' + relative);
-    }
+    if (/(List|Detail|Data)$/.test(name)) failures.push('Public API must use resource semantics instead of output suffix: ' + name + ' in ' + relative);
+    if (/^api_(load|save|run|generate)[A-Z_]/.test(name)) failures.push('Disallowed generic public API verb: ' + name + ' in ' + relative);
   });
 });
 

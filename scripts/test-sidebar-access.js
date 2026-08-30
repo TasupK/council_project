@@ -1,9 +1,9 @@
 var fs = require('fs');
 var assert = require('assert');
 function read(path) { return fs.readFileSync(path, 'utf8'); }
-var sidebar = read('src/100_common/App_Sidebar.html');
-var shell = read('src/100_common/app_shell_js.html');
-var appClient = read('src/100_common/app_client_js.html');
+var sidebar = read('src/frontend/widgets/app_sidebar/App_Sidebar.html');
+var shell = read('src/frontend/app/shell/app_shell_js.html');
+var appClient = read('src/frontend/entities/user/api/app_client_js.html');
 assert.ok(sidebar.includes('id="appNavMain"') && sidebar.includes('id="appNavAccounting"'), 'core sidebar hooks missing');
 assert.ok(sidebar.includes('id="appNavAccountingGroup"'), 'accounting group hook missing');
 assert.ok(sidebar.includes('id="appNavStudentFeeGroup"'), 'student fee group hook missing');

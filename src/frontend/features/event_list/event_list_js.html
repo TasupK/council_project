@@ -1,0 +1,123 @@
+<script>
+function renderEventListShell() {
+  var filter = state.eventFilters;
+  var searchForm = document.getElementById('ew-event-search');
+  searchForm.elements.keyword.value = filter.keyword || '';
+  searchForm.elements.startDate.value = filter.startDate || '';
+  searchForm.elements.endDate.value = filter.endDate || '';
+  searchForm.elements.closeStatus.value = filter.closeStatus || '';
+  searchForm.elements.includeClosed.checked = Boolean(filter.includeClosed);
+}
+
+function loadEventList() {
+  return runEventBusy(function () {
+    return eventClient.getEvents({ filter: state.eventFilters, page: state.eventPage, pageSize: 10 });
+  }).then(function (data) {
+    state.eventList = data;
+    fillEventFilterOptions(data.options || {});
+    renderEventSummary(data.summary || {});
+    renderEventTable(data);
+    return data;
+  }).catch(handleError);
+}
+
+function fillEventFilterOptions(options) {
+  fillSelect('ew-managerEmail-filter', options.managers || [], state.eventFilters.managerEmail);
+  fillSelect('ew-type-filter', options.eventTypes || [], state.eventFilters.category);
+  fillSelect('ew-status-filter', options.eventStatuses || [], state.eventFilters.status);
+}
+
+function fillSelect(id, values, selected) {
+  var select = document.getElementById(id);
+  if (!select) return;
+  while (select.options.length > 1) select.remove(1);
+  values.forEach(function (value) {
+    var option = document.createElement('option');
+    option.value = value;
+    option.textContent = value;
+    option.selected = value === selected;
+    select.appendChild(option);
+  });
+}
+
+function renderEventSummary(summary) {
+  var target = document.getElementById('ew-event-summary');
+  if (!target) return;
+  target.innerHTML = summaryItem('전체 행사', summary.total || 0, '') +
+    summaryItem('예정', summary.scheduled || 0, 'purple') +
+    summaryItem('모집 중', summary.recruiting || 0, 'blue') +
+    summaryItem('진행 중', summary.inProgress || 0, 'green') +
+    summaryItem('종료', summary.closed || 0, 'red');
+}
+
+function summaryItem(label, value, className) {
+  return '<div class="ew-summary-item ' + className + '"><span>' + label + '</span><strong>' + escapeHtml(value) + '건</strong></div>';
+}
+
+function renderEventTable(data) {
+  var target = document.getElementById('ew-event-table');
+  if (!target) return;
+  var rows = data.items || [];
+  var body = rows.length ? rows.map(function (event) {
+    var statusValues = (data.options && data.options.eventStatuses || ['예정', '모집', '진행', '종료']).slice();
+    if (event.status && statusValues.indexOf(event.status) < 0) statusValues.unshift(event.status);
+    var statusOptions = statusValues.map(function (status) {
+      return '<option value="' + escapeHtml(status) + '" ' + (status === event.status ? 'selected' : '') + '>' + escapeHtml(status) + '</option>';
+    }).join('');
+    return '<tr class="ew-event-row" data-event-id="' + escapeHtml(event.id) + '" title="더블클릭하여 상세 보기"><td><strong>' + escapeHtml(event.name) + '</strong><small>' + escapeHtml(event.id) + '</small></td>' +
+      '<td>' + escapeHtml(event.managerEmail) + '</td><td>' + displayDate(event.eventStartAt) + '</td>' +
+      '<td>' + escapeHtml(event.category) + '</td>' +
+      '<td><select class="ui-control" data-role="event-status" data-id="' + escapeHtml(event.id) + '" aria-label="' + escapeHtml(event.name) + ' 행사 상태">' + statusOptions + '</select></td>' +
+      '<td><div class="ew-row-actions"><button type="button" class="ew-btn ew-btn-outline ew-btn-small ui-btn outline small" data-action="go-detail" data-id="' + escapeHtml(event.id) + '">상세</button>' +
+      '<button type="button" class="ew-btn ew-btn-small ui-btn outline small" data-action="close-event" data-id="' + escapeHtml(event.id) + '" ' + (event.status === '종료' ? 'disabled' : '') + '>종료</button></div></td></tr>';
+  }).join('') : '<tr><td colspan="6" class="ew-table-empty ui-empty">조건에 맞는 행사가 없습니다.</td></tr>';
+  target.innerHTML = '<table class="ew-table ui-table"><thead><tr><th>행사명</th><th>담당자</th><th>진행 일자 ↓</th><th>유형</th><th>행사 상태</th><th>관리</th></tr></thead><tbody>' + body + '</tbody></table>' + paginationHtml(data, 'event-page');
+}
+
+function closeEvent(id) {
+  if (!window.confirm('이 행사를 종료 상태로 변경하시겠습니까?')) return;
+  runEventBusy(function () { return eventClient.closeEvent({ id: id }); })
+    .then(function () { showToast('행사를 종료했습니다.'); return loadEventList(); })
+    .catch(handleError);
+}
+
+function initializeEventList() {
+  var searchForm = document.getElementById('ew-event-search');
+  searchForm.addEventListener('submit', function (event) {
+    event.preventDefault();
+    state.eventFilters = readForm(event.target);
+    state.eventPage = 1;
+    loadEventList();
+  });
+  document.addEventListener('click', function (event) {
+    var button = event.target.closest('[data-action]');
+    if (!button || button.disabled) return;
+    var action = button.dataset.action;
+    if (action === 'go-create') goEventForm('');
+    else if (action === 'reset-event-filters') {
+      state.eventFilters = { includeClosed: false };
+      state.eventPage = 1;
+      renderEventListShell();
+      loadEventList();
+    } else if (action === 'go-detail') goDetail(button.dataset.id, 'basic');
+    else if (action === 'event-page') { state.eventPage = Number(button.dataset.page); loadEventList(); }
+    else if (action === 'close-event') closeEvent(button.dataset.id);
+  });
+  document.addEventListener('change', function (event) {
+    if (!event.target.matches('[data-role="event-status"]')) return;
+    var select = event.target;
+    runEventBusy(function () {
+      return eventClient.updateEventStatus({ id: select.dataset.id, payload: { status: select.value } });
+    }).then(function () { showToast('행사 상태를 변경했습니다.'); return loadEventList(); })
+      .catch(function (error) { handleError(error); loadEventList(); });
+  });
+  document.addEventListener('dblclick', function (event) {
+    if (event.target.closest('button, select, input, a')) return;
+    var row = event.target.closest('tr[data-event-id]');
+    if (!row) return;
+    goDetail(row.dataset.eventId, 'basic');
+  });
+  renderEventListShell();
+  return loadEventList();
+}
+</script>

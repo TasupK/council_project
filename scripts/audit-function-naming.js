@@ -2,7 +2,7 @@ var fs = require('fs');
 var path = require('path');
 
 var ROOT = path.resolve(__dirname, '..');
-var SERVER = path.join(ROOT, 'src/000_server');
+var SERVER = path.join(ROOT, 'src/backend');
 var candidatesOnly = process.argv.indexOf('--candidates') >= 0;
 
 function listFiles_(dir) {
@@ -26,7 +26,7 @@ function collectFunctions_(file) {
 function candidateReasons_(relative, name) {
   var reasons = [];
   var isApi = /^api_/.test(name);
-  var isPublicSettings = /\/070_settings\//.test('/' + relative) && /^(loadSettings|saveSettings)/.test(name);
+  var isPublicSettings = /\/domains\/iam\/controllers\/settings_/.test('/' + relative) && /^(loadSettings|saveSettings)/.test(name);
   if (!isApi && !isPublicSettings && name !== 'authorizeApp' && !/_$/.test(name)) reasons.push('private-missing-trailing-underscore');
   if (/^findAll/.test(name)) reasons.push('findAll-collection-read');
   if (/_query_service\.gs$/.test(relative) && /^list/.test(name)) reasons.push('query-service-list-prefix');

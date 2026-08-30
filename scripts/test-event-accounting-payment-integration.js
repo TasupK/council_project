@@ -4,9 +4,9 @@ var path = require('path');
 var vm = require('vm');
 
 var ROOT = path.resolve(__dirname, '..');
-var reconciliationQueryPath = path.join(ROOT, 'src/000_server/060_accounting/063_reconciliation/reconciliation_query_service.gs');
-var reconciliationServicePath = path.join(ROOT, 'src/000_server/060_accounting/063_reconciliation/reconciliation_service.gs');
-var ledgerServicePath = path.join(ROOT, 'src/000_server/060_accounting/061_ledger/ledger_service.gs');
+var reconciliationQueryPath = path.join(ROOT, 'src/backend/domains/accounting/application/reconciliation_query.gs');
+var reconciliationServicePath = path.join(ROOT, 'src/backend/domains/accounting/application/reconciliation_mutation.gs');
+var ledgerServicePath = path.join(ROOT, 'src/backend/domains/accounting/application/ledger_mutation.gs');
 
 function load_(context, file) {
   vm.runInContext(fs.readFileSync(file, 'utf8'), context, { filename: file });
