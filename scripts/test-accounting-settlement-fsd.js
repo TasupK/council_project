@@ -19,7 +19,7 @@ var router = read('src/backend/app/routing/Code.js');
 
 assert.ok(pageSource.includes("include('frontend/shared/styles/App_Styles')"), 'Settlement page must use migrated App_Styles');
 assert.ok(pageSource.includes("include('frontend/app/styles/App_Shell_Styles')"), 'Settlement page must use migrated shell styles');
-assert.ok(pageSource.includes("include('frontend/shared/api/app_api_runner_js')"), 'Settlement page must use migrated API runner');
+assert.ok(pageSource.includes("include('frontend/shared/api/rpc/app_api_runner_js')"), 'Settlement page must use migrated API runner');
 assert.ok(pageSource.includes("include('frontend/entities/user/api/app_client_js')"), 'Settlement page must use migrated app client');
 assert.ok(pageSource.includes("include('frontend/entities/settlement/api/settlement_client_js')"), 'Settlement page must include settlement entity client');
 assert.ok(pageSource.includes("include('frontend/features/accounting_settlement_manage/accounting_settlement_manage_js')"), 'Settlement page must include settlement feature');

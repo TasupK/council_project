@@ -17,7 +17,7 @@ const page = read('src/frontend/pages/settings_users/Settings_Users.html');
 [
   "include('frontend/shared/styles/App_Styles')",
   "include('frontend/app/styles/App_Shell_Styles')",
-  "include('frontend/shared/api/app_api_runner_js')",
+  "include('frontend/shared/api/rpc/app_api_runner_js')",
   "include('frontend/entities/user/api/app_client_js')",
   "include('frontend/entities/iam/api/settings_client_js')",
   "include('frontend/widgets/settings_shell/Settings_Styles')",

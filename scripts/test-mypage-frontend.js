@@ -9,7 +9,7 @@ var styles = read_('src/frontend/pages/mypage/MyPage_Styles.html');
 var controller = read_('src/frontend/pages/mypage/mypage_controller_js.html');
 var feature = read_('src/frontend/features/notification_settings/notification_settings_js.html');
 var appClient = read_('src/frontend/entities/user/api/app_client_js.html');
-['frontend/shared/styles/App_Styles','frontend/widgets/app_header/App_Header','frontend/widgets/app_sidebar/App_Sidebar','frontend/shared/api/app_api_runner_js','frontend/entities/user/api/app_client_js','frontend/app/shell/app_shell_js'].forEach(function (includePath) { assert.ok(page.indexOf(includePath) !== -1, 'MyPage must reuse FSD foundation: ' + includePath); });
+['frontend/shared/styles/App_Styles','frontend/widgets/app_header/App_Header','frontend/widgets/app_sidebar/App_Sidebar','frontend/shared/api/rpc/app_api_runner_js','frontend/entities/user/api/app_client_js','frontend/app/shell/app_shell_js'].forEach(function (includePath) { assert.ok(page.indexOf(includePath) !== -1, 'MyPage must reuse FSD foundation: ' + includePath); });
 assert.ok(page.indexOf('frontend/pages/mypage/MyPage_Styles') !== -1);
 assert.ok(page.indexOf('frontend/pages/mypage/MyPage_View') !== -1);
 assert.ok(page.indexOf('frontend/features/notification_settings/notification_settings_js') !== -1);

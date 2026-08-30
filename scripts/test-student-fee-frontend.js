@@ -65,7 +65,7 @@ function createFrontendContext_() {
 }
 
 function loadCommon_(fixture) {
-  vm.runInContext(scriptBody_('src/frontend/shared/api/app_api_runner_js.html'), fixture.context);
+  vm.runInContext(scriptBody_('src/frontend/shared/api/rpc/app_api_runner_js.html'), fixture.context);
   vm.runInContext(scriptBody_('src/frontend/entities/student_fee/api/student_fee_client_js.html'), fixture.context);
   vm.runInContext(scriptBody_('src/frontend/entities/student_fee/ui/student_fee_common_js.html'), fixture.context);
 }

@@ -5,8 +5,6 @@ const path = require('path');
 const ROOT = path.resolve(__dirname, '..');
 const src = (...parts) => path.join(ROOT, 'src', ...parts);
 const backend = src('backend');
-const legacyBackend = src('000_server');
-const strict = process.env.ARCHITECTURE_FINAL === '1';
 
 assert.ok(fs.existsSync(src('appsscript.json')), 'manifest must remain at src/appsscript.json');
 assert.ok(fs.existsSync(backend), 'src/backend must exist once backend migration starts');
@@ -41,9 +39,30 @@ listFiles(path.join(backend, 'core')).forEach((file) => {
   assert.doesNotMatch(source, /\b(?:BaseRepository|BaseService)\b/, 'inheritance-style base abstractions are forbidden: ' + path.relative(ROOT, file));
 });
 
-if (strict) {
-  assert.ok(fs.existsSync(src('frontend')), 'src/frontend must exist in final architecture');
-  assert.ok(!fs.existsSync(legacyBackend), 'legacy src/000_server must be removed in final architecture');
-}
+assert.ok(fs.existsSync(src('frontend')), 'src/frontend must exist in final architecture');
+[
+  '000_server', '100_common', '200_login', '250_main', '270_mypage',
+  '300_settings', '400_accounting', '500_student_fee', '600_event'
+].forEach((name) => assert.ok(!fs.existsSync(src(name)), 'legacy source root must be removed: ' + name));
 
-console.log('Project architecture migration guard: PASS' + (strict ? ' (strict)' : ''));
+listFiles(path.join(backend, 'domains')).filter((file) => file.includes(path.sep + 'business_rules' + path.sep)).forEach((file) => {
+  const source = fs.readFileSync(file, 'utf8');
+  assert.doesNotMatch(source, /\b(?:SpreadsheetApp|DriveApp|FormApp|Session|google\.script\.run)\b/, 'business rules must be infrastructure-free: ' + path.relative(ROOT, file));
+});
+
+listFiles(path.join(ROOT, 'src/frontend')).forEach((file) => {
+  if (!/\.(?:html|js)$/.test(file)) return;
+  const relative = path.relative(ROOT, file).replace(/\\/g, '/');
+  const source = fs.readFileSync(file, 'utf8');
+  if (source.includes('google.script.run')) assert.strictEqual(relative, 'src/frontend/shared/api/rpc/app_api_runner_js.html', 'only shared RPC transport may call google.script.run: ' + relative);
+});
+
+listFiles(path.join(backend, 'domains')).forEach((file) => {
+  const relative = path.relative(path.join(backend, 'domains'), file).replace(/\\/g, '/');
+  const owner = relative.split('/')[0];
+  const source = fs.readFileSync(file, 'utf8');
+  const crossRepository = new RegExp('(?:src/backend/domains/)?(?!' + owner + '/)([a-z_]+)/repositories/');
+  assert.doesNotMatch(source, crossRepository, 'domain must not reference another domain repository: ' + path.relative(ROOT, file));
+});
+
+console.log('Project architecture migration guard: PASS (strict)');

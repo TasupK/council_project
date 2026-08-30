@@ -5,7 +5,7 @@ var ROOT = path.resolve(__dirname, '..');
 var SRC = path.join(ROOT, 'src');
 var BACKEND_ROOTS = ['src/backend/'];
 var ALLOWED_DIRECT_GAS = [
-  'src/frontend/shared/api/app_api_runner_js.html'
+  'src/frontend/shared/api/rpc/app_api_runner_js.html'
 ];
 var failures = [];
 
@@ -27,7 +27,7 @@ listFiles_(SRC).forEach(function (file) {
 });
 
 [
-  'src/frontend/shared/api/app_api_runner_js.html',
+  'src/frontend/shared/api/rpc/app_api_runner_js.html',
   'src/frontend/entities/user/api/app_client_js.html',
   'src/frontend/entities/iam/api/settings_client_js.html',
   'src/frontend/entities/ledger/api/ledger_client_js.html',

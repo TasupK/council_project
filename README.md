@@ -43,7 +43,7 @@ src/backend/domains/<domain>/
 
 의존 방향은 `Controller → Application → Business Rules / Repository`입니다. 공통 기능은 상속하지 않고 조합하며, 다른 도메인의 Repository나 Controller를 직접 호출하지 않습니다. 도메인 간 연동은 Application facade를 사용합니다.
 
-프론트엔드 의존 방향은 `app → pages → widgets/features → entities → shared`입니다. `shared`는 업무 지식을 갖지 않으며, `google.script.run` 직접 호출은 `frontend/shared/api`의 RPC transport만 담당합니다.
+프론트엔드 의존 방향은 `app → pages → widgets/features → entities → shared`입니다. `shared`는 업무 지식을 갖지 않으며, `google.script.run` 직접 호출은 `frontend/shared/api/rpc`의 RPC transport만 담당합니다.
 
 ## 라우팅 방식
 

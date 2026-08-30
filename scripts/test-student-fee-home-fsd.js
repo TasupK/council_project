@@ -21,7 +21,7 @@ const router = fs.readFileSync(path.join(root, 'src/backend/app/routing/Code.js'
 [
   "include('frontend/shared/styles/App_Styles')",
   "include('frontend/app/styles/App_Shell_Styles')",
-  "include('frontend/shared/api/app_api_runner_js')",
+  "include('frontend/shared/api/rpc/app_api_runner_js')",
   "include('frontend/entities/user/api/app_client_js')",
   "include('frontend/widgets/app_header/App_Header')",
   "include('frontend/widgets/app_sidebar/App_Sidebar')",

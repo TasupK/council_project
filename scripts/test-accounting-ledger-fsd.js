@@ -25,7 +25,7 @@ var router = read('src/backend/app/routing/Code.js');
 
 assert.ok(pageSource.includes("include('frontend/shared/styles/App_Styles')"), 'Ledger page must use migrated App_Styles');
 assert.ok(pageSource.includes("include('frontend/app/styles/App_Shell_Styles')"), 'Ledger page must use migrated shell styles');
-assert.ok(pageSource.includes("include('frontend/shared/api/app_api_runner_js')"), 'Ledger page must use migrated API runner');
+assert.ok(pageSource.includes("include('frontend/shared/api/rpc/app_api_runner_js')"), 'Ledger page must use migrated API runner');
 assert.ok(pageSource.includes("include('frontend/entities/ledger/api/ledger_client_js')"), 'Ledger page must include ledger entity client');
 assert.ok(pageSource.includes("include('frontend/features/accounting_ledger_manage/accounting_ledger_manage_js')"), 'Ledger page must include manage feature');
 assert.ok(pageSource.includes("include('frontend/pages/accounting_ledger/accounting_ledger_controller_js')"), 'Ledger page must include page controller');

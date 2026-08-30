@@ -20,7 +20,7 @@ const foundation = [
   'src/frontend/widgets/app_sidebar/App_Sidebar.html',
   'src/frontend/app/styles/App_Shell_Styles.html',
   'src/frontend/shared/styles/App_Styles.html',
-  'src/frontend/shared/api/app_api_runner_js.html',
+  'src/frontend/shared/api/rpc/app_api_runner_js.html',
   'src/frontend/entities/user/api/app_client_js.html',
   'src/frontend/app/shell/app_shell_js.html'
 ];
@@ -29,7 +29,7 @@ foundation.forEach(p => assert.ok(exists(p), 'missing frontend foundation file: 
 const expectedFoundationIncludes = [
   "include('frontend/shared/styles/App_Styles')",
   "include('frontend/app/styles/App_Shell_Styles')",
-  "include('frontend/shared/api/app_api_runner_js')",
+  "include('frontend/shared/api/rpc/app_api_runner_js')",
   "include('frontend/entities/user/api/app_client_js')",
   "include('frontend/widgets/app_header/App_Header')",
   "include('frontend/widgets/app_sidebar/App_Sidebar')",

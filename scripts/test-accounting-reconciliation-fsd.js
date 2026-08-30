@@ -21,7 +21,7 @@ var router = read('src/backend/app/routing/Code.js');
 
 assert.ok(pageSource.includes("include('frontend/shared/styles/App_Styles')"), 'Reconciliation page must use migrated App_Styles');
 assert.ok(pageSource.includes("include('frontend/app/styles/App_Shell_Styles')"), 'Reconciliation page must use migrated shell styles');
-assert.ok(pageSource.includes("include('frontend/shared/api/app_api_runner_js')"), 'Reconciliation page must use migrated API runner');
+assert.ok(pageSource.includes("include('frontend/shared/api/rpc/app_api_runner_js')"), 'Reconciliation page must use migrated API runner');
 assert.ok(pageSource.includes("include('frontend/entities/reconciliation/api/reconciliation_client_js')"), 'Reconciliation page must include reconciliation entity client');
 assert.ok(pageSource.includes("include('frontend/entities/ledger/api/ledger_client_js')"), 'Reconciliation page must include ledger entity client');
 assert.ok(pageSource.includes("include('frontend/features/accounting_reconciliation_manage/accounting_reconciliation_manage_js')"), 'Reconciliation page must include feature');
