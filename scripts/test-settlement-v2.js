@@ -6,7 +6,7 @@ const vm = require('vm');
 const root = path.resolve(__dirname, '..');
 const context = { console };
 vm.createContext(context);
-vm.runInContext(fs.readFileSync(path.join(root, 'src/000_server/060_accounting/064_settlement/settlement_query_service.gs'), 'utf8'), context);
+vm.runInContext(fs.readFileSync(path.join(root, 'src/backend/domains/accounting/application/settlement_query.gs'), 'utf8'), context);
 
 assert.strictEqual(typeof context.buildSettlementSnapshotMetrics_, 'function');
 const prior = [

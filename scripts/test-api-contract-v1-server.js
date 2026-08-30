@@ -17,7 +17,7 @@ const sandbox = {
 };
 vm.createContext(sandbox);
 
-['src/000_server/010_core/api_request.gs', 'src/000_server/010_core/response.gs', 'src/000_server/010_core/api_handler.gs']
+['src/backend/core/response/api_request.gs', 'src/backend/core/response/response.gs', 'src/backend/core/response/api_handler.gs']
   .forEach(function (relativePath) {
     const file = path.join(root, relativePath);
     if (fs.existsSync(file)) vm.runInContext(fs.readFileSync(file, 'utf8'), sandbox, { filename: relativePath });

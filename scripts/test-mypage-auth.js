@@ -52,7 +52,7 @@ function installPermissionFixtures_(context) {
 function testEffectivePermissionDetails_() {
   var context = createContext_();
   installPermissionFixtures_(context);
-  load_(context, 'src/000_server/040_iam/043_permissions/permissions_query_service.gs');
+  load_(context, 'src/backend/domains/iam/application/permissions_query.gs');
 
   var effective = context.buildUserPermissionsFromDb_(['ROLE_EVENT']);
   var details = context.buildEffectivePermissionDetails_(effective);
@@ -88,7 +88,7 @@ function testAuthApiAddsPermissionDetails_() {
       dbMode: 'connected'
     };
   };
-  load_(context, 'src/000_server/030_auth/auth_api.gs');
+  load_(context, 'src/backend/domains/iam/controllers/auth_controller.gs');
 
   var result = context.api_getMyPermissions();
   assert.strictEqual(result.ok, true);

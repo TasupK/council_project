@@ -1,0 +1,21 @@
+<script>
+function uploadReconciliationBankTransactions(request) { return reconciliationClient.processBankTransactionUpload(request); }
+function processAccountingReconciliation(request) { return reconciliationClient.processReconciliation(request); }
+function getAccountingReconciliation(request) { return reconciliationClient.getReconciliation(request); }
+function getAccountingReconciliationCandidates(request) { return reconciliationClient.getReconciliationCandidates(request); }
+function applyAccountingReconciliationLink(request) { return reconciliationClient.applyReconciliationLink(request); }
+function createAccountingLedgerFromReconciliation(request) { return reconciliationClient.createLedgerEntryFromReconciliation(request); }
+function getReconciliationLedgerEntry(request) { return ledgerClient.getLedgerEntry(request); }
+function getReconciliationLedgerEvidence(request) { return ledgerClient.getLedgerEvidenceFileContent(request); }
+
+function initAccountingReconciliationManage() {
+  setupFileUpload({ key: 'reconciliation', zoneId: 'reconciliationDropzone', inputId: 'reconciliationFile', nameId: 'reconciliationFileName', multiple: true, onChange: resetCurrentReconciliation });
+  document.getElementById('runMissingCheck').addEventListener('click', runMissingCheck);
+  document.getElementById('reconciliationHistory').addEventListener('change', async function (event) { if (event.target.value) renderReconciliationDetail(await getAccountingReconciliation({ id: event.target.value })); });
+  ['reconciliationSearch','reconciliationStatus'].forEach(function (id) { document.getElementById(id).addEventListener('input', function () { renderReconciliationDetail(state.reconciliationDetail); }); });
+  document.getElementById('resetReconciliationFilters').addEventListener('click', function () { document.getElementById('reconciliationSearch').value = ''; document.getElementById('reconciliationStatus').value = '전체'; renderReconciliationDetail(state.reconciliationDetail); });
+  document.getElementById('reconciliationRows').addEventListener('click', function (event) { const button = event.target.closest('[data-action]'); if (!button) return; if (button.dataset.action === 'detail') openReconciliationLedgerDetail(button.dataset.ledgerId); if (button.dataset.action === 'link') manuallyLink(button.dataset.id); if (button.dataset.action === 'create') createLedgerForItem(button.dataset.id); });
+  document.getElementById('reconciliationLedgerDetailModal').addEventListener('click', function (event) { const button = event.target.closest('[data-close],[data-action="download-evidence"]'); if (!button) return; if (button.dataset.close) { document.getElementById(button.dataset.close).classList.remove('open'); clearReconciliationEvidencePreviews(); } if (button.dataset.action === 'download-evidence') downloadReconciliationEvidence(button); });
+  resetCurrentReconciliation([]);
+}
+</script>

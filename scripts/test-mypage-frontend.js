@@ -1,38 +1,27 @@
 var assert = require('assert');
 var fs = require('fs');
 var path = require('path');
-
 var ROOT = path.resolve(__dirname, '..');
-function read_(relativePath) {
-  return fs.readFileSync(path.join(ROOT, relativePath), 'utf8');
-}
-
-var page = read_('src/270_mypage/MyPage.html');
-var view = read_('src/270_mypage/MyPage_View.html');
-var styles = read_('src/270_mypage/MyPage_Styles.html');
-var client = read_('src/270_mypage/mypage_js.html');
-var appClient = read_('src/100_common/app_client_js.html');
-
-['100_common/App_Styles', '100_common/App_Header', '100_common/App_Sidebar', '100_common/app_api_runner_js', '100_common/app_client_js', '100_common/app_shell_js'].forEach(function (includePath) {
-  assert.ok(page.indexOf(includePath) !== -1, 'MyPage must reuse shared shell: ' + includePath);
-});
-assert.ok(page.indexOf('270_mypage/MyPage_Styles') !== -1);
-assert.ok(page.indexOf('270_mypage/MyPage_View') !== -1);
-assert.ok(page.indexOf('270_mypage/mypage_js') !== -1);
-assert.ok(page.indexOf("APP_CURRENT_PAGE =") !== -1);
-
-['mypageName', 'mypageEmail', 'mypageDepartment', 'mypageStatus', 'mypageTitle', 'mypageRoles', 'mypagePermissions', 'mypageMenus'].forEach(function (id) {
-  assert.ok(view.indexOf('id="' + id + '"') !== -1, 'missing MyPage view hook: ' + id);
-});
-
-assert.ok(client.indexOf('appClient.getCurrentUser()') !== -1, 'MyPage must use appClient.getCurrentUser');
-assert.ok(client.indexOf('appClient.getMyPermissions()') !== -1, 'MyPage must use appClient.getMyPermissions');
-assert.ok(appClient.indexOf("runAppApi('api_getCurrentUser'") !== -1, 'app client must own api_getCurrentUser mapping');
-assert.ok(appClient.indexOf("runAppApi('api_getMyPermissions'") !== -1, 'app client must own api_getMyPermissions mapping');
-assert.ok(client.indexOf('permissionDetails') !== -1, 'MyPage must render IAM permission details');
-assert.ok(client.indexOf('sessionStorage') === -1, 'MyPage must not trust browser sessionStorage for user identity');
-assert.ok(client.indexOf('localStorage') === -1, 'MyPage must not trust browser localStorage for user identity');
-assert.ok(client.indexOf('회계 담당') === -1 && client.indexOf('회장') === -1, 'MyPage must not hard-code role permission maps');
-assert.ok(styles.indexOf('.mypage-') !== -1, 'MyPage-specific styles must be scoped');
-
+function read_(relativePath) { return fs.readFileSync(path.join(ROOT, relativePath), 'utf8'); }
+var page = read_('src/frontend/pages/mypage/MyPage.html');
+var view = read_('src/frontend/pages/mypage/MyPage_View.html');
+var styles = read_('src/frontend/pages/mypage/MyPage_Styles.html');
+var controller = read_('src/frontend/pages/mypage/mypage_controller_js.html');
+var feature = read_('src/frontend/features/notification_settings/notification_settings_js.html');
+var appClient = read_('src/frontend/entities/user/api/app_client_js.html');
+['frontend/shared/styles/App_Styles','frontend/widgets/app_header/App_Header','frontend/widgets/app_sidebar/App_Sidebar','frontend/shared/api/rpc/app_api_runner_js','frontend/entities/user/api/app_client_js','frontend/app/shell/app_shell_js'].forEach(function (includePath) { assert.ok(page.indexOf(includePath) !== -1, 'MyPage must reuse FSD foundation: ' + includePath); });
+assert.ok(page.indexOf('frontend/pages/mypage/MyPage_Styles') !== -1);
+assert.ok(page.indexOf('frontend/pages/mypage/MyPage_View') !== -1);
+assert.ok(page.indexOf('frontend/features/notification_settings/notification_settings_js') !== -1);
+assert.ok(page.indexOf('frontend/pages/mypage/mypage_controller_js') !== -1);
+['mypageName','mypageEmail','mypageDepartment','mypageStatus','mypageTitle','mypageRoles','mypagePermissions','mypageMenus'].forEach(function (id) { assert.ok(view.indexOf('id="' + id + '"') !== -1, 'missing MyPage view hook: ' + id); });
+assert.ok(controller.indexOf('appClient.getCurrentUser()') !== -1);
+assert.ok(controller.indexOf('appClient.getMyPermissions()') !== -1);
+assert.ok(feature.indexOf('appClient.updateNotificationSettings') !== -1);
+assert.ok(controller.indexOf('updateNotificationSettings') === -1);
+assert.ok(appClient.indexOf("runAppApi('api_getCurrentUser'") !== -1);
+assert.ok(appClient.indexOf("runAppApi('api_getMyPermissions'") !== -1);
+assert.ok(controller.indexOf('permissionDetails') !== -1);
+assert.ok(!/sessionStorage|localStorage/.test(controller));
+assert.ok(styles.indexOf('.mypage-') !== -1);
 console.log('MyPage frontend contract tests passed.');

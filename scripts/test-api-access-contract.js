@@ -4,10 +4,10 @@ var path = require('path');
 var vm = require('vm');
 
 var ROOT = path.resolve(__dirname, '..');
-var requestPath = path.join(ROOT, 'src/000_server/010_core/api_request.gs');
-var responsePath = path.join(ROOT, 'src/000_server/010_core/response.gs');
-var accessPath = path.join(ROOT, 'src/000_server/010_core/api_access.gs');
-var handlerPath = path.join(ROOT, 'src/000_server/010_core/api_handler.gs');
+var requestPath = path.join(ROOT, 'src/backend/core/response/api_request.gs');
+var responsePath = path.join(ROOT, 'src/backend/core/response/response.gs');
+var accessPath = path.join(ROOT, 'src/backend/core/auth/api_access.gs');
+var handlerPath = path.join(ROOT, 'src/backend/core/response/api_handler.gs');
 
 assert.ok(fs.existsSync(accessPath), 'api_access.gs must exist');
 assert.ok(fs.existsSync(requestPath), 'api_request.gs must exist');

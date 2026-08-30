@@ -1,0 +1,14 @@
+<script>
+async function initializeSettingsPermissionsPage() {
+  try {
+    var data = await settingsClient.getPermissions();
+    applySettingsShell(data);
+    initializeSettingsPermissionsManage(data);
+    showSettingsContent();
+  } catch (error) {
+    showSettingsError(error);
+  }
+}
+
+initializeSettingsPermissionsPage();
+</script>

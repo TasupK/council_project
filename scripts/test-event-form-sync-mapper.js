@@ -4,10 +4,10 @@ var path = require('path');
 var vm = require('vm');
 
 var ROOT = path.resolve(__dirname, '..');
-var mapperPath = path.join(ROOT, 'src/000_server/050_event/052_applicants/applicants_form_mapper.gs');
-var readerPath = path.join(ROOT, 'src/000_server/050_event/052_applicants/applicants_form_reader.gs');
-assert.ok(fs.existsSync(mapperPath), 'applicants_form_mapper.gs must exist');
-assert.ok(fs.existsSync(readerPath), 'applicants_form_reader.gs must exist');
+var mapperPath = path.join(ROOT, 'src/backend/domains/event/repositories/applicant_form_mapper.gs');
+var readerPath = path.join(ROOT, 'src/backend/domains/event/repositories/applicant_form_reader.gs');
+assert.ok(fs.existsSync(mapperPath), 'applicant_form_mapper.gs must exist');
+assert.ok(fs.existsSync(readerPath), 'applicant_form_reader.gs must exist');
 
 var context = vm.createContext({
   console: console,

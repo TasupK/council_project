@@ -49,7 +49,7 @@ function installValueStubs_(context) {
 function testAdminRoleInterpretation_() {
   var context = createContext_();
   installValueStubs_(context);
-  load_(context, 'src/000_server/040_iam/042_roles/roles_query_service.gs');
+  load_(context, 'src/backend/domains/iam/application/roles_query.gs');
   assert.strictEqual(context.isAdminRoleSet_(['role_admin'], { role_admin: { name: '시스템', protected: false } }), true);
   assert.strictEqual(context.isAdminRoleSet_(['role_staff'], { role_staff: { name: '일반 사용자', protected: false } }), false);
   assert.strictEqual(context.isAdminRoleSet_(['role_manager'], { role_manager: { name: '행사 관리자', protected: false } }), true);
@@ -78,7 +78,7 @@ function testPermissionModel_() {
   var context = createContext_();
   installValueStubs_(context);
   installPermissionRows_(context);
-  load_(context, 'src/000_server/040_iam/043_permissions/permissions_query_service.gs');
+  load_(context, 'src/backend/domains/iam/application/permissions_query.gs');
 
   var byRole = context.buildPermissionsByRoleFromDb_();
   assert.strictEqual(byRole.ROLE_ADMIN.perm_EVENT_VIEW.view, true);
@@ -98,8 +98,8 @@ function testPermissionModel_() {
 function testRequirePermission_() {
   var context = createContext_();
   installValueStubs_(context);
-  load_(context, 'src/000_server/040_iam/043_permissions/permissions_query_service.gs');
-  load_(context, 'src/000_server/040_iam/043_permissions/permissions_access_service.gs');
+  load_(context, 'src/backend/domains/iam/application/permissions_query.gs');
+  load_(context, 'src/backend/domains/iam/application/permissions_access.gs');
   assert.strictEqual(context.requirePermission_({ ok: true, isAdmin: true }, { id: 'EVENT_EDIT', action: 'edit' }), true);
   assert.strictEqual(context.requirePermission_({ ok: true, isAdmin: false, permissions: { byScreen: { perm_EVENT_VIEW: { view: true } } } }, { id: 'EVENT_VIEW', action: 'view' }), true);
   assert.throws(function () {
@@ -111,7 +111,7 @@ function createLoginContextHarness_() {
   var context = createContext_();
   installValueStubs_(context);
   context.getUserDbFields_ = function () { return { email: 'email', status: 'status' }; };
-  load_(context, 'src/000_server/030_auth/auth_context.gs');
+  load_(context, 'src/backend/core/auth/auth_context.gs');
   return context;
 }
 
@@ -164,8 +164,8 @@ function testSessionContextCache_() {
 function testRequireLoginAndAuthApis_() {
   var context = createContext_();
   installValueStubs_(context);
-  load_(context, 'src/000_server/030_auth/auth_context.gs');
-  load_(context, 'src/000_server/030_auth/auth_api.gs');
+  load_(context, 'src/backend/core/auth/auth_context.gs');
+  load_(context, 'src/backend/domains/iam/controllers/auth_controller.gs');
 
   context.getSessionUserContext_ = function () { return { ok: true, email: 'admin@example.com' }; };
   assert.strictEqual(context.requireLoginContext_().email, 'admin@example.com');

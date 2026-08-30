@@ -1,0 +1,26 @@
+<script>
+  getSettingsElement("departmentsLink").href = buildAppPageUrl("settings_departments");
+  getSettingsElement("usersLink").href = buildAppPageUrl("settings_users");
+  getSettingsElement("rolesLink").href = buildAppPageUrl("settings_roles");
+  getSettingsElement("permissionsLink").href = buildAppPageUrl("settings_permissions");
+
+  getSettingsElement("btnReloadData").onclick = loadSettingsHome;
+
+  async function loadSettingsHome() {
+    try {
+      var data = await settingsClient.getHome();
+      var database = applySettingsShell(data);
+      var link = getSettingsElement("dbOpenLink");
+      if (database.spreadsheetUrl) {
+        link.href = database.spreadsheetUrl;
+        link.classList.remove("hidden");
+      }
+      getSettingsElement("folderIdInput").value = database.folderId || "";
+      showSettingsContent();
+    } catch (error) {
+      showSettingsError(error);
+    }
+  }
+
+  loadSettingsHome();
+</script>

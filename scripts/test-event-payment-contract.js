@@ -4,9 +4,9 @@ var path = require('path');
 var vm = require('vm');
 
 var ROOT = path.resolve(__dirname, '..');
-var servicePath = path.join(ROOT, 'src/000_server/050_event/053_payment/payment_service.gs');
-var queryPath = path.join(ROOT, 'src/000_server/050_event/053_payment/payment_query_service.gs');
-var apiPath = path.join(ROOT, 'src/000_server/050_event/053_payment/payment_api.gs');
+var servicePath = path.join(ROOT, 'src/backend/domains/event/application/payment_mutation.gs');
+var queryPath = path.join(ROOT, 'src/backend/domains/event/application/payment_query.gs');
+var apiPath = path.join(ROOT, 'src/backend/domains/event/controllers/payment_controller.gs');
 
 function load_(context, file) {
   vm.runInContext(fs.readFileSync(file, 'utf8'), context, { filename: file });
@@ -107,7 +107,7 @@ assert.deepStrictEqual(JSON.parse(JSON.stringify(facts)), [{
   confirmedAt: '2026-08-20T03:45:00+09:00'
 }]);
 
-assert.ok(fs.existsSync(apiPath), 'payment_api.gs must exist');
+assert.ok(fs.existsSync(apiPath), 'payment_controller.gs must exist');
 var apiSource = fs.readFileSync(apiPath, 'utf8');
 assert.ok(/function\s+api_createEventPayment\s*\(/.test(apiSource));
 assert.ok(/function\s+api_updateEventPayment\s*\(/.test(apiSource));

@@ -5,11 +5,11 @@ var vm = require('vm');
 
 var ROOT = path.resolve(__dirname, '..');
 var QUERY_SERVICE_FILES = [
-  'src/000_server/050_event/051_events/events_query_service.gs',
-  'src/000_server/050_event/052_applicants/applicants_query_service.gs',
-  'src/000_server/050_event/053_payment/payment_query_service.gs',
-  'src/000_server/050_event/054_attendance/attendance_query_service.gs',
-  'src/000_server/050_event/055_refunds/refunds_query_service.gs'
+  'src/backend/domains/event/application/events_query.gs',
+  'src/backend/domains/event/application/applicants_query.gs',
+  'src/backend/domains/event/application/payment_query.gs',
+  'src/backend/domains/event/application/attendance_query.gs',
+  'src/backend/domains/event/application/refunds_query.gs'
 ];
 
 function load_(context, relativePath) {
@@ -69,7 +69,7 @@ function testPaymentTotals_() {
       { applicationId: '', paidAmount: 9999 }
     ];
   };
-  load_(context, 'src/000_server/050_event/053_payment/payment_query_service.gs');
+  load_(context, 'src/backend/domains/event/application/payment_query.gs');
   assert.deepStrictEqual(JSON.parse(JSON.stringify(context.buildEventPaymentTotalsByApplicationId_())), { 'app-1': 1500, 'app-2': 700 });
 }
 

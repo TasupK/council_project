@@ -1,29 +1,35 @@
 var fs = require('fs');
-var path = require('path');
 var assert = require('assert');
 var vm = require('vm');
 function read(file) { return fs.readFileSync(file, 'utf8'); }
-var helperPath = 'src/000_server/030_auth/auth_page_access.gs';
-var deniedPath = 'src/100_common/Access_Denied.html';
-assert.ok(fs.existsSync(helperPath), 'auth page access helper missing');
-var helper = read(helperPath);
-var code = read('src/000_server/Code.js');
-var api = read('src/000_server/030_auth/auth_api.gs');
-assert.ok(helper.includes('function resolvePageDomain_'), 'resolvePageDomain_ missing');
-assert.ok(helper.includes('function buildDomainAccess_'), 'buildDomainAccess_ missing');
-assert.ok(helper.includes('function canAccessPage_'), 'canAccessPage_ missing');
-assert.ok(code.includes("settings_departments: '300_settings/340_departments/Settings_Departments'"), 'settings_departments route missing');
+
+var pageAccessPath = 'src/backend/app/routing/page_access.gs';
+var domainAccessPath = 'src/backend/domains/iam/application/domain_access.gs';
+var deniedPath = 'src/frontend/pages/access_denied/Access_Denied.html';
+assert.ok(fs.existsSync(pageAccessPath), 'routing page access helper missing');
+assert.ok(fs.existsSync(domainAccessPath), 'IAM domain access helper missing');
+var pageAccess = read(pageAccessPath);
+var domainAccess = read(domainAccessPath);
+var code = read('src/backend/app/routing/Code.js');
+var api = read('src/backend/domains/iam/controllers/auth_controller.gs');
+
+assert.ok(pageAccess.includes('function resolvePageDomain_'), 'resolvePageDomain_ missing from routing');
+assert.ok(pageAccess.includes('function canAccessPage_'), 'canAccessPage_ missing from routing');
+assert.ok(!pageAccess.includes('function buildDomainAccess_'), 'routing must not build IAM domain access');
+assert.ok(domainAccess.includes('function buildDomainAccess_'), 'buildDomainAccess_ missing from IAM application');
+assert.ok(!domainAccess.includes('function canAccessPage_'), 'IAM application must not own page routing guard');
+assert.ok(code.includes("settings_departments: 'frontend/pages/settings_departments/Settings_Departments'"), 'settings_departments route missing');
 assert.ok(!code.includes("accounting: '400_accounting/400_home/Accounting_Home'"), 'accounting overview route must be removed');
-assert.ok(code.includes("accounting_ledger: '400_accounting/410_ledger/Accounting_Ledger'"), 'accounting_ledger route missing');
-assert.ok(code.includes("accounting_reconciliation: '400_accounting/420_reconciliation/Accounting_Reconciliation'"), 'accounting_reconciliation route missing');
-assert.ok(code.includes("accounting_settlement: '400_accounting/430_settlement/Accounting_Settlement'"), 'accounting_settlement route missing');
+assert.ok(code.includes("accounting_ledger: 'frontend/pages/accounting_ledger/Accounting_Ledger'"), 'accounting_ledger route missing');
+assert.ok(code.includes("accounting_reconciliation: 'frontend/pages/accounting_reconciliation/Accounting_Reconciliation'"), 'accounting_reconciliation route missing');
+assert.ok(code.includes("accounting_settlement: 'frontend/pages/accounting_settlement/Accounting_Settlement'"), 'accounting_settlement route missing');
 assert.ok(code.includes('canAccessPage_(page, login)'), 'router access guard missing');
-assert.ok(code.includes("file = '100_common/Access_Denied'"), 'access denied route missing');
+assert.ok(code.includes("file = 'frontend/pages/access_denied/Access_Denied'"), 'access denied route missing');
 assert.ok(api.includes('domainAccess:'), 'auth API domainAccess missing');
 assert.ok(fs.existsSync(deniedPath), 'Access_Denied view missing');
 
 var context = vm.createContext({ String: String, Object: Object, Array: Array });
-vm.runInContext(helper, context, { filename: helperPath });
+vm.runInContext(domainAccess + '\n' + pageAccess, context, { filename: 'route_access_contract.gs' });
 var eventOnly = context.buildDomainAccess_({ menus: [{ id: 'area_행사', name: '행사', group: '행사' }] }, false);
 assert.strictEqual(eventOnly.event, true);
 assert.strictEqual(eventOnly.accounting, false);

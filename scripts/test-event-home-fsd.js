@@ -1,0 +1,13 @@
+const assert = require('assert');
+const fs = require('fs');
+const path = require('path');
+const root = path.resolve(__dirname, '..');
+const required=['src/frontend/pages/event_home/Event_Home.html','src/frontend/pages/event_home/Event_Home_View.html','src/frontend/pages/event_home/event_home_controller_js.html','src/frontend/features/event_list/event_list_js.html','src/frontend/entities/event/api/event_client_js.html','src/frontend/entities/event/ui/event_common_js.html','src/frontend/entities/event/ui/Event_Styles.html'];
+required.forEach(rel=>assert.ok(fs.existsSync(path.join(root,rel)),'missing Event Home FSD file: '+rel));
+assert.ok(!fs.existsSync(path.join(root,'src/600_event/610_home')));
+const shell=fs.readFileSync(path.join(root,required[0]),'utf8'),view=fs.readFileSync(path.join(root,required[1]),'utf8'),controller=fs.readFileSync(path.join(root,required[2]),'utf8'),feature=fs.readFileSync(path.join(root,required[3]),'utf8'),router=fs.readFileSync(path.join(root,'src/backend/app/routing/Code.js'),'utf8');
+["include('frontend/shared/styles/App_Styles')","include('frontend/app/styles/App_Shell_Styles')","include('frontend/shared/api/rpc/app_api_runner_js')","include('frontend/entities/user/api/app_client_js')","include('frontend/widgets/app_header/App_Header')","include('frontend/widgets/app_sidebar/App_Sidebar')","include('frontend/app/shell/app_shell_js')","include('frontend/entities/event/api/event_client_js')","include('frontend/entities/event/ui/event_common_js')","include('frontend/entities/event/ui/Event_Styles')","include('frontend/features/event_list/event_list_js')","include('frontend/pages/event_home/event_home_controller_js')"].forEach(needle=>assert.ok(shell.includes(needle),'Event Home shell missing include: '+needle));
+assert.ok(!shell.includes('600_event/')); assert.ok(view.includes('id="ew-event-search"')); assert.ok(view.includes('id="ew-event-table"')); assert.ok(controller.includes('initializeEventList()'));
+['eventClient.getEvents','eventClient.closeEvent','eventClient.updateEventStatus'].forEach(needle=>assert.ok(feature.includes(needle)));
+assert.ok(!feature.includes('google.script.run')); assert.ok(!/['"]api_[A-Za-z0-9_]+['"]/.test(feature)); assert.ok(feature.includes('function initializeEventList')); assert.ok(router.includes("event: 'frontend/pages/event_home/Event_Home'"));
+console.log('Event Home FSD migration contract: PASS');

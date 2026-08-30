@@ -5,10 +5,10 @@ var vm = require('vm');
 
 var ROOT = path.resolve(__dirname, '..');
 var EVENT_CREATION_FILES = [
-  'src/000_server/050_event/050_common/event_constants.gs',
-  'src/000_server/050_event/050_common/event_request.gs',
-  'src/000_server/050_event/051_events/events_validator.gs',
-  'src/000_server/050_event/051_events/events_service.gs'
+  'src/backend/domains/event/business_rules/event_constants.gs',
+  'src/backend/domains/event/controllers/event_request.gs',
+  'src/backend/domains/event/business_rules/events_rules.gs',
+  'src/backend/domains/event/application/events_mutation.gs'
 ];
 
 function load_(context, relativePath) {

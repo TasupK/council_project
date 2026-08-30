@@ -4,9 +4,11 @@ const path = require('path');
 const vm = require('vm');
 
 const root = path.resolve(__dirname, '..');
-const schemaPath = path.join(root, 'src/000_server/020_schema/operation_db_schema.gs');
-const userSchemaPath = path.join(root, 'src/000_server/020_schema/user_db_schema.gs');
-const integrityPath = path.join(root, 'src/000_server/020_schema/operation_db_integrity.gs');
+const backendRoot = path.join(root, 'src/backend');
+const legacyServerRoot = path.join(root, 'src/000_server');
+const schemaPath = path.join(backendRoot, 'core/db/schema/operation_db_schema.gs');
+const userSchemaPath = path.join(backendRoot, 'core/db/schema/user_db_schema.gs');
+const integrityPath = path.join(backendRoot, 'core/db/schema/operation_db_integrity.gs');
 const context = {
   console,
   normalizeTextValue_: value => String(value == null ? '' : value).trim(),
@@ -23,7 +25,7 @@ const context = {
   }
 };
 vm.createContext(context);
-vm.runInContext(fs.readFileSync(path.join(root, 'src/000_server/010_core/config.gs'), 'utf8'), context);
+vm.runInContext(fs.readFileSync(path.join(backendRoot, 'app/config/config.gs'), 'utf8'), context);
 vm.runInContext(fs.readFileSync(userSchemaPath, 'utf8'), context);
 vm.runInContext(fs.readFileSync(schemaPath, 'utf8'), context);
 vm.runInContext(fs.readFileSync(integrityPath, 'utf8'), context);
@@ -65,9 +67,8 @@ function collectGsFiles(dir) {
   });
 }
 
-const serverRoot = path.join(root, 'src/000_server');
 const staleManagerRefs = [];
-collectGsFiles(serverRoot).forEach((filePath) => {
+collectGsFiles(backendRoot).concat(collectGsFiles(legacyServerRoot)).forEach((filePath) => {
   if (filePath === schemaPath) return;
   const source = fs.readFileSync(filePath, 'utf8');
   const patterns = [

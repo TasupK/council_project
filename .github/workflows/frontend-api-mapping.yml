@@ -5,7 +5,7 @@ on:
     paths:
       - 'src/**/*.html'
       - 'src/**/*.js'
-      - 'src/000_server/**/*.gs'
+      - 'src/backend/**/*.gs'
       - 'scripts/test-frontend-api-mapping.js'
       - 'scripts/verify-frontend-api-mapping.js'
       - 'scripts/verify-frontend-api-contract-v1.js'
@@ -16,7 +16,7 @@ on:
     paths:
       - 'src/**/*.html'
       - 'src/**/*.js'
-      - 'src/000_server/**/*.gs'
+      - 'src/backend/**/*.gs'
       - 'scripts/test-frontend-api-mapping.js'
       - 'scripts/verify-frontend-api-mapping.js'
       - 'scripts/verify-frontend-api-contract-v1.js'

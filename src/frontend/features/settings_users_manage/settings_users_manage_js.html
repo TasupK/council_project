@@ -1,0 +1,187 @@
+<script>
+function initSettingsUsersManagement() {
+  var settingsUsers = [];
+  var settingsRoles = [];
+  var settingsDepartments = [];
+  var userDrafts = {};
+  var selectedUserKey = '';
+  var userNewSeq = 0;
+
+  function userKey_(user) { return user.isNew ? user.tempId : user.email; }
+  function snapshotUser_(user) {
+    return {
+      isNew: !!user.isNew, tempId: user.tempId || '', email: user.email || '', name: user.name || '',
+      studentId: user.studentId || '', phone: user.phone || '', departmentId: user.departmentId || '',
+      roleIds: (user.roleIds || []).slice(), status: user.status || 'active', updatedAt: user.updatedAt || '-'
+    };
+  }
+  function workingUser_(user) { return userDrafts[userKey_(user)] || snapshotUser_(user); }
+  function changedUserKeys_() { return Object.keys(userDrafts).filter(function (key) { return !!userDrafts[key]; }); }
+
+  function updateUserDirtyBar_() {
+    var count = changedUserKeys_().length;
+    getSettingsElement('userDirtyLabel').textContent = count + '개 변경됨';
+    getSettingsElement('btnSaveUsers').textContent = '변경사항 저장 (' + count + ')';
+    getSettingsElement('userDirtyBar').classList.toggle('show', count > 0);
+  }
+
+  function departmentName_(id) {
+    var item = settingsDepartments.filter(function (department) { return department.id === id; })[0];
+    return item ? item.name : (id ? id : '미배정');
+  }
+  function roleNames_(ids) {
+    return (ids || []).map(function (id) {
+      var role = settingsRoles.filter(function (item) { return item.id === id; })[0];
+      return role ? role.name : id;
+    }).join(', ') || '역할 없음';
+  }
+  function departmentOptions_(selectedId) {
+    return ['<option value="">미배정</option>'].concat(settingsDepartments.map(function (department) {
+      return '<option value="' + escapeSettingsHtml(department.id) + '"' + (department.id === selectedId ? ' selected' : '') + '>' + escapeSettingsHtml(department.name) + '</option>';
+    })).join('');
+  }
+  function roleChecks_(selectedIds, key) {
+    var selected = {};
+    (selectedIds || []).forEach(function (id) { selected[id] = true; });
+    return '<div class="role-check-list" data-role-list="' + escapeSettingsHtml(key) + '">' + settingsRoles.map(function (role) {
+      return '<label><input type="checkbox" data-role-id="' + escapeSettingsHtml(role.id) + '"' + (selected[role.id] ? ' checked' : '') + '>' + escapeSettingsHtml(role.name) + '</label>';
+    }).join('') + '</div>';
+  }
+  function statusToggle_(status, key) {
+    return '<label class="settings-toggle" onclick="event.stopPropagation()"><input type="checkbox" data-user-field="status" data-user-key="' + escapeSettingsHtml(key) + '"' + (status === 'active' ? ' checked' : '') + '><span class="settings-toggle-track"></span><span class="settings-toggle-label">' + (status === 'active' ? '활성' : '비활성') + '</span></label>';
+  }
+
+  function markUserDraft_(key, patch) {
+    var base = settingsUsers.filter(function (user) { return userKey_(user) === key; })[0];
+    var current = base ? workingUser_(base) : { isNew: true, tempId: key, roleIds: [], status: 'active' };
+    userDrafts[key] = Object.assign({}, current, patch);
+    updateUserDirtyBar_();
+  }
+
+  function renderSettingsUsers() {
+    var query = getSettingsElement('userQ').value.trim().toLowerCase();
+    var roleId = getSettingsElement('userRole').value;
+    var departmentId = getSettingsElement('userDepartment').value;
+    var status = getSettingsElement('userStatus').value;
+    var filtered = settingsUsers.map(workingUser_).filter(function (user) {
+      var text = (String(user.name || '') + ' ' + String(user.email || '')).toLowerCase();
+      return (!query || text.indexOf(query) !== -1) &&
+        (!roleId || (user.roleIds || []).indexOf(roleId) !== -1) &&
+        (!departmentId || (departmentId === '__unassigned__' ? !user.departmentId : user.departmentId === departmentId)) &&
+        (!status || user.status === status);
+    });
+    getSettingsElement('userTbody').innerHTML = filtered.map(function (user) {
+      var key = userKey_(user);
+      var editing = SETTINGS_CAN_ADMIN && (user.isNew || selectedUserKey === key || !!userDrafts[key]);
+      var classes = [];
+      if (user.isNew) classes.push('settings-row-new');
+      else if (userDrafts[key]) classes.push('settings-row-changed');
+      if (selectedUserKey === key) classes.push('settings-row-selected');
+      if (!editing) {
+        return '<tr class="' + classes.join(' ') + '" data-user-key="' + escapeSettingsHtml(key) + '"><td>' + escapeSettingsHtml(user.name || '-') + '</td><td>' + escapeSettingsHtml(user.email || '-') + '</td><td>' + escapeSettingsHtml(user.studentId || '-') + '</td><td>' + escapeSettingsHtml(user.phone || '-') + '</td><td>' + escapeSettingsHtml(departmentName_(user.departmentId)) + '</td><td>' + escapeSettingsHtml(roleNames_(user.roleIds)) + '</td><td><span class="settings-status-pill' + (user.status === 'active' ? ' is-active' : '') + '">' + (user.status === 'active' ? '활성' : '비활성') + '</span></td><td>' + escapeSettingsHtml(user.updatedAt || '-') + '</td></tr>';
+      }
+      var emailCell = user.isNew ? '<input class="ui-control compact" data-user-field="email" data-user-key="' + escapeSettingsHtml(key) + '" value="' + escapeSettingsHtml(user.email) + '">' : escapeSettingsHtml(user.email);
+      return '<tr class="' + classes.join(' ') + '" data-user-key="' + escapeSettingsHtml(key) + '">' +
+        '<td><input class="ui-control compact" data-user-field="name" data-user-key="' + escapeSettingsHtml(key) + '" value="' + escapeSettingsHtml(user.name) + '"></td>' +
+        '<td>' + emailCell + '</td>' +
+        '<td><input class="ui-control compact" data-user-field="studentId" data-user-key="' + escapeSettingsHtml(key) + '" value="' + escapeSettingsHtml(user.studentId) + '"></td>' +
+        '<td><input class="ui-control compact" data-user-field="phone" data-user-key="' + escapeSettingsHtml(key) + '" value="' + escapeSettingsHtml(user.phone) + '"></td>' +
+        '<td><select class="select ui-control compact" data-user-field="departmentId" data-user-key="' + escapeSettingsHtml(key) + '">' + departmentOptions_(user.departmentId) + '</select></td>' +
+        '<td>' + roleChecks_(user.roleIds, key) + '</td><td>' + statusToggle_(user.status, key) + '</td><td>' + escapeSettingsHtml(user.updatedAt || '신규') + '</td></tr>';
+    }).join('') || '<tr><td colspan="8">사용자가 없습니다.</td></tr>';
+    getSettingsElement('userCountLabel').textContent = '사용자 ' + filtered.length + '명';
+    getSettingsElement('userFooterTotal').textContent = '총 ' + filtered.length + '명';
+    getSettingsElement('btnAddUser').disabled = !SETTINGS_CAN_ADMIN;
+  }
+
+  function addNewUserRow_() {
+    if (!SETTINGS_CAN_ADMIN) return;
+    userNewSeq += 1;
+    var tempId = '__new__:' + userNewSeq;
+    var draft = snapshotUser_({ isNew: true, tempId: tempId, email: '', name: '', studentId: '', phone: '', departmentId: '', roleIds: [], status: 'active', updatedAt: '신규' });
+    settingsUsers.unshift(draft);
+    userDrafts[tempId] = draft;
+    selectedUserKey = tempId;
+    updateUserDirtyBar_();
+    renderSettingsUsers();
+  }
+
+  function collectUserPayload_() {
+    return changedUserKeys_().map(function (key) {
+      var draft = userDrafts[key];
+      return { isNew: !!draft.isNew, email: String(draft.email || '').trim(), name: String(draft.name || '').trim(), studentId: draft.studentId || '', phone: draft.phone || '', departmentId: draft.departmentId || '', roleIds: (draft.roleIds || []).slice(), status: draft.status || 'active' };
+    });
+  }
+
+  function openUserSaveModal_() {
+    var changes = collectUserPayload_();
+    if (!changes.length) return;
+    getSettingsElement('userSaveModalSub').textContent = '사용자 ' + changes.length + '명의 변경사항을 저장하시겠습니까?';
+    getSettingsElement('userSaveModalBody').innerHTML = changes.map(function (item) { return '<div class="summary-card ' + (item.isNew ? 'is-new' : 'is-changed') + '"><strong>' + escapeSettingsHtml(item.name || item.email || '사용자') + '</strong><div class="meta">' + escapeSettingsHtml(item.email) + ' · ' + escapeSettingsHtml(roleNames_(item.roleIds)) + '</div></div>'; }).join('');
+    getSettingsElement('userSaveModal').classList.add('show');
+  }
+  function closeUserSaveModal_() { getSettingsElement('userSaveModal').classList.remove('show'); }
+  async function commitUserChanges_() {
+    var changes = collectUserPayload_();
+    closeUserSaveModal_();
+    getSettingsElement('userMutationStatus').textContent = '저장 중…';
+    try {
+      var result = await settingsClient.saveUserChanges({ changes: changes });
+      settingsUsers = result.users || [];
+      userDrafts = {};
+      selectedUserKey = '';
+      updateUserDirtyBar_();
+      renderSettingsUsers();
+      getSettingsElement('userMutationStatus').textContent = '저장되었습니다.';
+    } catch (error) {
+      getSettingsElement('userMutationStatus').textContent = error && error.message ? error.message : '저장 중 오류가 발생했습니다.';
+    }
+  }
+  function discardUserChanges_() {
+    settingsUsers = settingsUsers.filter(function (user) { return !user.isNew; });
+    userDrafts = {}; selectedUserKey = ''; updateUserDirtyBar_(); renderSettingsUsers();
+    getSettingsElement('userMutationStatus').textContent = '변경사항을 취소했습니다.';
+  }
+
+  async function loadSettingsUsers() {
+    try {
+      var data = await settingsClient.getUsers();
+      applySettingsShell(data);
+      settingsUsers = data.users || []; settingsRoles = data.roles || []; settingsDepartments = data.departments || [];
+      getSettingsElement('userRole').innerHTML = '<option value="">역할 전체</option>' + settingsRoles.map(function (role) { return '<option value="' + escapeSettingsHtml(role.id) + '">' + escapeSettingsHtml(role.name) + '</option>'; }).join('');
+      getSettingsElement('userDepartment').innerHTML = '<option value="">부서 전체</option><option value="__unassigned__">미배정</option>' + settingsDepartments.map(function (department) { return '<option value="' + escapeSettingsHtml(department.id) + '">' + escapeSettingsHtml(department.name) + '</option>'; }).join('');
+      updateUserDirtyBar_(); renderSettingsUsers(); showSettingsContent();
+    } catch (error) { showSettingsError(error); }
+  }
+
+  ['userQ','userRole','userDepartment','userStatus'].forEach(function (id) { getSettingsElement(id).addEventListener(id === 'userQ' ? 'input' : 'change', renderSettingsUsers); });
+  getSettingsElement('userReset').onclick = function () { ['userQ','userRole','userDepartment','userStatus'].forEach(function (id) { getSettingsElement(id).value = ''; }); renderSettingsUsers(); };
+  getSettingsElement('btnAddUser').onclick = addNewUserRow_;
+  getSettingsElement('btnSaveUsers').onclick = openUserSaveModal_;
+  getSettingsElement('btnDiscardUsers').onclick = discardUserChanges_;
+  getSettingsElement('userSaveModalClose').onclick = closeUserSaveModal_;
+  getSettingsElement('userSaveModalCancel').onclick = closeUserSaveModal_;
+  getSettingsElement('userSaveModalConfirm').onclick = commitUserChanges_;
+  getSettingsElement('userTbody').addEventListener('click', function (event) {
+    if (event.target.closest('input,select,label,button,a')) return;
+    var row = event.target.closest('tr[data-user-key]'); if (!row || !SETTINGS_CAN_ADMIN) return;
+    selectedUserKey = row.getAttribute('data-user-key'); renderSettingsUsers();
+  });
+  getSettingsElement('userTbody').addEventListener('input', function (event) {
+    var target = event.target, key = target && target.getAttribute('data-user-key'), field = target && target.getAttribute('data-user-field');
+    if (!key || !field) return; var patch = {}; patch[field] = target.type === 'checkbox' ? (target.checked ? 'active' : 'inactive') : target.value; markUserDraft_(key, patch);
+  });
+  getSettingsElement('userTbody').addEventListener('change', function (event) {
+    var target = event.target;
+    if (target && target.getAttribute('data-role-id')) {
+      var list = target.closest('[data-role-list]'), key = list.getAttribute('data-role-list');
+      var roleIds = Array.prototype.slice.call(list.querySelectorAll('input[data-role-id]:checked')).map(function (el) { return el.getAttribute('data-role-id'); });
+      markUserDraft_(key, { roleIds: roleIds });
+    } else if (target) {
+      var key2 = target.getAttribute('data-user-key'), field2 = target.getAttribute('data-user-field');
+      if (key2 && field2) { var patch2 = {}; patch2[field2] = target.type === 'checkbox' ? (target.checked ? 'active' : 'inactive') : target.value; markUserDraft_(key2, patch2); }
+    }
+  });
+  loadSettingsUsers();
+}
+</script>

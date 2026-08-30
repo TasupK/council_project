@@ -4,7 +4,7 @@ var path = require('path');
 var vm = require('vm');
 
 var ROOT = path.resolve(__dirname, '..');
-var file = path.join(ROOT, 'src/000_server/020_schema/operation_db_integrity.gs');
+var file = path.join(ROOT, 'src/backend/core/db/schema/operation_db_integrity.gs');
 var context = vm.createContext({
   console: console,
   String: String, Object: Object, Array: Array

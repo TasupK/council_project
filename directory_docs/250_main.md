@@ -1,15 +1,14 @@
-# 250_main
+# main page
 
 로그인 후 진입하는 메인 페이지 영역이다. 기능 메뉴로 이동하기 위한 허브 역할을 한다.
 
 ## 구성
 
 ```text
-src/250_main/
+src/frontend/pages/main/
 ├─ Main.html
 ├─ Main_View.html
-├─ Main_Styles.html
-└─ main_js.html
+└─ Main_Styles.html
 ```
 
 ## 역할

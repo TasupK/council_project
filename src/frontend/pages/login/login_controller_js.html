@@ -1,0 +1,26 @@
+<script>
+var loginButton = document.getElementById('loginButton');
+if (loginButton) {
+  loginButton.addEventListener('click', function () {
+    loginButton.disabled = true;
+    loginButton.textContent = 'Google 계정 확인 중...';
+    window.top.location.href = buildPageUrl('main');
+  });
+}
+
+if (LOGIN_ERROR) setLoginAlert(LOGIN_ERROR);
+
+function buildPageUrl(page) {
+  var appUrl = WEB_APP_URL || window.location.href;
+  var url = new URL(appUrl);
+  url.searchParams.set('page', page);
+  return url.toString();
+}
+
+function setLoginAlert(message) {
+  var alert = document.getElementById('loginAlert');
+  if (!alert) return;
+  alert.textContent = message;
+  alert.classList.add('show');
+}
+</script>

@@ -1,0 +1,26 @@
+<div class="accounting-modal-overlay ui-modal-overlay" id="registerModal">
+  <section class="accounting-modal accounting-register-modal ui-modal">
+    <div class="modal-head">
+      <h2>수입·지출 등록</h2>
+      <button class="accounting-modal-close ui-btn ghost small" data-close="registerModal" type="button">×</button>
+    </div>
+    <div class="modal-body">
+      <form id="entryForm">
+        <div class="feature-view">
+          <div class="ui-field"><label>구분 *</label><div class="segments"><button class="segment expense-on" id="expenseBtn" type="button">지출</button><button class="segment" id="incomeBtn" type="button">수입</button></div></div>
+          <div class="grid">
+            <div class="ui-field"><label>거래일자 *</label><input name="transaction_date" placeholder="연도-월-일" required></div>
+            <div class="ui-field"><label>부서명</label><select id="formDepartment" name="department_name" disabled><option value="">미사용</option></select></div>
+            <div class="ui-field"><label>금액 *</label><input name="amount" type="number" min="0" placeholder="금액 입력" required></div>
+            <div class="ui-field"><label>거래처/입금자명 *</label><input name="counterparty" placeholder="거래처/입금자명 입력" required></div>
+          </div>
+          <div class="ui-field"><label>행사 항목 연결</label><select id="formEvent" name="event_name"></select><div class="balance" id="eventBalance">선택한 행사 잔액: ₩0</div></div>
+          <div class="ui-field"><label>적요</label><input name="description" placeholder="예: MT 간식 구매"></div>
+          <div class="ui-field"><label>비고</label><textarea name="note" placeholder="추가 설명 (선택)"></textarea></div>
+          <div class="ui-field"><span class="upload-label">증빙자료</span><label class="upload clickable" id="entryEvidenceDropzone" for="entryEvidenceFile"><input id="entryEvidenceFile" type="file" accept=".png,.jpg,.jpeg,.pdf,.xlsx,.xls,.csv" multiple><div><strong>파일을 드래그하거나 클릭해서 업로드</strong><span id="entryEvidenceFileName">선택된 파일 없음</span></div></label></div>
+        </div>
+      </form>
+    </div>
+    <div class="accounting-modal-actions ui-modal-actions"><button class="ui-btn outline" id="draft" type="button">임시저장</button><button class="ui-btn" id="create" type="button">등록하기</button></div>
+  </section>
+</div>

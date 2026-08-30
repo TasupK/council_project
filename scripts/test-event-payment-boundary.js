@@ -29,8 +29,8 @@ function createContext_() {
 }
 
 function testPaymentQueryServiceOwnsPaymentReadModel_() {
-  var queryPath = 'src/000_server/050_event/053_payment/payment_query_service.gs';
-  assert.ok(fs.existsSync(path.join(ROOT, queryPath)), 'payment_query_service.gs must exist');
+  var queryPath = 'src/backend/domains/event/application/payment_query.gs';
+  assert.ok(fs.existsSync(path.join(ROOT, queryPath)), 'payment_query.gs must exist');
 
   var context = createContext_();
   context.listEventPaymentClientRows_ = function () {
@@ -57,7 +57,7 @@ function testPaymentQueryServiceOwnsPaymentReadModel_() {
 }
 
 function testPaymentDaoOwnsEventPaymentTableAccess_() {
-  var dao = read_('src/000_server/050_event/053_payment/payment_sheet_dao.gs');
+  var dao = read_('src/backend/domains/event/repositories/payment_repository.gs');
   assert.match(dao, /listEventPaymentClientRows_/);
   assert.match(dao, /findEventPaymentRowsByApplicationId_/);
   assert.match(dao, /insertEventPaymentRow_/);
@@ -65,13 +65,13 @@ function testPaymentDaoOwnsEventPaymentTableAccess_() {
 }
 
 function testConsumersUsePaymentQueryInterface_() {
-  var paymentService = read_('src/000_server/050_event/053_payment/payment_service.gs');
+  var paymentService = read_('src/backend/domains/event/application/payment_mutation.gs');
   assert.ok(paymentService.indexOf('buildEventPaymentTotalsByApplicationId_') === -1, 'payment mutation service must not own payment totals');
 
   [
-    'src/000_server/050_event/051_events/events_query_service.gs',
-    'src/000_server/050_event/052_applicants/applicants_query_service.gs',
-    'src/000_server/050_event/054_attendance/attendance_query_service.gs'
+    'src/backend/domains/event/application/events_query.gs',
+    'src/backend/domains/event/application/applicants_query.gs',
+    'src/backend/domains/event/application/attendance_query.gs'
   ].forEach(function (relativePath) {
     var source = read_(relativePath);
     assert.ok(source.indexOf('buildEventPaymentTotalsByApplicationId_') >= 0, relativePath + ' must use payment query interface');

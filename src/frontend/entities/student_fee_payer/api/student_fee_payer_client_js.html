@@ -1,0 +1,9 @@
+<script>
+var studentFeePayerClient = {
+  getReference: function () { return runAppApi('api_getStudentFeeReference'); },
+  getPayers: function (request) { return runAppApi('api_getStudentFeePayers', request || {}); },
+  getPayer: function (request) { return runAppApi('api_getStudentFeePayer', request || {}); },
+  createPayer: function (request) { return runAppApi('api_createStudentFeePayer', request || {}); },
+  updatePayer: function (request) { return runAppApi('api_updateStudentFeePayer', request || {}); }
+};
+</script>

@@ -1,0 +1,43 @@
+<script>
+function loadApplicants(panel) {
+  panel.innerHTML = applicantsToolbar() + '<div id="ew-applicants-table" class="ew-card ew-table-card ui-card"></div>';
+  var filter = state.applicantFilters || {};
+  var rows = getCachedDetailItems_('applicants').filter(function (item) {
+    if (!includesDetailKeyword_([item.name, item.studentId, item.phone, item.accountHolder], filter.keyword)) return false;
+    if (filter.applicantType && item.applicantType !== filter.applicantType) return false;
+    if (filter.status && item.status !== filter.status) return false;
+    return true;
+  });
+  renderApplicantsTable(paginateCachedDetailItems_(rows, state.applicantPage, 10));
+}
+function applicantsToolbar() {
+  var filter = state.applicantFilters;
+  return '<form id="ew-applicant-search" class="ew-card ew-tab-toolbar ui-card ui-toolbar"><strong>▣　Google Forms</strong><button type="button" class="ew-btn ew-btn-small ui-btn outline small" disabled title="Google Forms 연동 계약 확인 필요">↻</button><span class="ew-spacer"></span>' +
+    '<input class="ui-control" name="keyword" type="search" value="' + escapeHtml(filter.keyword || '') + '" placeholder="이름, 학번, 연락처 검색">' +
+    '<select class="ui-control" name="applicantType"><option value="">학생회비 납부</option><option value="납부" ' + selected(filter.applicantType, '납부') + '>납부</option><option value="미납" ' + selected(filter.applicantType, '미납') + '>미납</option></select>' +
+    '<select class="ui-control" name="status"><option value="">승인 상태</option><option value="대기" ' + selected(filter.status, '대기') + '>대기</option><option value="승인" ' + selected(filter.status, '승인') + '>승인</option><option value="반려" ' + selected(filter.status, '반려') + '>반려</option></select>' +
+    '<button class="ew-btn ew-btn-primary ew-btn-small ui-btn primary small" type="submit">검색</button><span class="ew-last-sync">마지막 동기화: 확인 필요</span></form>';
+}
+function renderApplicantsTable(data) {
+  var target = document.getElementById('ew-applicants-table'); if (!target) return;
+  var body = (data.items || []).length ? data.items.map(function (item) {
+    var paid = Number(item.paidAmount || 0) >= Number(item.appliedFee || 0) && Number(item.appliedFee || 0) >= 0;
+    return '<tr><td>' + displayDate(item.sourceResponseAt) + '</td><td>' + escapeHtml(item.name) + '</td><td>' + escapeHtml(item.studentId) + '</td><td>' + escapeHtml(item.phone) + '</td><td>' + statusBadge(item.applicantType) + '</td><td>' + statusBadge(item.status) + '</td><td>' + statusBadge(paid ? '입금 완료' : '입금 대기') + '</td><td><button type="button" class="ew-btn ew-btn-outline ew-btn-small ui-btn outline small" data-action="applicant-detail" data-id="' + escapeHtml(item.id) + '">보기</button></td></tr>';
+  }).join('') : '<tr><td colspan="8" class="ew-table-empty ui-empty">신청자 데이터가 없습니다. Forms 연동 설정을 확인해주세요.</td></tr>';
+  target.innerHTML = '<table class="ew-table ui-table"><thead><tr><th>신청일시</th><th>이름</th><th>학번</th><th>연락처</th><th>학생회비</th><th>승인</th><th>참가비</th><th>상세</th></tr></thead><tbody>' + body + '</tbody></table>' + paginationHtml(data, 'applicant-page');
+}
+function openApplicantModal(applicationId) {
+  var item = getCachedDetailItems_('applicants').find(function (applicant) { return String(applicant.id) === String(applicationId); });
+  if (!item) { showToast('브라우저에 보관된 신청자 정보를 찾을 수 없습니다.', true); return; }
+  var modal = document.getElementById('ew-applicant-detail-modal'); if (!modal) { showToast('신청자 상세 모달을 찾을 수 없습니다.', true); return; }
+  var paid = Number(item.paidAmount || 0) >= Number(item.appliedFee || 0);
+  document.getElementById('ew-applicant-name').textContent = item.name || '-'; document.getElementById('ew-applicant-student-id').textContent = item.studentId || '-'; document.getElementById('ew-applicant-phone').textContent = item.phone || '-';
+  document.getElementById('ew-applicant-fee-status').innerHTML = statusBadge(item.applicantType); document.getElementById('ew-applicant-payment-status').innerHTML = statusBadge(paid ? '입금 완료' : '입금 대기'); document.getElementById('ew-applicant-approval-status').innerHTML = statusBadge(item.status);
+  document.getElementById('ew-applicant-manager').textContent = item.managerEmail || '-'; document.getElementById('ew-applicant-processed-at').textContent = item.processedAt ? displayDate(item.processedAt) : '-'; document.getElementById('ew-applicant-extra-answers').innerHTML = renderApplicantExtraAnswers_(item.extraAnswers || []);
+  var rejectButton = document.getElementById('ew-applicant-reject'), approveButton = document.getElementById('ew-applicant-approve'); rejectButton.dataset.id = String(item.id || ''); approveButton.dataset.id = String(item.id || ''); rejectButton.disabled = item.status === '반려'; approveButton.disabled = item.status === '승인'; modal.hidden = false;
+}
+function renderApplicantExtraAnswers_(answers) { if (!answers.length) return ''; return '<div class="ew-modal-divider"></div><dl class="ew-modal-info">' + answers.map(function (answer) { return info(answer.questionTitle || '추가 질문', answer.answer || '-'); }).join('') + '</dl>'; }
+function refreshApplicantSummaryFromCache_() { var applicants = getCachedDetailItems_('applicants'); if (!state.detail || !state.detail.summary) return; state.detail.summary.totalApplicants = applicants.length; state.detail.summary.approvedApplicants = applicants.filter(function (item) { return item.status === '승인'; }).length; }
+function updateCachedApplicant_(after) { var applicants = getCachedDetailItems_('applicants'); for (var index = 0; index < applicants.length; index += 1) { if (String(applicants[index].id) !== String(after.id)) continue; applicants[index] = Object.assign({}, applicants[index], after); break; } refreshApplicantSummaryFromCache_(); }
+function processApplicant(id, action) { runEventBusy(function () { return eventClient.processApplicant({ id: id, action: action }); }).then(function (after) { updateCachedApplicant_(after); showToast(action === 'reject' ? '신청자를 반려했습니다.' : '신청자를 승인했습니다.'); hideApplicantModal_(); renderDetailShell(); loadApplicants(document.getElementById('ew-tab-panel')); }).catch(handleError); }
+</script>

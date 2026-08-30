@@ -65,18 +65,18 @@ function createFrontendContext_() {
 }
 
 function loadCommon_(fixture) {
-  vm.runInContext(scriptBody_('src/100_common/app_api_runner_js.html'), fixture.context);
-  vm.runInContext(scriptBody_('src/500_student_fee/common/student_fee_client_js.html'), fixture.context);
-  vm.runInContext(scriptBody_('src/500_student_fee/common/student_fee_common_js.html'), fixture.context);
+  vm.runInContext(scriptBody_('src/frontend/shared/api/rpc/app_api_runner_js.html'), fixture.context);
+  vm.runInContext(scriptBody_('src/frontend/entities/student_fee/api/student_fee_client_js.html'), fixture.context);
+  vm.runInContext(scriptBody_('src/frontend/entities/student_fee/ui/student_fee_common_js.html'), fixture.context);
 }
 
 function testStudentFeeSemanticClient_() {
   var fixture = createFrontendContext_();
   loadCommon_(fixture);
-  return fixture.context.studentFeeClient.getApplications({ page: 1 }).then(function () {
+  return fixture.context.studentFeeClient.getSummary().then(function () {
     assert.strictEqual(fixture.calls.length, 1);
-    assert.strictEqual(fixture.calls[0].name, 'api_getStudentFeeApplications');
-    assert.deepStrictEqual(JSON.parse(JSON.stringify(fixture.calls[0].payload)), { request: { page: 1 } });
+    assert.strictEqual(fixture.calls[0].name, 'api_getStudentFeeSummary');
+    assert.deepStrictEqual(JSON.parse(JSON.stringify(fixture.calls[0].payload)), { request: {} });
   });
 }
 
@@ -94,12 +94,12 @@ function testBusyGuardPreventsDoubleSubmit_() {
 }
 
 function testStudentFeeRouteHelpers_() {
-  var code = read_('src/000_server/Code.js');
+  var code = read_('src/backend/app/routing/Code.js');
   ['student_fee', 'student_fee_payers', 'student_fee_payments', 'student_fee_refunds'].forEach(function (route) {
     assert.match(code, new RegExp('\\b' + route + '\\s*:'));
   });
   assert.match(code, /page\.indexOf\(['"]student_fee['"]\)\s*===\s*0/);
-  var shell = read_('src/100_common/app_shell_js.html');
+  var shell = read_('src/frontend/app/shell/app_shell_js.html');
   assert.match(shell, /appNavStudentFee/);
   assert.match(shell, /student_fee_payers/);
   assert.match(shell, /student_fee_payments/);
@@ -107,43 +107,43 @@ function testStudentFeeRouteHelpers_() {
 }
 
 function testPayerEditUsesLookupKey_() {
-  var source = read_('src/500_student_fee/510_payers/student_fee_payers_js.html');
-  var client = read_('src/500_student_fee/common/student_fee_client_js.html');
+  var source = read_('src/frontend/features/student_fee_payer_manage/student_fee_payer_manage_js.html');
+  var client = read_('src/frontend/entities/student_fee_payer/api/student_fee_payer_client_js.html');
   assert.match(source, /studentIdKey/);
-  assert.match(source, /studentFeeClient\.getPayer/);
+  assert.match(source, /studentFeePayerClient\.getPayer/);
   assert.match(client, /api_getStudentFeePayer/);
   assert.doesNotMatch(source, /textContent\s*=\s*[^;]*studentIdKey/);
 }
 
 function testPaymentApprovalCalculatesBeforeMutation_() {
-  var source = read_('src/500_student_fee/520_payments/student_fee_payments_js.html');
-  var calculateIndex = source.indexOf('studentFeeClient.calculateAmount');
-  var processIndex = source.indexOf('studentFeeClient.processApplications');
+  var source = read_('src/frontend/features/student_fee_payment_manage/student_fee_payment_manage_js.html');
+  var calculateIndex = source.indexOf('studentFeePaymentClient.calculateAmount');
+  var processIndex = source.indexOf('studentFeePaymentClient.processApplications');
   assert.ok(calculateIndex >= 0 && processIndex > calculateIndex);
 }
 
 function testRefundApprovalCalculatesBeforeMutation_() {
-  var source = read_('src/500_student_fee/530_refunds/student_fee_refunds_js.html');
-  var calculateIndex = source.indexOf('studentFeeClient.calculateRefund');
-  var processIndex = source.indexOf('studentFeeClient.processRefundRequests');
+  var source = read_('src/frontend/features/student_fee_refund_manage/student_fee_refund_manage_js.html');
+  var calculateIndex = source.indexOf('studentFeeRefundClient.calculateRefund');
+  var processIndex = source.indexOf('studentFeeRefundClient.processRefundRequests');
   assert.ok(calculateIndex >= 0 && processIndex > calculateIndex);
 }
 
 function testBulkRefundApprovalOmitsSharedApprovedAmount_() {
-  var source = read_('src/500_student_fee/530_refunds/student_fee_refunds_js.html');
+  var source = read_('src/frontend/features/student_fee_refund_manage/student_fee_refund_manage_js.html');
   assert.match(source, /bulkApproveSfRefunds_/);
   var start = source.indexOf('function bulkApproveSfRefunds_');
   var end = source.indexOf('function bulkRejectSfRefunds_', start);
   var block = source.slice(start, end);
   assert.ok(start >= 0 && end > start);
   assert.doesNotMatch(block, /approvedAmount\s*:/);
-  assert.match(block, /studentFeeClient\.processRefundRequests/);
+  assert.match(block, /studentFeeRefundClient\.processRefundRequests/);
 }
 
 function testModalFailureKeepsDialogOpen_() {
-  var payer = read_('src/500_student_fee/510_payers/student_fee_payers_js.html');
-  var payment = read_('src/500_student_fee/520_payments/student_fee_payments_js.html');
-  var refund = read_('src/500_student_fee/530_refunds/student_fee_refunds_js.html');
+  var payer = read_('src/frontend/features/student_fee_payer_manage/student_fee_payer_manage_js.html');
+  var payment = read_('src/frontend/features/student_fee_payment_manage/student_fee_payment_manage_js.html');
+  var refund = read_('src/frontend/features/student_fee_refund_manage/student_fee_refund_manage_js.html');
   [payer, payment, refund].forEach(function (source) {
     assert.match(source, /catch\s*\(/);
     assert.match(source, /studentFeeHandleError/);
@@ -152,9 +152,9 @@ function testModalFailureKeepsDialogOpen_() {
 
 function testStudentFeeViewsDoNotOwnModalsAfterMigration_() {
   [
-    'src/500_student_fee/510_payers/Student_Fee_Payers_View.html',
-    'src/500_student_fee/520_payments/Student_Fee_Payments_View.html',
-    'src/500_student_fee/530_refunds/Student_Fee_Refunds_View.html'
+    'src/frontend/pages/student_fee_payers/Student_Fee_Payers_View.html',
+    'src/frontend/pages/student_fee_payments/Student_Fee_Payments_View.html',
+    'src/frontend/pages/student_fee_refunds/Student_Fee_Refunds_View.html'
   ].forEach(function (file) {
     assert.doesNotMatch(read_(file), /ui-modal-overlay/);
   });

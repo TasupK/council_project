@@ -3,14 +3,14 @@ name: Business audit taxonomy
 on:
   pull_request:
     paths:
-      - 'src/000_server/**'
+      - 'src/**'
       - 'scripts/**'
       - '.github/workflows/business-audit-taxonomy.yml'
   push:
     branches:
       - design/business-audit-taxonomy
     paths:
-      - 'src/000_server/**'
+      - 'src/**'
       - 'scripts/**'
       - '.github/workflows/business-audit-taxonomy.yml'
 
@@ -43,3 +43,7 @@ jobs:
             node "$verify_file"
             echo "::endgroup::"
           done
+      - name: Final architecture strict guard
+        env:
+          ARCHITECTURE_FINAL: '1'
+        run: node scripts/verify-final-project-architecture.js

@@ -1,0 +1,44 @@
+<script>
+function readForm() {
+  const data = new FormData(document.getElementById('entryForm'));
+  return {
+    transaction_id: state.editingLedgerId || '', transaction_type: state.selectedType,
+    transaction_date: data.get('transaction_date'), amount: Number(data.get('amount') || 0),
+    counterparty: data.get('counterparty'), event_id: data.get('event_name') || '', description: data.get('description') || ''
+  };
+}
+function readFilePayloads(files) {
+  return Promise.all((files || []).map(function (file) {
+    return new Promise(function (resolve, reject) {
+      const reader = new FileReader();
+      reader.onload = function () { const result = String(reader.result || ''); resolve({ file_name: file.name, file_type: file.type || 'application/octet-stream', file_size: file.size, content_base64: result.includes(',') ? result.split(',')[1] : result }); };
+      reader.onerror = function () { reject(new Error(file.name + ' 파일을 읽을 수 없습니다.')); };
+      reader.readAsDataURL(file);
+    });
+  }));
+}
+async function saveEntry(draft) {
+  if (state.ledgerSaving) return;
+  const item = readForm();
+  if (!draft && (!item.transaction_date || !item.amount || !item.counterparty)) return toast('필수 항목을 입력해 주세요.');
+  const createButton = document.getElementById('create'); const draftButton = document.getElementById('draft'); const submitButton = draft ? draftButton : createButton; const submitLabel = submitButton.textContent;
+  state.ledgerSaving = true; createButton.disabled = true; draftButton.disabled = true; submitButton.textContent = '저장 중...';
+  try {
+    if (!state.editingLedgerId) item.evidence_files = await readFilePayloads(state.uploadFiles.ledgerEntry);
+    if (state.editingLedgerId) await ledgerClient.updateLedgerEntry(item);
+    else if (draft) await ledgerClient.createLedgerDraft(item);
+    else await ledgerClient.createLedgerEntry(item);
+    state.editingLedgerId = null; document.getElementById('create').textContent = '등록하기'; document.getElementById('entryForm').reset(); state.uploadFiles.ledgerEntry = [];
+    closeModal('registerModal'); await refreshLedger(); toast(draft ? '임시저장되었습니다.' : '저장되었습니다.');
+  } catch (error) { toast(error && error.message ? error.message : '저장 중 오류가 발생했습니다.'); }
+  finally { state.ledgerSaving = false; createButton.disabled = false; draftButton.disabled = false; submitButton.textContent = draft ? submitLabel : (state.editingLedgerId ? '수정 저장' : '등록하기'); }
+}
+function editSelectedLedger() {
+  const item = state.items.find(function (entry) { return String(entry.transaction_id) === String(state.selectedId); });
+  if (!item) return;
+  state.editingLedgerId = item.transaction_id; setType(item.transaction_type);
+  const form = document.getElementById('entryForm');
+  form.elements.transaction_date.value = String(item.transaction_date || '').slice(0, 10); form.elements.amount.value = item.amount || 0; form.elements.counterparty.value = item.counterparty || ''; form.elements.event_name.value = item.event_id || ''; form.elements.description.value = item.description || '';
+  document.getElementById('create').textContent = '수정 저장'; closeModal('detailModal'); openModal('registerModal');
+}
+</script>

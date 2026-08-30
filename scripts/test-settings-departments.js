@@ -2,12 +2,12 @@ var fs = require('fs');
 var assert = require('assert');
 function read(path) { return fs.readFileSync(path, 'utf8'); }
 
-var api = read('src/000_server/070_settings/071_users/settings_users_api.gs');
-var query = read('src/000_server/070_settings/071_users/settings_users_query_service.gs');
-var servicePath = 'src/000_server/070_settings/071_users/settings_users_department_service.gs';
-var view = read('src/300_settings/310_users/Settings_Users_View.html');
-var js = read('src/300_settings/310_users/settings_users_js.html');
-var client = read('src/300_settings/common/settings_client_js.html');
+var api = read('src/backend/domains/iam/controllers/settings_users_controller.gs');
+var query = read('src/backend/domains/iam/application/settings_users_query.gs');
+var servicePath = 'src/backend/domains/iam/application/settings_users_department.gs';
+var view = read('src/frontend/pages/settings_users/Settings_Users_View.html');
+var js = read('src/frontend/features/settings_users_manage/settings_users_manage_js.html');
+var client = read('src/frontend/entities/iam/api/settings_client_js.html');
 
 assert.ok(api.includes('departments: getActiveDepartmentsData_()'), 'department options missing from api_getSettingsUsers');
 assert.ok(api.includes('function api_updateSettingsUserDepartment'), 'api_updateSettingsUserDepartment API missing');

@@ -4,7 +4,7 @@ var path = require('path');
 var vm = require('vm');
 
 var ROOT = path.resolve(__dirname, '..');
-var file = path.join(ROOT, 'src/000_server/040_iam/043_permissions/permissions_query_service.gs');
+var file = path.join(ROOT, 'src/backend/domains/iam/application/permissions_query.gs');
 var context = vm.createContext({
   console: console,
   String: String, Object: Object, Array: Array,
