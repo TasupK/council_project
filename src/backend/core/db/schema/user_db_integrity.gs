@@ -10,18 +10,7 @@ function api_checkUserDbIntegrity() {
 
 // 2. UserDB 핵심 테이블 무결성 검증
 function validateUserDbIntegrity_() {
-  var schema = getUserDbSchema_();
-  var tables = readUserDbIntegrityTables_(schema);
-  var issues = [];
-
-  issues = issues.concat(validateUserDbPrimaryKeys_(schema, tables));
-  issues = issues.concat(validateUserDbForeignKeys_(schema, tables));
-
-  return {
-    valid: issues.length === 0,
-    issueCount: issues.length,
-    issues: issues
-  };
+  return validateUserDbSpreadsheetIntegrity_(openUserSpreadsheet_());
 }
 
 // 3. 로그인 사용자와 연결된 UserDB 참조 무결성 검증
@@ -71,6 +60,57 @@ function readUserDbIntegrityTables_(schema) {
   var tables = {};
   Object.keys(schema).forEach(function (tableKey) { tables[tableKey] = readUserDbIntegrityTableRows_(tableKey); });
   return tables;
+}
+
+function readUserDbIntegrityTablesFromSpreadsheet_(spreadsheet, schema) {
+  var tables = {};
+  var headers = {};
+  var issues = [];
+  Object.keys(schema).forEach(function (tableKey) {
+    var table = schema[tableKey];
+    var sheet = spreadsheet.getSheetByName(table.sheetName);
+    var values;
+    if (!sheet) {
+      tables[tableKey] = [];
+      headers[tableKey] = [];
+      issues.push(buildIntegrityIssue_(
+        'SHEET_NOT_FOUND',
+        table.name,
+        {},
+        '',
+        '시트 탭을 찾을 수 없습니다.'
+      ));
+      return;
+    }
+    values = sheet.getDataRange().getValues();
+    headers[tableKey] = values.length
+      ? values[0].map(function (value) { return String(value || '').trim(); })
+      : [];
+    tables[tableKey] = readTableRows_(spreadsheet, table.sheetName);
+  });
+  return { tables: tables, headers: headers, issues: issues };
+}
+
+function validateUserDbHeaders_(schema, headers) {
+  var issues = [];
+  Object.keys(schema).forEach(function (tableKey) {
+    var table = schema[tableKey];
+    var actualHeaders = headers[tableKey] || [];
+    Object.keys(table.fields).map(function (fieldKey) {
+      return table.fields[fieldKey];
+    }).forEach(function (header) {
+      if (actualHeaders.indexOf(header) === -1) {
+        issues.push(buildIntegrityIssue_(
+          'HEADER_NOT_FOUND',
+          table.name,
+          {},
+          header,
+          '명세서에 정의된 컬럼이 없습니다.'
+        ));
+      }
+    });
+  });
+  return issues;
 }
 
 function readUserDbIntegrityTableRows_(tableKey) {
