@@ -73,6 +73,73 @@
   .settings-row:hover { background: #fafbfc; }
   .settings-row .chevron { color: var(--ui-muted); }
 
+  .connection-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+    margin-top: 20px;
+  }
+  .connection-card {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
+    border-top: 3px solid #c1c7cd;
+  }
+  .connection-card.is-connected { border-top-color: #24a148; }
+  .connection-card.is-error { border-top-color: #da1e28; }
+  .connection-card.is-busy { opacity: .7; }
+  .connection-card__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .connection-card__name {
+    min-height: 40px;
+    margin: 0;
+    color: #161616;
+    font-size: 14px;
+    line-height: 1.45;
+    word-break: break-word;
+  }
+  .connection-card__meta {
+    min-height: 18px;
+    margin: 0;
+    color: #697077;
+    font-size: 12px;
+  }
+  .connection-card label {
+    color: #525252;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .connection-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #697077;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .connection-status::before {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #c1c7cd;
+    content: "";
+  }
+  .connection-card.is-connected .connection-status { color: #198038; }
+  .connection-card.is-connected .connection-status::before { background: #24a148; }
+  .connection-card.is-error .connection-status { color: #da1e28; }
+  .connection-card.is-error .connection-status::before { background: #da1e28; }
+  .connection-page-actions { margin-top: 16px; }
+
+  @media (max-width: 960px) {
+    .connection-grid { grid-template-columns: 1fr; }
+  }
+
   /* Figma 프라이머리 버튼 */
   .settings-figma .ui-btn.primary,
   .page-header .ui-btn.primary.settings-primary-btn {
