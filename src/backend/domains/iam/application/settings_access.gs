@@ -17,6 +17,52 @@ function requireSettingsCurrent_() {
   throwSettingsError_('FORBIDDEN', '설정 화면에 접근할 권한이 없습니다.');
 }
 
+function requireConnectionManageCurrent_() {
+  var current = requireSettingsCurrent_();
+  requirePermission_(current, {
+    id: 'SYSTEM_CONNECTION_MANAGE',
+    action: 'edit'
+  });
+  return current;
+}
+
+function ensureSystemConnectionManagePermission_() {
+  var permissionId = 'SYSTEM_CONNECTION_MANAGE';
+  var permissionFields = getUserDbFields_('permissions');
+  var rolePermissionFields = getUserDbFields_('rolePermissions');
+  var permissionExists = listPermissionRows_().some(function (row) {
+    return normalizeTextValue_(row[permissionFields.id]) === permissionId;
+  });
+  var mappingExists;
+
+  if (!permissionExists) {
+    insertSheetCrudItem_('user', 'permissions', {
+      id: permissionId,
+      area: '시스템',
+      action: '수정',
+      name: '시스템 연결 관리',
+      description: '운영 DB, 사용자 DB, 루트 폴더 연결 변경',
+      active: true
+    });
+  }
+
+  mappingExists = listRolePermissionRows_().some(function (row) {
+    return normalizeTextValue_(row[rolePermissionFields.roleId]) === ADMIN_ROLE_ID &&
+      normalizeTextValue_(row[rolePermissionFields.permissionId]) === permissionId;
+  });
+  if (!mappingExists) {
+    insertSheetCrudItem_('user', 'rolePermissions', {
+      roleId: ADMIN_ROLE_ID,
+      permissionId: permissionId
+    });
+  }
+
+  return {
+    permissionCreated: !permissionExists,
+    mappingCreated: !mappingExists
+  };
+}
+
 // 기존 내부 서비스 호환용 결과 계약
 function getSettingsCurrent_() {
   try {
