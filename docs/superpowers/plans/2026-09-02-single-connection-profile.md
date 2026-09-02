@@ -73,7 +73,6 @@
   - `getConnectionProfile_(): { operationDbId, userDbId, rootFolderId, revision, resources }`
   - `requireConnectionResourceId_(resourceKey): string`
   - `replaceConnectionResource_(resourceKey, candidateId, actorEmail, expectedRevision): object`
-  - `migrateLegacyConnectionProfile_(): object`
   - `CONNECTION_RESOURCE_KEYS_`, `CONNECTION_PROFILE_REVISION_KEY_`, `LOGIN_CONTEXT_CACHE_GENERATION_KEY_`.
 
 - [ ] **Step 1: Write the failing repository test**
@@ -101,7 +100,7 @@ context.LockService = {
 };
 ```
 
-Assert missing-resource, successful replacement, metadata, revision increment, stale revision, all-or-none migration, and migration idempotency:
+Assert missing-resource, successful replacement, metadata, revision increment, stale revision, and atomic UserDB cache-generation advancement:
 
 ```js
 assert.strictEqual(context.getConnectionProfile_().revision, 0);
@@ -186,6 +185,11 @@ function replaceConnectionResource_(resourceKey, candidateId, actorEmail, expect
     entries[propertyKey + '_UPDATED_AT'] = updatedAt;
     entries[propertyKey + '_UPDATED_BY'] = normalizeEmail_(actorEmail);
     entries[CONNECTION_PROFILE_REVISION_KEY_] = String(nextRevision);
+    if (resourceKey === 'userDb') {
+      entries[LOGIN_CONTEXT_CACHE_GENERATION_KEY_] = String(
+        Number(properties.getProperty(LOGIN_CONTEXT_CACHE_GENERATION_KEY_) || 0) + 1
+      );
+    }
     properties.setProperties(entries);
     return getConnectionProfile_();
   } finally {
@@ -196,18 +200,23 @@ function replaceConnectionResource_(resourceKey, candidateId, actorEmail, expect
 
 Candidate validation stays outside this lock.
 
-- [ ] **Step 4: Implement the migration state contract**
+- [ ] **Step 4: Test atomic UserDB cache-generation advancement**
 
-`migrateLegacyConnectionProfile_()` must:
+Add a UserDB replacement assertion:
 
-1. Return `{ migrated: false, reason: 'already_migrated' }` when all three keys exist.
-2. Throw `PARTIAL_CONNECTION_PROFILE` when one or two keys exist.
-3. Read all three legacy `DB_CONFIG` IDs only when none exist.
-4. Validate all three candidates before one bulk `setProperties()`.
-5. Seed revision `1`, cache generation `0`, and the connection-manage permission.
-6. Never overwrite existing keys.
+```js
+var beforeGeneration = Number(values.LOGIN_CONTEXT_CACHE_GENERATION || 0);
+var next = context.replaceConnectionResource_(
+  'userDb', 'user-2', 'admin@example.com', saved.revision
+);
+assert.strictEqual(next.userDbId, 'user-2');
+assert.strictEqual(
+  Number(values.LOGIN_CONTEXT_CACHE_GENERATION),
+  beforeGeneration + 1
+);
+```
 
-Keep `DB_CONFIG` in Task 1 so this function remains executable.
+Operation DB and root folder replacements must not change this generation.
 
 - [ ] **Step 5: Verify and commit**
 
@@ -377,8 +386,8 @@ Expected: all tests PASS.
 - Produces:
   - `requireConnectionManageCurrent_(): current`
   - `ensureSystemConnectionManagePermission_(): object`
-  - `getLoginContextCacheGeneration_(): number`
-  - `advanceLoginContextCacheGeneration_(): number`.
+  - `migrateLegacyConnectionProfile_(): object`
+  - `getLoginContextCacheGeneration_(): number`.
 
 - [ ] **Step 1: Write failing permission and cache-generation tests**
 
@@ -422,7 +431,11 @@ Insert when absent:
 }
 ```
 
-Also insert `{ roleId: ADMIN_ROLE_ID, permissionId: 'SYSTEM_CONNECTION_MANAGE' }` when that composite mapping is absent. Call this from legacy migration while current UserDB is active.
+Also insert `{ roleId: ADMIN_ROLE_ID, permissionId: 'SYSTEM_CONNECTION_MANAGE' }` when that composite mapping is absent.
+
+Implement `migrateLegacyConnectionProfile_()` now that Task 2 candidate validators exist. It returns `already_migrated` when all keys exist, throws `PARTIAL_CONNECTION_PROFILE` for one or two keys, validates all three `DB_CONFIG` resources before a bulk write, seeds revision `1` and cache generation `0`, calls `ensureSystemConnectionManagePermission_()`, and never overwrites existing keys.
+
+Add migration tests for successful bulk save, validation rollback, partial state rejection, permission seeding, and idempotent second execution to `scripts/test-settings-connections.js`.
 
 - [ ] **Step 4: Include generation in login cache keys**
 
@@ -447,7 +460,7 @@ function buildLoginContextCacheKey_(email) {
 }
 ```
 
-`advanceLoginContextCacheGeneration_()` acquires only a short Script Lock and persists `generation + 1`.
+The generation is advanced atomically by `replaceConnectionResource_()` when `resourceKey === 'userDb'`; auth-cache code only reads it.
 
 - [ ] **Step 5: Verify and commit**
 
@@ -550,9 +563,6 @@ function updateSettingsConnection_(resourceType, input, current) {
     current.user.email,
     request.expectedRevision
   );
-  if (resourceType === 'userDb') {
-    advanceLoginContextCacheGeneration_();
-  }
   return buildSettingsConnectionMutationResult_(resourceType, candidate, profile);
 }
 ```
@@ -593,7 +603,7 @@ connections: {
 }
 ```
 
-Cards return `status`, `connected`, `name`, `url`, `updatedAt`, and `updatedBy`; non-managers receive no raw IDs.
+Cards return `status`, `connected`, `name`, `url`, `updatedAt`, and `updatedBy`; non-managers receive no raw IDs. Card loading performs only ID presence and lightweight open/access checks, not full schema or integrity validation.
 
 - [ ] **Step 6: Verify and commit**
 
@@ -667,6 +677,25 @@ updateRootFolderConnection: function (request) {
 ```
 
 - [ ] **Step 3: Replace old DB/folder blocks with three cards**
+
+Use this structure for each resource, changing IDs and labels per card:
+
+```html
+<section class="connection-card ui-card" id="operationDbConnectionCard">
+  <div class="connection-card__head">
+    <strong>운영 데이터베이스</strong>
+    <span class="connection-status" id="operationDbStatus">미연결</span>
+  </div>
+  <p id="operationDbName">연결된 스프레드시트가 없습니다.</p>
+  <p class="connection-card__meta" id="operationDbUpdatedAt"></p>
+  <label for="operationDbUrlInput">Google Sheets URL</label>
+  <input class="ui-control" id="operationDbUrlInput" type="url" />
+  <div class="ui-page-actions">
+    <button class="ui-btn primary" id="btnSaveOperationDb" type="button">최초 연결</button>
+    <a class="ui-btn outline hidden" id="operationDbOpenLink" target="_blank" rel="noopener">열기</a>
+  </div>
+</section>
+```
 
 Each card renders status, resource name, last change time, URL input, connect/replace button, and Open link. Do not add year/profile/global-save/disconnect controls.
 
