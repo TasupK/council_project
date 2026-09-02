@@ -439,6 +439,8 @@ Add migration tests for successful bulk save, validation rollback, partial state
 
 - [ ] **Step 4: Include generation in login cache keys**
 
+Define `getLoginContextCacheGeneration_()` in `connection_profile.gs`; `auth_cache.gs` consumes the accessor and must not call `PropertiesService` directly.
+
 ```js
 function getLoginContextCacheGeneration_() {
   return Number(
@@ -567,7 +569,7 @@ function updateSettingsConnection_(resourceType, input, current) {
 }
 ```
 
-UserDB validation must prove current user active, prove `role_admin` or mapped `SYSTEM_CONNECTION_MANAGE`, and validate current operation DB cross-references against candidate UserDB tables.
+UserDB validation must prove current user active, prove `role_admin` or mapped `SYSTEM_CONNECTION_MANAGE`, and validate current operation DB cross-references against candidate UserDB tables. Missing active-user or administrator access throws `ADMIN_ACCESS_WOULD_BE_LOST`; cross-reference failures throw `SCHEMA_INVALID`.
 
 - [ ] **Step 4: Add public controllers through `apiHandler_`**
 
