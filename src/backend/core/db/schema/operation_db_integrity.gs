@@ -10,16 +10,30 @@ function api_checkOperationDbIntegrity() {
 
 // 2. 운영 DB 전체 검증 실행
 function validateOperationDbIntegrity_() {
-  var schema = getOperationDbSchema_();
   var spreadsheet = openOperationSpreadsheet_();
+  var userSchema = getUserDbSchema_();
+  var userTables = readUserDbIntegrityTables_(userSchema);
+  return validateOperationDbSpreadsheetIntegrity_(spreadsheet, userTables);
+}
+
+function validateOperationDbSpreadsheetIntegrity_(spreadsheet, userTables) {
+  var schema = getOperationDbSchema_();
   var result = readOperationDbIntegrityTables_(spreadsheet, schema);
-  var issues = result.issues;
+  var issues = result.issues.slice();
 
   issues = issues.concat(validateOperationDbHeaders_(schema, result.headers));
   issues = issues.concat(validateOperationDbPrimaryKeys_(schema, result.tables));
-  issues = issues.concat(validateOperationDbForeignKeys_(schema, result.tables));
+  issues = issues.concat(validateOperationDbForeignKeysWithUserTables_(
+    schema,
+    result.tables,
+    userTables || {}
+  ));
   issues = issues.concat(validateOperationDbBusinessKeys_(schema, result.tables));
-  issues = issues.concat(validateOperationDbReferenceRules_(schema, result.tables));
+  issues = issues.concat(validateOperationDbReferenceRules_(
+    schema,
+    result.tables,
+    (userTables || {}).users || []
+  ));
 
   return {
     valid: issues.length === 0,
@@ -95,7 +109,12 @@ function validateOperationDbPrimaryKeys_(schema, tables) {
 // 6. 운영 DB 내부 및 UserDB 교차 FK 검증
 function validateOperationDbForeignKeys_(schema, tables) {
   var userSchema = getUserDbSchema_();
-  var userTables = {};
+  var userTables = readUserDbIntegrityTables_(userSchema);
+  return validateOperationDbForeignKeysWithUserTables_(schema, tables, userTables);
+}
+
+function validateOperationDbForeignKeysWithUserTables_(schema, tables, userTables) {
+  var userSchema = getUserDbSchema_();
   var issues = [];
 
   Object.keys(schema).forEach(function (tableKey) {
@@ -203,12 +222,9 @@ function resolveOperationDbReference_(foreignKey, schema, tables, userSchema, us
 
   if (foreignKey.refDatabase === 'user') {
     table = userSchema[foreignKey.refTable];
-    if (!userTables[foreignKey.refTable]) {
-      userTables[foreignKey.refTable] = readUserDbIntegrityTableRows_(foreignKey.refTable);
-    }
     return {
       table: table,
-      rows: userTables[foreignKey.refTable],
+      rows: userTables[foreignKey.refTable] || [],
       column: resolveUserDbFieldColumn_(table, foreignKey.refField)
     };
   }

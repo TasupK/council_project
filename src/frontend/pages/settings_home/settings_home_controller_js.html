@@ -6,20 +6,116 @@
 
   getSettingsElement("btnReloadData").onclick = loadSettingsHome;
 
+  var settingsConnectionRevision_ = 0;
+  var CONNECTION_CARD_BINDINGS_ = {
+    operationDb: {
+      cardId: "operationDbConnectionCard", statusId: "operationDbStatus",
+      nameId: "operationDbName", metaId: "operationDbUpdatedAt",
+      inputId: "operationDbUrlInput", buttonId: "btnSaveOperationDb",
+      openLinkId: "operationDbOpenLink", clientMethod: "updateOperationDbConnection",
+      emptyName: "연결된 스프레드시트가 없습니다."
+    },
+    userDb: {
+      cardId: "userDbConnectionCard", statusId: "userDbStatus",
+      nameId: "userDbName", metaId: "userDbUpdatedAt",
+      inputId: "userDbUrlInput", buttonId: "btnSaveUserDb",
+      openLinkId: "userDbOpenLink", clientMethod: "updateUserDbConnection",
+      emptyName: "연결된 스프레드시트가 없습니다."
+    },
+    rootFolder: {
+      cardId: "rootFolderConnectionCard", statusId: "rootFolderStatus",
+      nameId: "rootFolderName", metaId: "rootFolderUpdatedAt",
+      inputId: "rootFolderUrlInput", buttonId: "btnSaveRootFolder",
+      openLinkId: "rootFolderOpenLink", clientMethod: "updateRootFolderConnection",
+      emptyName: "연결된 Drive 폴더가 없습니다."
+    }
+  };
+
+  Object.keys(CONNECTION_CARD_BINDINGS_).forEach(function (resourceType) {
+    getSettingsElement(CONNECTION_CARD_BINDINGS_[resourceType].buttonId).onclick = function () {
+      submitConnectionChange_(resourceType);
+    };
+  });
+
   async function loadSettingsHome() {
     try {
       var data = await settingsClient.getHome();
-      var database = applySettingsShell(data);
-      var link = getSettingsElement("dbOpenLink");
-      if (database.spreadsheetUrl) {
-        link.href = database.spreadsheetUrl;
-        link.classList.remove("hidden");
-      }
-      getSettingsElement("folderIdInput").value = database.folderId || "";
+      applySettingsShell(data);
+      renderConnectionCards_(data.connections || {});
       showSettingsContent();
     } catch (error) {
       showSettingsError(error);
     }
+  }
+
+  function renderConnectionCards_(connections) {
+    settingsConnectionRevision_ = Number(connections.revision || 0);
+    Object.keys(CONNECTION_CARD_BINDINGS_).forEach(function (resourceType) {
+      renderConnectionCard_(resourceType, connections[resourceType] || {}, !!connections.canManage);
+    });
+  }
+
+  function renderConnectionCard_(resourceType, resource, canManage) {
+    var binding = CONNECTION_CARD_BINDINGS_[resourceType];
+    var card = getSettingsElement(binding.cardId);
+    var status = getSettingsElement(binding.statusId);
+    var input = getSettingsElement(binding.inputId);
+    var button = getSettingsElement(binding.buttonId);
+    var link = getSettingsElement(binding.openLinkId);
+    var labels = {
+      connected: "연결됨",
+      not_connected: "미연결",
+      connection_error: "연결 오류"
+    };
+    card.classList.toggle("is-connected", resource.status === "connected");
+    card.classList.toggle("is-error", resource.status === "connection_error");
+    status.textContent = labels[resource.status] || "미연결";
+    getSettingsElement(binding.nameId).textContent = resource.name || binding.emptyName;
+    getSettingsElement(binding.metaId).textContent = resource.updatedAt
+      ? "마지막 변경 " + resource.updatedAt + (resource.updatedBy ? " · " + resource.updatedBy : "")
+      : "";
+    button.textContent = resource.connected ? "연결 변경" : "최초 연결";
+    input.classList.toggle("hidden", !canManage);
+    button.classList.toggle("hidden", !canManage);
+    if (resource.url) {
+      link.href = resource.url;
+      link.classList.remove("hidden");
+    } else {
+      link.removeAttribute("href");
+      link.classList.add("hidden");
+    }
+  }
+
+  async function submitConnectionChange_(resourceType) {
+    var binding = CONNECTION_CARD_BINDINGS_[resourceType];
+    var input = getSettingsElement(binding.inputId);
+    var url = input.value.trim();
+    if (!url) {
+      showSettingsError(new Error("연결할 URL을 입력해 주세요."));
+      return;
+    }
+    if (!window.confirm("현재 연결을 검증된 새 자원으로 변경할까요?")) return;
+    setConnectionCardBusy_(resourceType, true);
+    try {
+      await settingsClient[binding.clientMethod]({
+        resourceUrl: url,
+        expectedRevision: settingsConnectionRevision_
+      });
+      input.value = "";
+      await loadSettingsHome();
+    } catch (error) {
+      showSettingsError(error);
+      if (error && error.code === "CONNECTION_CHANGED") await loadSettingsHome();
+    } finally {
+      setConnectionCardBusy_(resourceType, false);
+    }
+  }
+
+  function setConnectionCardBusy_(resourceType, busy) {
+    var binding = CONNECTION_CARD_BINDINGS_[resourceType];
+    getSettingsElement(binding.cardId).classList.toggle("is-busy", busy);
+    getSettingsElement(binding.inputId).disabled = busy;
+    getSettingsElement(binding.buttonId).disabled = busy;
   }
 
   loadSettingsHome();

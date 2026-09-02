@@ -13,6 +13,7 @@ assert.ok(fs.existsSync(backend), 'src/backend must exist once backend migration
   'app/routing/Code.js',
   'app/bootstrap/authorize_app.gs',
   'app/config/config.gs',
+  'app/config/connection_profile.gs',
   'core/response/api_handler.gs',
   'core/response/api_request.gs',
   'core/response/response.gs',
@@ -37,6 +38,17 @@ listFiles(path.join(backend, 'core')).forEach((file) => {
   const source = fs.readFileSync(file, 'utf8');
   assert.doesNotMatch(source, /src\/backend\/domains\//, 'backend/core must not reference domain implementation paths: ' + path.relative(ROOT, file));
   assert.doesNotMatch(source, /\b(?:BaseRepository|BaseService)\b/, 'inheritance-style base abstractions are forbidden: ' + path.relative(ROOT, file));
+});
+
+listFiles(backend).forEach((file) => {
+  const relative = path.relative(backend, file).replace(/\\/g, '/');
+  if (relative === 'app/config/connection_profile.gs') return;
+  const source = fs.readFileSync(file, 'utf8');
+  assert.doesNotMatch(
+    source,
+    /\b(?:OPERATION_DB_ID|USER_DB_ID|ROOT_FOLDER_ID)\b/,
+    'connection property keys must stay behind connection_profile.gs: ' + path.relative(ROOT, file)
+  );
 });
 
 assert.ok(fs.existsSync(src('frontend')), 'src/frontend must exist in final architecture');

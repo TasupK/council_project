@@ -34,10 +34,11 @@ function invalidateLoginContextCache_(email) {
 
 // 4. 이메일 기반 캐시 키 생성
 function buildLoginContextCacheKey_(email) {
+  var generation = getLoginContextCacheGeneration_();
   var digest = Utilities.computeDigest(
     Utilities.DigestAlgorithm.SHA_256,
     normalizeEmail_(email),
     Utilities.Charset.UTF_8
   );
-  return LOGIN_CONTEXT_CACHE_PREFIX + Utilities.base64EncodeWebSafe(digest);
+  return LOGIN_CONTEXT_CACHE_PREFIX + generation + '_' + Utilities.base64EncodeWebSafe(digest);
 }

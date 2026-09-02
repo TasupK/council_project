@@ -57,6 +57,11 @@ var access = read_('src/backend/domains/iam/application/settings_access.gs');
 assert.ok(access.indexOf('requireAuthenticatedUserData_') !== -1, 'Settings access must use internal auth data contract');
 assert.ok(access.indexOf('api_getCurrentUser()') === -1, 'Settings access must not chain through public Auth API');
 
+var connectionsApplicationPath = 'src/backend/domains/iam/application/settings_connections.gs';
+assert.ok(fs.existsSync(path.join(ROOT, connectionsApplicationPath)), 'Settings connection application must exist');
+var connectionsApplication = read_(connectionsApplicationPath);
+assert.ok(connectionsApplication.indexOf('updateSettingsConnection_') !== -1, 'Settings connection application must own candidate-first orchestration');
+
 [
   'src/backend/domains/iam/controllers/settings_home_controller.gs',
   'src/backend/domains/iam/controllers/settings_users_controller.gs',
@@ -78,6 +83,15 @@ var rolesApi = read_('src/backend/domains/iam/controllers/settings_roles_control
 });
 var permissionsApi = read_('src/backend/domains/iam/controllers/settings_permissions_controller.gs');
 assert.ok(permissionsApi.indexOf('api_updateSettingsRolePermissions') !== -1, 'missing settings permissions mutation API');
+var homeApi = read_('src/backend/domains/iam/controllers/settings_home_controller.gs');
+[
+  'api_updateOperationDbConnection',
+  'api_updateUserDbConnection',
+  'api_updateRootFolderConnection'
+].forEach(function (name) {
+  assert.ok(homeApi.indexOf(name) !== -1, 'missing settings connection API: ' + name);
+});
+assert.ok(homeApi.indexOf('api_updateSettingsConnection') === -1, 'generic public connection mutation API is forbidden');
 
 [
   'src/backend/domains/iam/application/settings_users_mutation.gs',

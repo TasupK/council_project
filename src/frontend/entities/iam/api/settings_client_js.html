@@ -1,6 +1,9 @@
 <script>
 var settingsClient = {
   getHome: function () { return runAppApi('api_getSettingsHome'); },
+  updateOperationDbConnection: function (request) { return runAppApi('api_updateOperationDbConnection', request || {}); },
+  updateUserDbConnection: function (request) { return runAppApi('api_updateUserDbConnection', request || {}); },
+  updateRootFolderConnection: function (request) { return runAppApi('api_updateRootFolderConnection', request || {}); },
   getUsers: function () { return runAppApi('api_getSettingsUsers'); },
   updateUserDepartment: function (request) { return runAppApi('api_updateSettingsUserDepartment', request || {}); },
   saveUserChanges: function (request) { return runAppApi('api_applySettingsUserChanges', request || {}); },
