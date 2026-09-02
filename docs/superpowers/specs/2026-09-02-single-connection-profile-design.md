@@ -54,6 +54,11 @@
 - `<RESOURCE_KEY>_UPDATED_AT`
 - `<RESOURCE_KEY>_UPDATED_BY`
 
+동시 변경과 캐시 세대 전환을 위해 다음 보조 키를 사용한다.
+
+- `CONNECTION_PROFILE_REVISION`
+- `LOGIN_CONTEXT_CACHE_GENERATION`
+
 전체 변경 이력 저장소는 이번 범위에 포함하지 않는다.
 
 ### 5.2 접근 경계
@@ -158,6 +163,7 @@ URL 입력
 - `users`, `departments`, `roles`, `permissions`, `userRoles`, `rolePermissions` 시트 존재
 - 필수 헤더 존재
 - PK와 FK 무결성 검증
+- 현재 운영 DB의 UserDB 교차 참조가 후보 UserDB에서도 유효한지 검증
 - 현재 관리자 계정의 활성 상태 확인
 - 현재 관리자에게 관리자 역할 또는 `SYSTEM_CONNECTION_MANAGE` 권한이 있는지 확인
 
@@ -218,7 +224,7 @@ URL 입력
 
 ## 12. 마이그레이션과 배포
 
-마이그레이션은 두 단계로 진행한다.
+마이그레이션은 다음 순서로 진행한다.
 
 1. `migrateLegacyConnectionProfile_()`를 추가한다.
 2. Script Properties에 키가 없을 때만 현재 `DB_CONFIG` 세 값을 검증 후 저장한다.
@@ -227,7 +233,7 @@ URL 입력
 5. `DB_CONFIG`의 세 ID와 런타임 fallback을 제거한다.
 6. 설정 홈에서 세 카드와 파일/폴더 열기를 확인한다.
 
-마이그레이션은 반복 실행해도 이미 존재하는 Script Properties를 덮어쓰지 않는다. 하나라도 후보 값 검증에 실패하면 부분 저장하지 않고 실패한다.
+마이그레이션은 반복 실행해도 이미 존재하는 Script Properties를 덮어쓰지 않는다. 세 연결 키가 모두 없을 때만 검증 후 한 번에 저장하고, 세 키가 모두 있으면 no-op으로 끝낸다. 일부 키만 존재하면 `PARTIAL_CONNECTION_PROFILE` 오류로 중단하여 기존 값과 하드코딩 값이 섞이지 않게 한다. 하나라도 후보 값 검증에 실패하면 부분 저장하지 않고 실패한다.
 
 ## 13. 테스트
 
@@ -248,6 +254,7 @@ URL 입력
 - 권한 없는 사용자의 변경 거부
 - 후보 DB의 필수 시트·헤더·무결성 오류
 - 새 UserDB에서 현재 관리자 권한 상실 방지
+- 새 UserDB가 현재 운영 DB의 교차 참조를 깨는 경우 거부
 - 쓰기 불가능한 폴더 거부
 - 검증 실패 시 기존 ID 유지
 - 동시 변경 중 하나만 성공
