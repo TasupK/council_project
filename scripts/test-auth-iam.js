@@ -161,6 +161,34 @@ function testSessionContextCache_() {
   assert.strictEqual(reads, 2);
 }
 
+function testLoginCacheKeyIncludesConnectionGeneration_() {
+  var context = createContext_();
+  installValueStubs_(context);
+  var generation = 3;
+  context.LOGIN_CONTEXT_CACHE_PREFIX = 'LOGIN_CONTEXT_V1_';
+  context.getLoginContextCacheGeneration_ = function () { return generation; };
+  context.Utilities = {
+    DigestAlgorithm: { SHA_256: 'SHA_256' },
+    Charset: { UTF_8: 'UTF_8' },
+    computeDigest: function (algorithm, value, charset) {
+      assert.strictEqual(algorithm, 'SHA_256');
+      assert.strictEqual(charset, 'UTF_8');
+      return Array.from(Buffer.from(value, 'utf8'));
+    },
+    base64EncodeWebSafe: function (digest) {
+      return Buffer.from(digest).toString('base64url');
+    }
+  };
+  load_(context, 'src/backend/core/auth/auth_cache.gs');
+
+  var generationThreeKey = context.buildLoginContextCacheKey_('Admin@Example.com');
+  generation = 4;
+  var generationFourKey = context.buildLoginContextCacheKey_('Admin@Example.com');
+  assert.notStrictEqual(generationThreeKey, generationFourKey);
+  assert.ok(generationThreeKey.indexOf('LOGIN_CONTEXT_V1_3_') === 0);
+  assert.ok(generationFourKey.indexOf('LOGIN_CONTEXT_V1_4_') === 0);
+}
+
 function testRequireLoginAndAuthApis_() {
   var context = createContext_();
   installValueStubs_(context);
@@ -192,5 +220,6 @@ testPermissionModel_();
 testRequirePermission_();
 testBuildSessionUserContext_();
 testSessionContextCache_();
+testLoginCacheKeyIncludesConnectionGeneration_();
 testRequireLoginAndAuthApis_();
 console.log('Auth/IAM behavior regression tests passed.');
