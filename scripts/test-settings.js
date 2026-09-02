@@ -53,6 +53,15 @@ function testSettingsHomeData_() {
   context.requireAuthenticatedUserData_ = function () {
     return { isAdmin: true, user: { email: 'admin@example.com', name: '관리자' }, domainAccess: { settings: true } };
   };
+  context.getSettingsConnectionCards_ = function () {
+    return {
+      revision: 3,
+      canManage: true,
+      operationDb: { id: 'operation-db-id', connected: true, status: 'connected', name: '운영 DB', url: 'operation-url' },
+      userDb: { id: 'user-db-id', connected: true, status: 'connected', name: '사용자 DB', url: 'https://docs.google.com/spreadsheets/d/user-db-id/edit' },
+      rootFolder: { id: 'root-folder-id', connected: true, status: 'connected', name: '루트 폴더', url: 'folder-url' }
+    };
+  };
   load_(context, 'src/backend/domains/iam/application/settings_access.gs');
   load_(context, 'src/backend/domains/iam/controllers/settings_home_controller.gs');
   var result = context.api_getSettingsHome();
@@ -60,6 +69,8 @@ function testSettingsHomeData_() {
   assert.strictEqual(result.data.app.version, 'v0.7');
   assert.strictEqual(result.data.app.term, '2026학년도');
   assert.strictEqual(result.data.database.spreadsheetId, 'user-db-id');
+  assert.strictEqual(result.data.connections.revision, 3);
+  assert.strictEqual(result.data.connections.operationDb.name, '운영 DB');
   assert.strictEqual(result.data.session.email, 'admin@example.com');
 }
 
