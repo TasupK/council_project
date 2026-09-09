@@ -5,16 +5,20 @@ function read(path) { return fs.readFileSync(path, 'utf8'); }
 var page = 'src/frontend/pages/accounting_reconciliation/Accounting_Reconciliation.html';
 var view = 'src/frontend/pages/accounting_reconciliation/Accounting_Reconciliation_View.html';
 var controller = 'src/frontend/pages/accounting_reconciliation/accounting_reconciliation_controller_js.html';
-var feature = 'src/frontend/features/accounting_reconciliation_manage/accounting_reconciliation_manage_js.html';
+var features = [
+  'src/frontend/features/accounting_reconciliation_manage/accounting_reconciliation_render_js.html',
+  'src/frontend/features/accounting_reconciliation_manage/accounting_reconciliation_actions_js.html',
+  'src/frontend/features/accounting_reconciliation_manage/accounting_reconciliation_manage_js.html'
+];
 var reconciliationClient = 'src/frontend/entities/reconciliation/api/reconciliation_client_js.html';
 var ledgerClient = 'src/frontend/entities/ledger/api/ledger_client_js.html';
-[page, view, controller, feature, reconciliationClient, ledgerClient].forEach(function (path) {
+[page, view, controller, reconciliationClient, ledgerClient].concat(features).forEach(function (path) {
   assert.ok(fs.existsSync(path), 'missing Accounting Reconciliation FSD file: ' + path);
 });
 
 var pageSource = read(page);
 var controllerSource = read(controller);
-var featureSource = read(feature);
+var featureSource = features.map(read).join('\n');
 var reconciliationClientSource = read(reconciliationClient);
 var ledgerClientSource = read(ledgerClient);
 var router = read('src/backend/app/routing/Code.js');
@@ -29,7 +33,7 @@ assert.ok(pageSource.includes("include('frontend/pages/accounting_reconciliation
 assert.ok(controllerSource.includes('initAccountingReconciliationManage'), 'Reconciliation page controller must compose feature');
 assert.ok(!/runAppApi|google\.script\.run/.test(featureSource), 'Reconciliation feature must not own transport');
 assert.ok(!featureSource.includes('accountingClient.'), 'Reconciliation feature must not depend on legacy accounting client');
-['processBankTransactionUpload', 'processReconciliation', 'getReconciliationCandidates', 'applyReconciliationLink', 'createLedgerEntryFromReconciliation'].forEach(function (method) {
+['processBankTransactionUpload', 'processReconciliation', 'createLedgerEntryFromReconciliation'].forEach(function (method) {
   assert.ok(featureSource.includes('reconciliationClient.' + method), 'Reconciliation feature missing semantic client call: ' + method);
 });
 ['getLedgerEntry', 'getLedgerEvidenceFileContent'].forEach(function (method) {

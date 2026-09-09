@@ -24,7 +24,7 @@ async function saveEntry(draft) {
   const createButton = document.getElementById('create'); const draftButton = document.getElementById('draft'); const submitButton = draft ? draftButton : createButton; const submitLabel = submitButton.textContent;
   state.ledgerSaving = true; createButton.disabled = true; draftButton.disabled = true; submitButton.textContent = '저장 중...';
   try {
-    if (!state.editingLedgerId) item.evidence_files = await readFilePayloads(state.uploadFiles.ledgerEntry);
+    item.evidence_files = await readFilePayloads(state.uploadFiles.ledgerEntry);
     if (state.editingLedgerId) await ledgerClient.updateLedgerEntry(item);
     else if (draft) await ledgerClient.createLedgerDraft(item);
     else await ledgerClient.createLedgerEntry(item);

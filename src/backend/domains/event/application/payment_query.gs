@@ -53,7 +53,7 @@ function buildEventPaymentAccountingFacts_() {
       eventId: String(application.eventId || '').trim(),
       paidAmount: Number(payment.paidAmount || 0),
       paymentDate: String(payment.paymentDate || '').trim(),
-      depositorName: String(payment.depositorName || '').trim(),
+      depositorName: String(payment.depositorName || application.accountHolder || application.name || '').trim(),
       moneyStatus: String(payment.moneyStatus || '').trim(),
       confirmedAt: String(payment.confirmedAt || '').trim()
     };

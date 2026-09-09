@@ -21,16 +21,22 @@ function normalizeLedgerRecordStatus_(value) {
 }
 
 function assertLedgerBusinessSourceAvailable_(businessType, businessId, currentLedgerId) {
-  if (String(businessType || '') !== 'EVENT_PAYMENT') return;
+  var sourceType = String(businessType || '');
+  if ([
+    'EVENT_PAYMENT',
+    'EVENT_APPLICATION',
+    'STUDENT_FEE_PAYMENT',
+    'STUDENT_FEE_APPLICATION'
+  ].indexOf(sourceType) < 0) return;
   var sourceId = String(businessId || '').trim();
   if (!sourceId) return;
   var claimed = listLedgerRows_().some(function (row) {
     if (currentLedgerId && String(row.id) === String(currentLedgerId)) return false;
     return String(row.recordStatus || '활성') !== '무효' &&
-      String(row.businessType || '') === 'EVENT_PAYMENT' &&
+      String(row.businessType || '') === sourceType &&
       String(row.businessId || '') === sourceId;
   });
-  if (claimed) throw new Error('해당 행사 입금은 이미 다른 원장에 연결되어 있습니다.');
+  if (claimed) throw new Error('해당 승인 입금은 이미 다른 원장에 연결되어 있습니다.');
 }
 
 function createLedgerEntryData_(request, context, recordStatus) {

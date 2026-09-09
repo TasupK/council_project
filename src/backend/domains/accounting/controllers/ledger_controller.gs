@@ -35,7 +35,7 @@ function api_createLedgerDraft(request) {
 }
 
 function api_updateLedgerEntry(request) {
-  return apiHandler_({ operation: 'updateLedgerEntry', input: request, requireLogin: true, access: accountingApiAccess_('edit', 'accounting_ledger'), service: function (input, context) { return updateLedgerEntryData_(input || {}, context); } });
+  return apiHandler_({ operation: 'updateLedgerEntry', input: request, requireLogin: true, access: accountingApiAccess_('edit', 'accounting_ledger'), service: function (input, context) { return updateLedgerEntryWithEvidenceData_(input || {}, context); } });
 }
 
 function api_deleteLedgerEntry(request) {

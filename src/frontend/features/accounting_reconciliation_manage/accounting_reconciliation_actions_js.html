@@ -9,8 +9,6 @@ function fileToBankPayload(file) {
 }
 function showCurrentReconciliationRun(detail) {
   state.reconciliationRuns = detail && detail.header ? [detail.header] : [];
-  const select = document.getElementById('reconciliationHistory');
-  select.innerHTML = state.reconciliationRuns.length ? state.reconciliationRuns.map(function (row) { return '<option value="' + escapeHtml(row.id) + '">' + escapeHtml(String(row.auditStartDate || '').slice(0, 10) + ' ~ ' + String(row.auditEndDate || '').slice(0, 10) + ' · ' + row.status) + '</option>'; }).join('') : '<option value="">현재 대사 결과 없음</option>';
   renderReconciliationDetail(detail || null);
 }
 function resetCurrentReconciliation(files) {
@@ -38,10 +36,6 @@ async function runMissingCheck() {
     summaryElement.textContent = '점검 기간 ' + summary.startDate + ' ~ ' + summary.endDate + ' · 추출 ' + summary.extractedCount + '건 · 신규 ' + summary.savedCount + '건 · 중복 ' + summary.duplicateCount + '건 · 실패 ' + summary.failedFileCount + '개'; summaryElement.title = summary.failedFiles.map(function (item) { return (item.file_name || '파일') + ': ' + (item.reason || '분석 실패'); }).join('\n'); toast(summary.failedFileCount ? '일부 파일을 제외하고 누락 점검을 완료했습니다.' : '누락 점검을 완료했습니다.');
   } catch (error) { showCurrentReconciliationRun(null); summaryElement.textContent = error && error.message ? error.message : '누락 점검에 실패했습니다.'; toast(summaryElement.textContent); }
   finally { state.reconciliationImporting = false; checkButton.disabled = false; checkButton.textContent = originalLabel; }
-}
-async function manuallyLink(itemId) {
-  try { const result = await getAccountingReconciliationCandidates({ reconciliationItemId: itemId }); const candidates = (result && result.items) || []; if (!candidates.length) return toast('연결할 수 있는 원장 후보가 없습니다.'); const message = candidates.map(function (c, i) { return (i + 1) + '. ' + String(c.transactionAt || '').slice(0,10) + ' / ' + c.counterparty + ' / ' + currency(c.amount) + ' / ' + c.matchDetail; }).join('\n'); const selected = Number(window.prompt('연결할 후보 번호를 입력하세요.\n' + message, '1')) - 1; if (selected < 0 || selected >= candidates.length) return; const detail = await applyAccountingReconciliationLink({ reconciliationItemId: itemId, ledgerId: candidates[selected].ledgerId }); showCurrentReconciliationRun(detail); toast('수동 연결되었습니다.'); }
-  catch (error) { toast(error && error.message ? error.message : '수동 연결에 실패했습니다.'); }
 }
 async function createLedgerForItem(itemId) {
   if (!window.confirm('이 계좌 거래를 기준으로 새 원장을 만들까요?')) return;
