@@ -56,6 +56,61 @@ function getFeeApplicationDetailData_(request) {
   };
 }
 
+function buildStudentFeePaymentAccountingFacts_() {
+  var applicationsById = {};
+  listFeeApplicationRows_().forEach(function (application) {
+    applicationsById[String(application.id || '').trim()] = application;
+  });
+  return listFeePaymentRows_().map(function (payment) {
+    var applicationId = String(payment.applicationId || '').trim();
+    var application = applicationsById[applicationId] || {};
+    return {
+      paymentId: String(payment.id || '').trim(),
+      applicationId: applicationId,
+      amount: Number(payment.amount || 0),
+      paymentDate: String(payment.paymentDate || '').trim(),
+      depositorName: String(payment.depositorName || application.name || '').trim(),
+      moneyStatus: String(payment.moneyStatus || '').trim(),
+      confirmedAt: String(payment.confirmedAt || '').trim(),
+      applicationStatus: String(application.status || '').trim()
+    };
+  });
+}
+
+function buildApprovedStudentFeeApplicationAccountingFacts_() {
+  var paymentByApplicationId = {};
+  listFeePaymentRows_().forEach(function (payment) {
+    var applicationId = String(payment.applicationId || '').trim();
+    if (applicationId) paymentByApplicationId[applicationId] = payment;
+  });
+  return listFeeApplicationRows_().filter(function (application) {
+    return String(application.status || '') === '승인';
+  }).map(function (application) {
+    var applicationId = String(application.id || '').trim();
+    var payment = paymentByApplicationId[applicationId] || {};
+    var amount = Number(payment.amount || 0);
+    if (!amount) {
+      try {
+        amount = Number(resolveStudentFeeRate_(application.paymentDate).amountPerSemester || 0) *
+          Number(application.semesterCount || 0);
+      } catch (error) {
+        amount = 0;
+      }
+    }
+    return {
+      applicationId: applicationId,
+      paymentId: String(payment.id || '').trim(),
+      amount: amount,
+      paymentDate: String(payment.paymentDate || application.paymentDate || '').trim(),
+      depositorName: String(payment.depositorName || application.name || '').trim(),
+      moneyStatus: String(payment.moneyStatus || '').trim(),
+      applicationStatus: String(application.status || '').trim()
+    };
+  }).filter(function (fact) {
+    return fact.applicationId && Number(fact.amount || 0) > 0;
+  });
+}
+
 // 4. 납부 예정 금액 계산
 function calculateFeeAmountData_(request) {
   var paymentDate = String(request && request.paymentDate || '').trim().slice(0, 10);

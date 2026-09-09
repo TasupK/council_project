@@ -1,6 +1,6 @@
 <script>
 function reconcileType(bank) { return Number(bank && bank.amount || 0) < 0 ? '지출' : '수입'; }
-function reconcileStatusClass(status) { return status === '정상' ? 'success' : status === '원장누락' ? 'danger' : 'warning'; }
+function reconcileStatusClass(status) { return status === '정상' ? 'success' : 'danger'; }
 function reconciliationLedgerBadgeClass(status) { if (status === '승인') return 'success'; if (status === '반려') return 'danger'; return 'warning'; }
 function renderReconciliationDetail(detail) {
   state.reconciliationDetail = detail || { header: null, items: [] };
@@ -10,11 +10,11 @@ function renderReconciliationDetail(detail) {
     const searchable = [item.bank && item.bank.counterparty, item.bank && item.bank.description, item.ledger && item.ledger.counterparty, item.note].join(' ').toLowerCase();
     return (!keyword || searchable.includes(keyword)) && (status === '전체' || item.status === status);
   });
-  document.getElementById('reconciliationSummary').textContent = '총 ' + items.length + '건 · 정상 ' + items.filter(function (x) { return x.status === '정상'; }).length + '건 · 확인 필요 ' + items.filter(function (x) { return x.status !== '정상'; }).length + '건';
+  document.getElementById('reconciliationSummary').textContent = '총 ' + items.length + '건 · 정상 ' + items.filter(function (x) { return x.status === '정상'; }).length + '건 · 원장 누락 ' + items.filter(function (x) { return x.status === '원장누락'; }).length + '건';
   document.getElementById('reconciliationRows').innerHTML = items.length ? items.map(function (item) {
     const bank = item.bank || {}; const ledger = item.ledger || {}; const ledgerId = ledger.transaction_id || item.ledgerId || '';
-    const action = ledgerId ? '<button class="ui-btn outline small" data-action="detail" data-ledger-id="' + escapeHtml(ledgerId) + '">상세보기</button>' : item.status === '확인필요' ? '<button class="ui-btn outline small" data-action="link" data-id="' + item.id + '">수동 연결</button>' : item.status === '원장누락' ? '<button class="ui-btn outline small" data-action="create" data-id="' + item.id + '">장부 등록</button>' : '-';
-    const counterparty = bank.counterparty || bank.description || '거래처 확인 필요';
+    const action = ledgerId ? '<button class="ui-btn outline small" data-action="detail" data-ledger-id="' + escapeHtml(ledgerId) + '">상세보기</button>' : item.status === '원장누락' ? '<button class="ui-btn outline small" data-action="create" data-id="' + item.id + '">장부 등록</button>' : '-';
+    const counterparty = bank.counterparty || bank.description || '거래처 없음';
     return '<tr><td>' + escapeHtml(String(bank.transactionAt || '').slice(0,10)) + '</td><td>' + reconcileType(bank) + '</td><td>' + escapeHtml(counterparty) + '</td><td>' + currency(bank.amount || 0) + '</td><td><span class="ui-badge ' + reconcileStatusClass(item.status) + '">' + escapeHtml(item.status) + '</span></td><td>' + action + '</td></tr>';
   }).join('') : '<tr><td colspan="6" class="muted">대사 결과가 없습니다.</td></tr>';
 }

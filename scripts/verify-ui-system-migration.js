@@ -62,7 +62,7 @@ const REQUIRED_IDS = {
     'src/frontend/pages/settings_users/Settings_Users_View.html': ['userQ', 'userRole', 'userStatus', 'userReset', 'userCountLabel', 'userTbody', 'userFooterTotal']
   },
   accounting: {
-    'src/frontend/pages/accounting_ledger/Accounting_Ledger_View.html': ['ledgerDbLink', 'openRegister', 'sumIncome', 'sumExpense', 'sumPending', 'sumReview', 'keyword', 'type', 'department', 'event', 'status', 'rows', 'ledgerPagination', 'prevLedgerPage', 'ledgerPageInfo', 'nextLedgerPage', 'toast'],
+    'src/frontend/pages/accounting_ledger/Accounting_Ledger_View.html': ['ledgerDbLink', 'openRegister', 'sumIncome', 'sumExpense', 'sumPending', 'sumBalance', 'keyword', 'type', 'department', 'event', 'status', 'rows', 'ledgerPagination', 'prevLedgerPage', 'ledgerPageInfo', 'nextLedgerPage', 'toast'],
     'src/frontend/pages/accounting_ledger/modals/Accounting_Ledger_Register_Modal.html': ['registerModal', 'entryForm', 'expenseBtn', 'incomeBtn', 'formDepartment', 'formEvent', 'eventBalance', 'entryEvidenceDropzone', 'entryEvidenceFile', 'entryEvidenceFileName', 'draft', 'create'],
     'src/frontend/pages/accounting_ledger/modals/Accounting_Ledger_Detail_Modal.html': ['detailModal', 'detailTitle', 'detailStatus', 'detailAlert', 'detailRows', 'detailEvidenceList', 'editLedger', 'deleteLedger', 'approve']
   },

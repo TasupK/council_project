@@ -97,11 +97,16 @@ function testLedgerComposition_() {
 function testLedgerFilter_() {
   var context = createContext_();
   var items = [
-    { transaction_id: '1', transaction_type: '수입', event_name: '개강 행사', status: '정상', counterparty: '김학생', description: '회비', manager: 'staff-a' },
-    { transaction_id: '2', transaction_type: '지출', event_name: 'MT', status: '확인필요', counterparty: '문구점', description: '물품 구매', manager: 'staff-b' }
+    { transaction_id: '1', transaction_type: '수입', transaction_date: '2026-08-01T10:00:00', event_name: '개강 행사', status: '정상', counterparty: '김학생', description: '회비', manager: 'staff-a' },
+    { transaction_id: '2', transaction_type: '지출', transaction_date: '2026-08-02T10:00:00', event_name: 'MT', status: '확인필요', counterparty: '문구점', description: '물품 구매', manager: 'staff-b' },
+    { transaction_id: '3', transaction_type: '지출', transaction_date: '2026-04-25', event_name: '해당없음', status: '승인', counterparty: '복사집', description: '자료 인쇄', manager: 'staff-c' }
   ];
   var result = context.filterLedgerEntries_(items, { keyword: '문구', transaction_type: '지출', event_name: 'MT', status: '확인필요' });
   assert.deepStrictEqual(result.map(function (item) { return item.transaction_id; }), ['2']);
+  assert.deepStrictEqual(context.filterLedgerEntries_(items, { keyword: '8' }).map(function (item) { return item.transaction_id; }), ['1', '2']);
+  assert.deepStrictEqual(context.filterLedgerEntries_(items, { keyword: '4' }).map(function (item) { return item.transaction_id; }), ['3']);
+  assert.deepStrictEqual(context.filterLedgerEntries_(items, { keyword: '25' }).map(function (item) { return item.transaction_id; }), ['3']);
+  assert.deepStrictEqual(context.filterLedgerEntries_(items, { keyword: '20260425' }).map(function (item) { return item.transaction_id; }), ['3']);
 }
 
 function testLedgerSaveDefaults_() {
@@ -124,6 +129,37 @@ function testLedgerSaveDefaults_() {
   assert.strictEqual(inserted.managerEmail, 'manager@example.com');
   assert.deepStrictEqual(forwarded, { transactionId: 'TRX-uuid-1', files: [{ file_id: 'file-1' }], timestamp: '2026-08-17T13:00:00+09:00' });
   assert.strictEqual(result.ok, true);
+}
+
+function testLedgerUpdateEvidenceAppend_() {
+  var context = createContext_();
+  var updatedRequest = null;
+  var forwarded = null;
+  context.updateLedgerEntryData_ = function (request) {
+    updatedRequest = plain_(request);
+    return { ok: true, item: { transaction_id: request.transaction_id, amount: request.amount } };
+  };
+  context.createEvidenceFilesData_ = function (transactionId, files, timestamp) {
+    forwarded = { transactionId: transactionId, files: plain_(files), timestamp: timestamp };
+    return { savedCount: files.length, errors: [] };
+  };
+  context.getLedgerDetailData_ = function (transactionId) {
+    return { transaction_id: transactionId, evidence: [{ evidence_id: 'evd-1' }] };
+  };
+
+  var result = context.updateLedgerEntryWithEvidenceData_({
+    transaction_id: 'trx-1',
+    amount: 9000,
+    evidence_files: [{ file_name: 'receipt.png', content_base64: 'abc' }]
+  }, { user: { email: 'manager@example.com' } });
+
+  assert.strictEqual(updatedRequest.amount, 9000);
+  assert.deepStrictEqual(forwarded, {
+    transactionId: 'trx-1',
+    files: [{ file_name: 'receipt.png', content_base64: 'abc' }],
+    timestamp: '2026-08-17T13:00:00+09:00'
+  });
+  assert.strictEqual(result.item.evidence[0].evidence_id, 'evd-1');
 }
 
 function testEvidenceSaveBehavior_() {
@@ -235,6 +271,7 @@ testLedgerDto_();
 testLedgerComposition_();
 testLedgerFilter_();
 testLedgerSaveDefaults_();
+testLedgerUpdateEvidenceAppend_();
 testEvidenceSaveBehavior_();
 testAccountingOperationSchema_();
 testLedgerLifecycle_();

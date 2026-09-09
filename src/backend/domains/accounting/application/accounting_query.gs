@@ -72,13 +72,20 @@ function mapEvidenceDto_(item) {
 function filterLedgerEntries_(items, filter) {
   var normalized = normalizeFilter_(filter || {});
   var keyword = String(normalized.keyword).toLowerCase();
+  var keywordDigits = keyword.replace(/\D/g, '');
   return items.filter(function (item) {
-    if (keyword && [item.counterparty, item.description, item.manager].join(' ').toLowerCase().indexOf(keyword) < 0) return false;
+    if (keyword && !isLedgerKeywordMatch_(item, keyword, keywordDigits)) return false;
     if (normalized.transaction_type !== '전체' && item.transaction_type !== normalized.transaction_type) return false;
     if (normalized.event_name !== '전체' && item.event_name !== normalized.event_name) return false;
     if (normalized.status !== '전체' && item.status !== normalized.status) return false;
     return true;
   });
+}
+
+function isLedgerKeywordMatch_(item, keyword, keywordDigits) {
+  var date = String(item.transaction_date || '').slice(0, 10);
+  var haystack = [item.counterparty, item.description, item.event_name, item.manager, date, date.replace(/\D/g, '')].join(' ').toLowerCase();
+  return haystack.indexOf(keyword) >= 0 || (keywordDigits && haystack.indexOf(keywordDigits) >= 0);
 }
 
 function normalizeFilter_(filter) {

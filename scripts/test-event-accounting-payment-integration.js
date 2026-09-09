@@ -34,6 +34,7 @@ var queryContext = vm.createContext({
   buildLedgerAccountingFacts_: function () { return ledgers; }
 });
 load_(queryContext, reconciliationQueryPath);
+load_(queryContext, path.join(ROOT, 'src/backend/core/db/sheets.gs'));
 
 var candidates = JSON.parse(JSON.stringify(queryContext.buildEventPaymentReconciliationCandidates_({})));
 var strongest = candidates.filter(function (row) { return row.bankTransactionId === 'BANK-1' && row.eventPaymentId === 'PAY-1'; })[0];
@@ -48,7 +49,7 @@ assert.ok(weaker, 'near-date candidate must exist');
 assert.strictEqual(weaker.amountMatches, true);
 assert.strictEqual(weaker.depositorMatches, false);
 assert.ok(weaker.score < strongest.score);
-assert.strictEqual(weaker.result, '확인필요');
+assert.strictEqual(weaker.result, '정상');
 assert.strictEqual(candidates.some(function (row) { return row.bankTransactionId === 'BANK-3'; }), false, 'mismatched amount must not be a normal candidate');
 assert.strictEqual(candidates.some(function (row) { return row.eventPaymentId === 'PAY-CLAIMED'; }), false, 'already ledger-claimed Event payment must be excluded');
 
@@ -102,5 +103,19 @@ assert.strictEqual(serviceFacts[0].moneyStatus, '확인', 'Event payment fact mu
 assert.throws(function () {
   serviceContext.createLedgerFromEventPaymentReconciliationData_({ bankTransactionId: 'BANK-3', eventPaymentId: 'PAY-1' }, {});
 }, /금액/);
+
+var paymentQueryContext = vm.createContext({
+  console: console, String: String, Number: Number, Object: Object, Array: Array,
+  Math: Math, Date: Date, JSON: JSON, isFinite: isFinite,
+  listEventApplicationClientRows_: function () {
+    return [{ id: 'APP-FALLBACK', eventId: 'EVENT-FALLBACK', accountHolder: '', name: '신청자명' }];
+  },
+  listEventPaymentClientRows_: function () {
+    return [{ id: 'PAY-FALLBACK', applicationId: 'APP-FALLBACK', paidAmount: 33000, paymentDate: '2026-08-23', depositorName: '', moneyStatus: '확인' }];
+  }
+});
+load_(paymentQueryContext, path.join(ROOT, 'src/backend/domains/event/application/payment_query.gs'));
+var fallbackFacts = paymentQueryContext.buildEventPaymentAccountingFacts_();
+assert.strictEqual(fallbackFacts[0].depositorName, '신청자명');
 
 console.log('Event–Accounting payment integration contract passed.');

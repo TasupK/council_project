@@ -57,3 +57,22 @@ function getApplicantDetailData_(request) {
     attendance: withoutInternalRowNumber_(attendance)
   };
 }
+
+// Accounting이 Event 신청 Sheet 구조에 직접 의존하지 않도록 제공하는 정규화 read boundary.
+function buildApprovedEventApplicationAccountingFacts_() {
+  var paymentTotals = buildEventPaymentTotalsByApplicationId_();
+  return listEventApplicationClientRows_().filter(function (application) {
+    return String(application.status || '') === '승인' &&
+      Number(application.appliedFee || 0) > 0 &&
+      !Number(paymentTotals[String(application.id || '')] || 0);
+  }).map(function (application) {
+    return {
+      applicationId: String(application.id || '').trim(),
+      eventId: String(application.eventId || '').trim(),
+      amount: Number(application.appliedFee || 0),
+      paymentDate: String(application.sourceResponseAt || application.processedAt || application.importedAt || '').trim(),
+      depositorName: String(application.accountHolder || application.name || '').trim(),
+      applicationStatus: String(application.status || '').trim()
+    };
+  });
+}
