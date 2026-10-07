@@ -32,7 +32,43 @@
   .accounting-ledger-filters .ui-field.grow { min-width: 280px; }
   .accounting-ledger-filters .ui-field:not(.grow) { min-width: 112px; }
   .accounting-page .ledger-date-filter { position: relative; }
-  .accounting-page .ledger-date-filter summary { cursor: pointer; white-space: nowrap; }
+  .accounting-ledger-filters > .ui-field > input,
+  .accounting-ledger-filters > .ui-field > select { height: 42px; }
+  .accounting-page .ledger-date-filter summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    width: 100%;
+    min-width: 160px;
+    height: 42px;
+    padding: 7px 10px;
+    border: 1px solid var(--ui-border-strong);
+    border-radius: var(--ui-radius-md);
+    background: #fff;
+    color: var(--ui-text);
+    font: inherit;
+    font-weight: 400;
+    cursor: pointer;
+    white-space: nowrap;
+    list-style: none;
+  }
+  .accounting-page .ledger-date-filter summary::-webkit-details-marker { display: none; }
+  .accounting-page .ledger-date-filter summary::after {
+    content: '';
+    flex-shrink: 0;
+    width: 6px;
+    height: 6px;
+    margin-right: 3px;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: translateY(-2px) rotate(45deg);
+  }
+  .accounting-page .ledger-date-filter summary:focus-visible {
+    border-color: var(--ui-primary);
+    box-shadow: 0 0 0 2px rgba(47, 59, 82, .16);
+    outline: none;
+  }
   .accounting-page .ledger-date-filter-panel {
     position: absolute;
     z-index: 10;
