@@ -1,7 +1,7 @@
 <script>
 function initAccountingLedgerManage() {
   setupFileUpload({ key: 'ledgerEntry', zoneId: 'entryEvidenceDropzone', inputId: 'entryEvidenceFile', nameId: 'entryEvidenceFileName', multiple: true });
-  document.getElementById('openRegister').addEventListener('click', function () { state.editingLedgerId = null; document.getElementById('entryForm').reset(); state.uploadFiles.ledgerEntry = []; document.getElementById('entryEvidenceFileName').textContent = '선택된 파일 없음'; document.getElementById('create').textContent = '등록하기'; setDefaultLedgerTransactionDate(); setType('지출'); updateBalance(); openModal('registerModal'); });
+  document.getElementById('openRegister').addEventListener('click', function () { state.editingLedgerId = null; state.editingLedgerRejected = false; document.getElementById('entryForm').reset(); state.uploadFiles.ledgerEntry = []; document.getElementById('entryEvidenceFileName').textContent = '선택된 파일 없음'; updateLedgerSaveLabel(); setDefaultLedgerTransactionDate(); setType('지출'); updateBalance(); openModal('registerModal'); });
   document.getElementById('expenseBtn').addEventListener('click', function () { setType('지출'); });
   document.getElementById('incomeBtn').addEventListener('click', function () { setType('수입'); });
   document.getElementById('formEvent').addEventListener('change', updateBalance);

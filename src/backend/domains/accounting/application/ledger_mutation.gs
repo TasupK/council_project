@@ -106,6 +106,8 @@ function updateLedgerEntryData_(input, context) {
     if (!before || String(before.recordStatus || '활성') === '무효') throw new Error('원장 거래를 찾을 수 없습니다.');
     if (normalizeLedgerApprovalStatus_(before.approvalStatus) === '승인') throw new Error('승인된 거래는 승인 취소 후 수정할 수 있습니다.');
 
+    var resubmitting = input.resubmit === true;
+    if (resubmitting && normalizeLedgerApprovalStatus_(before.approvalStatus) !== '반려') throw new Error('반려된 거래만 재제출할 수 있습니다.');
     var transactionType = input.transaction_type == null || input.transaction_type === ''
       ? normalizeLedgerTransactionType_(before.transactionType)
       : normalizeLedgerTransactionType_(input.transaction_type);
@@ -133,6 +135,7 @@ function updateLedgerEntryData_(input, context) {
       String(businessType || '') !== String(before.businessType || '') ||
       String(businessId || '') !== String(before.businessId || '');
 
+    var resetApproval = approvalSensitiveChanged || resubmitting;
     changes = {
       bankTransactionId: bankTransactionId,
       transactionAt: transactionAt,
@@ -147,10 +150,10 @@ function updateLedgerEntryData_(input, context) {
       recordStatus: normalizeLedgerRecordStatus_(before.recordStatus),
       managerEmail: resolveAccountingActorEmail_(context),
       updatedAt: getCurrentIsoDateTime_(),
-      approvalStatus: approvalSensitiveChanged ? '승인대기' : normalizeLedgerApprovalStatus_(before.approvalStatus),
-      approvedByEmail: approvalSensitiveChanged ? '' : (before.approvedByEmail || ''),
-      approvedAt: approvalSensitiveChanged ? '' : (before.approvedAt || ''),
-      rejectionReason: approvalSensitiveChanged ? '' : (before.rejectionReason || '')
+      approvalStatus: resetApproval ? '승인대기' : normalizeLedgerApprovalStatus_(before.approvalStatus),
+      approvedByEmail: resetApproval ? '' : (before.approvedByEmail || ''),
+      approvedAt: resetApproval ? '' : (before.approvedAt || ''),
+      rejectionReason: resetApproval ? '' : (before.rejectionReason || '')
     };
     updateLedgerRowById_(input.transaction_id, changes);
   } finally {
@@ -161,7 +164,7 @@ function updateLedgerEntryData_(input, context) {
   var after = Object.assign({}, before, changes);
   delete before._rowNumber;
   delete after._rowNumber;
-  writeAccountingAudit_(actor, 'UPDATE', 'ledger', input.transaction_id, before, after, input.reason || '원장 수정');
+  writeAccountingAudit_(actor, 'UPDATE', 'ledger', input.transaction_id, before, after, input.reason || (input.resubmit === true ? '반려 거래 수정 및 재제출' : '원장 수정'));
   return { ok: true, item: getLedgerDetailData_(input.transaction_id) || mapLedgerEntryDto_(after) };
 }
 
