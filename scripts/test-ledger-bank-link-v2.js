@@ -70,9 +70,16 @@ reset();
 assert.throws(() => context.createLedgerEntryData_({ transaction_type: '수입', amount: 1000, bank_transaction_id: 'BNK_VOID' }, {}, '활성'), /무효/);
 
 reset();
-existingRows = [{ id: 'TRX-D', transactionType: '수입', amount: 1000, recordStatus: '활성', matchStatus: '미확인' }];
+existingRows = [{ id: 'TRX-D', transactionType: '수입', amount: 1000, recordStatus: '활성', matchStatus: '미확인', approvalStatus: '반려', rejectionReason: '중복 등록' }];
 context.deleteLedgerEntryData_({ transaction_id: 'TRX-D' }, {});
 assert.strictEqual(updated.recordStatus, '무효');
+
+['승인대기', '승인'].forEach(approvalStatus => {
+  reset();
+  existingRows = [{ id: 'TRX-D', recordStatus: '활성', approvalStatus }];
+  assert.throws(() => context.deleteLedgerEntryData_({ transaction_id: 'TRX-D' }, {}), /반려된 거래만 삭제/);
+  assert.strictEqual(updated, null, 'blocked deletion must not update the ledger');
+});
 
 assert.throws(() => context.parseLedgerPositiveAmount_(-1), /0보다 큰/);
 console.log('Ledger bank-link v2 contract: PASS');
