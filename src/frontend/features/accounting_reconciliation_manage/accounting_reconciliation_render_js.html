@@ -6,9 +6,12 @@ function renderReconciliationDetail(detail) {
   state.reconciliationDetail = detail || { header: null, items: [] };
   const keyword = (document.getElementById('reconciliationSearch').value || '').toLowerCase();
   const status = document.getElementById('reconciliationStatus').value || '전체';
+  const startDate = document.getElementById('reconciliationStartDate').value;
+  const endDate = document.getElementById('reconciliationEndDate').value;
   const items = (state.reconciliationDetail.items || []).filter(function (item) {
     const searchable = [item.bank && item.bank.counterparty, item.bank && item.bank.description, item.ledger && item.ledger.counterparty, item.note].join(' ').toLowerCase();
-    return (!keyword || searchable.includes(keyword)) && (status === '전체' || item.status === status);
+    const date = String(item.bank && item.bank.transactionAt || '').slice(0, 10);
+    return (!startDate || date >= startDate) && (!endDate || date <= endDate) && (!keyword || searchable.includes(keyword)) && (status === '전체' || item.status === status);
   });
   document.getElementById('reconciliationSummary').textContent = '총 ' + items.length + '건 · 정상 ' + items.filter(function (x) { return x.status === '정상'; }).length + '건 · 원장 누락 ' + items.filter(function (x) { return x.status === '원장누락'; }).length + '건';
   document.getElementById('reconciliationRows').innerHTML = items.length ? items.map(function (item) {

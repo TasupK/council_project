@@ -11,8 +11,14 @@ function showCurrentReconciliationRun(detail) {
   state.reconciliationRuns = detail && detail.header ? [detail.header] : [];
   renderReconciliationDetail(detail || null);
 }
+function setDefaultReconciliationDates() {
+  const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date());
+  function part(type) { return parts.find(function (value) { return value.type === type; }).value; }
+  document.getElementById('reconciliationStartDate').value = part('year') + '-01-01';
+  document.getElementById('reconciliationEndDate').value = part('year') + '-' + part('month') + '-' + part('day');
+}
 function resetCurrentReconciliation(files) {
-  document.getElementById('reconciliationStartDate').value = ''; document.getElementById('reconciliationEndDate').value = ''; document.getElementById('reconciliationSearch').value = ''; document.getElementById('reconciliationStatus').value = '전체';
+  setDefaultReconciliationDates(); document.getElementById('reconciliationSearch').value = ''; document.getElementById('reconciliationStatus').value = '전체';
   document.getElementById('ocrResultSummary').textContent = files && files.length ? '선택한 파일 ' + files.length + '개 · 누락 점검을 시작해 주세요.' : '점검 전';
   showCurrentReconciliationRun(null);
 }
@@ -31,7 +37,7 @@ async function runMissingCheck() {
     }
     summary.bankTransactionIds = Array.from(new Set(summary.bankTransactionIds));
     if (!summary.extractedCount || !summary.startDate || !summary.endDate || !summary.bankTransactionIds.length) throw new Error(summary.failedFiles[0] && summary.failedFiles[0].reason ? summary.failedFiles[0].reason : '점검할 거래를 찾지 못했습니다.');
-    document.getElementById('reconciliationStartDate').value = summary.startDate; document.getElementById('reconciliationEndDate').value = summary.endDate; checkButton.textContent = '장부 대조 중'; summaryElement.textContent = summary.startDate + ' ~ ' + summary.endDate + ' 승인 장부 대조 중';
+    checkButton.textContent = '장부 대조 중'; summaryElement.textContent = summary.startDate + ' ~ ' + summary.endDate + ' 승인 장부 대조 중';
     const detail = await processAccountingReconciliation({ startDate: summary.startDate, endDate: summary.endDate, bankTransactionIds: summary.bankTransactionIds }); showCurrentReconciliationRun(detail);
     summaryElement.textContent = '점검 기간 ' + summary.startDate + ' ~ ' + summary.endDate + ' · 추출 ' + summary.extractedCount + '건 · 신규 ' + summary.savedCount + '건 · 중복 ' + summary.duplicateCount + '건 · 실패 ' + summary.failedFileCount + '개'; summaryElement.title = summary.failedFiles.map(function (item) { return (item.file_name || '파일') + ': ' + (item.reason || '분석 실패'); }).join('\n'); toast(summary.failedFileCount ? '일부 파일을 제외하고 누락 점검을 완료했습니다.' : '누락 점검을 완료했습니다.');
   } catch (error) { showCurrentReconciliationRun(null); summaryElement.textContent = error && error.message ? error.message : '누락 점검에 실패했습니다.'; toast(summaryElement.textContent); }
