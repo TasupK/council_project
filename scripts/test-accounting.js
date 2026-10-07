@@ -227,7 +227,7 @@ function testLedgerLifecycle_() {
   assert.strictEqual(inserted.recordStatus, '활성');
   assert.strictEqual(inserted.matchStatus, '미확인');
 
-  context.findLedgerRowById_ = function () { return { id: 'trx-1', transactionAt: '2026-08-01', transactionType: '지출', amount: 1000, bankTransactionId: '', recordStatus: '활성', createdAt: 'old', matchStatus: '미확인' }; };
+  context.findLedgerRowById_ = function () { return { id: 'trx-1', transactionAt: '2026-08-01', transactionType: '지출', amount: 1000, bankTransactionId: '', recordStatus: '활성', approvalStatus: '반려', rejectionReason: '중복 등록', createdAt: 'old', matchStatus: '미확인' }; };
   context.updateLedgerRowById_ = function (id, changes) { updated = { id: id, changes: plain_(changes) }; };
   context.deleteLedgerEntryData_({ transaction_id: 'trx-1' }, { user: { email: 'm@example.com' } });
   assert.strictEqual(updated.changes.recordStatus, '무효');
