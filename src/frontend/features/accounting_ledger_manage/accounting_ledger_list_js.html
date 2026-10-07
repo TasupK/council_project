@@ -6,7 +6,14 @@ function optionHtml(values) {
   }).join('');
 }
 function ledgerFilter() {
-  return { keyword: document.getElementById('keyword').value.trim(), transaction_type: document.getElementById('type').value, event_name: document.getElementById('event').value, status: document.getElementById('status').value };
+  return { keyword: document.getElementById('keyword').value.trim(), transaction_type: document.getElementById('type').value, event_id: document.getElementById('event').value, status: document.getElementById('status').value, date_from: document.getElementById('ledgerDateFrom').value, date_to: document.getElementById('ledgerDateTo').value };
+}
+function validateLedgerDateRange() {
+  const from = document.getElementById('ledgerDateFrom');
+  const to = document.getElementById('ledgerDateTo');
+  const invalid = !!(from.value && to.value && from.value > to.value);
+  to.setCustomValidity(invalid ? '종료일은 시작일과 같거나 이후여야 합니다.' : '');
+  if (invalid) to.reportValidity();
 }
 function ledgerSearchText(item) {
   const date = String(item.transaction_date || '').slice(0, 10);
@@ -17,7 +24,9 @@ function filteredItems() {
   const keywordDigits = keyword.replace(/\D/g, '');
   return state.items.filter(function (item) {
     const haystack = ledgerSearchText(item);
-    return (!keyword || haystack.includes(keyword) || (keywordDigits && haystack.includes(keywordDigits))) && (f.transaction_type === '전체' || item.transaction_type === f.transaction_type) && (f.event_name === '전체' || item.event_name === f.event_name) && (f.status === '전체' || item.status === f.status);
+    const date = String(item.transaction_date || '').slice(0, 10);
+    const eventMatches = f.event_id === '전체' || (f.event_id === '미연결' ? !item.event_id : String(item.event_id || '') === f.event_id);
+    return (!keyword || haystack.includes(keyword) || (keywordDigits && haystack.includes(keywordDigits))) && (f.transaction_type === '전체' || item.transaction_type === f.transaction_type) && eventMatches && (f.status === '전체' || item.approval_status === f.status) && (!f.date_from || date >= f.date_from) && (!f.date_to || date <= f.date_to);
   });
 }
 function badgeClass(status) { if (status === '승인') return 'success'; if (status === '반려') return 'danger'; return 'warning'; }
@@ -52,9 +61,14 @@ function setType(type) {
   document.getElementById('incomeBtn').className = type === '수입' ? 'segment income-on' : 'segment';
 }
 function fillControls() {
+  const selectedEvent = document.getElementById('event').value;
+  const selectedFormEvent = document.getElementById('formEvent').value;
   const eventOptions = [{ value: '', label: '해당없음' }].concat(state.events.map(function (e) { return { value: e.event_id, label: e.event_name }; }));
-  document.getElementById('event').innerHTML = optionHtml(['전체'].concat(state.events.map(function (e) { return e.event_name; })));
+  const filterOptions = [{ value: '전체', label: '행사: 전체' }, { value: '미연결', label: '행사 미연결' }].concat(state.events.map(function (e) { return { value: e.event_id, label: '행사: ' + e.event_name }; }));
+  document.getElementById('event').innerHTML = optionHtml(filterOptions);
+  document.getElementById('event').value = filterOptions.some(function (option) { return String(option.value) === selectedEvent; }) ? selectedEvent : '전체';
   document.getElementById('formEvent').innerHTML = optionHtml(eventOptions);
+  document.getElementById('formEvent').value = eventOptions.some(function (option) { return String(option.value) === selectedFormEvent; }) ? selectedFormEvent : '';
   document.getElementById('department').innerHTML = '<option value="전체">부서 미사용</option>';
   document.getElementById('formDepartment').innerHTML = '<option value="">미사용</option>';
   updateBalance();

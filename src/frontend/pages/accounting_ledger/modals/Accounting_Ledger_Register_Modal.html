@@ -9,7 +9,7 @@
         <div class="feature-view">
           <div class="ui-field"><label>구분 *</label><div class="segments"><button class="segment expense-on" id="expenseBtn" type="button">지출</button><button class="segment" id="incomeBtn" type="button">수입</button></div></div>
           <div class="grid">
-            <div class="ui-field"><label>거래일자 *</label><input name="transaction_date" placeholder="연도-월-일" required></div>
+            <div class="ui-field"><label for="ledgerTransactionDate">거래일자 *</label><input id="ledgerTransactionDate" name="transaction_date" type="date" required><small>달력에서 선택하거나 날짜를 직접 입력하세요.</small></div>
             <div class="ui-field"><label>부서명</label><select id="formDepartment" name="department_name" disabled><option value="">미사용</option></select></div>
             <div class="ui-field"><label>금액 *</label><input name="amount" type="number" min="0" placeholder="금액 입력" required></div>
             <div class="ui-field"><label>거래처/입금자명 *</label><input name="counterparty" placeholder="거래처/입금자명 입력" required></div>

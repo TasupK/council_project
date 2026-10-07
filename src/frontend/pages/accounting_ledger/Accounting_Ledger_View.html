@@ -20,11 +20,12 @@
 
   <section class="accounting-ledger-filters ui-toolbar">
     <div class="ui-field grow"><input class="ui-control" id="keyword" type="search" placeholder="거래처·적요·날짜 검색"></div>
-    <div class="ui-field"><select class="ui-control"><option>날짜</option></select></div>
+    <div class="ui-field"><label for="ledgerDateFrom">거래일자 시작</label><input class="ui-control" id="ledgerDateFrom" type="date"></div>
+    <div class="ui-field"><label for="ledgerDateTo">거래일자 종료</label><input class="ui-control" id="ledgerDateTo" type="date"></div>
     <div class="ui-field"><select class="ui-control" id="type"><option value="전체">구분</option><option>수입</option><option>지출</option></select></div>
     <div class="ui-field"><select class="ui-control" id="department"><option value="전체">부서</option></select></div>
-    <div class="ui-field"><select class="ui-control" id="event"><option value="전체">행사</option></select></div>
-    <div class="ui-field"><select class="ui-control" id="status"><option value="전체">상태</option><option>미확인</option><option>정상</option><option>확인필요</option><option>임시저장</option></select></div>
+    <div class="ui-field"><label for="event">연결 행사</label><select class="ui-control" id="event"><option value="전체">행사: 전체</option><option value="미연결">행사 미연결</option></select></div>
+    <div class="ui-field"><label for="status">승인 상태</label><select class="ui-control" id="status"><option value="전체">승인 상태: 전체</option><option value="승인대기">승인대기</option><option value="승인">승인</option><option value="반려">반려</option></select></div>
   </section>
 
   <section class="accounting-ledger-table ui-table-wrap">
