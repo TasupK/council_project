@@ -94,11 +94,6 @@ function createLedgerEntryData_(request, context, recordStatus) {
   return { ok: true, item: mapLedgerEntryDto_(item) };
 }
 
-function createLedgerDraftData_(request, context) {
-  request = Object.assign({}, request || {}, { match_status: '미확인' });
-  return createLedgerEntryData_(request, context, '활성');
-}
-
 function updateLedgerEntryData_(input, context) {
   input = input || {};
   if (!input.transaction_id) throw new Error('transaction_id is required.');

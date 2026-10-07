@@ -33,10 +33,10 @@ assert.ok(controllerSource.includes('initAccountingLedgerManage'), 'Ledger page 
 assert.ok(!/runAppApi|google\.script\.run/.test(featureSource), 'Ledger features must not own transport');
 assert.ok(!featureSource.includes('accountingClient.'), 'Ledger features must not depend on legacy accounting client');
 
-['getLedgerEntries','getLedgerSummary','getLedgerEventOptions','getLedgerEntry','getLedgerEvidenceFileContent','createLedgerEntry','createLedgerDraft','updateLedgerEntry','processLedgerEntry','removeLedgerEntry','getLedgerDatabaseInfo'].forEach(function (method) {
+['getLedgerEntries','getLedgerSummary','getLedgerEventOptions','getLedgerEntry','getLedgerEvidenceFileContent','createLedgerEntry','updateLedgerEntry','processLedgerEntry','removeLedgerEntry','getLedgerDatabaseInfo'].forEach(function (method) {
   assert.ok(featureSource.includes('ledgerClient.' + method), 'Ledger features missing semantic client call: ' + method);
 });
-['api_getLedgerEntries','api_getLedgerSummary','api_getLedgerEventOptions','api_getLedgerEntry','api_getLedgerEvidenceFileContent','api_createLedgerEntry','api_createLedgerDraft','api_updateLedgerEntry','api_processLedgerEntry','api_deleteLedgerEntry','api_getLedgerDatabaseInfo'].forEach(function (api) {
+['api_getLedgerEntries','api_getLedgerSummary','api_getLedgerEventOptions','api_getLedgerEntry','api_getLedgerEvidenceFileContent','api_createLedgerEntry','api_updateLedgerEntry','api_processLedgerEntry','api_deleteLedgerEntry','api_getLedgerDatabaseInfo'].forEach(function (api) {
   assert.ok(ledgerClientSource.includes(api), 'Ledger entity client missing API mapping: ' + api);
 });
 

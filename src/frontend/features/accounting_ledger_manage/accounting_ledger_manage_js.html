@@ -5,8 +5,7 @@ function initAccountingLedgerManage() {
   document.getElementById('expenseBtn').addEventListener('click', function () { setType('지출'); });
   document.getElementById('incomeBtn').addEventListener('click', function () { setType('수입'); });
   document.getElementById('formEvent').addEventListener('change', updateBalance);
-  document.getElementById('draft').addEventListener('click', function () { saveEntry(true); });
-  document.getElementById('create').addEventListener('click', function () { saveEntry(false); });
+  document.getElementById('create').addEventListener('click', function () { saveEntry(); });
   document.getElementById('approve').addEventListener('click', approve);
   document.getElementById('editLedger').addEventListener('click', editSelectedLedger);
   document.getElementById('deleteLedger').addEventListener('click', deleteSelectedLedger);

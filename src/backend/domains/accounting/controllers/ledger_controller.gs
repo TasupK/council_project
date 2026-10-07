@@ -30,10 +30,6 @@ function api_createLedgerEntry(request) {
   return apiHandler_({ operation: 'createLedgerEntry', input: request, requireLogin: true, access: accountingApiAccess_('edit', 'accounting_ledger'), service: function (input, context) { return createLedgerEntryWithEvidenceData_(input || {}, context, '활성'); } });
 }
 
-function api_createLedgerDraft(request) {
-  return apiHandler_({ operation: 'saveLedgerDraft', input: request, requireLogin: true, access: accountingApiAccess_('edit', 'accounting_ledger'), service: function (input, context) { return createLedgerDraftWithEvidenceData_(input || {}, context); } });
-}
-
 function api_updateLedgerEntry(request) {
   return apiHandler_({ operation: 'updateLedgerEntry', input: request, requireLogin: true, access: accountingApiAccess_('edit', 'accounting_ledger'), service: function (input, context) { return updateLedgerEntryWithEvidenceData_(input || {}, context); } });
 }

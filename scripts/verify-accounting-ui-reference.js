@@ -43,7 +43,7 @@ if (/ui-modal-overlay|id=["'](?:registerModal|detailModal)["']/.test(ledger)) fa
 if (ledgerShell.indexOf("include('frontend/pages/accounting_ledger/modals/Accounting_Ledger_Register_Modal')") < 0) failures.push('Ledger shell must include the register modal partial.');
 if (ledgerShell.indexOf("include('frontend/pages/accounting_ledger/modals/Accounting_Ledger_Detail_Modal')") < 0) failures.push('Ledger shell must include the detail modal partial.');
 if (registerModal && hasExactClassToken_(registerModal, ['field'])) failures.push('Ledger register modal must not use legacy .field because App_Styles gives it fixed height/border/padding.');
-requireIds_(registerModal, 'Ledger register modal', ['registerModal', 'entryForm', 'expenseBtn', 'incomeBtn', 'formDepartment', 'formEvent', 'eventBalance', 'entryEvidenceDropzone', 'entryEvidenceFile', 'entryEvidenceFileName', 'draft', 'create']);
+requireIds_(registerModal, 'Ledger register modal', ['registerModal', 'entryForm', 'expenseBtn', 'incomeBtn', 'formDepartment', 'formEvent', 'eventBalance', 'entryEvidenceDropzone', 'entryEvidenceFile', 'entryEvidenceFileName', 'create']);
 requireNames_(registerModal, 'Ledger register modal', ['transaction_date', 'department_name', 'amount', 'counterparty', 'event_name', 'description', 'note']);
 requireIds_(detailModal, 'Ledger detail modal', ['detailModal', 'detailTitle', 'detailStatus', 'detailAlert', 'detailRows', 'detailEvidenceList', 'editLedger', 'deleteLedger', 'approve']);
 ['ui-stat-card', 'ui-toolbar', 'ui-table', 'ui-pagination', 'ui-modal', 'ui-badge'].forEach(function (primitive) { if (ledgerComposed.indexOf(primitive) < 0) failures.push('Ledger must use shared primitive: ' + primitive); });
