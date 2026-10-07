@@ -1,39 +1,11 @@
 /** 계좌-원장 대조 read-only query/snapshot */
 
 function buildReconciliationSnapshotItems_(banks, ledgers) {
-  ledgers = (ledgers || []).filter(function (ledger) {
-    return String(ledger.recordStatus || '활성') !== '무효' &&
-      String(ledger.approvalStatus || '').trim() === '승인';
+  return (banks || []).filter(function (bank) { return String(bank.recordStatus || '정상') !== '무효'; }).map(function (bank) {
+    var linked = (ledgers || []).filter(function (ledger) { return String(ledger.recordStatus || '활성') !== '무효' && String(ledger.bankTransactionId || '') === String(bank.id); });
+    var ledger = linked.length === 1 && isUploadedBankLedgerAmountTypeMatch_(bank, linked[0]) ? linked[0] : null;
+    return { bankTransactionId: bank.id, ledgerId: ledger ? ledger.id : '', result: ledger ? '정상' : '원장누락', differenceAmount: ledger ? 0 : Math.abs(Number(bank.amount || 0)), validationNote: linked.length && !ledger ? '기존 연결 거래의 금액 또는 구분을 확인해 주세요.' : ledger ? '기존 원장 연결 확인' : '원장 연결 또는 생성 필요' };
   });
-  var ledgerByBankId = {};
-  var usedLedgerIds = {};
-  (ledgers || []).forEach(function (ledger) {
-    if (String(ledger.recordStatus || '활성') === '무효' || !ledger.bankTransactionId) return;
-    ledgerByBankId[String(ledger.bankTransactionId)] = ledger;
-  });
-
-  var items = (banks || []).filter(function (bank) {
-    return String(bank.recordStatus || '정상') !== '무효';
-  }).map(function (bank) {
-    var ledger = ledgerByBankId[String(bank.id || '')];
-    if (ledger && (!isUploadedBankLedgerAmountTypeMatch_(bank, ledger) || usedLedgerIds[String(ledger.id || '')])) ledger = null;
-    if (!ledger) ledger = findUploadedBankLedgerCandidate_(bank, ledgers, usedLedgerIds);
-    if (!ledger) {
-      return {
-        bankTransactionId: bank.id || '', ledgerId: '', result: '원장누락',
-        differenceAmount: Math.abs(Number(bank.amount || 0)),
-        validationNote: '계좌거래에 연결된 활성 원장이 없습니다.'
-      };
-    }
-    usedLedgerIds[String(ledger.id || '')] = true;
-    var amountDifference = Math.abs(Math.abs(Number(bank.amount || 0)) - Number(ledger.amount || 0));
-    return {
-      bankTransactionId: bank.id || '', ledgerId: ledger.id || '', result: '정상',
-      differenceAmount: amountDifference,
-      validationNote: '계좌거래와 연결된 승인 장부를 확인했습니다.'
-    };
-  });
-  return items;
 }
 
 function isUploadedBankLedgerAmountTypeMatch_(bank, ledger) {
@@ -98,8 +70,13 @@ function countExactUploadedBankLedgerCandidates_(bank, ledgers, usedLedgerIds, s
 
 function buildReconciliationLedgerCandidates_(filter) {
   filter = filter || {};
-  return buildApprovedLedgerAccountingFacts_().filter(function (row) {
-    return isAccountingDateInRange_(row.transactionAt, filter.startDate, filter.endDate);
+  return buildLedgerAccountingFacts_().filter(function (row) { return String(row.recordStatus || '활성') !== '무효' && isAccountingDateInRange_(row.transactionAt, filter.startDate, filter.endDate); });
+}
+function listBankReconciliationCandidates_(bank, ledgers) {
+  return (ledgers || []).filter(function (ledger) {
+    return String(ledger.recordStatus || '활성') !== '무효' && !ledger.bankTransactionId && isUploadedBankLedgerAmountTypeMatch_(bank, ledger) && reconciliationDateDistanceDays_(bank.transactionAt, ledger.transactionAt) <= 3;
+  }).sort(function (a, b) { return scoreUploadedBankLedgerCandidate_(bank, b) - scoreUploadedBankLedgerCandidate_(bank, a); }).map(function (ledger) {
+    return { ledgerId: ledger.id, transactionAt: formatDateTimeValue_(ledger.transactionAt), counterparty: ledger.counterparty || '', description: ledger.description || '', amount: Number(ledger.amount || 0), approvalStatus: ledger.approvalStatus || '승인대기' };
   });
 }
 
@@ -116,26 +93,20 @@ function getReconciliationListData_(filter) {
 function getReconciliationDetailData_(reconciliationId) {
   var header = findReconciliationRowById_(reconciliationId);
   if (!header) return null;
-  var bankById = listBankTransactionRows_().reduce(function (index, row) { index[row.id] = row; return index; }, {});
-  var ledgerById = buildLedgerAccountingFacts_().reduce(function (index, row) { index[row.id] = row; return index; }, {});
-  var items = listReconciliationItemRows_().filter(function (row) {
-    return String(row.reconciliationId) === String(reconciliationId);
-  }).map(function (row) {
-    return {
-      id: row.id,
-      reconciliationId: row.reconciliationId,
-      bankTransactionId: row.bankTransactionId || '',
-      ledgerId: row.ledgerId || '',
-      status: row.result,
-      result: row.result,
-      differenceAmount: Number(row.differenceAmount || 0),
-      note: row.validationNote || '',
-      validationNote: row.validationNote || '',
-      createdAt: formatDateTimeValue_(row.createdAt),
-      bank: row.bankTransactionId ? (bankById[row.bankTransactionId] || null) : null,
-      ledger: row.ledgerId ? (ledgerById[row.ledgerId] || null) : null
-    };
-  });
+  var banks = listBankTransactionRows_();
+  var ledgers = buildLedgerAccountingFacts_().filter(function (row) { return String(row.recordStatus || '활성') !== '무효'; });
+  var bankById = banks.reduce(function (index, row) { index[row.id] = row; return index; }, {});
+  var ledgerById = ledgers.reduce(function (index, row) { index[row.id] = row; return index; }, {});
+  var items = listReconciliationItemRows_().filter(function (row) { return String(row.reconciliationId) === String(reconciliationId); }).map(function (row) {
+    var bank = bankById[row.bankTransactionId];
+    if (!bank || String(bank.recordStatus || '정상') === '무효') return null;
+    var result = buildReconciliationSnapshotItems_([bank], ledgers)[0];
+    var linkedLedger = ledgers.filter(function (ledger) { return String(ledger.bankTransactionId || '') === String(bank.id); })[0];
+    var claimed = Boolean(linkedLedger);
+    var candidates = claimed ? [] : listBankReconciliationCandidates_(bank, ledgers);
+    var workflowStatus = result.ledgerId ? '연결완료' : claimed ? '확인필요' : candidates.length === 1 ? '연결후보' : candidates.length > 1 ? '확인필요' : '원장없음';
+    return { id: row.id, reconciliationId: row.reconciliationId, bankTransactionId: row.bankTransactionId, ledgerId: result.ledgerId || (linkedLedger ? linkedLedger.id : ''), status: result.result, result: result.result, workflowStatus: workflowStatus, candidates: candidates, note: result.validationNote, bank: Object.assign({}, bank, { transactionAt: formatDateTimeValue_(bank.transactionAt) }), ledger: result.ledgerId ? mapLedgerEntryDto_(ledgerById[result.ledgerId]) : linkedLedger ? mapLedgerEntryDto_(linkedLedger) : null };
+  }).filter(Boolean);
   return { header: header, items: items };
 }
 
