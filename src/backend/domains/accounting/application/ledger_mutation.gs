@@ -94,11 +94,6 @@ function createLedgerEntryData_(request, context, recordStatus) {
   return { ok: true, item: mapLedgerEntryDto_(item) };
 }
 
-function createLedgerDraftData_(request, context) {
-  request = Object.assign({}, request || {}, { match_status: '미확인' });
-  return createLedgerEntryData_(request, context, '활성');
-}
-
 function updateLedgerEntryData_(input, context) {
   input = input || {};
   if (!input.transaction_id) throw new Error('transaction_id is required.');
@@ -109,7 +104,10 @@ function updateLedgerEntryData_(input, context) {
   try {
     before = findLedgerRowById_(input.transaction_id);
     if (!before || String(before.recordStatus || '활성') === '무효') throw new Error('원장 거래를 찾을 수 없습니다.');
+    if (normalizeLedgerApprovalStatus_(before.approvalStatus) === '승인') throw new Error('승인된 거래는 승인 취소 후 수정할 수 있습니다.');
 
+    var resubmitting = input.resubmit === true;
+    if (resubmitting && normalizeLedgerApprovalStatus_(before.approvalStatus) !== '반려') throw new Error('반려된 거래만 재제출할 수 있습니다.');
     var transactionType = input.transaction_type == null || input.transaction_type === ''
       ? normalizeLedgerTransactionType_(before.transactionType)
       : normalizeLedgerTransactionType_(input.transaction_type);
@@ -137,6 +135,7 @@ function updateLedgerEntryData_(input, context) {
       String(businessType || '') !== String(before.businessType || '') ||
       String(businessId || '') !== String(before.businessId || '');
 
+    var resetApproval = approvalSensitiveChanged || resubmitting;
     changes = {
       bankTransactionId: bankTransactionId,
       transactionAt: transactionAt,
@@ -151,10 +150,10 @@ function updateLedgerEntryData_(input, context) {
       recordStatus: normalizeLedgerRecordStatus_(before.recordStatus),
       managerEmail: resolveAccountingActorEmail_(context),
       updatedAt: getCurrentIsoDateTime_(),
-      approvalStatus: approvalSensitiveChanged ? '승인대기' : normalizeLedgerApprovalStatus_(before.approvalStatus),
-      approvedByEmail: approvalSensitiveChanged ? '' : (before.approvedByEmail || ''),
-      approvedAt: approvalSensitiveChanged ? '' : (before.approvedAt || ''),
-      rejectionReason: approvalSensitiveChanged ? '' : (before.rejectionReason || '')
+      approvalStatus: resetApproval ? '승인대기' : normalizeLedgerApprovalStatus_(before.approvalStatus),
+      approvedByEmail: resetApproval ? '' : (before.approvedByEmail || ''),
+      approvedAt: resetApproval ? '' : (before.approvedAt || ''),
+      rejectionReason: resetApproval ? '' : (before.rejectionReason || '')
     };
     updateLedgerRowById_(input.transaction_id, changes);
   } finally {
@@ -165,7 +164,7 @@ function updateLedgerEntryData_(input, context) {
   var after = Object.assign({}, before, changes);
   delete before._rowNumber;
   delete after._rowNumber;
-  writeAccountingAudit_(actor, 'UPDATE', 'ledger', input.transaction_id, before, after, input.reason || '원장 수정');
+  writeAccountingAudit_(actor, 'UPDATE', 'ledger', input.transaction_id, before, after, input.reason || (input.resubmit === true ? '반려 거래 수정 및 재제출' : '원장 수정'));
   return { ok: true, item: getLedgerDetailData_(input.transaction_id) || mapLedgerEntryDto_(after) };
 }
 
@@ -184,50 +183,65 @@ function linkLedgerBankTransactionData_(request, context) {
 function deleteLedgerEntryData_(input, context) {
   input = input || {};
   if (!input.transaction_id) throw new Error('transaction_id is required.');
-  var before = findLedgerRowById_(input.transaction_id);
-  if (!before) throw new Error('원장 거래를 찾을 수 없습니다.');
-  var changes = { recordStatus: '무효', managerEmail: resolveAccountingActorEmail_(context), updatedAt: getCurrentIsoDateTime_() };
-  updateLedgerRowById_(input.transaction_id, changes);
+  var lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  var before; var after;
   var actor = resolveAccountingActorEmail_(context);
-  var after = Object.assign({}, before, changes);
+  try {
+    before = findLedgerRowById_(input.transaction_id);
+    if (!before || String(before.recordStatus || '활성') === '무효') throw new Error('원장 거래를 찾을 수 없습니다.');
+    if (normalizeLedgerApprovalStatus_(before.approvalStatus) !== '반려') throw new Error('반려된 거래만 삭제할 수 있습니다.');
+    var changes = { recordStatus: '무효', managerEmail: actor, updatedAt: getCurrentIsoDateTime_() };
+    updateLedgerRowById_(input.transaction_id, changes);
+    after = Object.assign({}, before, changes);
+  } finally { lock.releaseLock(); }
   delete before._rowNumber;
   delete after._rowNumber;
-  writeAccountingAudit_(actor, 'DELETE', 'ledger', input.transaction_id, before, after, input.reason || '원장 무효 처리');
+  writeAccountingAudit_(actor, 'DELETE', 'ledger', input.transaction_id, before, after, input.reason || '반려 거래 무효 처리');
   return { ok: true, transaction_id: input.transaction_id };
 }
 
 function processLedgerEntryData_(input, context) {
   input = input || {};
   if (!input.transaction_id) throw new Error('transaction_id is required.');
-  var before = findLedgerRowById_(input.transaction_id);
-  if (!before || String(before.recordStatus || '활성') === '무효') throw new Error('원장 거래를 찾을 수 없습니다.');
-
   var actor = resolveAccountingActorEmail_(context);
   var now = getCurrentIsoDateTime_();
-  var changes;
-  if (input.action === 'approve') {
-    changes = {
-      approvalStatus: '승인', approvedByEmail: actor, approvedAt: now, rejectionReason: '',
-      recordStatus: '활성', managerEmail: actor, updatedAt: now
-    };
-  } else if (input.action === 'reject') {
-    changes = {
-      approvalStatus: '반려', approvedByEmail: actor, approvedAt: now,
-      rejectionReason: String(input.reason || '').trim(), recordStatus: '활성', managerEmail: actor, updatedAt: now
-    };
-  } else {
-    throw new Error('지원하지 않는 승인 처리입니다.');
-  }
-  updateLedgerRowById_(input.transaction_id, changes);
+  var reason = String(input.reason || '').trim();
+  var lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  var before; var changes; var auditAction;
+  try {
+    before = findLedgerRowById_(input.transaction_id);
+    if (!before || String(before.recordStatus || '활성') === '무효') throw new Error('원장 거래를 찾을 수 없습니다.');
+    var status = normalizeLedgerApprovalStatus_(before.approvalStatus);
+    if (input.action === 'cancel_approval') {
+      if (status !== '승인') throw new Error('승인된 거래만 승인 취소할 수 있습니다.');
+      if (!reason) throw new Error('승인 취소 사유를 입력해 주세요.');
+      changes = { approvalStatus: '승인대기', approvedByEmail: '', approvedAt: '', rejectionReason: '' };
+      auditAction = 'UPDATE';
+      reason = '승인 취소: ' + reason;
+    } else if (input.action === 'approve' || input.action === 'reject') {
+      if (status !== '승인대기') throw new Error('승인대기 거래만 승인 또는 반려할 수 있습니다.');
+      if (input.action === 'reject' && !reason) throw new Error('반려 사유를 입력해 주세요.');
+      changes = {
+        approvalStatus: input.action === 'approve' ? '승인' : '반려',
+        approvedByEmail: actor, approvedAt: now,
+        rejectionReason: input.action === 'reject' ? reason : ''
+      };
+      auditAction = input.action === 'approve' ? 'APPROVE' : 'REJECT';
+    } else { throw new Error('지원하지 않는 승인 처리입니다.'); }
+    changes.recordStatus = '활성';
+    changes.managerEmail = actor;
+    changes.updatedAt = now;
+    updateLedgerRowById_(input.transaction_id, changes);
+  } finally { lock.releaseLock(); }
   var after = Object.assign({}, before, changes);
   delete before._rowNumber;
   delete after._rowNumber;
-  writeAccountingAudit_(actor, input.action === 'approve' ? 'APPROVE' : 'REJECT', 'ledger', input.transaction_id, before, after, input.reason || changes.approvalStatus);
+  writeAccountingAudit_(actor, auditAction, 'ledger', input.transaction_id, before, after, reason || changes.approvalStatus);
   return {
-    ok: true,
-    transaction_id: input.transaction_id,
-    approval_status: changes.approvalStatus,
-    match_status: before.matchStatus || '미확인',
+    ok: true, transaction_id: input.transaction_id,
+    approval_status: changes.approvalStatus, match_status: before.matchStatus || '미확인',
     item: getLedgerDetailData_(input.transaction_id)
   };
 }

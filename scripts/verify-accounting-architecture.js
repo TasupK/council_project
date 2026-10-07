@@ -96,7 +96,6 @@ var ownership = {
   api_getLedgerSummary: 'controllers/ledger_controller.gs',
   api_updateLedgerEntry: 'controllers/ledger_controller.gs',
   api_deleteLedgerEntry: 'controllers/ledger_controller.gs',
-  createLedgerDraftData_: 'application/ledger_mutation.gs',
   updateLedgerEntryData_: 'application/ledger_mutation.gs',
   deleteLedgerEntryData_: 'application/ledger_mutation.gs',
   assertLedgerBusinessSourceAvailable_: 'application/ledger_mutation.gs',

@@ -8,10 +8,6 @@ function createLedgerEntryWithEvidenceData_(request, context, recordStatus) {
   return { ok: true, evidence: evidence, item: saved.item };
 }
 
-function createLedgerDraftWithEvidenceData_(request, context) {
-  return createLedgerEntryWithEvidenceData_(request || {}, context, '활성');
-}
-
 function updateLedgerEntryWithEvidenceData_(request, context) {
   request = request || {};
   var updated = updateLedgerEntryData_(request, context);

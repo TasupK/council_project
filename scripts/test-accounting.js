@@ -223,7 +223,7 @@ function testLedgerLifecycle_() {
   assert.strictEqual(inserted.recordStatus, '활성');
   assert.strictEqual(inserted.managerEmail, 'm@example.com');
 
-  context.createLedgerDraftData_({ transaction_type: '지출', amount: 2000 }, { user: { email: 'm@example.com' } });
+  context.createLedgerEntryData_({ transaction_type: '지출', amount: 2000 }, { user: { email: 'm@example.com' } }, '활성');
   assert.strictEqual(inserted.recordStatus, '활성');
   assert.strictEqual(inserted.matchStatus, '미확인');
 

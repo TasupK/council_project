@@ -77,7 +77,13 @@ function filterLedgerEntries_(items, filter) {
     if (keyword && !isLedgerKeywordMatch_(item, keyword, keywordDigits)) return false;
     if (normalized.transaction_type !== '전체' && item.transaction_type !== normalized.transaction_type) return false;
     if (normalized.event_name !== '전체' && item.event_name !== normalized.event_name) return false;
+    if (normalized.event_id !== '전체') {
+      if (normalized.event_id === '미연결' ? !!item.event_id : String(item.event_id || '') !== normalized.event_id) return false;
+    }
     if (normalized.status !== '전체' && item.status !== normalized.status) return false;
+    var date = String(item.transaction_date || '').slice(0, 10);
+    if (normalized.date_from && date < normalized.date_from) return false;
+    if (normalized.date_to && date > normalized.date_to) return false;
     return true;
   });
 }
@@ -89,10 +95,23 @@ function isLedgerKeywordMatch_(item, keyword, keywordDigits) {
 }
 
 function normalizeFilter_(filter) {
+  var dateFrom = String(filter.date_from || '').trim();
+  var dateTo = String(filter.date_to || '').trim();
+  [dateFrom, dateTo].forEach(function (value) {
+    if (!value) return;
+    var date = new Date(value + 'T00:00:00Z');
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value) || isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== value) {
+      throw new Error('필터 날짜는 올바른 연도-월-일 형식이어야 합니다.');
+    }
+  });
+  if (dateFrom && dateTo && dateFrom > dateTo) throw new Error('종료일은 시작일과 같거나 이후여야 합니다.');
   return {
     keyword: filter.keyword || '',
     transaction_type: filter.transaction_type || filter.type || '전체',
     event_name: filter.event_name || filter.event || '전체',
+    event_id: String(filter.event_id == null ? '전체' : filter.event_id),
+    date_from: dateFrom,
+    date_to: dateTo,
     status: filter.status || '전체'
   };
 }
@@ -121,7 +140,8 @@ function getLedgerDatabaseInfoData_() {
     ok: true,
     spreadsheetId: spreadsheet.getId(),
     spreadsheetName: spreadsheet.getName(),
-    spreadsheetUrl: spreadsheet.getUrl(),
+    spreadsheetUrl: spreadsheet.getUrl().split('#')[0] + '#gid=' + sheet.getSheetId(),
+    sheetId: sheet.getSheetId(),
     transactionRowCount: sheet ? Math.max(0, sheet.getLastRow() - 1) : 0
   };
 }

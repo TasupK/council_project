@@ -1,17 +1,21 @@
 <script>
 function initAccountingLedgerManage() {
   setupFileUpload({ key: 'ledgerEntry', zoneId: 'entryEvidenceDropzone', inputId: 'entryEvidenceFile', nameId: 'entryEvidenceFileName', multiple: true });
-  document.getElementById('openRegister').addEventListener('click', function () { state.editingLedgerId = null; document.getElementById('create').textContent = '등록하기'; setType('지출'); openModal('registerModal'); });
+  document.getElementById('openRegister').addEventListener('click', function () { state.editingLedgerId = null; state.editingLedgerRejected = false; document.getElementById('entryForm').reset(); state.uploadFiles.ledgerEntry = []; document.getElementById('entryEvidenceFileName').textContent = '선택된 파일 없음'; updateLedgerSaveLabel(); setDefaultLedgerTransactionDate(); setType('지출'); updateBalance(); openModal('registerModal'); });
   document.getElementById('expenseBtn').addEventListener('click', function () { setType('지출'); });
   document.getElementById('incomeBtn').addEventListener('click', function () { setType('수입'); });
   document.getElementById('formEvent').addEventListener('change', updateBalance);
-  document.getElementById('draft').addEventListener('click', function () { saveEntry(true); });
-  document.getElementById('create').addEventListener('click', function () { saveEntry(false); });
+  document.getElementById('create').addEventListener('click', function () { saveEntry(); });
   document.getElementById('approve').addEventListener('click', approve);
+  document.getElementById('cancelLedgerApproval').addEventListener('click', cancelLedgerApproval);
+  document.getElementById('rejectLedger').addEventListener('click', rejectLedger);
   document.getElementById('editLedger').addEventListener('click', editSelectedLedger);
   document.getElementById('deleteLedger').addEventListener('click', deleteSelectedLedger);
   document.querySelectorAll('[data-close]').forEach(function (button) { button.addEventListener('click', function () { closeModal(button.dataset.close); }); });
   document.querySelectorAll('.accounting-ledger-filters input, .accounting-ledger-filters select').forEach(function (element) { element.addEventListener('input', function () { state.ledgerPage = 1; render(); }); });
+  ['ledgerDateFrom', 'ledgerDateTo'].forEach(function (id) { document.getElementById(id).addEventListener('change', validateLedgerDateRange); });
+  document.getElementById('applyLedgerDateFilter').addEventListener('click', applyLedgerDateFilter);
+  document.getElementById('clearLedgerDateFilter').addEventListener('click', clearLedgerDateFilter);
   document.getElementById('prevLedgerPage').addEventListener('click', function () { goLedgerPage(state.ledgerPage - 1); });
   document.getElementById('nextLedgerPage').addEventListener('click', function () { goLedgerPage(state.ledgerPage + 1); });
   document.getElementById('rows').addEventListener('click', function (event) { const button = event.target.closest('[data-id]'); if (button) openDetail(button.dataset.id); });
