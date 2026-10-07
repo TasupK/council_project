@@ -56,6 +56,7 @@ function processBankTransactionUploadData_(request, context) {
     normalizedRows = parseTossBankTransactionRows_(request.rows);
   } else {
     var files = request.files || (request.file ? [request.file] : []);
+    if (files.length > 1) throw new Error('은행 거래내역 파일은 한 개만 업로드할 수 있습니다.');
     if (!files.length) throw new Error('업로드할 토스뱅크 거래내역 파일이 없습니다.');
     uploadedFileCount = files.length;
     files.forEach(function (rawFile) {

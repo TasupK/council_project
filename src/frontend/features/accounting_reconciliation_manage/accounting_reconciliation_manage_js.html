@@ -6,11 +6,12 @@ function getReconciliationLedgerEntry(request) { return ledgerClient.getLedgerEn
 function getReconciliationLedgerEvidence(request) { return ledgerClient.getLedgerEvidenceFileContent(request); }
 
 function initAccountingReconciliationManage() {
-  setupFileUpload({ key: 'reconciliation', zoneId: 'reconciliationDropzone', inputId: 'reconciliationFile', nameId: 'reconciliationFileName', multiple: true, onChange: resetCurrentReconciliation });
+  setupFileUpload({ key: 'reconciliation', zoneId: 'reconciliationDropzone', inputId: 'reconciliationFile', nameId: 'reconciliationFileName', multiple: false, onChange: resetCurrentReconciliation });
+  setupReconciliationWorkspace();
   document.getElementById('runMissingCheck').addEventListener('click', runMissingCheck);
-  ['reconciliationSearch','reconciliationStatus'].forEach(function (id) { document.getElementById(id).addEventListener('input', function () { renderReconciliationDetail(state.reconciliationDetail); }); });
-  document.getElementById('resetReconciliationFilters').addEventListener('click', function () { document.getElementById('reconciliationSearch').value = ''; document.getElementById('reconciliationStatus').value = '전체'; renderReconciliationDetail(state.reconciliationDetail); });
-  document.getElementById('reconciliationRows').addEventListener('click', function (event) { const button = event.target.closest('[data-action]'); if (!button) return; if (button.dataset.action === 'detail') openReconciliationLedgerDetail(button.dataset.ledgerId); if (button.dataset.action === 'create') createLedgerForItem(button.dataset.id); });
+  ['reconciliationSearch','reconciliationStatus','reconciliationStartDate','reconciliationEndDate'].forEach(function (id) { document.getElementById(id).addEventListener('input', function () { renderReconciliationDetail(state.reconciliationDetail); }); });
+  document.getElementById('resetReconciliationFilters').addEventListener('click', function () { if (state.reconciliationApplying || state.reconciliationImporting) return; setDefaultReconciliationDates(); document.getElementById('reconciliationSearch').value = ''; document.getElementById('reconciliationStatus').value = '전체'; renderReconciliationDetail(state.reconciliationDetail); });
+  document.getElementById('reconciliationRows').addEventListener('click', function (event) { const button = event.target.closest('[data-action]'); if (!button) return; if (button.dataset.action === 'detail') openReconciliationLedgerDetail(button.dataset.ledgerId); if (button.dataset.action === 'create' || button.dataset.action === 'link') applyReconciliationSelection([button.dataset.id]); if (button.dataset.action === 'candidate-detail') { const selected = selectedReconciliationCandidate(button.dataset.id); if (selected) openReconciliationLedgerDetail(selected); else toast('원장 후보를 선택해 주세요.'); } });
   document.getElementById('reconciliationLedgerDetailModal').addEventListener('click', function (event) { const button = event.target.closest('[data-close],[data-action="download-evidence"]'); if (!button) return; if (button.dataset.close) { document.getElementById(button.dataset.close).classList.remove('open'); clearReconciliationEvidencePreviews(); } if (button.dataset.action === 'download-evidence') downloadReconciliationEvidence(button); });
   resetCurrentReconciliation([]);
 }

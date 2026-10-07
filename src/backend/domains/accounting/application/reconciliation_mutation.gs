@@ -39,14 +39,6 @@ function processReconciliationData_(request, context) {
   });
   if (!banks.length) throw new Error('현재 업로드한 파일에서 비교할 계좌 거래를 찾지 못했습니다.');
   var ledgers = buildReconciliationLedgerCandidates_({ startDate: request.startDate, endDate: request.endDate });
-  var linkedCount = linkUnclaimedApprovedIncomeLedgersForReconciliation_(banks, ledgers, context);
-  if (linkedCount) {
-    ledgers = buildReconciliationLedgerCandidates_({ startDate: request.startDate, endDate: request.endDate });
-  }
-  var relinkedCount = relinkApprovedIncomeLedgersForReconciliation_(banks, ledgers, context);
-  if (relinkedCount) {
-    ledgers = buildReconciliationLedgerCandidates_({ startDate: request.startDate, endDate: request.endDate });
-  }
   var results = buildReconciliationSnapshotItems_(banks, ledgers);
   var balances = resolveReconciliationBankBalances_(banks);
   var now = getCurrentIsoDateTime_();
@@ -374,13 +366,23 @@ function applyReconciliationLinkData_(request, context) {
   request = request || {};
   if (!request.reconciliationItemId || !request.ledgerId) throw new Error('대사상세ID와 원장ID가 필요합니다.');
   var item = findReconciliationItemRowById_(request.reconciliationItemId);
-  if (!item || !item.bankTransactionId) throw new Error('연결 가능한 대사 상세를 찾을 수 없습니다.');
-  linkLedgerBankTransactionData_({
-    transaction_id: request.ledgerId,
-    bank_transaction_id: item.bankTransactionId,
-    reason: request.note || '감사대사 화면에서 계좌거래 연결'
-  }, context);
-  return getReconciliationDetailData_(item.reconciliationId);
+  if (!item || !item.bankTransactionId) throw new Error('대사 상세를 찾을 수 없습니다.');
+  var lock = LockService.getScriptLock(); lock.waitLock(30000);
+  var before; var after; var actor = resolveAccountingActorEmail_(context);
+  try {
+    before = findLedgerRowById_(request.ledgerId);
+    var bank = findBankTransactionRowById_(item.bankTransactionId);
+    if (!before || String(before.recordStatus || '활성') === '무효' || !bank) throw new Error('연결할 거래를 찾을 수 없습니다.');
+    if (before.bankTransactionId && String(before.bankTransactionId) !== String(bank.id)) throw new Error('다른 계좌 거래에 연결된 원장입니다.');
+    if (!isUploadedBankLedgerAmountTypeMatch_(bank, before) || reconciliationDateDistanceDays_(bank.transactionAt, before.transactionAt) > 3) throw new Error('금액·구분·거래일이 연결 조건과 일치하지 않습니다.');
+    var matchStatus = resolveReconciliationLedgerBankMatchStatus_(bank.id, before.transactionType, before.amount, before.id);
+    var changes = { bankTransactionId: bank.id, matchStatus: matchStatus, updatedAt: getCurrentIsoDateTime_(), managerEmail: actor };
+    updateLedgerRowById_(before.id, changes); after = Object.assign({}, before, changes);
+    updateReconciliationItemRowById_(item.id, { ledgerId: before.id, result: '정상', differenceAmount: 0, validationNote: '사용자가 기존 원장 연결 확인' });
+  } finally { lock.releaseLock(); }
+  delete before._rowNumber; delete after._rowNumber;
+  writeAccountingAudit_(actor, 'UPDATE', 'ledger', before.id, before, after, '은행 거래 대사: 기존 원장 연결');
+  return request.summaryOnly ? { ok: true, ledgerId: before.id } : getReconciliationDetailData_(item.reconciliationId);
 }
 
 function createLedgerFromReconciliationData_(request, context) {
@@ -389,19 +391,23 @@ function createLedgerFromReconciliationData_(request, context) {
   if (!item || !item.bankTransactionId) throw new Error('대사 상세를 찾을 수 없습니다.');
   var bank = findBankTransactionRowById_(item.bankTransactionId);
   if (!bank || String(bank.recordStatus || '정상') === '무효') throw new Error('계좌 거래를 찾을 수 없습니다.');
+  var activeLedgers = buildLedgerAccountingFacts_().filter(function (ledger) { return String(ledger.recordStatus || '활성') !== '무효'; });
+  if (activeLedgers.some(function (ledger) { return String(ledger.bankTransactionId || '') === String(bank.id); })) throw new Error('이미 원장에 연결된 계좌 거래입니다.');
+  if (listBankReconciliationCandidates_(bank, activeLedgers).length) throw new Error('기존 원장 후보가 있습니다. 확인 후 연결해 주세요.');
   var saved = createLedgerEntryData_({
     bank_transaction_id: bank.id,
     transaction_type: Number(bank.amount || 0) < 0 ? '지출' : '수입',
     transaction_date: bank.transactionAt,
     amount: Math.abs(Number(bank.amount || 0)),
-    counterparty: request.counterparty || bank.description || '',
+    counterparty: request.counterparty || bank.counterparty || bank.description || '',
     description: request.description || bank.description || '',
     event_id: request.event_id || '',
     source: 'BANK',
     business_type: request.business_type || '대사생성',
     business_id: request.business_id || item.id
   }, context, '활성');
-  return { snapshot: getReconciliationDetailData_(item.reconciliationId), createdLedger: saved.item };
+  updateReconciliationItemRowById_(item.id, { ledgerId: saved.item.transaction_id, result: '정상', differenceAmount: 0, validationNote: '은행 내역 기반 승인대기 원장 생성' });
+  return request.summaryOnly ? { ok: true, createdLedger: saved.item } : { snapshot: getReconciliationDetailData_(item.reconciliationId), createdLedger: saved.item };
 }
 
 function createLedgerFromEventPaymentReconciliationData_(request, context) {

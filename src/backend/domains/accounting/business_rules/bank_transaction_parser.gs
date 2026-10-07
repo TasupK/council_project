@@ -136,6 +136,9 @@ function mapTossBankSheetValuesToRows_(values) {
 
 function parseTossBankOcrTextToRows_(ocrText) {
   var text = normalizeTossBankOcrText_(ocrText);
+  // 표 형태의 거래내역서는 단일 거래 화면 파서보다 먼저 처리한다.
+  var tableDocument = /거래\s*내역서/.test(text) || (/거래\s*일자/.test(text) && /거래\s*금액/.test(text) && /거래\s*내용/.test(text));
+  if (tableDocument) return parseTossBankStatementTableOcr_(text);
   var detailRow = parseTossBankDetailScreenshotOcr_(text);
   if (detailRow) return [detailRow];
   if (/(거래 후 잔액|받는 분 통장표시|거래한 모임원)/.test(text)) {
@@ -155,6 +158,42 @@ function parseTossBankOcrTextToRows_(ocrText) {
   if (!rows.length) {
     throw new Error('PDF 또는 이미지에서 토스뱅크 거래내역을 인식하지 못했습니다. 날짜와 금액이 선명한 파일인지 확인해 주세요.');
   }
+  return rows;
+}
+
+function parseTossBankStatementTableOcr_(text) {
+  // 조회기간에는 시간이 없다. 시간을 포함한 거래 행만 시작점으로 사용한다.
+  var datePattern = /(20\d{2})\s*[.\/-]\s*(\d{1,2})\s*[.\/-]\s*(\d{1,2})\s+(\d{1,2})\s*:\s*(\d{2})\s*:\s*(\d{2})/g;
+  var matches = []; var found;
+  while ((found = datePattern.exec(text)) !== null) {
+    matches.push({ index: found.index, end: datePattern.lastIndex, date: found[1] + '-' + ('0' + found[2]).slice(-2) + '-' + ('0' + found[3]).slice(-2) + ' ' + ('0' + found[4]).slice(-2) + ':' + found[5] + ':' + found[6] });
+  }
+  if (!matches.length) throw new Error('거래내역서 표에서 거래일시를 찾지 못했습니다. 암호 없는 Excel 파일로 가져오거나 PDF 인식 결과를 확인해 주세요.');
+  var rows = []; var failures = [];
+  matches.forEach(function (match, index) {
+    var block = text.slice(match.end, index + 1 < matches.length ? matches[index + 1].index : text.length).trim();
+    var type = block.match(/^(모임원\s*송금|체크\s*카드\s*결제|카드\s*결제|자동\s*이체|ATM\s*출금|이자\s*입금|프로모션\s*입금|캐시백|환불|출금|송금|이체|입금)\s*/);
+    if (!type) { failures.push(match.date + ': 거래 구분 인식 실패'); return; }
+    block = block.slice(type[0].length).trim();
+    // 이 양식은 단위를 머리글에 표시한다. 금액 뒤의 '원'은 선택 사항이다.
+    var money = /^([+-]?\s*\d+(?:\s*,\s*\d{3})*)\s*(?:원\s*)?\s+([+-]?\s*\d+(?:\s*,\s*\d{3})*)\s*(?:원\s*)?/;
+    var amounts = block.match(money);
+    if (!amounts) { failures.push(match.date + ': 거래금액 또는 잔액 인식 실패'); return; }
+    var bankType = type[1].replace(/\s/g, '');
+    var amount = parseBankOcrNumber_(amounts[1]);
+    var balance = parseBankOcrNumber_(amounts[2]);
+    if (!isFinite(amount) || !isFinite(balance)) { failures.push(match.date + ': 숫자 인식 실패'); return; }
+    if ((isTossBankOutgoingType_(bankType) && amount > 0) || (isTossBankIncomingType_(bankType) && amount < 0)) {
+      failures.push(match.date + ': 거래 구분과 금액 부호 불일치'); return;
+    }
+    var remainder = block.slice(amounts[0].length);
+    var description = remainder.split(/\n+/).map(normalizeBankSourceText_).filter(function (line) {
+      return line && !/^(?:\d+\s*(?:\/\s*)+\d+|토스\s*뱅크|toss\s*bank|거래\s*내역서|단위\s*[:：]|거래\s*일자|예금주|계좌번호|예금종류|조회기간)/i.test(line);
+    })[0] || '';
+    if (!description) { failures.push(match.date + ': 거래내용 인식 실패'); return; }
+    rows.push({ '거래 일시': match.date, '적요': description, '거래 유형': bankType, '거래 기관': '', '계좌번호': '', '거래 금액': amount, '거래 후 잔액': balance, '메모': '' });
+  });
+  if (failures.length) throw new Error('거래내역서 ' + failures.length + '개 행을 정확히 읽지 못해 저장하지 않았습니다. ' + failures.slice(0, 3).join(' / ') + '. 암호 없는 Excel 파일을 사용해 주세요.');
   return rows;
 }
 
@@ -480,3 +519,4 @@ function extractTossBankOcrDescription_(lines) {
   }
   return '';
 }
+
