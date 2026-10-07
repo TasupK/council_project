@@ -26,7 +26,7 @@ function resetCurrentReconciliation(files) {
 function extendImportDateRange(summary, result) { if (result.startDate && (!summary.startDate || result.startDate < summary.startDate)) summary.startDate = result.startDate; if (result.endDate && (!summary.endDate || result.endDate > summary.endDate)) summary.endDate = result.endDate; }
 async function runMissingCheck() {
   if (state.reconciliationImporting || state.reconciliationApplying || state.reconciliationEditSaving) return;
-  const files = state.uploadFiles.reconciliation || []; if (!files.length) return toast('점검할 거래내역 파일을 선택해 주세요.');
+  const files = state.uploadFiles.reconciliation || []; if (files.length > 1) return toast('은행 거래내역 파일은 한 개만 선택해 주세요.'); if (!files.length) return toast('점검할 거래내역 파일을 선택해 주세요.');
   const checkButton = document.getElementById('runMissingCheck'); const summaryElement = document.getElementById('ocrResultSummary'); const originalLabel = checkButton.textContent;
   const summary = { extractedCount: 0, savedCount: 0, duplicateCount: 0, failedFileCount: 0, failedFiles: [], startDate: '', endDate: '', bankTransactionIds: [] };
   const fileInput = document.getElementById('reconciliationFile'); fileInput.disabled = true;

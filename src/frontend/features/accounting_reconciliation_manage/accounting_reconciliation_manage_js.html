@@ -6,7 +6,7 @@ function getReconciliationLedgerEntry(request) { return ledgerClient.getLedgerEn
 function getReconciliationLedgerEvidence(request) { return ledgerClient.getLedgerEvidenceFileContent(request); }
 
 function initAccountingReconciliationManage() {
-  setupFileUpload({ key: 'reconciliation', zoneId: 'reconciliationDropzone', inputId: 'reconciliationFile', nameId: 'reconciliationFileName', multiple: true, onChange: resetCurrentReconciliation });
+  setupFileUpload({ key: 'reconciliation', zoneId: 'reconciliationDropzone', inputId: 'reconciliationFile', nameId: 'reconciliationFileName', multiple: false, onChange: resetCurrentReconciliation });
   setupReconciliationWorkspace();
   document.getElementById('runMissingCheck').addEventListener('click', runMissingCheck);
   ['reconciliationSearch','reconciliationStatus','reconciliationStartDate','reconciliationEndDate'].forEach(function (id) { document.getElementById(id).addEventListener('input', function () { renderReconciliationDetail(state.reconciliationDetail); }); });
