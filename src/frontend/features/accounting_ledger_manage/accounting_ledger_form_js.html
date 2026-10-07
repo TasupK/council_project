@@ -9,7 +9,7 @@ function setDefaultLedgerTransactionDate() {
 }
 function updateLedgerSaveLabel() {
   const rejected = Boolean(state.editingLedgerId && state.editingLedgerRejected);
-  document.getElementById('create').textContent = rejected ? '수정 후 재제출' : (state.editingLedgerId ? '수정 저장' : '등록하기');
+  document.getElementById('create').textContent = state.editingLedgerId ? '수정 저장' : '등록하기';
   document.getElementById('ledgerResubmitNotice').hidden = !rejected;
 }
 function readForm() {
