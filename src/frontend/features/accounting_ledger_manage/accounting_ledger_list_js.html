@@ -14,6 +14,26 @@ function validateLedgerDateRange() {
   const invalid = !!(from.value && to.value && from.value > to.value);
   to.setCustomValidity(invalid ? '종료일은 시작일과 같거나 이후여야 합니다.' : '');
   if (invalid) to.reportValidity();
+  updateLedgerDateFilterLabel();
+  return !invalid && from.checkValidity() && to.checkValidity();
+}
+function updateLedgerDateFilterLabel() {
+  const from = document.getElementById('ledgerDateFrom').value;
+  const to = document.getElementById('ledgerDateTo').value;
+  document.getElementById('ledgerDateFilterLabel').textContent = from || to
+    ? (from || '시작일 전체') + ' ~ ' + (to || '종료일 전체')
+    : '거래일자: 전체';
+}
+function applyLedgerDateFilter() {
+  if (!validateLedgerDateRange()) return;
+  state.ledgerPage = 1;
+  render();
+  document.getElementById('ledgerDateFilter').open = false;
+}
+function clearLedgerDateFilter() {
+  document.getElementById('ledgerDateFrom').value = '';
+  document.getElementById('ledgerDateTo').value = '';
+  applyLedgerDateFilter();
 }
 function ledgerSearchText(item) {
   const date = String(item.transaction_date || '').slice(0, 10);

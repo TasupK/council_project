@@ -13,6 +13,8 @@ function initAccountingLedgerManage() {
   document.querySelectorAll('[data-close]').forEach(function (button) { button.addEventListener('click', function () { closeModal(button.dataset.close); }); });
   document.querySelectorAll('.accounting-ledger-filters input, .accounting-ledger-filters select').forEach(function (element) { element.addEventListener('input', function () { state.ledgerPage = 1; render(); }); });
   ['ledgerDateFrom', 'ledgerDateTo'].forEach(function (id) { document.getElementById(id).addEventListener('change', validateLedgerDateRange); });
+  document.getElementById('applyLedgerDateFilter').addEventListener('click', applyLedgerDateFilter);
+  document.getElementById('clearLedgerDateFilter').addEventListener('click', clearLedgerDateFilter);
   document.getElementById('prevLedgerPage').addEventListener('click', function () { goLedgerPage(state.ledgerPage - 1); });
   document.getElementById('nextLedgerPage').addEventListener('click', function () { goLedgerPage(state.ledgerPage + 1); });
   document.getElementById('rows').addEventListener('click', function (event) { const button = event.target.closest('[data-id]'); if (button) openDetail(button.dataset.id); });

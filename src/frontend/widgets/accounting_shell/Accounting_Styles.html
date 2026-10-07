@@ -31,6 +31,25 @@
   }
   .accounting-ledger-filters .ui-field.grow { min-width: 280px; }
   .accounting-ledger-filters .ui-field:not(.grow) { min-width: 112px; }
+  .accounting-page .ledger-date-filter { position: relative; }
+  .accounting-page .ledger-date-filter summary { cursor: pointer; white-space: nowrap; }
+  .accounting-page .ledger-date-filter-panel {
+    position: absolute;
+    z-index: 10;
+    top: calc(100% + 6px);
+    left: 0;
+    width: 260px;
+    max-width: calc(100vw - 40px);
+    display: grid;
+    gap: 12px;
+    padding: 16px;
+    border: 1px solid var(--ui-border);
+    border-radius: var(--ui-radius-md);
+    background: var(--ui-surface);
+    box-shadow: 0 8px 24px rgba(20, 22, 30, .15);
+  }
+  .accounting-page .ledger-date-filter-actions { display: flex; justify-content: flex-end; gap: 8px; }
+  .accounting-page .accounting-register-modal .grid > .ui-field { align-content: start; }
 
   .accounting-ledger-table {
     min-height: 656px;
