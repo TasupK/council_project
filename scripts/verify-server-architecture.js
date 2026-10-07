@@ -10,7 +10,7 @@ var REQUIRED_PUBLIC_FUNCTIONS = [
   'api_checkLogin','api_getCurrentUser','api_getMyPermissions','api_checkUserDbIntegrity','api_checkOperationDbIntegrity',
   'api_getEvents','api_getEvent','api_getEventOverview','api_createEvent','api_updateEvent','api_updateEventStatus','api_closeEvent',
   'api_getEventApplicants','api_getEventApplicant','api_processEventApplicant','api_getEventAttendances','api_applyEventAttendanceChanges','api_getEventRefunds',
-  'api_getLedgerDatabaseInfo','api_getLedgerEntries','api_getLedgerEntry','api_getLedgerEventOptions','api_createLedgerEntry','api_createLedgerDraft','api_processLedgerEntry','api_getSettlementSummary','api_getLedgerEvidenceFileContent',
+  'api_getLedgerDatabaseInfo','api_getLedgerEntries','api_getLedgerEntry','api_getLedgerEventOptions','api_createLedgerEntry','api_processLedgerEntry','api_getSettlementSummary','api_getLedgerEvidenceFileContent',
   'api_getSettingsHome','api_getSettingsUsers','api_getSettingsRoles','api_getSettingsPermissions',
   'api_getStudentFeeReference','api_getStudentFeeSummary','api_getStudentFeePayers','api_getStudentFeePayer','api_createStudentFeePayer','api_updateStudentFeePayer','api_getStudentFeeApplications','api_getStudentFeeApplication','api_processStudentFeeApplications','api_calculateStudentFeeAmount','api_confirmStudentFeePayment','api_getStudentFeeRefundRequests','api_getStudentFeeRefundRequest','api_processStudentFeeRefundRequests','api_calculateStudentFeeRefund','api_confirmStudentFeeRefund',
   'apiHandler_','requirePermission_','listSheetCrudItems_','findSheetCrudItemById_','insertSheetCrudItem_','updateSheetCrudItemById_'

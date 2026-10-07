@@ -29,6 +29,8 @@ function makeContext() {
     getLedgerDetailData_: function () { return null; },
     isTruthyValue_: function (value) { return !!value; }
   });
+  var queryFile = path.join(ROOT, 'src/backend/domains/accounting/application/ledger_query.gs');
+  vm.runInContext(fs.readFileSync(queryFile, 'utf8'), context, { filename: queryFile });
   vm.runInContext(fs.readFileSync(file, 'utf8'), context, { filename: file });
   return { context: context, getInserted: function () { return inserted; } };
 }
