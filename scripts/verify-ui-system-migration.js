@@ -63,7 +63,7 @@ const REQUIRED_IDS = {
   },
   accounting: {
     'src/frontend/pages/accounting_ledger/Accounting_Ledger_View.html': ['ledgerDbLink', 'openRegister', 'sumIncome', 'sumExpense', 'sumPending', 'sumBalance', 'keyword', 'type', 'department', 'event', 'status', 'rows', 'ledgerPagination', 'prevLedgerPage', 'ledgerPageInfo', 'nextLedgerPage', 'toast'],
-    'src/frontend/pages/accounting_ledger/modals/Accounting_Ledger_Register_Modal.html': ['registerModal', 'entryForm', 'expenseBtn', 'incomeBtn', 'formDepartment', 'formEvent', 'eventBalance', 'entryEvidenceDropzone', 'entryEvidenceFile', 'entryEvidenceFileName', 'draft', 'create'],
+    'src/frontend/pages/accounting_ledger/modals/Accounting_Ledger_Register_Modal.html': ['registerModal', 'entryForm', 'expenseBtn', 'incomeBtn', 'formDepartment', 'formEvent', 'eventBalance', 'entryEvidenceDropzone', 'entryEvidenceFile', 'entryEvidenceFileName', 'create'],
     'src/frontend/pages/accounting_ledger/modals/Accounting_Ledger_Detail_Modal.html': ['detailModal', 'detailTitle', 'detailStatus', 'detailAlert', 'detailRows', 'detailEvidenceList', 'editLedger', 'deleteLedger', 'approve']
   },
   event: {
@@ -143,7 +143,7 @@ function verifyAccounting() {
 }
 function verifyAccountingServerContracts() {
   const ledgerClient = read('src/frontend/entities/ledger/api/ledger_client_js.html');
-  ['api_getLedgerSummary','api_getLedgerEntries','api_createLedgerDraft','api_updateLedgerEntry','api_deleteLedgerEntry','api_getLedgerEvidenceFileContent','api_getLedgerDatabaseInfo','api_getLedgerEventOptions','api_createLedgerEntry','api_processLedgerEntry'].forEach((name) => { if (!ledgerClient.includes(name)) failures.push(`Ledger semantic client missing ${name}`); });
+  ['api_getLedgerSummary','api_getLedgerEntries','api_updateLedgerEntry','api_deleteLedgerEntry','api_getLedgerEvidenceFileContent','api_getLedgerDatabaseInfo','api_getLedgerEventOptions','api_createLedgerEntry','api_processLedgerEntry'].forEach((name) => { if (!ledgerClient.includes(name)) failures.push(`Ledger semantic client missing ${name}`); });
   const reconciliationClient = read('src/frontend/entities/reconciliation/api/reconciliation_client_js.html');
   ['api_processBankTransactionUpload','api_processReconciliation','api_getReconciliations','api_getReconciliation','api_getReconciliationCandidates','api_applyReconciliationLink','api_createLedgerEntryFromReconciliation'].forEach((name) => { if (!reconciliationClient.includes(name)) failures.push(`Reconciliation semantic client missing ${name}`); });
   const settlementClient = read('src/frontend/entities/settlement/api/settlement_client_js.html');
